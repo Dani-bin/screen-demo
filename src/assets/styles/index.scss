@@ -1,0 +1,353 @@
+// 导入字体
+@font-face {
+  font-family: "Alimama ShuHeiTi";
+  src: url("@/assets/fonts/AlimamaShuHeiTi-Bold.ttf") format("opentype");
+}
+
+@font-face {
+  font-family: "YouSheBiaoTiHei";
+  src: url("@/assets/fonts/YouSheBiaoTiHei.ttf") format("opentype");
+}
+
+@font-face {
+  font-family: "Source Han Sans CN";
+  src: url("@/assets/fonts/SourceHanSansCN-Regular.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "DIN";
+  src: url("@/assets/fonts/DIN-Bold.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "Douyin Sans";
+  src: url("@/assets/fonts/DouyinSans.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "Digital Numbers";
+  src: url("@/assets/fonts/DigitalNumbers.ttf") format("opentype");
+}
+
+@font-face {
+  font-family: "MiSans-Normal";
+  src: url("@/assets/fonts/MiSans-Normal.ttf") format("opentype");
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  font-size: 18px;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-family:
+    Microsoft YaHei,
+    Arial,
+    Helvetica Neue,
+    Helvetica,
+    PingFang SC,
+    Hiragino Sans GB,
+    sans-serif;
+  user-select: none;
+}
+
+label {
+  font-weight: 700;
+}
+
+html {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+#app {
+  height: 100%;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+a:focus,
+a:active {
+  outline: none;
+}
+
+a,
+a:focus,
+a:hover {
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
+
+div:focus {
+  outline: none;
+}
+
+.el-scrollbar {
+  .el-select-dropdown__item {
+    font-size: 24px;
+    height: 50px;
+    line-height: 50px;
+  }
+}
+
+.echart-box {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 195, 255, 0.1);
+    box-shadow: inset 0px 0px 51px 0px rgba(0, 204, 255, 0.5);
+    z-index: -1;
+  }
+}
+
+.empty-data {
+  text-align: center;
+  font-size: 0.08rem;
+  color: #ffffff;
+  margin-top: 0.5rem;
+}
+
+.el-message {
+  z-index: 9999 !important;
+  .el-message__content {
+    font-size: 30px;
+  }
+}
+.el-message-box {
+  --el-messagebox-width: 700px;
+  --el-messagebox-padding-primary: 40px;
+  --el-messagebox-font-size: 44px;
+  --el-messagebox-content-font-size: 34px;
+  .el-message-box__headerbtn {
+    width: 90px;
+    height: 90px;
+  }
+}
+.el-button {
+  height: 70px;
+  padding: 0 40px;
+}
+
+.el-popper {
+  .el-cascader-panel {
+    .el-scrollbar {
+      min-width: 300px;
+      .el-cascader-menu__wrap {
+        height: 400px;
+      }
+      .el-scrollbar__view {
+        padding: 20px 0;
+        .el-cascader-node {
+          height: 60px;
+          line-height: 60px;
+          .el-cascader-node__label {
+            padding-left: 20px;
+          }
+        }
+      }
+    }
+  }
+  .el-select-dropdown {
+    .el-scrollbar {
+      .el-select-dropdown__wrap {
+        max-height: 500px;
+        .el-scrollbar__view {
+          .el-select-group__wrap {
+            .el-select-group__title {
+              font-size: 16px;
+              line-height: 36px;
+            }
+            .el-select-group {
+              padding-left: 20px;
+            }
+          }
+          .el-select-dropdown__item {
+            font-size: 16px;
+            height: 36px;
+            line-height: 36px;
+          }
+        }
+      }
+    }
+    .el-select-dropdown__empty {
+      font-size: 16px;
+      padding: 40px 0;
+    }
+  }
+}
+.el-select__input{
+  color: #fff;
+}
+
+
+.el-input {
+  height: 100%;
+
+  .el-input__wrapper {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+
+    .el-input__prefix {
+      .el-icon {
+        font-size: 16px;
+        color: #fff;
+      }
+    }
+
+    .el-input__inner {
+      height: 100%;
+      background: transparent;
+      border: none;
+      font-family: Source Han Sans CN;
+      font-weight: 400;
+      font-size: 14px;
+      color: #fff;
+
+      &::placeholder {
+        color: rgba(255, 255, 255);
+      }
+    }
+
+    .el-input__suffix {
+      .el-input__suffix-inner {
+        .el-icon {
+          font-size: 14px;
+          color: #fff;
+        }
+      }
+    }
+  }
+}
+
+.el-select__wrapper {
+  height: 100%;
+  background-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+  font-family: Source Han Sans CN;
+  font-weight: 400;
+  font-size: 14px;
+  color: #fff;
+  padding: 0 12px;
+  &:hover {
+    background-color: transparent;
+    box-shadow: none;
+  }
+  .el-select__selection {
+    height: 100%;
+  }
+  .el-select__placeholder {
+    height: 100%;
+    color: #fff;
+    display: flex;
+    align-items: center;
+  }
+  .el-select__suffix {
+    .el-select__caret {
+      font-size: 14px;
+      color: #fff;
+    }
+  }
+}
+
+.el-radio {
+  --el-radio-input-width: 30px;
+  --el-radio-input-height: 30px;
+  .el-radio__inner:after {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+:root {
+  --el-font-size-base: 30px;
+  --el-mask-color: rgba(17, 34, 54, 0.401);
+  --el-loading-spinner-size: 100px;
+}
+
+.view-all-btn {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  min-width: 145px;
+  padding: 0 20px;
+  height: 54px;
+  background-color: rgba(0, 119, 255, 0.86);
+  border-radius: 4px 4px 4px 4px;
+  border: 1px solid;
+  border-image: linear-gradient(
+      159deg,
+      rgba(126, 224, 255, 0),
+      rgba(126, 224, 255, 1)
+    )
+    1 1;
+
+  font-family: Source Han Sans CN;
+  font-weight: 500;
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  line-height: 54px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(0, 119, 255, 0.7);
+  }
+}
+
+.el-table {
+  font-size: 30px;
+  .cell {
+    line-height: 60px;
+  }
+}
+
+.viewer-container {
+  .viewer-footer {
+    .viewer-toolbar {
+      ul {
+        li {
+          width: 60px;
+          height: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          &::before {
+            transform: scale(2);
+          }
+        }
+      }
+    }
+  }
+  .viewer-close {
+    transform: scale(2);
+  }
+}
+
+// 百度地图 InfoWindow 样式 - 隐藏阴影图片 (iws3.png)
+.BMap_pop,
+.BMapGL_pop {
+  // 隐藏所有 InfoWindow 相关的图片（阴影、关闭按钮等）
+  div img {
+    display: none !important;
+  }
+}
+// 更精确的选择器：只隐藏 iws3 阴影图片
+img[src*="iws3"],
+img[src*="webmap0.bdimg.com/image/api/iws3"] {
+  display: none !important;
+}

@@ -1,0 +1,31 @@
+<svg width="1582" height="1631" viewBox="0 0 1582 1631" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="&#233;&#162;&#132;&#232;&#173;&#166;&#229;&#186;&#147;" clip-path="url(#clip0_566_1836)">
+<g id="&#233;&#162;&#132;&#232;&#173;&#166;&#229;&#186;&#147;_2">
+<foreignObject x="-5" y="-5" width="1592" height="1641"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(2.5px);clip-path:url(#bgblur_1_566_1836_clip_path);height:100%;width:100%"></div></foreignObject><g id="Rectangle 27707" filter="url(#filter0_i_566_1836)" data-figma-bg-blur-radius="5">
+<path d="M0 0H1582V1631H0V0Z" fill="#00C3FF" fill-opacity="0.1"/>
+<path d="M1580.5 1.5V1629.5H1.5V1.5H1580.5Z" stroke="#00C4FF" stroke-width="3"/>
+</g>
+<line id="Line 13" x1="1580.81" y1="469.53" x2="1580.81" y2="972.759" stroke="#0668B1" stroke-width="4"/>
+<line id="Line 14" x1="2" y1="722.399" x2="1.99999" y2="1226.09" stroke="#00C1FF" stroke-width="4"/>
+<line id="Line 15" x1="56.5273" y1="1619.12" x2="21.7406" y2="1619.12" stroke="#1AA7FF" stroke-width="4"/>
+<line id="Line 17" x1="1552.36" y1="1619.12" x2="1517.57" y2="1619.12" stroke="#18D2DE" stroke-width="4"/>
+<line id="Line 16" x1="1125.23" y1="1619.12" x2="459.93" y2="1619.12" stroke="#1383C0" stroke-width="4"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_i_566_1836" x="-5" y="-5" width="1592" height="1641" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset/>
+<feGaussianBlur stdDeviation="25.5"/>
+<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0.8 0 0 0 0 1 0 0 0 0.5 0"/>
+<feBlend mode="normal" in2="shape" result="effect1_innerShadow_566_1836"/>
+</filter>
+<clipPath id="bgblur_1_566_1836_clip_path" transform="translate(5 5)"><path d="M0 0H1582V1631H0V0Z"/>
+</clipPath><clipPath id="clip0_566_1836">
+<rect width="1582" height="1631" fill="white"/>
+</clipPath>
+</defs>
+</svg>

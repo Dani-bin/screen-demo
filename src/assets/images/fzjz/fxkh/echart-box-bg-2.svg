@@ -1,0 +1,30 @@
+<svg width="950" height="793" viewBox="0 0 950 793" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="&#230;&#154;&#180;&#233;&#155;&#168;&#233;&#163;&#142;&#233;&#153;&#169;&#229;&#155;&#190;">
+<g id="&#230;&#154;&#180;&#233;&#155;&#168;&#233;&#163;&#142;&#233;&#153;&#169;&#229;&#155;&#190;_2">
+<foreignObject x="0.921875" y="0.609375" width="948" height="792"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(2.5px);clip-path:url(#bgblur_0_417_6230_clip_path);height:100%;width:100%"></div></foreignObject><g id="Rectangle 27707" data-figma-bg-blur-radius="5">
+<g filter="url(#filter0_i_417_6230)">
+<path d="M0.921875 0.609375H948.922V792.609H0.921875V0.609375Z" fill="#00C3FF" fill-opacity="0.1"/>
+</g>
+<path d="M947.422 2.10938V791.109H2.42188V2.10938H947.422Z" stroke="#00C4FF" stroke-width="3"/>
+</g>
+<line id="Line 13" x1="947.492" y1="229.195" x2="947.492" y2="473.878" stroke="#00C1FF" stroke-width="4"/>
+<line id="Line 14" x1="2.92188" y1="351.533" x2="2.92187" y2="596.216" stroke="#0668B1" stroke-width="4"/>
+<line id="Line 15" x1="34.7783" y1="788.172" x2="13.9432" y2="788.172" stroke="#1AA7FF" stroke-width="4"/>
+<line id="Line 17" x1="930.691" y1="788.172" x2="909.856" y2="788.172" stroke="#18D2DE" stroke-width="4"/>
+<line id="Line 16" x1="674.863" y1="788.172" x2="276.391" y2="788.172" stroke="#1383C0" stroke-width="4"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_i_417_6230" x="0.921875" y="0.609375" width="948" height="792" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset/>
+<feGaussianBlur stdDeviation="25.5"/>
+<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0.8 0 0 0 0 1 0 0 0 0.5 0"/>
+<feBlend mode="normal" in2="shape" result="effect1_innerShadow_417_6230"/>
+</filter>
+<clipPath id="bgblur_0_417_6230_clip_path" transform="translate(-0.921875 -0.609375)"><path d="M0.921875 0.609375H948.922V792.609H0.921875V0.609375Z"/>
+</clipPath></defs>
+</svg>

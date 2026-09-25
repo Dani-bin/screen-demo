@@ -1,0 +1,26 @@
+<svg width="948" height="502" viewBox="0 0 948 502" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="&#230;&#149;&#145;&#230;&#143;&#180;&#233;&#152;&#159;&#228;&#188;&#141;">
+<foreignObject x="-5" y="-5" width="958" height="511.995"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(2.5px);clip-path:url(#bgblur_0_42_3801_clip_path);height:100%;width:100%"></div></foreignObject><g id="Rectangle 27707" filter="url(#filter0_i_42_3801)" data-figma-bg-blur-radius="5">
+<path d="M0 0H948V501.995H0V0Z" fill="#00C3FF" fill-opacity="0.1"/>
+<path d="M946.5 1.5V500.495H1.5V1.5H946.5Z" stroke="#00C4FF" stroke-width="3"/>
+</g>
+<line id="Line 13" x1="946.57" y1="144.885" x2="946.57" y2="299.973" stroke="#00C1FF" stroke-width="4"/>
+<line id="Line 14" x1="2" y1="222.428" x2="1.99999" y2="377.516" stroke="#0668B1" stroke-width="4"/>
+<line id="Line 15" x1="33.8564" y1="499.914" x2="13.0213" y2="499.914" stroke="#1AA7FF" stroke-width="4"/>
+<line id="Line 17" x1="929.77" y1="499.914" x2="908.934" y2="499.914" stroke="#18D2DE" stroke-width="4"/>
+<line id="Line 16" x1="673.941" y1="499.914" x2="275.469" y2="499.914" stroke="#1383C0" stroke-width="4"/>
+</g>
+<defs>
+<filter id="filter0_i_42_3801" x="-5" y="-5" width="958" height="511.995" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset/>
+<feGaussianBlur stdDeviation="25.5"/>
+<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0.8 0 0 0 0 1 0 0 0 0.5 0"/>
+<feBlend mode="normal" in2="shape" result="effect1_innerShadow_42_3801"/>
+</filter>
+<clipPath id="bgblur_0_42_3801_clip_path" transform="translate(5 5)"><path d="M0 0H948V501.995H0V0Z"/>
+</clipPath></defs>
+</svg>
