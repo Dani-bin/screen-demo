@@ -1,0 +1,12 @@
+export default [
+  {
+    ignores: [
+      "config/*",
+      ".husky",
+      ".local",
+      "public/*",
+      ".vscode",
+      "node_modules",
+    ],
+  },
+]

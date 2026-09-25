@@ -1,0 +1,21 @@
+# Git 提交信息规范（供 Cursor 自动生成 commit message 使用）
+
+当 Cursor 自动生成本仓库的 Git 提交信息时，必须严格遵守以下要求：
+
+1. **描述部分必须使用简体中文**，禁止使用英文描述。
+2. 采用约定式提交格式：`<类型>: <简短描述>`
+3. 常用类型：feat（新功能）、fix（修复）、style（样式）、refactor（重构）、docs（文档）、chore（杂项）、perf（性能）。
+4. 描述要简洁、准确，说明「做了什么」而非「怎么做」。
+
+## 正确示例
+
+- feat: 新增台风路径地图图层
+- fix: 修复刷新令牌并发请求队列回放问题
+- style: 调整大屏头部组件间距
+- refactor: 重构 ECharts 图表初始化逻辑
+
+## 错误示例（禁止）
+
+- feat: add typhoon map layer
+- fix: resolve token refresh issue
+- Enhance video API integration and improve map drawing functionality

@@ -1,0 +1,21 @@
+<svg width="94" height="94" viewBox="0 0 94 94" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="&#230;&#143;&#144;&#228;&#186;&#164;">
+<circle id="Ellipse 5395" cx="47" cy="47" r="47" fill="url(#paint0_linear_787_4598)"/>
+<g id="Ellipse 5394">
+<circle cx="47" cy="47" r="47" fill="url(#paint1_radial_787_4598)" style="mix-blend-mode:overlay"/>
+</g>
+<g id="&#229;&#143;&#145;&#233;&#128;&#129; 1">
+<path id="Vector" d="M68.2785 27.5322L25.1785 44.1636C22.7497 45.1008 22.8105 46.4629 25.3024 47.2023L35.7162 50.2923L39.9504 62.8911C40.5047 64.5405 41.9529 64.8883 43.1916 63.6612L48.654 58.2501L59.4369 66.1518C60.8378 67.1784 62.2782 66.6381 62.6563 64.9341L70.5248 29.4785C70.9019 27.7793 69.8976 26.9075 68.2785 27.5322ZM61.7197 35.5487L43.3354 51.9285C43.0048 52.223 42.7057 52.8067 42.6598 53.2388L41.8482 60.8693C41.757 61.7262 41.4616 61.7615 41.1891 60.9402L37.6318 50.2173C37.4926 49.7978 37.6833 49.2836 38.0548 49.0608L61.3695 35.0766C62.8552 34.1855 63.0134 34.396 61.7197 35.5487Z" fill="white"/>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_787_4598" x1="0.468614" y1="0" x2="0.468614" y2="93.0628" gradientUnits="userSpaceOnUse">
+<stop stop-color="#12B8FF"/>
+<stop offset="1" stop-color="#3051FE"/>
+</linearGradient>
+<radialGradient id="paint1_radial_787_4598" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(47 2.5) rotate(90) scale(57.3159 66.0319)">
+<stop stop-color="#FDFEFF" stop-opacity="0.58367"/>
+<stop offset="1" stop-color="#0571F9" stop-opacity="0.8"/>
+</radialGradient>
+</defs>
+</svg>
