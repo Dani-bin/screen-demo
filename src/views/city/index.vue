@@ -32,7 +32,7 @@
       />
     </div>
 
-    <!-- 右侧工具栏：事件统一转到 script 里的方法，由方法读取非响应式的 scene -->
+    <!-- 右侧工具栏：scene 非响应式，模板不直接依赖它，事件统一经 script 内的方法转接 -->
     <MapTools
       :playing="playing"
       @reset="handleReset"
@@ -98,8 +98,8 @@
 
   /*
    * 工具栏与导览条的事件处理。
-   * scene 是普通变量而非响应式，模板里直接写 scene.xxx() 拿不到它，
-   * 因此全部经 script 内的方法转接；场景未建好（加载中或降级）时静默忽略。
+   * scene 不是响应式的，模板不宜直接依赖它；
+   * 统一经 script 内的方法转接，场景未就绪（加载中或降级）时静默忽略。
    */
   /** 点击底部导览条，飞往指定景点 */
   const handleSelectStop = (index) => scene?.gotoStop(index)
