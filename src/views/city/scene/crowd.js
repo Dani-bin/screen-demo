@@ -491,7 +491,9 @@ export function createCrowd(theme, { max, reduceMotion = false } = {}) {
     update(dt) {
       if (!n) return
       const d = Number.isFinite(dt) && dt > 0 ? dt : 0
-      if (fadeDir !== 0 && C.fade > 0) {
+      // 只在时间确实前进时推进淡入淡出：dt = 0 时进度停在 0 / 1 端点，
+      // 会被误判为「淡出完成」（刚 show 就清空）或「淡入完成」（取消 hide）
+      if (fadeDir !== 0 && C.fade > 0 && d > 0) {
         fade += (fadeDir * d) / C.fade
         if (fade >= 1) {
           fade = 1
