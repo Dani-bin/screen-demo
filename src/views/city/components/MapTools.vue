@@ -1,16 +1,46 @@
 <!-- 右侧地图工具栏：复位 / 放大 / 缩小 / 全屏 / 巡览开关 -->
 <template>
   <div class="map-tools">
-    <button type="button" title="复位到总览" @click="emit('reset')">⌂</button>
+    <button
+      type="button"
+      title="复位到总览"
+      aria-label="复位到总览"
+      @click="emit('reset')"
+    >
+      ⌂
+    </button>
     <hr />
-    <button type="button" title="放大" @click="emit('zoom-in')">＋</button>
-    <button type="button" title="缩小" @click="emit('zoom-out')">－</button>
+    <button
+      type="button"
+      title="放大"
+      aria-label="放大"
+      @click="emit('zoom-in')"
+    >
+      ＋
+    </button>
+    <button
+      type="button"
+      title="缩小"
+      aria-label="缩小"
+      @click="emit('zoom-out')"
+    >
+      －
+    </button>
     <hr />
-    <button type="button" title="全屏" @click="emit('fullscreen')">⛶</button>
+    <button
+      type="button"
+      title="全屏"
+      aria-label="全屏"
+      @click="emit('fullscreen')"
+    >
+      ⛶
+    </button>
     <!-- 巡览开关：播放中显示暂停图标，暂停时显示播放图标 -->
     <button
       type="button"
       :title="playing ? '暂停巡览' : '开始巡览'"
+      :aria-label="playing ? '暂停巡览' : '开始巡览'"
+      :aria-pressed="playing"
       :class="{ on: playing }"
       @click="emit('toggle-play')"
     >
@@ -65,6 +95,12 @@
       &.on {
         background: rgba(47, 143, 150, 0.14);
         color: var(--city-teal);
+      }
+
+      /* 键盘聚焦时的可见焦点框 */
+      &:focus-visible {
+        outline: 2px solid var(--city-teal);
+        outline-offset: 2px;
       }
     }
 
