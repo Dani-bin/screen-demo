@@ -22,6 +22,35 @@
       <FlowPanel :flow="flow" />
     </div>
 
+    <!-- 右栏：当前景点介绍，随巡览站点切换 -->
+    <div class="col-right">
+      <SpotPanel
+        v-if="currentSpot"
+        :spot="currentSpot"
+        :index="current"
+        :total="spots.length"
+      />
+    </div>
+
+    <!-- 右侧工具栏：事件统一转到 script 里的方法，由方法读取非响应式的 scene -->
+    <MapTools
+      :playing="playing"
+      @reset="handleReset"
+      @zoom-in="handleZoomIn"
+      @zoom-out="handleZoomOut"
+      @fullscreen="toggleFullscreen"
+      @toggle-play="handleTogglePlay"
+    />
+
+    <TourBar :spots="spots" :current="current" @select="handleSelectStop" />
+
+    <Compass :heading="view.heading" :scale-meters="view.scaleMeters" />
+
+    <div class="operate-hint">
+      拖动旋转 · 滚轮缩放 · 点击楼体查看<br />
+      景点自动巡览中，<em>15s</em> 无操作自动恢复
+    </div>
+
     <div v-if="loading" class="scene-loading">城市场景构建中</div>
     <div v-if="error" class="scene-error">{{ error }}</div>
   </div>
@@ -33,6 +62,11 @@
   import CityHead from "./components/CityHead.vue"
   import OverviewPanel from "./components/OverviewPanel.vue"
   import FlowPanel from "./components/FlowPanel.vue"
+  import SpotPanel from "./components/SpotPanel.vue"
+  import TourBar from "./components/TourBar.vue"
+  import MapTools from "./components/MapTools.vue"
+  import Compass from "./components/Compass.vue"
+  import screenfull from "screenfull"
 
   const pageRef = ref(null)
   const canvasRef = ref(null)
@@ -58,6 +92,30 @@
   let scene = null
   /** 组件是否仍存活：异步取数期间用户可能已切走路由，之后不能再写状态或建场景 */
   let alive = true
+
+  /** 当前停靠的景点数据；数据未到位时为 null，右栏不渲染 */
+  const currentSpot = computed(() => spots.value[current.value] || null)
+
+  /*
+   * 工具栏与导览条的事件处理。
+   * scene 是普通变量而非响应式，模板里直接写 scene.xxx() 拿不到它，
+   * 因此全部经 script 内的方法转接；场景未建好（加载中或降级）时静默忽略。
+   */
+  /** 点击底部导览条，飞往指定景点 */
+  const handleSelectStop = (index) => scene?.gotoStop(index)
+  /** 复位到城市总览视角 */
+  const handleReset = () => scene?.gotoOverview()
+  const handleZoomIn = () => scene?.zoomIn()
+  const handleZoomOut = () => scene?.zoomOut()
+  /** 暂停 / 恢复自动巡览；playing 由场景回调同步，不在这里直接改 */
+  const handleTogglePlay = () => scene?.setPlaying(!playing.value)
+
+  /** 全屏切换：以整页为全屏元素，面板一起进入全屏 */
+  const toggleFullscreen = () => {
+    if (!screenfull.isEnabled) return
+    // 浏览器拒绝全屏（权限策略、非用户手势等）时只记录，不打断页面
+    screenfull.toggle(pageRef.value).catch((err) => console.warn(err))
+  }
 
   /** 几何数据路径：生产环境 base 为 /bi/，必须经 BASE_URL 拼接 */
   const GEOMETRY_URL = `${import.meta.env.BASE_URL}city/chengdu.json`
@@ -215,6 +273,26 @@
 
   .col-right {
     right: 88px;
+  }
+
+  /* 左下角操作提示 */
+  .operate-hint {
+    position: absolute;
+    left: 28px;
+    bottom: 26px;
+    z-index: 4;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--city-panel);
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--city-ink-soft);
+
+    em {
+      font-style: normal;
+      font-weight: 600;
+      color: var(--city-teal);
+    }
   }
 </style>
 
