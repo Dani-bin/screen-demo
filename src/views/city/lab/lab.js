@@ -9,7 +9,10 @@
  *   y         注视点高度（米，缺省取景点 / 样例给的推荐值）
  *   tx / tz   注视点水平平移（米，X 向东、Z 向南，相对景点落点 / 样例注视点），
  *             用于近看离落点较远的构件（如合江亭站的安顺廊桥、人民公园站的鹤鸣茶社）
- *   focus     仅 kit：对准某件样例（hall | hall2 | twin | lhouse | pagoda | panda | pavilion | house | disc | boat | totem）
+ *   focus     仅 kit：对准某件样例（hall | hall2 | twin | lhouse | pagoda | panda | pavilion | house | disc | boat | totem | crowd）
+ *   people    景点 / kit 的步行路径上默认生成人群（crowd.js，种子与线上到站一致）；people=0 关闭
+ *   t         人群预先推进的模拟秒数（缺省 3，按固定 0.05 s 步长推进）：让小人散开、姿态不一；
+ *             同一视角取 t=3 与 t=4 各截一张，即可对比 1 秒内的走动（位置与摆腿不同）
  *   shadow    city：阴影与相机 near = 20 完全照搬城市场景（景点模式默认，所见即线上效果，
  *             near = 20 时近景距离须 ≥ 300 m，验收截图按此取 dist）。景点模式下等同线上
  *             「巡览停靠该站」时的阴影：按站点收紧到景点周围 ±1000 m（shadow.js 的 applyStopShadow）；
@@ -48,6 +51,7 @@ import {
   applyStopShadow
 } from "../scene/shadow.js"
 import { buildKit } from "./kitShowcase.js"
+import { createCrowd } from "../scene/crowd.js"
 
 const DEG = Math.PI / 180
 const GEOMETRY_URL = "/city/chengdu.json"
@@ -66,6 +70,8 @@ const SPOT_KEYS = {
 const CONTEXT_RADIUS = 1100
 // 景点模式 shadow=tight 时的阴影半径（只用于近看细节，不作验收依据）
 const TIGHT_SPOT_RADIUS = 600
+// 人群预推进的固定步长（秒）：t = 3 时即 60 步
+const CROWD_STEP = 0.05
 
 const params = new URLSearchParams(location.search)
 const num = (key, fallback) => {
@@ -75,7 +81,7 @@ const num = (key, fallback) => {
 
 /**
  * 构建预览对象。
- * @returns {{ meshes, zones, target: number[], defaultDist: number,
+ * @returns {{ meshes, zones, walkways, seed: number, target: number[], defaultDist: number,
  *   shadowRadius: number, context: boolean, center?: number[], stats?: object }}
  *   context 为 true 时额外画景点周围、替换区外的通用楼
  */
@@ -89,7 +95,8 @@ function buildSubject(name, data, project) {
       defaultDist: f ? f[3] : 160,
       shadowRadius: 110,
       shadowMode: "tight",
-      context: false
+      context: false,
+      seed: 1
     }
   }
   const spotName = SPOT_KEYS[name]
@@ -126,6 +133,8 @@ function buildSubject(name, data, project) {
   return {
     ...r,
     target: [x, base * 0.5, z],
+    // 人群种子与线上 CityScene 到站时相同（1000 + 站点索引），所见即线上
+    seed: 1000 + SPOTS.indexOf(raw),
     defaultDist: 420,
     shadowRadius: TIGHT_SPOT_RADIUS,
     shadowMode: "city",
@@ -269,8 +278,25 @@ async function main() {
   const [tx, ty, tz] = subject.target
   placeCamera(camera, { x: tx, y: ty, z: tz, defaultDist: subject.defaultDist })
 
+  // 人群：显示后按固定步长预推进 t 秒（淡入 0.6 s 早已完成），首帧即「走动中」的一帧
+  let people = 0
+  if (params.get("people") !== "0" && subject.walkways?.length) {
+    const crowd = createCrowd(THEME)
+    scene.add(crowd.group)
+    crowd.show(subject.walkways, subject.seed)
+    const steps = Math.round(Math.max(0, num("t", 3)) / CROWD_STEP)
+    for (let k = 0; k < steps; k++) crowd.update(CROWD_STEP)
+    people = crowd.count
+    window.__labCrowd = crowd
+    subject.stats = {
+      ...subject.stats,
+      people,
+      crowdTriangles: people * crowd.trianglesPerPerson
+    }
+  }
+
   window.__labStats = subject.stats
-  info.textContent = `${name}  阴影 ${shadowMode}  三角形 ${subject.stats?.total ?? "-"}`
+  info.textContent = `${name}  阴影 ${shadowMode}  三角形 ${subject.stats?.total ?? "-"}  行人 ${people}`
 
   // 场景静态：阴影只画一次；只渲染一帧，之后不再循环
   renderer.shadowMap.autoUpdate = false

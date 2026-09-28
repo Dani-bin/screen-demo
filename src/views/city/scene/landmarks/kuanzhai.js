@@ -10,7 +10,8 @@
  *      东端止于穿过井巷子南侧的小路（OSM 道路 #387，u ≈ 85）之前；
  *   5. 东入口（宽巷子东口的东广场）一座三间四柱单檐悬山牌坊，红柱灰瓦；
  *   6. 院落天井、巷边空地与宽巷子两侧种低多边形树：树冠比屋脊高时允许伸出屋檐，
- *      大树冠打破成片灰瓦（屋面按楼栋略微深浅不一，正脊用浅灰勾线，避免俯瞰成一块深色毯子）。
+ *      大树冠打破成片灰瓦（屋面按楼栋略微深浅不一，正脊用浅灰勾线，避免俯瞰成一块深色毯子）；
+ *   7. 返回 walkways：三条巷的中线（收口后的两端），到站时人群系统在巷里生成行人。
  *
  * 巷道东西两端按数据收口：保留的通用楼（现代公寓）轮廓只要伸进巷面，巷面就在它前面截止，
  * 巷面、文化墙、灯笼都不会和保留楼相交。
@@ -753,9 +754,20 @@ export function build(ctx) {
       laneTrees
     }
   }
+  // 步行路径：三条巷的中线（用收口后的两端，不会走进保留楼），换到世界坐标；
+  // 可走宽度比巷宽（墙到墙）窄 1.5 m，小人不贴墙；宽巷子游人最多
+  const walkways = lanes.map((l) => ({
+    points: [toXZ([l.u0, l.v]), toXZ([l.u1, l.v])],
+    y: LANE_Y,
+    width: l.width - 1.5,
+    closed: false,
+    density: l === kuan ? 1.5 : 1
+  }))
+
   return {
     meshes: mesh ? [mesh] : [],
     zones: zonePolys,
-    markerHeight: Math.max(gateTop, centerTop)
+    markerHeight: Math.max(gateTop, centerTop),
+    walkways
   }
 }

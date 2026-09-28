@@ -4,6 +4,8 @@
  * 在城市原点摆一块浅色展台，前后两排陈列 kit 的全部构件，
  * 用于检查屋面曲线、翘角、重檐、塔的收分、熊猫黑白分区等造型。
  * 每件样例单独统计三角形数，挂到 window.__labStats 供验收。
+ * 另给一条 40 m 直线步行路径（前排后方，10 人），由预览页交给人群系统，
+ * 用于检查小人的头、发、身体、腿比例与配色（focus=crowd）。
  */
 import { Mesh } from "three"
 import { THEME } from "../scene/theme.js"
@@ -35,8 +37,11 @@ const L = THEME.landmark
 // 展台高度：盖住道路面（道路最高 0.9 m），样例都放在展台上
 const PAD = 1.2
 
+// 人群样例路径：前排金盘、游船、图腾柱后方的空地（z = 40），沿 X 长 40 m
+const CROWD_PATH = { x0: 5, x1: 45, z: 40, width: 4, people: 10 }
+
 /**
- * @returns {{ meshes: Mesh[], zones: Array, target: number[], focus: object, stats: object }}
+ * @returns {{ meshes: Mesh[], zones: Array, walkways: Array, target: number[], focus: object, stats: object }}
  *   focus：样例名 → [x, y, z, 推荐距离]，供 ?focus= 近景
  */
 export function buildKit() {
@@ -162,6 +167,22 @@ export function buildKit() {
       addTotem(b, frame(x, PAD, 20), { h: 12, r: 0.6 })
   })
 
+  // 人群样例：每米人数按 theme.crowd.perMeter 换算成 density，正好 10 人
+  const cp = CROWD_PATH
+  const walkways = [
+    {
+      points: [
+        [cp.x0, cp.z],
+        [cp.x1, cp.z]
+      ],
+      y: PAD,
+      width: cp.width,
+      closed: false,
+      density: cp.people / ((cp.x1 - cp.x0) * THEME.crowd.perMeter)
+    }
+  ]
+  focus.crowd = [(cp.x0 + cp.x1) / 2, PAD + 1.5, cp.z, 22]
+
   const meshes = []
   const g = b.bake()
   if (g) meshes.push(new Mesh(g, landmarkMaterial()))
@@ -174,6 +195,7 @@ export function buildKit() {
   return {
     meshes,
     zones: [],
+    walkways,
     target: [0, 8, -3],
     focus,
     stats: { ...stats, total }
