@@ -340,6 +340,17 @@ export function build() {
 - 静态阴影：景点动画（游船、喷泉）不投影，所以仍保持 `shadowMap.autoUpdate = false`；在注释里写明「景点动画件一律不投影」。
 - `dispose` 中调用 `this.landmarks.dispose()`。
 
+- [ ] **Step 5b: 按站点收紧阴影范围**
+
+城区统一阴影约 1.9 m/texel，景点的柱子、檐下、栏杆阴影会全部糊掉。在 `CityScene` 增加 `_fitShadow(center, R)`：
+- 太阳位置 = `center + 光照方向 × 2000`，`sun.target` = `center`（光照方向取 `THEME.light.sunPosition` 归一化）；
+- 正交范围 `±R`，`near = 2000 − 1.5R`、`far = 2000 + 1.5R`；`bias ≈ −0.15 / (3R)`，`normalBias = 0.15`；
+- `shadow.camera.updateProjectionMatrix()`，`renderer.shadowMap.needsUpdate = true`。
+
+调用时机：巡览飞抵某站（`CameraTour` 抵达回调；没有就在 `onStopChange` 后飞行结束时）用 `R = 1000`；
+回总览 / 复位时恢复 `THEME.light` 的原始阴影范围与偏移。注释说明代价：离站点 R 以外的楼在该站停留期间没有阴影。
+验证：`?spot=5` 截图中文殊院殿堂的檐下阴影、塔身阴影清晰可见。
+
 - [ ] **Step 6: lab 页支持单景点**
 
 `lab.js` 在 `landmark` 不是 `kit` 时调用 `buildLandmark(name, ctx)`，用它的 `zones` 排除通用楼，相机对准 spot。URL 里景点名用英文键：`tianfu | taikooli | ifs | kuanzhai | peoplesPark | wenshu | hejiang`，在 lab.js 里映射到中文景点名。
