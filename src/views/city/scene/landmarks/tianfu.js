@@ -269,6 +269,84 @@ const LAWNS = [
   ]
 ]
 
+/*
+ * 步行路径（广场局部坐标，人群系统用）：均避开草坪、喷泉池沿、图腾柱与下沉广场栏杆。
+ * 广场大、游人多，密度整体偏高（全站约 70 人），金盘外环最密。
+ * - 南北两条东西向散步线：北线走北侧草带与中部草坪之间的空当（z ≈ -75）；
+ *   南线西段 z = 64.5、东段 z = 61.5（两侧草坪边缘错位，中段缓缓过渡）；
+ * - 两条南北向散步线：西线夹在东侧喷泉池沿（外缘 x = -31.4）与金盘（半径 27）之间
+ *   （x = -29.5，只留 2 m 宽），东线在东侧草坪与东缘长条草坪之间（x = 107.5），
+ *   两端都接到南北散步线；
+ * - 中轴：金盘南北两侧各一段（北段偏东 3 m、南段偏西 4 m，让开两端斜穿的 S 形分界带）；
+ * 这些都在铺装顶面 PAVE 上；S 形分界带只高出铺装 0.2 m，横穿时看不出。
+ */
+const WALK_W = [
+  {
+    points: [
+      [-138, -75],
+      [106, -75]
+    ],
+    width: 5,
+    density: 1.5
+  },
+  {
+    points: [
+      [-110, 64.5],
+      [-40, 64.5],
+      [25, 61.5],
+      [106, 61.5]
+    ],
+    width: 3,
+    density: 1.5
+  },
+  {
+    points: [
+      [-29.5, -72],
+      [-29.5, 62]
+    ],
+    width: 2,
+    density: 1.2
+  },
+  {
+    points: [
+      [107.5, -72],
+      [107.5, 58]
+    ],
+    width: 3,
+    density: 1.2
+  },
+  {
+    points: [
+      [3, -92],
+      [3, -31]
+    ],
+    width: 6,
+    density: 1.5
+  },
+  {
+    points: [
+      [-4, 31],
+      [-4, 92]
+    ],
+    width: 6,
+    density: 1.5
+  }
+]
+// 金盘外环：盘半径 27，环中线 29.5、宽 2（外缘 30.5 离下沉广场栏杆约 1 m）
+const RING = { r: 29.5, width: 2, density: 2 }
+// 下沉广场环路：半径 12（内侧离螺旋雕塑飘带 ≥ 3.5 m，外侧离台阶 ≥ 3.9 m）。
+// 路面高度取实际露出的面：外沿低台阶是一整块实心圆角矩形（没有挖洞），顶面 CURB_H
+// 盖住了坑底 SUNKEN.floor 与下面两级台阶，下沉广场里看到的地面其实是 CURB_H
+const SUNKEN_RING = {
+  r: 12,
+  width: 3,
+  density: 1.5,
+  y: Math.max(SUNKEN.floor, CURB_H)
+}
+// 科技馆前南北轴线（毛主席像北侧、科技馆正门以南的空地，地面高度 -0.5）：
+// 由科技馆正门前 5 m 走到像的台基北沿外 7 m，x 相对像中心
+const AXIS = { z0: -75, z1: -33, width: 8, density: 1.5, y: -0.5 }
+
 /* ---------------- 本景点专用色 ---------------- */
 
 const C = {
@@ -795,11 +873,58 @@ export function build(ctx) {
   jetMesh.position.y = WATER_TOP
   jetMesh.userData.animated = true
 
+  // 步行路径：广场局部坐标 → 世界坐标
+  const toWorld = (pts, ox, oz) => pts.map(([x, z]) => [ox + x, oz + z])
+  const ring = (cx, cz, r, n) =>
+    Array.from({ length: n }, (_, i) => {
+      const a = (i / n) * Math.PI * 2
+      return [cx + Math.cos(a) * r, cz + Math.sin(a) * r]
+    })
+  const walkways = [
+    ...WALK_W.map((w) => ({
+      points: toWorld(w.points, qx, qz),
+      y: PAVE,
+      width: w.width,
+      closed: false,
+      density: w.density
+    })),
+    {
+      points: ring(qx, qz, RING.r, 32),
+      y: PAVE,
+      width: RING.width,
+      closed: true,
+      density: RING.density
+    },
+    {
+      points: ring(qx + SUNKEN.x, qz + SUNKEN.z, SUNKEN_RING.r, 20),
+      y: SUNKEN_RING.y,
+      width: SUNKEN_RING.width,
+      closed: true,
+      density: SUNKEN_RING.density
+    },
+    {
+      // 轴线相对毛主席像中心：北端在科技馆正门前，南端在像的台基北沿外
+      points: toWorld(
+        [
+          [0, AXIS.z0],
+          [0, AXIS.z1]
+        ],
+        sx,
+        sz
+      ),
+      y: AXIS.y,
+      width: AXIS.width,
+      closed: false,
+      density: AXIS.density
+    }
+  ]
+
   return {
     meshes: [mesh, jetMesh],
     zones,
     // 落点球坐在广场中心金盘上（盘厚 0.3 + 纹样 0.15）
     markerHeight: PAVE + 0.45,
+    walkways,
     update(t) {
       jetMesh.scale.y = 1 + 0.18 * Math.sin(t * 2.2)
     }
