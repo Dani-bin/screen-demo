@@ -2,7 +2,10 @@
  * 场景通用工具：确定性随机、几何判断
  */
 
-/** 用整数索引生成 [0,1) 的稳定伪随机数：同一索引每次结果相同 */
+/**
+ * 用整数索引生成 [0,1) 的稳定伪随机数：同一索引在同一 JS 引擎内每次结果相同。
+ * 跨浏览器 Math.sin 末位可能不同，因此仅用于选色等不影响观感的场合。
+ */
 export function hash01(i) {
   const x = Math.sin(i * 12.9898) * 43758.5453
   return x - Math.floor(x)
@@ -20,7 +23,11 @@ export function mulberry32(seed) {
   }
 }
 
-/** 射线法判断点 (x, z) 是否在多边形 [[x, z], ...] 内 */
+/**
+ * 射线法判断点 (x, z) 是否在多边形 [[x, z], ...] 内。
+ * 采用半开区间约定：落在下/左边界上的点算在内、上/右边界不算，
+ * 这样相邻多边形共享的边不会被重复计数。
+ */
 export function pointInPolygon(x, z, poly) {
   let inside = false
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -33,7 +40,7 @@ export function pointInPolygon(x, z, poly) {
   return inside
 }
 
-/** 多边形包围盒 */
+/** 多边形包围盒（要求非空多边形） */
 export function polygonBounds(poly) {
   let minX = Infinity
   let maxX = -Infinity
@@ -48,7 +55,7 @@ export function polygonBounds(poly) {
   return { minX, maxX, minZ, maxZ }
 }
 
-/** 多边形顶点平均点（做标签落点够用，不追求真实质心） */
+/** 多边形顶点平均点（要求非空多边形；做标签落点够用，不追求真实质心） */
 export function polygonCenter(poly) {
   let sx = 0
   let sz = 0
