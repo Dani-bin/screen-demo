@@ -371,7 +371,9 @@ git commit -m "feat(city): 景点注册表、通用楼排除与场景接入"
 
 - **动画件不投影的约定**：注册表对每个 Mesh 设 `receiveShadow = true`，`castShadow = !mesh.userData.animated`。
   景点模块里的动画件（游船、喷泉）必须设 `mesh.userData.animated = true`；只写 `castShadow = false` 会被注册表改回 `true`。
-  同一规则由 `landmarks/index.js` 导出的 `applyShadowFlags(mesh)` 实现，lab 页也调用它。
+  同一规则由 `landmarks/index.js` 导出的 `applyShadowFlags(root)` 实现（遍历全部后代：自身或任一祖先带 `animated` 即不投影，
+  所以也可以给整个动画 Group 设标记），lab 页也调用它。`pickables` 只登记模块返回的顶层对象，命中子节点时拾取沿父级链换算回景点。
+  `dispose()` 同时释放材质上挂的贴图（map、normalMap 等）。
 - **失败隔离**还覆盖动画：某景点 `update(t)` 抛错时打印一次错误并停用该景点动画，渲染循环不受影响。
   模块返回值由注册表规整（缺字段取默认值，`markerHeight` 非正数视为 0）。
 - **阴影参数抽到 `scene/shadow.js`**：`applyCityShadow(sun, light)`（整城，`THEME.light` 原值，太阳在 `sunPosition`、target 在原点）、
@@ -384,6 +386,9 @@ git commit -m "feat(city): 景点注册表、通用楼排除与场景接入"
   返回 `{ spot }` / `{ building }` / `null`（避免隔着前景楼点中后面的景点）。命中 Mesh 的父级链也会查 `pickables`。点中景点调 `CityScene.gotoStop(spot)`（清除楼体选中 + 人工飞往）。
 - **落点估算只看仍在画的楼**：`createMarkers` 的 `buildings` 参数传入去掉 `excluded` 的楼栋，`markerHeight` 为 0 时球不会悬在已被替换、看不见的楼顶上。
 - **lab `shadow=city`**：景点模式下等同线上停靠该站，即以景点落点为中心 `applyStopShadow(…, 1000)`；kit 显式 `shadow=city` 时无站点，用整城阴影。
+- **lab 与线上对齐**：周围通用楼半径 600 → 1100 m（覆盖 1000 m 收紧范围内的投影物）；通用楼用 `createBuildings(全部楼, THEME, excluded)`
+  （excluded = 替换区内或超出半径），保持原始索引，配色与线上一致；注视点高度 = 底座高度 × 0.5（同 `_initTour`，markerHeight 为 0 时按仍在画的楼估算）；
+  三角形统计遍历后代 Mesh，有索引时按 `index.count / 3`；景点模式 `shadow=tight` 的阴影半径为 600 m。
 
 ---
 
