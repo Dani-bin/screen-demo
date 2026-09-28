@@ -259,6 +259,30 @@ export function rectPolygon(cx, cz, w, d, bearing) {
   ]
 }
 
+/**
+ * 点 (px, pz) 到线段 a-b（[x, z]）的最短距离；退化线段（两端重合）取到端点的距离
+ */
+export function distToSegment(px, pz, a, b) {
+  const dx = b[0] - a[0]
+  const dz = b[1] - a[1]
+  const len2 = dx * dx + dz * dz
+  const t =
+    len2 > 0
+      ? Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[1]) * dz) / len2))
+      : 0
+  return Math.hypot(px - a[0] - t * dx, pz - a[1] - t * dz)
+}
+
+/**
+ * 两个方位角之差的绝对值（度）。
+ * period = 360（默认）时按方向比较，结果 0～180；
+ * period = 180 时按轴线比较（长边方位 0～180 循环），结果 0～90。
+ */
+export function bearingDiff(a, b, period = 360) {
+  const d = (((a - b) % period) + period) % period
+  return Math.min(d, period - d)
+}
+
 /** 圆形替换区：以 (cx, cz) 为中心、半径 r 的正 n 边形 */
 export function circlePolygon(cx, cz, r, n = 16) {
   return Array.from({ length: n }, (_, k) => {

@@ -16,7 +16,9 @@
 import { FrontSide, Mesh } from "three"
 import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
 import {
+  bearingDiff,
   buildingsInZones,
+  distToSegment,
   findBuilding,
   minAreaRect,
   polygonArea,
@@ -371,15 +373,6 @@ function addWallRun(b, parent, L, x0, z0, x1, z1) {
 
 /* ---------------- 树 ---------------- */
 
-/** 点 (u, v) 到线段 (a, b) 的距离（中轴坐标） */
-function segDist(u, v, a, b) {
-  const du = b[0] - a[0]
-  const dv = b[1] - a[1]
-  const len2 = du * du + dv * dv || 1
-  const t = clamp(((u - a[0]) * du + (v - a[1]) * dv) / len2, 0, 1)
-  return Math.hypot(u - a[0] - t * du, v - a[1] - t * dv)
-}
-
 /**
  * 在院内空地撒树：按网格取候选点，只留院墙折线内、离墙 ≥ 6 m 的点，
  * 避开所有楼（外接矩形外扩树冠半径）、塔台与中轴甬道，再按最小间距挑出至多 maxN 棵。
@@ -405,7 +398,7 @@ function scatterTrees(axis, poly, obstacles, pagodaPos, pagodaR, greens, maxN) {
       // 必须在院墙折线内，且离每段墙 ≥ 6 m（西北斜切角也不越墙）
       if (!pointInPolygon(ju, jv, poly)) continue
       const nearWall = poly.some(
-        (p, i) => segDist(ju, jv, p, poly[(i + 1) % poly.length]) < 6
+        (p, i) => distToSegment(ju, jv, p, poly[(i + 1) % poly.length]) < 6
       )
       if (nearWall) continue
       const [x, z] = axis.toWorld(ju, jv)
@@ -473,12 +466,6 @@ function flatPolygon(points, y) {
   return fromTriangles(pos)
 }
 
-/** 两个方位角（0～180 循环）之差的绝对值 */
-function bearingDiff(a, b) {
-  const d = Math.abs((((a - b) % 180) + 180) % 180)
-  return Math.min(d, 180 - d)
-}
-
 /**
  * 合并首尾相接的同向附属房：方位差 ≤ 3°、横向错位 ≤ 2.5 m、进深差 ≤ 3 m、
  * 两端间隙 < 1.5 m 的两块矩形合成一块（OSM 常把一排连续的廊房切成几段，
@@ -495,7 +482,7 @@ function mergeRuns(items) {
       for (let j = i + 1; j < list.length; j++) {
         const a = list[i].rect
         const b = list[j].rect
-        if (bearingDiff(a.bearing, b.bearing) > 3) continue
+        if (bearingDiff(a.bearing, b.bearing, 180) > 3) continue
         if (Math.abs(a.d - b.d) > 3) continue
         const br = a.bearing * DEG
         const ux = Math.sin(br)
