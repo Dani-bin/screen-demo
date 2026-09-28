@@ -76,6 +76,11 @@ function slope(E0, E1, R0, R1, h, o) {
       if (j === 0) eave.push([x, y, z])
     }
   }
+  // 两个网格点重合（屋脊退化成一点时，最后一行全部重合）
+  const same = (p, q) =>
+    Math.abs(pos[p * 3] - pos[q * 3]) < 1e-9 &&
+    Math.abs(pos[p * 3 + 1] - pos[q * 3 + 1]) < 1e-9 &&
+    Math.abs(pos[p * 3 + 2] - pos[q * 3 + 2]) < 1e-9
   const index = []
   for (let j = 0; j < segT; j++) {
     for (let i = 0; i < segS; i++) {
@@ -83,13 +88,15 @@ function slope(E0, E1, R0, R1, h, o) {
       const b = a + 1
       const c = a + cols + 1
       const d = a + cols
-      index.push(a, b, c, a, c, d)
+      // 跳过面积为 0 的三角形（有两个顶点重合），不白占三角形预算
+      if (!same(a, b) && !same(b, c) && !same(a, c)) index.push(a, b, c)
+      if (!same(a, c) && !same(c, d) && !same(a, d)) index.push(a, c, d)
     }
   }
   const g = new BufferGeometry()
   g.setAttribute("position", new BufferAttribute(pos, 3))
   g.setIndex(index)
-  // 索引网格上算法线 = 坡面内平滑；屋脊退化成点的三角形面积为 0，不影响结果
+  // 索引网格上算法线 = 坡面内平滑；坡面之间不共享顶点，戗脊处保留折线
   g.computeVertexNormals()
   const surface = g.toNonIndexed()
   g.dispose()

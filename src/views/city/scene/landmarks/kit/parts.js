@@ -1,5 +1,6 @@
 /*
- * 古建构件：台基、柱列、墙体、殿堂、栏杆、灯笼、坡屋顶民居（亭、塔见 towers.js，由本文件转出）
+ * 古建构件：台基、柱列、墙体、殿堂、栏杆、灯笼
+ * （亭、塔见 towers.js，坡屋顶民居见 houses.js，均由本文件转出，外部统一从 parts.js 导入）
  * ----------------------------------------------------------
  * 所有函数形如 addXxx(b, parent, opts)：直接把几何体加进 ColorBuilder b，
  * parent 为 Matrix4 坐标系（通常是 frame(...) 的结果，局部 +Z 为正面）。
@@ -7,9 +8,7 @@
  * 颜色缺省取 THEME.landmark；殿堂 / 亭子可用 opts.colors 覆盖其中任意几项，
  * 键名见 palette()。返回「整体高度」的函数，返回值为局部坐标下的最高点 y。
  */
-import { extrudeBuilding } from "../../buildings.js"
-import { local, frame } from "./builder.js"
-import { minAreaRect } from "./footprint.js"
+import { local } from "./builder.js"
 import { box, cylinder, sphere } from "./shapes.js"
 import {
   gableRidge,
@@ -21,8 +20,9 @@ import {
 } from "./roofs.js"
 import { L, addTop, clamp, eaveDrop, palette } from "./common.js"
 
-export { palette } from "./common.js"
+export { palette, edgeFrame } from "./common.js"
 export { addPavilion, addPagoda } from "./towers.js"
+export { addPitchedHouse, housePieces } from "./houses.js"
 
 /* ---------------- 台基 ---------------- */
 
@@ -308,39 +308,4 @@ export function addLantern(b, parent, x, y, z, opts = {}) {
     color,
     local(m, 0, -r * 1.6, 0)
   )
-}
-
-/* ---------------- 坡屋顶民居 ---------------- */
-
-/**
- * 坡屋顶民居：墙体为轮廓挤出到 eaveH（剔除底面，同 buildings.js），
- * 屋顶取 minAreaRect 沿长边做 gableRoof(w, d, ridgeH, { overhang })，放在檐口高度，
- * 两端山墙用墙色。footprintPoints 为世界坐标 [[x, z], ...]（不需要 parent）。
- * @param {object} opts { eaveH, ridgeH（屋脊高出檐口的高度）, overhang = 0.6, wallColor = plaster, roofColor = roof, y = 0 }
- * @returns {{ rect: object, top: number }|null} 外接矩形与屋脊高度；轮廓无效返回 null
- */
-export function addPitchedHouse(b, footprintPoints, opts) {
-  const { eaveH, ridgeH, overhang = 0.6, y = 0 } = opts
-  const wallColor = opts.wallColor ?? L.plaster
-  const roofColor = opts.roofColor ?? L.roof
-  const walls = extrudeBuilding({ p: footprintPoints, h: eaveH })
-  if (!walls) return null
-  if (y) walls.translate(0, y, 0)
-  b.add(walls, wallColor)
-  const rect = minAreaRect(footprintPoints)
-  const go = { overhang, ridges: false, gables: false }
-  const ry = y + eaveH - eaveDrop(rect.d / 2, overhang, ridgeH, 1.3, 0)
-  // 屋脊沿局部 X；frame 的局部 +X 指向 bearing + 90°，故传 bearing - 90 使屋脊沿长边
-  const m = frame(rect.cx, ry, rect.cz, rect.bearing - 90)
-  b.add(gableRoof(rect.w, rect.d, ridgeH, go), roofColor, m)
-  b.add(gableWalls(rect.w, rect.d, ridgeH, go), wallColor, m)
-  const ridgeColor = roofColor === L.roof ? L.roofRidge : roofColor
-  const top = addTop(
-    b,
-    gableRidge(rect.w, rect.d, ridgeH, go),
-    ridgeColor,
-    m,
-    ry
-  )
-  return { rect, top }
 }

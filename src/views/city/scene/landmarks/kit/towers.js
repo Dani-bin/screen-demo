@@ -21,12 +21,25 @@ import {
 /* ---------------- 亭 ---------------- */
 
 /**
- * 亭：正 n 边形台基 + n 根柱 + 柱顶额枋 + 坐凳栏（正面留口）+ 攒尖顶（可重檐）+ 宝顶。
- * 正多边形朝向：一条边正对 +Z（见 shapes.js），柱位于外接半径 radius 的顶点上。
+ * 亭：正 n 边形台基 + n 根柱 + 柱顶额枋 + 坐凳栏 + 攒尖顶（可重檐）+ 宝顶。
+ *
+ * 朝向（见 shapes.js）：柱位于外接半径 radius 的顶点上，顶点 k 在 θ = π/n + k·2π/n。
+ * 边 k 连接顶点 k 与 k+1，其外法向方位 θ = π/n + (k + 0.5)·2π/n：
+ * 边 n-1 正对 +Z（正面），六边形时边 2 正对 -Z，±X 方向是顶点（不是边）。
+ *
+ * 两座六角亭共用一条边（如合江亭）：
+ *   - 沿局部 Z 排列：亭 A 在 z = -radius·cos30°、亭 B 在 z = +radius·cos30°，
+ *     A 的边 5（+Z）与 B 的边 2（-Z）重合；两亭 openEdges 都取 [2, 5]，
+ *     共用边与各自入口都不设坐凳。
+ *   - 沿局部 X 排列：每座亭绕 Y 转 π/2（local(parent, x, 0, 0, Math.PI / 2)），
+ *     此时边 5 朝 +X、边 2 朝 -X，中心同样相距 2·radius·cos30°，openEdges 仍为 [2, 5]。
+ *   共用的两根柱、额枋会重合（同色，不闪烁）；两座屋顶自然相交成连体屋面。
+ *
  * @param {object} opts
  *   { sides = 6, radius, colH = 3.2, platformH = 0.8, roofH = radius × 0.9,
  *     double = true, roofColor = colors.roof, overhang = 0.35·radius + 0.3,
- *     curl = 0.3, columnRadius, colors }
+ *     curl = 0.3, columnRadius, openEdges = [sides - 1], colors }
+ *   openEdges：不设坐凳栏的边（入口、与相邻亭共用的边），缺省只空出正面 +Z 那条边
  * @returns {number} 整体高度（宝顶尖）
  */
 export function addPavilion(b, parent, opts) {
@@ -39,6 +52,7 @@ export function addPavilion(b, parent, opts) {
   const o = opts.overhang ?? 0.35 * radius + 0.3
   const curl = opts.curl ?? 0.3
   const colR = opts.columnRadius ?? clamp(0.06 * radius, 0.15, 0.4)
+  const open = new Set(opts.openEdges ?? [sides - 1])
 
   if (platformH > 0) {
     const pr = radius + Math.max(0.6, 0.25 * radius)
@@ -57,8 +71,8 @@ export function addPavilion(b, parent, opts) {
       c.lattice,
       edgeFrame(parent, sides, radius, k, y0 + colH - beamH)
     )
-    // 坐凳栏：k = sides - 1 那条边正对 +Z，作为入口不设
-    if (k === sides - 1) continue
+    // 坐凳栏：openEdges 列出的边（入口、共用边）不设
+    if (open.has(k)) continue
     b.add(
       box(side - colR * 2, 0.5, 0.3),
       c.lattice,

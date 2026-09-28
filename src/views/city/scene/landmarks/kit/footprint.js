@@ -11,14 +11,116 @@ import { frame } from "./builder.js"
 const DEG = Math.PI / 180
 
 /**
- * 按名称查楼：先精确匹配，再「名称包含 name」匹配。
- * @param {Array<{n?: string}>} buildings 几何数据里的楼栋数组
- * @returns {number} 楼栋索引，找不到返回 -1
+ * 按名称查全部同名楼：先取所有精确匹配；一个都没有时，取所有「名称包含 name」的楼。
+ * @returns {number[]} 楼栋索引数组（可能为空）
  */
-export function findBuilding(buildings, name) {
-  const exact = buildings.findIndex((b) => b.n === name)
-  if (exact >= 0) return exact
-  return buildings.findIndex((b) => b.n && b.n.includes(name))
+export function findBuildings(buildings, name) {
+  const exact = []
+  const partial = []
+  buildings.forEach((b, i) => {
+    if (!b.n) return
+    if (b.n === name) exact.push(i)
+    else if (b.n.includes(name)) partial.push(i)
+  })
+  return exact.length ? exact : partial
+}
+
+/**
+ * 按名称查楼。数据里常有重名（如文殊院与大慈寺都有「大雄宝殿」），
+ * 传 near 时在候选里取顶点平均点离 near 最近、且不超过 maxDist 的那栋。
+ * 不传 near 时：先精确匹配，再「包含」匹配，取第一栋。
+ * @param {Array<{n?: string, p?: Array}>} buildings
+ * @param {string} name
+ * @param {{ near?: [number, number], maxDist?: number }} [opts]
+ * @returns {number} 楼栋索引，找不到（或最近的也超出 maxDist）返回 -1
+ */
+export function findBuilding(
+  buildings,
+  name,
+  { near, maxDist = Infinity } = {}
+) {
+  const list = findBuildings(buildings, name)
+  if (!near) return list.length ? list[0] : -1
+  let best = -1
+  let bestD = maxDist
+  for (const i of list) {
+    const p = buildings[i].p
+    if (!p || !p.length) continue
+    const [x, z] = polygonCenter(p)
+    const dist = Math.hypot(x - near[0], z - near[1])
+    if (dist <= bestD) {
+      best = i
+      bestD = dist
+    }
+  }
+  return best
+}
+
+/** 多边形面积（鞋带公式，取绝对值，与顶点绕向无关） */
+export function polygonArea(points) {
+  let a = 0
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    a += points[j][0] * points[i][1] - points[i][0] * points[j][1]
+  }
+  return Math.abs(a) / 2
+}
+
+/**
+ * 用半平面裁剪多边形（Sutherland–Hodgman）：保留满足 (p - o)·n ≥ 0 的部分。
+ * 凹多边形被切成几块时结果以零宽边相连，面积仍然正确；沿分界线折返的零宽尖刺会被去掉。
+ * @param {Array<[number, number]>} points
+ * @param {[number, number]} o 分界线上一点
+ * @param {[number, number]} n 分界线法向（指向保留一侧）
+ * @returns {Array<[number, number]>} 裁剪后的多边形（可能少于 3 点）
+ */
+export function clipHalfPlane(points, o, n) {
+  const side = ([x, z]) => (x - o[0]) * n[0] + (z - o[1]) * n[1]
+  const out = []
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i]
+    const b = points[(i + 1) % points.length]
+    const sa = side(a)
+    const sb = side(b)
+    if (sa >= 0) out.push(a)
+    // 边跨过分界线：补上交点
+    if (sa >= 0 !== sb >= 0) {
+      const t = sa / (sa - sb)
+      out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t])
+    }
+  }
+  return removeSpikes(out)
+}
+
+/**
+ * 去掉重复点与「原路折返」的共线点（零宽尖刺）。
+ * 落在分界线上的轮廓边会同时留在两半里，形成沿分界线来回的零宽边，
+ * 不去掉会把外接矩形撑大。
+ */
+function removeSpikes(points) {
+  const pts = points.slice()
+  let changed = true
+  while (changed && pts.length >= 3) {
+    changed = false
+    for (let i = 0; i < pts.length && pts.length >= 3; i++) {
+      const p = pts[(i + pts.length - 1) % pts.length]
+      const c = pts[i]
+      const n = pts[(i + 1) % pts.length]
+      const ax = c[0] - p[0]
+      const az = c[1] - p[1]
+      const bx = n[0] - c[0]
+      const bz = n[1] - c[1]
+      const dup = Math.abs(ax) < 1e-9 && Math.abs(az) < 1e-9
+      const cross = ax * bz - az * bx
+      // 共线且前后两段方向相反 = 折返
+      const back = Math.abs(cross) < 1e-6 && ax * bx + az * bz < 0
+      if (dup || back) {
+        pts.splice(i, 1)
+        changed = true
+        i--
+      }
+    }
+  }
+  return pts
 }
 
 /** 点集的凸包（Andrew 单调链），返回逆时针顺序的顶点，去掉共线点 */

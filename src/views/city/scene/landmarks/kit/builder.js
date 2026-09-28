@@ -33,14 +33,21 @@ export class ColorBuilder {
   }
 
   /**
-   * 加入一个构件。geometry 的所有权移交给合批器：内部复制一份再释放原件，
-   * 因此同一个模板几何体可以用不同 matrix 反复 add（原件不会被改动）。
+   * 加入一个构件：内部先复制一份（非索引化）再做变换与着色，然后对原件调用 dispose()。
+   * dispose() 只释放 GPU 端资源、不清空顶点数据，所以同一个模板几何体
+   * 可以用不同 matrix 反复传入（原件的顶点不会被改动）；调用方不应再把原件拿去渲染。
    * @param {BufferGeometry} geometry 构件几何体（局部坐标）
    * @param {string|number|Color} color 构件颜色（sRGB，与 Color.set 相同，内部转线性值）
-   * @param {Matrix4} [matrix] 局部 → 世界变换，法线随之变换
+   * @param {Matrix4} [matrix] 局部 → 世界变换，法线随之变换；不允许镜像（行列式 < 0）
    * @returns {ColorBuilder} this，便于链式调用
    */
   add(geometry, color, matrix) {
+    // 负缩放（镜像）会翻转三角形绕序，与法线不再一致，直接报错而不是悄悄画错
+    if (matrix && matrix.determinant() < 0) {
+      throw new Error(
+        "ColorBuilder.add：matrix 含镜像（行列式 < 0），请改用正缩放"
+      )
+    }
     // 非索引化：每个三角形独立顶点，合并后三角形 k 即顶点 3k..3k+2
     const g = geometry.index ? geometry.toNonIndexed() : geometry.clone()
     geometry.dispose()

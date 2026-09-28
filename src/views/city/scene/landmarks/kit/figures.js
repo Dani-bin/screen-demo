@@ -126,7 +126,7 @@ function limb(a, b, r) {
 /**
  * 低多边形熊猫（配合 flatMaterial 使用）：二十面体（细分 1 次）拉伸成
  * 头、身体、四肢、耳朵；耳朵、眼圈、鼻头、四肢、肩带黑色，其余白色。
- * pose "climb"（目前唯一姿态）：身体前倾约 35°，前爪搭在墙顶内侧，后腿悬在墙外。
+ * parent 可为 null（即世界坐标）。pose "climb"（目前唯一姿态）：身体前倾约 35°，前爪搭在墙顶内侧，后腿悬在墙外。
  * 局部原点为女儿墙顶外沿中点（y = 0 墙顶、z = 0 外立面，墙在 z < 0 一侧）；
  * +Z 为背部朝向（朝街），-Z 为头部朝向（朝屋顶花园）。
  * 竖向总高约 height：脚底约在 -0.56·height，耳尖约在 +0.44·height；
@@ -134,6 +134,8 @@ function limb(a, b, r) {
  * @param {object} [opts] { height = 15, pose = "climb" }
  */
 export function addPanda(b, parent, { height = 15 } = {}) {
+  // parent 可传 null，表示直接用世界坐标
+  const base = parent ?? new Matrix4()
   const k = height / PANDA_SPAN
   const m = new Matrix4()
   const s = new Vector3()
@@ -144,7 +146,7 @@ export function addPanda(b, parent, { height = 15 } = {}) {
       p.q,
       s.set(...p.r).multiplyScalar(k)
     )
-    b.add(g, p.black ? L.pandaBlack : L.pandaWhite, parent.clone().multiply(m))
+    b.add(g, p.black ? L.pandaBlack : L.pandaWhite, base.clone().multiply(m))
   }
 }
 
@@ -250,17 +252,19 @@ export function addBoat(b, parent, { length = 14 } = {}) {
 /* ---------------- 太阳神鸟金盘 ---------------- */
 
 const LIGHT_GOLD = "#F3DA8C"
+// 纹样离盘面的高度：城市总览距离下 24 位深度精度约 0.1 m，至少抬 0.15 m
+const PATTERN_LIFT = 0.15
 
 /**
  * 太阳神鸟金盘：金色薄圆盘 + 12 道旋转的镰刀形浅金光芒 + 中心小圆 + 外圈细环。
- * 盘底在 y = 0，盘厚 0.3 m，纹样浮在盘面上 0.05 m。
+ * 盘底在 y = 0，盘厚 0.3 m，纹样浮在盘面上 0.15 m（远景深度精度下也不会与盘面闪烁）。
  * @param {object} [opts] { radius = 27 }
  */
 export function addSunbirdDisc(b, parent, { radius = 27 } = {}) {
   const R = radius
   const th = 0.3
   b.add(cylinder(R, R, th, { segments: 48, caps: true }), L.gold, parent)
-  const y = th + 0.05
+  const y = th + PATTERN_LIFT
   const pos = []
   const segs = 10
   for (let k = 0; k < 12; k++) {
@@ -295,9 +299,12 @@ export function addSunbirdDisc(b, parent, { radius = 27 } = {}) {
   }
   b.add(fromTriangles(pos), LIGHT_GOLD, parent)
   b.add(
-    cylinder(0.13 * R, 0.13 * R, 0.1, { segments: 24, caps: true }),
+    cylinder(0.13 * R, 0.13 * R, PATTERN_LIFT + 0.05, {
+      segments: 24,
+      caps: true
+    }),
     LIGHT_GOLD,
-    local(parent, 0, th - 0.05, 0)
+    local(parent, 0, th - 0.05, 0) // 顶面与光芒同高
   )
 }
 

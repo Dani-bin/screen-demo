@@ -108,8 +108,8 @@ git commit -m "feat(city): 扩大数据范围、纠正景点坐标、支持 ?spo
 
 ### Task 2: 景点构件库 kit 与单景点预览页
 
-**Files:** Create `src/views/city/scene/landmarks/kit/{builder,footprint,shapes,roofs,common,parts,towers,figures}.js`、`city-lab.html`、`src/views/city/lab/{lab,kitShowcase}.js`；Modify `src/views/city/scene/theme.js`
-（实现时拆分：`shapes.js` 基础几何体、`towers.js` 亭与塔、`common.js` 内部小工具、`kitShowcase.js` 构件陈列；`addPavilion`/`addPagoda` 仍从 `parts.js` 导入。）
+**Files:** Create `src/views/city/scene/landmarks/kit/{builder,footprint,shapes,roofs,common,parts,towers,houses,figures}.js`、`city-lab.html`、`src/views/city/lab/{lab,kitShowcase}.js`；Modify `src/views/city/scene/theme.js`
+（实现时拆分：`shapes.js` 基础几何体、`towers.js` 亭与塔、`houses.js` 坡屋顶民居、`common.js` 内部小工具、`kitShowcase.js` 构件陈列；`addPavilion`/`addPagoda`/`addPitchedHouse` 仍从 `parts.js` 导入。）
 
 - [ ] **Step 1: theme.js 新增 landmark 配色段**
 
@@ -238,13 +238,16 @@ git commit -m "feat(city): 景点构件库与单景点预览页"
 「一条边正对 +Z」，顶点 k 在 θ = π/n + k·2π/n（x = r·sin θ，z = r·cos θ），六边形时 ±X 为顶点、±Z 为边
 （两座六角亭共用一条边时，应沿局部 Z 排列，或把 frame 转 90°）。
 
-- **builder.js**：`add()` 总是复制输入再释放原件，所以同一模板几何体可以反复 `add`；`bake()` 之后合批器清空、可继续复用，并算好包围盒 / 包围球。
-- **footprint.js**：新增 `rectFrame(rect, y = 0, frontBearing = 180)` → Matrix4：局部 X 沿长边，+Z 取两条长边法向里更接近 `frontBearing` 的那一个（按 OSM 轮廓放 `addHall` 用这个）。
+- **builder.js**：`add()` 总是先复制再对原件 `dispose()`（只释放 GPU 资源、不清顶点），所以同一模板几何体可以反复 `add`；`matrix` 行列式 < 0（镜像）时直接抛错。`bake()` 之后合批器清空、可继续复用，并算好包围盒 / 包围球。
+- **footprint.js**：
+  - `findBuilding(buildings, name, { near, maxDist = Infinity } = {})`：传 `near: [x, z]` 时在同名候选里取顶点平均点最近、且不超过 maxDist 的那栋。数据里「大雄宝殿」有两座：文殊院 #1659（OSM h = 16.2）、大慈寺 #2265（h = 10.4），**重名楼一律传 near**。
+  - 新增 `findBuildings(buildings, name)`（全部同名索引）、`polygonArea(points)`、`clipHalfPlane(points, o, n)`（Sutherland–Hodgman，并去掉沿分界线的零宽尖刺）。
+  - 新增 `rectFrame(rect, y = 0, frontBearing = 180)` → Matrix4：局部 X 沿长边，+Z 取两条长边法向里更接近 `frontBearing` 的那一个（按 OSM 轮廓放 `addHall` 用这个）。
 - **shapes.js（新增）**：`polygonVertex(sides, r, k)`、`fromTriangles(positions)`、`dropBottom(geo)`、`box(w, h, d, { bottom })`、`prism(sides, rBottom, rTop, h, { top, bottom })`、`cylinder(rBottom, rTop, h, { segments, caps })`、`sphere(r, ws, hs)`（底在 0）、`sweepBar(points3d, w, h, { sink })`。
 - **roofs.js**：
   - 所有屋顶都接受 `ridges`（默认 true；false 时只返回屋面）、`segS`、`segT`、`thick`（封檐板厚，默认 max(0.08, 0.05h)）选项。檐口外沿挂竖直封檐板，所以几何体最低点在 y = -thick。
   - 新增只返回屋脊的出口：`hipRidges`、`pyramidRidges`、`gableRidge`，以及悬山山墙 `gableWalls`；`gableRoof` 加了 `gables` 选项（默认 true）。这样屋面、屋脊、山墙可以分别配色。
-  - `hipRidges` 含 4 条戗脊，外加正脊与两端吻兽块（吻兽高 ≈ 0.13h），所以 `hipRoof(20, 12, 5)` 最高点是 5.54 而不是 5.4。攒尖垂脊止于 t = 0.92，顶点留给宝顶。
+  - `hipRidges` 含 4 条戗脊，外加正脊与两端吻兽块（吻兽高 ≈ 0.13h），所以 `hipRoof(20, 12, 5)` 最高点是 5.54 而不是 5.4。攒尖垂脊止于 t = 0.92，顶点留给宝顶；屋脊退化成点时不输出零面积三角形。
   - 有起翘时，s 方向网格向两端加密（曲面公式不变）；`gableRoof` 默认 `segS = 2`（沿檐口无起翘）。
   - 导出 `roofHeight(s, t, h, curl, pow)`（曲面高度公式）。
 - **parts.js**：
@@ -252,20 +255,35 @@ git commit -m "feat(city): 景点构件库与单景点预览页"
   - 重檐的上层高度不是「roofH × 0.6」：下层截断檐顶再往上露出 0.4 × wallH 的上层墙，上层屋顶檐口约为下层的 80%。悬山殿的山墙用墙色；`double` 只对四坡顶生效。
   - 所有屋顶按「柱线外 0.5 m 处屋面 = 柱顶」下沉落位，檐口垂到柱顶以下，额枋不会戳穿瓦面。
   - `addColumns` 返回柱位 `[[x, z], ...]`；`addWalls` 的 `door: false` 表示不开门；`addBalustrade` 新增 `y` 选项，并加了实心栏板；`addLantern` 的 (x, y, z) 是球心。
-  - `addPitchedHouse` 新增 `y` 选项。`ridgeH` 指屋脊高出檐口的高度。返回 `{ rect, top }`（轮廓无效时返回 null）。
+  - `addPitchedHouse(b, footprint, { eaveH, ridgeH, overhang = 0.6, wallColor, roofColor, y = 0, rect, ridgeBearing })`，实现在 `houses.js`，由 parts.js 转出。`ridgeH` 指屋脊高出檐口的高度。返回 **`{ rects: [...], top }`**（数组；轮廓无效时返回 null）。
+    - 凹形 / L 形处理：充满度 fill = 面积 / 外接矩形面积。fill ≥ 0.85 时，墙按轮廓挤出、屋顶盖外接矩形。
+    - fill 不达标时，找一条垂直于矩形某条轴、过轮廓某个顶点的切线，取「较差一半的充满度」最高的切法切成两半，最多切两层（至多 4 块），每块各一套墙和屋顶。
+    - 仍不达标时，墙体退回整个外接矩形，保证墙和屋顶相接。L / T 形由此在凹角处切成规整矩形。
+    - 传 `rect`（minAreaRect 同构对象）时不切分：fill 达标用轮廓做墙，否则用该矩形做墙。
+    - `ridgeBearing` 吸附到矩形里较近的那条轴。
+    - 另导出 `housePieces(points, rect?)` → `[{ points, rect }]`，只做切分、不建几何，便于规划和测试。
   - 新增 `palette(colors)`，键为 platform / column / wall / lattice / roof / ridge / finial / trim。
+  - 新增转出 `edgeFrame(parent, sides, radius, k, y)` → Matrix4：正 n 边形第 k 条边中点处的坐标系，局部 X 沿边、+Z 朝外；边 k 连接顶点 k 与 k+1，边 sides-1 正对 +Z。
 - **towers.js（由 parts.js 转出）**：
-  - `addPavilion`：新增 `overhang`（缺省 0.35·radius + 0.3）、`curl`（缺省 0.3）、`columnRadius` 选项；有坐凳栏，正面留口。重檐时上层檐口半径为下层的 72%，上层短墙露出 0.45 × colH（花格色）。琉璃瓦的屋脊取同色压暗。
+  - `addPavilion`：新增 `overhang`（缺省 0.35·radius + 0.3）、`curl`（缺省 0.3）、`columnRadius` 选项。
+    - `openEdges`（缺省 `[sides - 1]`，即 +Z 那条边）列出不设坐凳栏的边。六边形的边 5 朝 +Z、边 2 朝 -Z，±X 方向是顶点。
+    - 连体双亭（合江亭）沿局部 Z 排列：两中心在 z = ∓radius·cos30°，openEdges 都取 `[2, 5]`。
+    - 沿 X 排列：每座用 `local(parent, ∓radius·cos30°, 0, 0, Math.PI / 2)`，openEdges 同样取 `[2, 5]`。预览页 `focus=twin` 有示例。重檐时上层檐口半径为下层的 72%，上层短墙露出 0.45 × colH（花格色）。琉璃瓦的屋脊取同色压暗。
   - `addPagoda`：首层塔身较高；每面一块贴金色块；檐口 `curl = 0.38`；总高（含塔刹）严格等于 `height`。11 层 21 m 约 5.9k 三角形。
 - **figures.js**：
-  - `addPanda` 的局部原点在女儿墙顶外沿（y = 0 墙顶，z = 0 外立面，墙在 z < 0 一侧）。脚底约 -0.56·height、耳尖约 +0.44·height；前爪、鼻尖伸进墙内约 0.36·height。目前只有 `"climb"` 一种姿态。
+  - `addPanda` 的 parent 可为 null（世界坐标）；局部原点在女儿墙顶外沿（y = 0 墙顶，z = 0 外立面，墙在 z < 0 一侧）。脚底约 -0.56·height、耳尖约 +0.44·height；前爪、鼻尖伸进墙内约 0.36·height。目前只有 `"climb"` 一种姿态。
   - `addBoat`：船底在 y = 0，船头朝 +X，船舷外张（上宽下窄，比「上窄下宽」更像船），另加金色舷边；顶棚是黄色小悬山。
-  - `addSunbirdDisc`：光芒是 12 道旋转的镰刀形，外加一道外圈细环。
+  - `addSunbirdDisc`：光芒是 12 道旋转的镰刀形，外加一道外圈细环；纹样高出盘面 0.15 m，避免远景闪烁。
   - `addTotem`：总高 h 含顶部金球；柱身深绿 `#2F5A48` 以常量形式写在 figures.js 里。
 - **lab**：
   - 新增 `focus` 参数：kit 时对准某件样例（hall | hall2 | pagoda | panda | pavilion | house | disc | boat | totem）。
   - Task 3 的接入点是 lab.js 里的 `const buildLandmark = null`，换成 `import { buildLandmark } from "../scene/landmarks/index.js"` 即可；景点键映射、600 m 通用楼筛选、替换区排除都已写好。
-  - 预览页把阴影正交范围收紧到注视点周围（kit 110 m、景点 600 m），相机 near = 1；三角形统计挂在 `window.__labStats`，失败时设 `window.__labError`。
+  - 传给景点模块的 ctx 与生产完全一致，为 `{ project, buildings, theme, spot }`。**ctx 里没有 footprint**，景点模块直接 `import` kit。
+  - `shadow` 参数：
+    - `city`：景点模式的缺省。太阳位置、`THEME.light.shadowBox`、`shadowBias`、`shadowNormalBias` 和相机 near = 20 全部照搬线上，**验收截图用这个模式，dist ≥ 300**。
+    - `tight`：kit 的缺省。阴影收紧到注视点周围 110 m，相机 near = 1，只用于近看构件造型；景点近景细节可以加 `&shadow=tight` 用更小的 dist，但不作为验收依据。
+  - 三角形统计挂在 `window.__labStats`；出错时同时设 `window.__labError` 与 `window.__labReady = true`，截图脚本不用等到超时。
+  - kit 样例新增 `twin`（共边连体双亭）与 `lhouse`（L 形民居自动切分）。
 
 ---
 
@@ -346,7 +364,7 @@ git commit -m "feat(city): 景点注册表、通用楼排除与场景接入"
 
 **每个景点任务的统一流程：**
 1. 读设计文档对应小节、参考照片（通用约定里的目录与前缀）、kit 源码。
-2. 用 `footprint.js` 按名称从 `ctx.buildings` 取真实轮廓（名称缺失时退回到设计文档给的坐标与朝向，并在报告中说明）；用 `ctx.project.toLocal(lon, lat)` 换算坐标。
+2. 用 `footprint.js` 按名称从 `ctx.buildings` 取真实轮廓（重名时传 `{ near: spot 或设计坐标 }`；名称缺失时退回到设计文档给的坐标与朝向，并在报告中说明）；用 `ctx.project.toLocal(lon, lat)` 换算坐标。
 3. 所有静态件加进一个 `ColorBuilder`，`bake()` 后配 `landmarkMaterial()` 成一个 Mesh；熊猫用 `flatMaterial()` 单独一个 Mesh；动画件单独 Mesh 且 `castShadow = false`。
 4. 返回 `zones`（替换区，覆盖被模型取代的 OSM 楼）与 `markerHeight`（落点球应坐的高度）。
 5. 迭代截图：
@@ -354,6 +372,7 @@ git commit -m "feat(city): 景点注册表、通用楼排除与场景接入"
    node <cdp.mjs> --url "https://localhost:8892/city-lab.html?landmark=<key>&yaw=<角度>&pitch=32&dist=<距离>" --wait-js "window.__labReady===true" --delay 1 --console --timeout 120 --out /tmp/claude-501/lm-<key>-<n>.png
    ```
    至少两个角度（一张 45° 斜俯视全景、一张近景看标志细节），与参考照片对比形制、层数、朝向、配色，改到可辨认为止。
+   景点模式默认 `shadow=city`（与线上相同、相机 near = 20），验收截图 **dist ≥ 300**；看细节可另加 `&shadow=tight` 用更近的 dist，但只作参考。
 6. 预算：本景点三角形 ≤ 3 万（天府广场、宽窄巷子、太古里这类片区 ≤ 4 万），Mesh ≤ 2 个。
 7. Lint 门槛通过。报告里给出：最终截图路径、三角形数、`zones` 覆盖了哪些 OSM 楼（名称或数量）、与照片对照的结论、偏差与原因。
 
