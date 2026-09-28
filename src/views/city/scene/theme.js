@@ -77,7 +77,8 @@ export const THEME = {
   },
 
   /* ---- 景点标注 ---- */
-  marker: { color: "#ff7a45", radius: 12, mainRadius: 18, labelLift: 34 },
+  /* labelLift：标签锚点在落点球心上方的高度（米）：取普通球半径，锚点即球顶；标签再由 CSS 固定上抬 40px */
+  marker: { color: "#ff7a45", radius: 12, mainRadius: 18, labelLift: 12 },
 
   /* ---- 相机与巡览 ---- */
   camera: {
