@@ -11,7 +11,10 @@
         <i></i>
       </div>
     </div>
-    <div class="scale-bar">{{ scaleMeters.toLocaleString() }} m</div>
+    <!-- 场景未就绪（加载中或降级）时比例尺为 0，显示占位符而不是「0 m」 -->
+    <div class="scale-bar">
+      {{ scaleMeters > 0 ? scaleMeters.toLocaleString() : "—" }} m
+    </div>
   </div>
 </template>
 

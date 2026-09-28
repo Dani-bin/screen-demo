@@ -251,8 +251,15 @@
     background: #f6f3ec;
   }
 
+  /*
+   * 错误提示只替代三维场景，不遮挡面板：层级压到面板（4）与标签层（3）之下，
+   * 背景透明、不拦截鼠标，面板与导览条照常可见
+   */
   .scene-error {
+    z-index: 2;
     color: #c0392b;
+    background: transparent;
+    pointer-events: none;
   }
 
   /* 左右两栏面板：浮于三维画布之上，右栏为右侧工具栏留出位置 */
