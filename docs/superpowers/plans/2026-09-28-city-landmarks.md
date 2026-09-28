@@ -367,6 +367,24 @@ git add src/views/city/scene/landmarks src/views/city/scene/buildings.js src/vie
 git commit -m "feat(city): 景点注册表、通用楼排除与场景接入"
 ```
 
+#### 实现记录：相对上文的偏差（Task 4～11 以此为准）
+
+- **动画件不投影的约定**：注册表对每个 Mesh 设 `receiveShadow = true`，`castShadow = !mesh.userData.animated`。
+  景点模块里的动画件（游船、喷泉）必须设 `mesh.userData.animated = true`；只写 `castShadow = false` 会被注册表改回 `true`。
+  同一规则由 `landmarks/index.js` 导出的 `applyShadowFlags(mesh)` 实现，lab 页也调用它。
+- **失败隔离**还覆盖动画：某景点 `update(t)` 抛错时打印一次错误并停用该景点动画，渲染循环不受影响。
+  模块返回值由注册表规整（缺字段取默认值，`markerHeight` 非正数视为 0）。
+- **阴影参数抽到 `scene/shadow.js`**：`applyCityShadow(sun, light)`（整城，`THEME.light` 原值，太阳在 `sunPosition`、target 在原点）、
+  `applyStopShadow(sun, light, center, R)`（按站点收紧，参数同 Step 5b）、`STOP_SHADOW_RADIUS = 1000`。
+  `CityScene._initScene` 初始化、`_fitShadow` / `_resetShadow` 与 lab 页共用，保证 lab 截图与线上停靠时一致。
+- **抵达回调**：`CameraTour` 新增可选 `onArrive(index)`，在 `arrived` 置真时触发（正常飞抵与 reduceMotion 跳转都触发；人工打断的飞行、飞回总览不触发）。
+- **收紧 / 恢复时机**：飞抵站点 `_fitShadow([spot.x, 0, spot.z], 1000)`；`onStopChange`（离站飞往下一站）、`gotoOverview`（复位）时 `_resetShadow()`，
+  飞行途中沿途楼体仍有整城阴影；停靠时人工拉远到 `getDistance() > 1.5R` 也自动恢复整城阴影。已是整城时 `_resetShadow` 不重绘。
+- **拾取取最近命中**：`createPicker(canvas, camera, mesh, faceToBuilding, landmarks)` 同时检测景点组与通用楼，取离相机更近者，
+  返回 `{ spot }` / `{ building }` / `null`（避免隔着前景楼点中后面的景点）。命中 Mesh 的父级链也会查 `pickables`。点中景点调 `CityScene.gotoStop(spot)`（清除楼体选中 + 人工飞往）。
+- **落点估算只看仍在画的楼**：`createMarkers` 的 `buildings` 参数传入去掉 `excluded` 的楼栋，`markerHeight` 为 0 时球不会悬在已被替换、看不见的楼顶上。
+- **lab `shadow=city`**：景点模式下等同线上停靠该站，即以景点落点为中心 `applyStopShadow(…, 1000)`；kit 显式 `shadow=city` 时无站点，用整城阴影。
+
 ---
 
 ### Task 4～10: 七个景点模型（可并行）
@@ -376,7 +394,7 @@ git commit -m "feat(city): 景点注册表、通用楼排除与场景接入"
 **每个景点任务的统一流程：**
 1. 读设计文档对应小节、参考照片（通用约定里的目录与前缀）、kit 源码。
 2. 用 `footprint.js` 按名称从 `ctx.buildings` 取真实轮廓（重名时传 `{ near: spot 或设计坐标 }`；名称缺失时退回到设计文档给的坐标与朝向，并在报告中说明）；用 `ctx.project.toLocal(lon, lat)` 换算坐标。
-3. 所有静态件加进一个 `ColorBuilder`，`bake()` 后配 `landmarkMaterial()` 成一个 Mesh；熊猫用 `flatMaterial()` 单独一个 Mesh；动画件单独 Mesh 且 `castShadow = false`。
+3. 所有静态件加进一个 `ColorBuilder`，`bake()` 后配 `landmarkMaterial()` 成一个 Mesh；熊猫用 `flatMaterial()` 单独一个 Mesh；动画件单独 Mesh 且设 `userData.animated = true`（注册表据此令其不投影，见 Task 3 实现记录）。
 4. 返回 `zones`（替换区，覆盖被模型取代的 OSM 楼）与 `markerHeight`（落点球应坐的高度）。
 5. 迭代截图：
    ```bash

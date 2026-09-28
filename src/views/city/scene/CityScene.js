@@ -34,6 +34,12 @@ import { createMarkers } from "./markers.js"
 import { CameraTour } from "./cameraTour.js"
 import { createPicker } from "./picking.js"
 import { polygonCenter } from "./utils.js"
+import { createLandmarks } from "./landmarks/index.js"
+import {
+  STOP_SHADOW_RADIUS,
+  applyCityShadow,
+  applyStopShadow
+} from "./shadow.js"
 
 const DEG = Math.PI / 180
 
@@ -126,15 +132,12 @@ export class CityScene {
     // 保留太阳光引用：释放时要调用 sun.dispose() 回收阴影贴图
     const sun = new DirectionalLight(L.sun, L.sunIntensity)
     this.sun = sun
-    sun.position.set(...L.sunPosition)
     sun.castShadow = true
     sun.shadow.mapSize.set(L.shadowMapSize, L.shadowMapSize)
-    // 阴影正交范围要覆盖整个城区，小了会出现阴影被截断的硬边；改完范围要刷新投影矩阵
-    Object.assign(sun.shadow.camera, L.shadowBox)
-    sun.shadow.camera.updateProjectionMatrix()
-    // 偏移量见 theme.light.shadowBias / shadowNormalBias 的注释
-    sun.shadow.bias = L.shadowBias
-    sun.shadow.normalBias = L.shadowNormalBias
+    // 初始为整城阴影：太阳位置、正交范围、偏移见 shadow.js 与 theme.light；
+    // 停靠站点时由 _fitShadow 收紧，回总览 / 离站时 _resetShadow 恢复
+    applyCityShadow(sun, L)
+    this.shadowFitted = false
     this.scene.add(sun)
     // 平行光朝向 target；target 需在场景中才会更新 matrixWorld，否则阴影方向不对
     this.scene.add(sun.target)
@@ -150,18 +153,39 @@ export class CityScene {
     this.root.add(createRivers(d.rivers, this.materials, this.theme))
     this.root.add(createRoads(d.roads, this.materials, this.theme))
 
-    this.buildings = createBuildings(d.buildings, this.theme)
+    // 景点精细模型先建：它的替换区决定哪些通用楼不再画（excluded）。
+    // 单个景点构建失败只跳过该景点（见 landmarks/index.js）
+    this.landmarks = createLandmarks({
+      geometry: d,
+      spots: this.spots,
+      theme: this.theme,
+      project: this.project
+    })
+    this.root.add(this.landmarks.group)
+    this.elapsed = 0 // 景点动画用的累计秒数
+
+    this.buildings = createBuildings(
+      d.buildings,
+      this.theme,
+      this.landmarks.excluded
+    )
     this.root.add(this.buildings.mesh)
 
     this.trees = createTrees(d, this.materials, this.theme)
     this.root.add(this.trees.group)
 
-    // 传入楼栋：落点压在楼上时，落点球放到楼顶，避免被楼体吞没
+    // 景点模型给了底座高度（markerHeight > 0）就直接用；否则按楼栋估算：
+    // 落点压在楼上时，落点球放到楼顶，避免被楼体吞没。
+    // 估算只看仍在画的楼，已被景点替换的楼不画，球不能悬在看不见的楼顶上
+    const excluded = this.landmarks.excluded
     this.markers = createMarkers(
       this.spots,
       this.materials,
       this.theme,
-      d.buildings
+      excluded.size
+        ? d.buildings.filter((b, i) => !excluded.has(i))
+        : d.buildings,
+      this.landmarks.markerHeights
     )
     this.root.add(this.markers.group)
 
@@ -169,7 +193,9 @@ export class CityScene {
     this.bubble = null
 
     // 场景静态、太阳固定：阴影只绘制一次，之后每帧跳过阴影通道。
-    // 选中楼体的高亮体不投射阴影，选中 / 取消时也无需重绘阴影
+    // 选中楼体的高亮体不投射阴影，选中 / 取消时也无需重绘阴影。
+    // 景点动画件（游船、喷泉）一律不投影（landmarks/index.js 的阴影约定），
+    // 所以动画不需要逐帧重绘阴影；只有阴影范围切换（_fitShadow / _resetShadow）时重绘一次
     this.renderer.shadowMap.autoUpdate = false
     this.renderer.shadowMap.needsUpdate = true
   }
@@ -199,7 +225,14 @@ export class CityScene {
       timing: this.theme.tour,
       onStopChange: (index) => {
         this.markers.setActive(index)
+        // 离站飞往下一站：先恢复整城阴影，飞行途中沿途楼体照常有影；飞抵后再收紧
+        this._resetShadow()
         if (options.onStopChange) options.onStopChange(index)
+      },
+      // 飞抵站点：阴影收紧到站点周围，景点细部阴影清晰
+      onArrive: (index) => {
+        const s = this.spots[index]
+        this._fitShadow([s.x, 0, s.z], STOP_SHADOW_RADIUS)
       },
       onPlayingChange: (playing) => {
         // 巡览恢复时清掉人工选中的楼体，避免气泡跟着镜头飘到下一站
@@ -220,7 +253,8 @@ export class CityScene {
       this.canvas,
       this.camera,
       this.buildings.mesh,
-      this.buildings.faceToBuilding
+      this.buildings.faceToBuilding,
+      this.landmarks
     )
 
     // 区分点击与拖拽：按下与抬起位置相距超过 6px 视为拖拽，不触发拾取
@@ -239,7 +273,10 @@ export class CityScene {
       )
       this._downAt = null
       if (moved > 6) return
-      this.selectBuilding(this.pick(e))
+      const hit = this.pick(e)
+      // 点中景点模型：飞往该景点（gotoStop 内会清除楼体选中并暂停巡览）
+      if (hit && hit.spot !== undefined) this.gotoStop(hit.spot)
+      else this.selectBuilding(hit ? hit.building : null)
     }
     // 指针被系统取消（触摸被手势打断等）时作废本次按下，避免之后误判为点击
     this._onCancel = (e) => {
@@ -338,6 +375,7 @@ export class CityScene {
   }
   gotoOverview() {
     this.selectBuilding(null)
+    this._resetShadow()
     this.tour.gotoOverview()
   }
   zoomIn() {
@@ -348,6 +386,25 @@ export class CityScene {
   }
   setPlaying(value) {
     this.tour.setPlaying(value)
+  }
+
+  /**
+   * 阴影收紧到 center 周围 ±R 米（见 shadow.js），并重绘一次静态阴影。
+   * 代价：停留期间离站点 R 以外的楼没有阴影；站点机位视野基本落在 R 以内，
+   * 人工拉远超过 1.5R 时由 _loop 自动恢复整城阴影
+   */
+  _fitShadow(center, R) {
+    applyStopShadow(this.sun, this.theme.light, center, R)
+    this.shadowFitted = true
+    this.renderer.shadowMap.needsUpdate = true
+  }
+
+  /** 恢复整城阴影（theme.light 的范围、偏移与太阳位置）；已是整城时不做事，避免无谓重绘 */
+  _resetShadow() {
+    if (!this.shadowFitted) return
+    applyCityShadow(this.sun, this.theme.light)
+    this.shadowFitted = false
+    this.renderer.shadowMap.needsUpdate = true
   }
 
   /** 视角变化时通知页面（指北针与比例尺），变化很小则不通知 */
@@ -382,6 +439,15 @@ export class CityScene {
     // 下限 0 防止时间戳回退得到负值
     const dt = Math.max(0, Math.min(this.timer.getDelta(), 0.25))
     this.tour.update(dt)
+    // 停靠时人工拉远到收紧范围之外：恢复整城阴影，免得视野外圈的楼没有影子
+    if (
+      this.shadowFitted &&
+      this.tour.getDistance() > STOP_SHADOW_RADIUS * 1.5
+    ) {
+      this._resetShadow()
+    }
+    this.elapsed += dt
+    this.landmarks.update(this.elapsed)
     this._emitView()
     this.renderer.render(this.scene, this.camera)
     this.labelRenderer.render(this.scene, this.camera)
@@ -416,6 +482,7 @@ export class CityScene {
 
     if (this.root) this.selectBuilding(null)
     this.tour?.dispose()
+    this.landmarks?.dispose()
     this.markers?.dispose()
     this.trees?.dispose()
     this.buildings?.dispose()

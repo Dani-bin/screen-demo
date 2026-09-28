@@ -33,6 +33,7 @@ export class CameraTour {
    * @param {object} options.timing theme.tour（fly / hold / idle / drift，秒）
    * @param {Function} options.onStopChange 停靠点变化回调，参数为索引
    * @param {Function} options.onPlayingChange 巡览播放状态变化回调
+   * @param {Function} [options.onArrive] 飞抵景点站回调，参数为索引（被人工打断的飞行不触发，飞回总览也不触发）
    * @param {boolean} options.reduceMotion 是否跳过飞行动画
    */
   constructor(options) {
@@ -44,6 +45,7 @@ export class CameraTour {
     this.timing = options.timing
     this.onStopChange = options.onStopChange || (() => {})
     this.onPlayingChange = options.onPlayingChange || (() => {})
+    this.onArrive = options.onArrive || (() => {})
     this.reduceMotion = Boolean(options.reduceMotion)
 
     this.target = new Vector3()
@@ -208,7 +210,7 @@ export class CameraTour {
     if (this.reduceMotion) {
       this._jumpTo(stop)
       this.flying = false
-      if (this.flyingToStop) this.arrived = true
+      if (this.flyingToStop) this._arrive()
       return
     }
     const offset = new Vector3()
@@ -225,6 +227,12 @@ export class CameraTour {
     this.flyDTheta = Math.atan2(Math.sin(d), Math.cos(d))
     this.flyProgress = 0
     this.flying = true
+  }
+
+  /** 标记已抵达当前站并通知外部 */
+  _arrive() {
+    this.arrived = true
+    this.onArrive(this.current)
   }
 
   /**
@@ -273,7 +281,7 @@ export class CameraTour {
       this.apply()
       if (k >= 1) {
         this.flying = false
-        if (this.flyingToStop) this.arrived = true
+        if (this.flyingToStop) this._arrive()
       }
       return
     }
