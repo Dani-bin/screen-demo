@@ -53,6 +53,9 @@ TYPE_HEIGHT = {
     "hotel": (40, 80), "residential": (18, 45), "house": (6, 9),
     "school": (12, 18), "university": (15, 24), "hospital": (20, 40),
     "retail": (8, 15), "yes": (9, 30),
+    # 棚顶、车棚、小屋、车库等小型构筑物
+    "roof": (3, 5), "carport": (3, 5), "shed": (3, 5),
+    "garage": (3, 5), "garages": (3, 5), "hut": (3, 5),
 }
 
 
@@ -77,6 +80,10 @@ def overpass(query, cache_dir):
             with urllib.request.urlopen(req, timeout=180) as resp:
                 text = resp.read().decode("utf-8")
             data = json.loads(text)
+            # Overpass 超时 / 内存不足时也可能返回 200，但带 remark 且 elements 被截断，
+            # 这种残缺响应不能写入缓存，抛出异常走重试
+            if "remark" in data or not data.get("elements"):
+                raise RuntimeError(f"响应残缺：{data.get('remark', '无 elements')}")
             with open(cache_file, "w", encoding="utf-8") as f:
                 json.dump(data, f)
             return data
@@ -89,21 +96,60 @@ def overpass(query, cache_dir):
 
 def parse_num(text):
     """从 '24 m' / '6.5' 之类的标签值里取出数字。"""
-    m = re.search(r"[\d.]+", text or "")
+    m = re.search(r"\d+(?:\.\d+)?", text or "")
     return float(m.group()) if m else None
 
 
 def estimate_height(tags, osm_id):
-    """高度标签优先，其次层数 × 3.3，否则按类型区间用 id 做种子随机（每次一致）。"""
+    """高度标签优先，其次层数 × 3.3，否则按类型区间用 id 做种子随机（每次一致）。
+
+    最终不低于 3 米：低于 3 米的值多来自围墙、栅栏之类的标注，挤出后是纸片状薄板，观感很差。
+    """
     h = parse_num(tags.get("height"))
     if h:
-        return round(h, 1)
+        return max(3, round(h, 1))
     levels = parse_num(tags.get("building:levels"))
     if levels:
-        return round(levels * 3.3, 1)
+        return max(3, round(levels * 3.3, 1))
     lo, hi = TYPE_HEIGHT.get(tags.get("building", "yes"), (9, 30))
     r = random.Random(osm_id)
-    return round(lo + (hi - lo) * r.random() ** 1.6, 1)
+    return max(3, round(lo + (hi - lo) * r.random() ** 1.6, 1))
+
+
+def stitch_rings(ways):
+    """把多面关系的 outer 成员 way 按端点拼接成闭合环。
+
+    OSM 里大面积水体 / 公园的外轮廓常被拆成多段未闭合的 way（例如 relation 19710348 由 5 段组成），
+    直接把每段当独立多边形会得到破碎的形状。这里从任意一段出发，反复寻找首尾节点能与当前环
+    首 / 尾相接的其他段（必要时反转方向）并拼上，直到环闭合或再无可接的段。
+    返回若干节点列表；无法闭合的残段也原样返回，由调用方按普通多边形处理。
+    """
+    def key(node):
+        return (node["lon"], node["lat"])
+
+    segments = [list(w["geometry"]) for w in ways if len(w.get("geometry", [])) > 1]
+    rings = []
+    while segments:
+        pts = segments.pop(0)
+        grown = True
+        while grown and key(pts[0]) != key(pts[-1]):
+            grown = False
+            for i, seg in enumerate(segments):
+                if key(seg[0]) == key(pts[-1]):
+                    pts = pts + seg[1:]  # 段头接环尾
+                elif key(seg[-1]) == key(pts[-1]):
+                    pts = pts + seg[-2::-1]  # 段尾接环尾：反转后接上
+                elif key(seg[-1]) == key(pts[0]):
+                    pts = seg[:-1] + pts  # 段尾接环头
+                elif key(seg[0]) == key(pts[0]):
+                    pts = seg[:0:-1] + pts  # 段头接环头：反转后接上
+                else:
+                    continue
+                segments.pop(i)
+                grown = True
+                break
+        rings.append(pts)
+    return rings
 
 
 def main():
@@ -126,8 +172,13 @@ def main():
     def to_local(node):
         return [round((node["lon"] - lon0) * kx, 1), round(-(node["lat"] - lat0) * kz, 1)]
 
-    def ring(way):
-        pts = [to_local(n) for n in way.get("geometry", [])]
+    def ring(nodes):
+        """节点列表 → 局部坐标多边形：去掉四舍五入后产生的连续重复点，以及闭合重复点。"""
+        pts = []
+        for n in nodes:
+            q = to_local(n)
+            if not pts or q != pts[-1]:
+                pts.append(q)
         if len(pts) > 1 and pts[0] == pts[-1]:
             pts = pts[:-1]  # 去掉闭合重复点
         return pts
@@ -138,7 +189,7 @@ def main():
     for w in raw_b["elements"]:
         if w["type"] != "way":
             continue
-        p = ring(w)
+        p = ring(w.get("geometry", []))
         if len(p) < 3:
             continue
         tags = w.get("tags", {})
@@ -170,22 +221,22 @@ def main():
             if "waterway" in tags:
                 rivers.append([to_local(n) for n in e.get("geometry", [])])
                 continue
-            p = ring(e)
+            p = ring(e.get("geometry", []))
             if len(p) >= 3:
                 (water if is_water else parks).append(p)
         elif e["type"] == "relation":
-            # 多面关系只取 outer 成员，每段作为独立多边形
-            for m in e.get("members", []):
-                if m.get("role") == "outer" and m.get("geometry"):
-                    p = ring(m)
-                    if len(p) >= 3:
-                        (water if is_water else parks).append(p)
+            # 多面关系只取 outer 成员并拼接成闭合环；inner（岛 / 洞）成员忽略，场景里不做挖洞
+            outers = [m for m in e.get("members", []) if m.get("role") == "outer" and m.get("geometry")]
+            for nodes in stitch_rings(outers):
+                p = ring(nodes)
+                if len(p) >= 3:
+                    (water if is_water else parks).append(p)
 
     out = {
         "meta": {"city": args.city, "origin": [lon0, lat0], "bbox": [south, west, north, east]},
         "buildings": buildings, "roads": roads, "water": water, "parks": parks, "rivers": rivers,
     }
-    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
 
