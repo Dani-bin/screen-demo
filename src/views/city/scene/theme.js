@@ -66,14 +66,26 @@ export const THEME = {
     sunIntensity: 2.6,
     sunPosition: [-1400, 2600, 1800],
     shadowMapSize: 4096,
+    /*
+     * 阴影正交相机范围（光源坐标系，米）：刚好包住城区数据范围，
+     * 收紧后 4096 贴图每个 texel 覆盖的地面更小，阴影边缘更实；
+     * near / far 也收紧到城区实际深度区间，提升深度精度
+     */
     shadowBox: {
-      left: -3000,
-      right: 3400,
-      top: 3000,
-      bottom: -2800,
-      near: 100,
-      far: 9000
-    }
+      left: -2950,
+      right: 3450,
+      top: 2750,
+      bottom: -2100,
+      near: 1500,
+      far: 6000
+    },
+    /*
+     * 正交阴影相机深度线性，bias × (far − near) ≈ 沿光线方向的米数：
+     * -0.0001 × 4500 ≈ 0.45 m，足以消除阴影痤疮，又不会让矮楼阴影与墙根脱开（漂浮感）。
+     * normalBias 沿法线偏移（米），处理掠射角的条纹
+     */
+    shadowBias: -0.0001,
+    shadowNormalBias: 1
   },
 
   /* ---- 景点标注 ---- */

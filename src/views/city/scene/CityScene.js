@@ -60,23 +60,32 @@ export class CityScene {
     this.onViewChange = options.onViewChange || (() => {})
     this.lastView = { heading: NaN, scaleMeters: NaN }
 
-    this.project = createProjection(this.geometry.meta.origin)
-    // 景点补上局部坐标
-    this.spots = options.spots.map((s) => {
-      const [x, z] = this.project.toLocal(s.lon, s.lat)
-      return { ...s, x, z }
-    })
+    // 构造中途失败（如 WebGL 上下文创建失败、数据异常）时，
+    // 已创建的 GPU 资源与事件监听要先释放再抛出，由页面显示降级提示
+    try {
+      this.project = createProjection(this.geometry.meta.origin)
+      // 景点补上局部坐标
+      this.spots = options.spots.map((s) => {
+        const [x, z] = this.project.toLocal(s.lon, s.lat)
+        return { ...s, x, z }
+      })
 
-    this._initRenderer()
-    this._initScene()
-    this._buildCity()
-    this._initTour(options)
-    this._initEvents()
+      this._initRenderer()
+      this._initScene()
+      this._buildCity()
+      this._initTour(options)
+      this._initEvents()
 
-    // three r186 起 Clock 已弃用，改用 Timer：每帧先 update(时间戳) 再取 delta
-    this.timer = new Timer()
-    this._loop = this._loop.bind(this)
-    this.frameId = requestAnimationFrame(this._loop)
+      // three r186 起 Clock 已弃用，改用 Timer：每帧先 update(时间戳) 再取 delta。
+      // connect(document) 让 Timer 在页面切回前台时重置，后台期间不累计时间
+      this.timer = new Timer()
+      this.timer.connect(document)
+      this._loop = this._loop.bind(this)
+      this.frameId = requestAnimationFrame(this._loop)
+    } catch (err) {
+      this.dispose()
+      throw err
+    }
   }
 
   _initRenderer() {
@@ -113,16 +122,20 @@ export class CityScene {
     this.scene.add(
       new HemisphereLight(L.hemiSky, L.hemiGround, L.hemiIntensity)
     )
+    // 保留太阳光引用：释放时要调用 sun.dispose() 回收阴影贴图
     const sun = new DirectionalLight(L.sun, L.sunIntensity)
+    this.sun = sun
     sun.position.set(...L.sunPosition)
     sun.castShadow = true
     sun.shadow.mapSize.set(L.shadowMapSize, L.shadowMapSize)
     // 阴影正交范围要覆盖整个城区，小了会出现阴影被截断的硬边；改完范围要刷新投影矩阵
     Object.assign(sun.shadow.camera, L.shadowBox)
     sun.shadow.camera.updateProjectionMatrix()
-    sun.shadow.bias = -0.0005
-    sun.shadow.normalBias = 1.5
+    // 偏移量见 theme.light.shadowBias / shadowNormalBias 的注释
+    sun.shadow.bias = L.shadowBias
+    sun.shadow.normalBias = L.shadowNormalBias
     this.scene.add(sun)
+    // 平行光朝向 target；target 需在场景中才会更新 matrixWorld，否则阴影方向不对
     this.scene.add(sun.target)
   }
 
@@ -142,11 +155,22 @@ export class CityScene {
     this.trees = createTrees(d, this.materials, this.theme)
     this.root.add(this.trees.group)
 
-    this.markers = createMarkers(this.spots, this.materials, this.theme)
+    // 传入楼栋：落点压在楼上时，落点球放到楼顶，避免被楼体吞没
+    this.markers = createMarkers(
+      this.spots,
+      this.materials,
+      this.theme,
+      d.buildings
+    )
     this.root.add(this.markers.group)
 
     this.highlight = null
     this.bubble = null
+
+    // 场景静态、太阳固定：阴影只绘制一次，之后每帧跳过阴影通道。
+    // 选中楼体的高亮体不投射阴影，选中 / 取消时也无需重绘阴影
+    this.renderer.shadowMap.autoUpdate = false
+    this.renderer.shadowMap.needsUpdate = true
   }
 
   _initTour(options) {
@@ -169,7 +193,11 @@ export class CityScene {
         this.markers.setActive(index)
         if (options.onStopChange) options.onStopChange(index)
       },
-      onPlayingChange: options.onPlayingChange,
+      onPlayingChange: (playing) => {
+        // 巡览恢复时清掉人工选中的楼体，避免气泡跟着镜头飘到下一站
+        if (playing) this.selectBuilding(null)
+        if (options.onPlayingChange) options.onPlayingChange(playing)
+      },
       reduceMotion
     })
     this.tour.gotoStop(0, false)
@@ -184,24 +212,30 @@ export class CityScene {
     )
 
     // 区分点击与拖拽：按下与抬起位置相距超过 6px 视为拖拽，不触发拾取
+    // 记录按下的指针编号，只有同一指针抬起才算点击（多指触摸时互不干扰）
     this._downAt = null
     this._onDown = (e) => {
       // 只认主键（左键 / 单指），右键与中键不触发拾取
       if (e.button !== 0) return
-      this._downAt = [e.clientX, e.clientY]
+      this._downAt = { x: e.clientX, y: e.clientY, id: e.pointerId }
     }
     this._onUp = (e) => {
-      if (!this._downAt) return
+      if (!this._downAt || e.pointerId !== this._downAt.id) return
       const moved = Math.hypot(
-        e.clientX - this._downAt[0],
-        e.clientY - this._downAt[1]
+        e.clientX - this._downAt.x,
+        e.clientY - this._downAt.y
       )
       this._downAt = null
       if (moved > 6) return
       this.selectBuilding(this.pick(e))
     }
+    // 指针被系统取消（触摸被手势打断等）时作废本次按下，避免之后误判为点击
+    this._onCancel = (e) => {
+      if (this._downAt && e.pointerId === this._downAt.id) this._downAt = null
+    }
     this.canvas.addEventListener("pointerdown", this._onDown)
     this.canvas.addEventListener("pointerup", this._onUp)
+    this.canvas.addEventListener("pointercancel", this._onCancel)
 
     // 页面切到后台时停渲染，避免大屏长时间挂起仍空耗 GPU
     this._onVisibility = () => {
@@ -262,6 +296,9 @@ export class CityScene {
 
   _resize() {
     const { width, height } = this._size()
+    // 缓存尺寸，每帧的比例尺计算直接读缓存，避免逐帧 getBoundingClientRect 触发布局
+    this.width = width
+    this.height = height
     this.renderer.setSize(width, height, false)
     this.labelRenderer.setSize(width, height)
     if (this.camera) {
@@ -290,12 +327,15 @@ export class CityScene {
   /** 视角变化时通知页面（指北针与比例尺），变化很小则不通知 */
   _emitView() {
     const heading = this.tour.getHeading()
-    const { height } = this._size()
-    // 注视点处 100px 对应的米数
+    // 注视点处每个屏幕像素对应的米数
     const metersPerPx =
       (2 * this.tour.getDistance() * Math.tan((this.camera.fov / 2) * DEG)) /
-      height
-    const scaleMeters = Math.round(metersPerPx * 100)
+      this.height
+    // 比例尺条在设计稿里宽 100px，但构建时被 pxtorem 换成 rem（rootValue 192），
+    // 运行时 amfe-flexible 令 1rem = 视口宽 / 10，实际屏幕宽度 = 100 × 视口宽 / 1920。
+    // 这里按实际屏幕像素换算，比例尺数字才与条长一致
+    const designPx = 100 * (document.documentElement.clientWidth / 1920)
+    const scaleMeters = Math.round(metersPerPx * designPx)
     const last = this.lastView
     if (
       Math.abs(heading - last.heading) < 0.5 &&
@@ -311,36 +351,51 @@ export class CityScene {
     this.frameId = requestAnimationFrame(this._loop)
     if (!this.visible) return
 
-    // 后台期间不 update，切回前台第一帧 delta 会很大，夹到 50ms 防止镜头跳变
     this.timer.update(timestamp)
-    const dt = Math.min(this.timer.getDelta(), 0.05)
+    // 上限 0.25 s 只防卡顿后镜头跳变：低帧率机器上 0.05 的上限会让巡览按真实时间的几分之一播放；
+    // 下限 0 防止时间戳回退得到负值
+    const dt = Math.max(0, Math.min(this.timer.getDelta(), 0.25))
     this.tour.update(dt)
     this._emitView()
     this.renderer.render(this.scene, this.camera)
     this.labelRenderer.render(this.scene, this.camera)
   }
 
-  /** 释放全部资源，页面卸载时必须调用 */
+  /**
+   * 释放全部资源，页面卸载时必须调用。
+   * 构造中途失败时也会调用，因此每项资源都可能不存在，逐项判空。
+   */
   dispose() {
     this.disposed = true
-    cancelAnimationFrame(this.frameId)
+    if (this.frameId) cancelAnimationFrame(this.frameId)
 
-    this.canvas.removeEventListener("pointerdown", this._onDown)
-    this.canvas.removeEventListener("pointerup", this._onUp)
-    document.removeEventListener("visibilitychange", this._onVisibility)
+    const canvas = this.canvas
+    if (canvas && this._onDown) {
+      canvas.removeEventListener("pointerdown", this._onDown)
+      canvas.removeEventListener("pointerup", this._onUp)
+      canvas.removeEventListener("pointercancel", this._onCancel)
+    }
+    if (this._onVisibility) {
+      document.removeEventListener("visibilitychange", this._onVisibility)
+    }
     if (this.resizeObserver) this.resizeObserver.disconnect()
-    else window.removeEventListener("resize", this._onResize)
+    else if (this._onResize)
+      window.removeEventListener("resize", this._onResize)
 
-    this.selectBuilding(null)
-    this.tour.dispose()
-    this.markers.dispose()
-    this.trees.dispose()
-    this.buildings.dispose()
-    this.scene.traverse((obj) => {
+    if (this.root) this.selectBuilding(null)
+    this.tour?.dispose()
+    this.markers?.dispose()
+    this.trees?.dispose()
+    this.buildings?.dispose()
+    this.scene?.traverse((obj) => {
       if (obj.geometry) obj.geometry.dispose()
     })
-    this.materials.dispose()
-    this.timer.dispose()
-    this.renderer.dispose()
+    this.materials?.dispose()
+    this.timer?.dispose()
+    // 释放阴影贴图（渲染目标），再释放渲染器并主动丢弃 WebGL 上下文：
+    // 浏览器同时存活的上下文数量有限，反复进出页面不释放会挤掉旧上下文
+    this.sun?.dispose()
+    this.renderer?.dispose()
+    this.renderer?.forceContextLoss()
   }
 }
