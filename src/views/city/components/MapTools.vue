@@ -39,7 +39,7 @@
     <button
       type="button"
       :title="playing ? '暂停巡览' : '开始巡览'"
-      :aria-label="playing ? '暂停巡览' : '开始巡览'"
+      aria-label="自动巡览"
       :aria-pressed="playing"
       :class="{ on: playing }"
       @click="emit('toggle-play')"

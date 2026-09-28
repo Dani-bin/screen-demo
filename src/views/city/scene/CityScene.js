@@ -244,6 +244,15 @@ export class CityScene {
     this.canvas.addEventListener("pointerup", this._onUp)
     this.canvas.addEventListener("pointercancel", this._onCancel)
 
+    // GPU 重置后上下文恢复：three.js 会重建 GPU 资源，但静态阴影需要重绘一次
+    this._onContextRestored = () => {
+      this.renderer.shadowMap.needsUpdate = true
+    }
+    this.canvas.addEventListener(
+      "webglcontextrestored",
+      this._onContextRestored
+    )
+
     // 页面切到后台时停渲染，避免大屏长时间挂起仍空耗 GPU
     this._onVisibility = () => {
       this.visible = !document.hidden
@@ -306,6 +315,8 @@ export class CityScene {
     // 缓存尺寸，每帧的比例尺计算直接读缓存，避免逐帧 getBoundingClientRect 触发布局
     this.width = width
     this.height = height
+    // 视口宽度同样缓存，供比例尺把设计稿 px 换算成屏幕 px
+    this.viewportWidth = document.documentElement.clientWidth
     this.renderer.setSize(width, height, false)
     this.labelRenderer.setSize(width, height)
     if (this.camera) {
@@ -341,7 +352,7 @@ export class CityScene {
     // 比例尺条在设计稿里宽 100px，但构建时被 pxtorem 换成 rem（rootValue 192），
     // 运行时 amfe-flexible 令 1rem = 视口宽 / 10，实际屏幕宽度 = 100 × 视口宽 / 1920。
     // 这里按实际屏幕像素换算，比例尺数字才与条长一致
-    const designPx = 100 * (document.documentElement.clientWidth / 1920)
+    const designPx = 100 * (this.viewportWidth / 1920)
     const scaleMeters = Math.round(metersPerPx * designPx)
     const last = this.lastView
     if (
@@ -381,6 +392,12 @@ export class CityScene {
       canvas.removeEventListener("pointerdown", this._onDown)
       canvas.removeEventListener("pointerup", this._onUp)
       canvas.removeEventListener("pointercancel", this._onCancel)
+    }
+    if (canvas && this._onContextRestored) {
+      canvas.removeEventListener(
+        "webglcontextrestored",
+        this._onContextRestored
+      )
     }
     if (this._onVisibility) {
       document.removeEventListener("visibilitychange", this._onVisibility)
