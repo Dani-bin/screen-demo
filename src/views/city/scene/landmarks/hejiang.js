@@ -8,6 +8,8 @@
  *      桥面上两层红柱木廊、灰瓦歇山顶，中部与两端楼阁高出一层；
  *   3. 锦江上一艘游船（红船身、黄顶棚），沿河中心线来回缓慢漂移（单独 Mesh、不投影）。
  * 另在亭子与桥头的陆地上补几棵低多边形树。
+ * 返回 walkways（步行路径，人群系统到站时生成行人）：亭子一侧的南河北岸步道、
+ * 廊桥两段长廊下的桥面边道、合江亭台基上绕双亭的一圈环路。游船在河面上动，路径一律不下水。
  *
  * 定位：OSM 数据里合江亭没有名称、安顺廊桥不在建筑数据中（桥不是 building），
  * 先按名称查楼，查不到时按设计坐标与朝向放置（见 PAVILION / BRIDGE 常量）。
@@ -91,6 +93,31 @@ const HOLES = [
 ]
 const RAMP = { len: 16, w: 11, footH: 0.8 } // 桥头引坡
 const COPING = 0.5 // 桥面压面石厚度：石桥体只挤出到 DECK_H − COPING，桥面顶面归压面石
+
+/* ---------------- 步行路径（人群用，见 crowd.js） ---------------- */
+
+// 台基环路：亭子组坐标系 fs 的局部坐标（真实尺寸，放大在坐标系上）里的圆角矩形，
+// 夹在双亭台座与台基栏杆（放大后高 1.6 m）之间。六角台座的尖角正对长边，
+// 尖角处净宽只剩约 1 m，故可走宽度取 0.6 m（世界米）；路面 = 台基顶（TERRACE.h × PAV_SCALE）
+const TERRACE_WALK = { x: 9.3, z: 5.78, r: 1.2, width: 0.6, density: 3.5 }
+// 廊桥桥面：木廊芯体是实心的，只能走柱列与桥面石栏之间的边道。中部、两端楼阁的
+// 二层腰檐伸到边道上方、离桥面只有约 3.9 m，小人（身高 4 m）会顶到檐口，
+// 故只取两段长廊（腰檐出檐短）下的边道：桥坐标系 |x| ∈ [9.6, 27]、z = ±5.6，
+// 四段各自走到端点折返。路面 = 压面石顶 DECK_H
+const DECK_WALK = { x0: 9.6, x1: 27, z: 5.6, width: 0.4, density: 5 }
+// 河岸步道：亭子西北、南河北岸的空地（城市地面 y = 0），离水边约 4 m，
+// 从上游一路走到台基西侧；fp 局部坐标（未放大），按水面、河道带、邻楼与通用树核对过
+const RIVERSIDE = {
+  points: [
+    [-115, -124.3],
+    [-100, -106.7],
+    [-70, -71.5],
+    [-45, -42],
+    [-22.5, -16]
+  ],
+  width: 2.4,
+  density: 3.5
+}
 
 // 亭西北侧那栋无名小楼的轮廓中心（OSM 顶点平均点，经纬度）
 const NEIGHBOUR = { lon: 104.08076, lat: 30.645537 }
@@ -608,6 +635,57 @@ export function build(ctx) {
   boat.position.set(cx, boatY, cz)
   meshes.push(boat)
 
+  // 步行路径（世界坐标）：局部点经各自坐标系矩阵换算（fs 含放大）
+  const wp = new Vector3()
+  const xz = (m, x, z) => {
+    wp.set(x, 0, z).applyMatrix4(m)
+    return [wp.x, wp.z]
+  }
+  // 台基环路：四角各 4 段圆弧（每段转 22.5°），不出现急转
+  const tw = TERRACE_WALK
+  const ring = []
+  const corners = [
+    [tw.x - tw.r, -tw.z + tw.r, -90],
+    [tw.x - tw.r, tw.z - tw.r, 0],
+    [-tw.x + tw.r, tw.z - tw.r, 90],
+    [-tw.x + tw.r, -tw.z + tw.r, 180]
+  ]
+  for (const [cx0, cz0, a0] of corners) {
+    for (let k = 0; k <= 4; k++) {
+      const a = ((a0 + k * 22.5) * Math.PI) / 180
+      ring.push(xz(fs, cx0 + tw.r * Math.cos(a), cz0 + tw.r * Math.sin(a)))
+    }
+  }
+  const walkways = [
+    {
+      points: RIVERSIDE.points.map(([x, z]) => xz(fp, x, z)),
+      y: 0,
+      width: RIVERSIDE.width,
+      closed: false,
+      density: RIVERSIDE.density
+    },
+    // 廊桥边道：南北两段长廊 × 东西两侧
+    ...[-1, 1].flatMap((sx) =>
+      [-1, 1].map((sz) => ({
+        points: [
+          xz(fb, sx * DECK_WALK.x0, sz * DECK_WALK.z),
+          xz(fb, sx * DECK_WALK.x1, sz * DECK_WALK.z)
+        ],
+        y: DECK_H,
+        width: DECK_WALK.width,
+        closed: false,
+        density: DECK_WALK.density
+      }))
+    ),
+    {
+      points: ring,
+      y: TERRACE.h * S,
+      width: tw.width,
+      closed: true,
+      density: tw.density
+    }
+  ]
+
   const zones = [
     rectPolygon(
       pavC.x,
@@ -624,6 +702,7 @@ export function build(ctx) {
     meshes,
     zones,
     markerHeight: pavTop,
+    walkways,
     update(t) {
       // 正弦往复：周期 60 s、振幅 60 m，端点处自然减速
       const w = (2 * Math.PI) / BOAT.period
