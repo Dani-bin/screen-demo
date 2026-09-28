@@ -34,7 +34,7 @@ export const TAGS = [
 
 /** 热门景点客流 Top5（示意值，单位：人次） */
 export const FLOW = [
-  { name: "春熙路太古里", value: 186000 },
+  { name: "春熙路·太古里", value: 186000 },
   { name: "宽窄巷子", value: 149000 },
   { name: "天府广场", value: 123000 },
   { name: "文殊院", value: 77000 },
@@ -135,7 +135,8 @@ export const SPOTS = [
       ["开放时间", "08:00–17:00"]
     ],
     image: null,
-    cam: { offset: [-460, 440, 620] }
+    // 文殊院距数据北边界仅约 440 米，相机压得更陡、更近，避免视野露出数据边缘
+    cam: { offset: [-300, 520, 420] }
   },
   {
     name: "合江亭",
