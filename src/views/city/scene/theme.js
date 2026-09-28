@@ -115,7 +115,21 @@ export const THEME = {
 
   /* ---- 景点标注 ---- */
   /* labelLift：标签锚点在落点球心上方的高度（米）：取普通球半径，锚点即球顶；标签再由 CSS 固定上抬 40px */
-  marker: { color: "#ff7a45", radius: 12, mainRadius: 18, labelLift: 12 },
+  /*
+   * 落点标注：小球悬在景点模型上方，细竖线连到模型顶，像一枚定位针。
+   * 早期落点球半径 12～18 m、直接坐在楼顶，景点换成精细模型后会盖住亭顶、熊猫、塔尖，
+   * 因此改为小球（普通 4 m、主景点 5 m）悬在 markerHeight + hover 处（球心），
+   * 竖线从 markerHeight + stemGap 画到球底，标签在球顶上方 labelLift 米。
+   */
+  marker: {
+    color: "#ff7a45",
+    radius: 4,
+    mainRadius: 5,
+    hover: 14, // 球心离底座（景点 markerHeight）的高度
+    stemRadius: 0.25,
+    stemGap: 1, // 竖线底端离底座的空隙，免得插进模型顶
+    labelLift: 4 // 标签锚点离球顶的高度
+  },
 
   /* ---- 相机与巡览 ---- */
   camera: {

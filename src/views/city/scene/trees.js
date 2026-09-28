@@ -72,8 +72,10 @@ export function createObstacleIndex(polygons, cellSize = 100) {
  * @param {object} data 几何数据（parks / rivers，可选 buildings / water 用于避让）
  * @param {object} theme
  * @param {Function} rand 返回 [0,1) 的随机函数
+ * @param {{ has: (x: number, z: number) => boolean }} [blocked] 额外的占用网格
+ *   （景点模型，见 landmarks/index.js 的 buildOccupancy），落在其中的候选点跳过
  */
-export function scatterTrees(data, theme, rand) {
+export function scatterTrees(data, theme, rand, blocked = null) {
   const t = theme.tree
   const points = []
   // 河岸树按固定距离离中心线排布，河面宽窄不一，部分会落进水面或临河楼体；
@@ -82,6 +84,9 @@ export function scatterTrees(data, theme, rand) {
     ...(data.buildings || []).map((b) => b.p),
     ...(data.water || [])
   ])
+  // 景点精细模型不在 OSM 楼里（或已替换掉原楼），另用占用网格避让：
+  // 否则亭心、碑台、茶社屋顶会长出通用树，模型被树冠淹没
+  const free = (x, z) => !obstacles.contains(x, z) && !blocked?.has(x, z)
 
   for (const poly of data.parks) {
     if (!poly || poly.length < 3) continue
@@ -91,7 +96,7 @@ export function scatterTrees(data, theme, rand) {
       t.parkMaxPerPolygon,
       Math.floor(area / t.parkAreaPerTree)
     )
-    // 包围盒内随机取点，落在多边形内且不压楼、不落水的才要；
+    // 包围盒内随机取点，落在多边形内且不压楼、不落水、不压景点模型的才要；
     // 被剔除的点也算一次失败尝试，最多尝试 4 倍次数
     for (
       let placed = 0, tries = 0;
@@ -100,7 +105,7 @@ export function scatterTrees(data, theme, rand) {
     ) {
       const x = minX + rand() * (maxX - minX)
       const z = minZ + rand() * (maxZ - minZ)
-      if (pointInPolygon(x, z, poly) && !obstacles.contains(x, z)) {
+      if (pointInPolygon(x, z, poly) && free(x, z)) {
         points.push([x, z])
         placed++
       }
@@ -119,11 +124,11 @@ export function scatterTrees(data, theme, rand) {
         const k = d / len
         const x = x1 + (x2 - x1) * k
         const z = z1 + (z2 - z1) * k
-        // 河两侧各一棵，落进楼体或水面的直接跳过
+        // 河两侧各一棵，落进楼体、水面或景点模型的直接跳过
         for (const side of [1, -1]) {
           const tx = x + nx * t.riverOffset * side
           const tz = z + nz * t.riverOffset * side
-          if (!obstacles.contains(tx, tz)) points.push([tx, tz])
+          if (free(tx, tz)) points.push([tx, tz])
         }
       }
     }
@@ -132,12 +137,16 @@ export function scatterTrees(data, theme, rand) {
 }
 
 /**
+ * @param {object} data 几何数据
+ * @param {object} materials createMaterials 的结果（foliage / trunk）
+ * @param {object} theme
+ * @param {{ has: (x: number, z: number) => boolean }} [blocked] 景点占用网格，见 scatterTrees
  * @returns {{ group: Group, count: number, dispose: Function }}
  */
-export function createTrees(data, materials, theme) {
+export function createTrees(data, materials, theme, blocked = null) {
   const t = theme.tree
   const rand = mulberry32(t.seed)
-  const points = scatterTrees(data, theme, rand)
+  const points = scatterTrees(data, theme, rand, blocked)
 
   const crownGeo = new IcosahedronGeometry(1, 1)
   const trunkGeo = new CylinderGeometry(0.9, 1.2, 1, 6)
