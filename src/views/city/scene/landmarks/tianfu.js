@@ -34,6 +34,7 @@ import { addBalustrade, addPlatform } from "./kit/parts.js"
 import { addSunbirdDisc, addTotem } from "./kit/figures.js"
 import { THEME } from "../theme.js"
 import { polygonBounds } from "../utils.js"
+import { GROUND_Y } from "../terrain.js"
 
 const NEAR = 400 // 按名称查楼的搜索半径（米）
 const L = THEME.landmark
@@ -282,11 +283,13 @@ const LAWNS = [
  */
 const WALK_W = [
   {
+    // 宽 4.2：东端（x 102～105）北侧是北边草带的一个凸角，南沿 z = -78 离中线仅 3 m，
+    // 可走半宽 + 身体半径 0.8 须小于 3，宽 5 时贴边小人的身体会擦进草坪
     points: [
       [-138, -75],
       [106, -75]
     ],
-    width: 5,
+    width: 4.2,
     density: 1.5
   },
   {
@@ -334,18 +337,12 @@ const WALK_W = [
 ]
 // 金盘外环：盘半径 27，环中线 29.5、宽 2（外缘 30.5 离下沉广场栏杆约 1 m）
 const RING = { r: 29.5, width: 2, density: 2 }
-// 下沉广场环路：半径 12（内侧离螺旋雕塑飘带 ≥ 3.5 m，外侧离台阶 ≥ 3.9 m）。
-// 路面高度取实际露出的面：外沿低台阶是一整块实心圆角矩形（没有挖洞），顶面 CURB_H
-// 盖住了坑底 SUNKEN.floor 与下面两级台阶，下沉广场里看到的地面其实是 CURB_H
-const SUNKEN_RING = {
-  r: 12,
-  width: 3,
-  density: 1.5,
-  y: Math.max(SUNKEN.floor, CURB_H)
-}
-// 科技馆前南北轴线（毛主席像北侧、科技馆正门以南的空地，地面高度 -0.5）：
+// 下沉广场环路：半径 12，走在坑底 SUNKEN.floor 上
+// （内侧离螺旋雕塑飘带 ≥ 3.5 m，外侧离台阶 ≥ 3.9 m）
+const SUNKEN_RING = { r: 12, width: 3, density: 1.5, y: SUNKEN.floor }
+// 科技馆前南北轴线（毛主席像北侧、科技馆正门以南的空地，直接露出 terrain 地面）：
 // 由科技馆正门前 5 m 走到像的台基北沿外 7 m，x 相对像中心
-const AXIS = { z0: -75, z1: -33, width: 8, density: 1.5, y: -0.5 }
+const AXIS = { z0: -75, z1: -33, width: 8, density: 1.5, y: GROUND_Y }
 
 /* ---------------- 本景点专用色 ---------------- */
 
@@ -443,10 +440,19 @@ function strut(b, parent, a, c, r0, r1, color) {
  */
 function buildSquare(b, jets, f) {
   const { w, d, r } = SQUARE
-  // 外沿低台阶：整块圆角矩形外扩 1.5 m，顶面 CURB_H
+  // 外沿低台阶：整块圆角矩形外扩 1.5 m，顶面 CURB_H。
+  // 必须在下沉广场处挖洞：否则这块实心板的顶面（1.0）会盖住坑底 SUNKEN.floor（0.3）
+  // 和下面两级台阶，下沉广场看上去只下沉约 0.5 m。洞口与铺装洞口、坑底外缘
+  // 用同一个圆（同中心、半径、分段数），洞壁完全藏在最高一级台阶里，不露缝
   const g = roundedRectHalves(w, d, r, CURB_W)
+  const sunkenHole = circlePolygon(SUNKEN.x, SUNKEN.z, SUNKEN.r, 48)
   b.add(
-    extrudePolygon([...g.west, ...g.east.slice(1, -1)], [], 0, CURB_H),
+    extrudePolygon(
+      [...g.west, ...g.east.slice(1, -1)],
+      [sunkenHole],
+      0,
+      CURB_H
+    ),
     C.curb,
     f
   )
@@ -462,9 +468,13 @@ function buildSquare(b, jets, f) {
   // 西半：外轮廓（南中点 → 西侧 → 北中点）+ 分界线（北 → 南）
   b.add(extrudePolygon([...half.west, ...inner], [], 0, PAVE), C.paveWest, f)
   // 东半：外轮廓（北中点 → 东侧 → 南中点）+ 分界线（南 → 北），挖出下沉广场
-  const hole = circlePolygon(SUNKEN.x, SUNKEN.z, SUNKEN.r, 48)
   b.add(
-    extrudePolygon([...half.east, ...inner.slice().reverse()], [hole], 0, PAVE),
+    extrudePolygon(
+      [...half.east, ...inner.slice().reverse()],
+      [sunkenHole],
+      0,
+      PAVE
+    ),
     C.paveEast,
     f
   )
