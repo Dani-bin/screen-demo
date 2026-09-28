@@ -46,9 +46,24 @@
 
     <Compass :heading="view.heading" :scale-meters="view.scaleMeters" />
 
+    <!-- 第二行随巡览状态切换；空闲秒数取自 THEME.tour.idle，与巡览逻辑同源 -->
     <div class="operate-hint">
       拖动旋转 · 滚轮缩放 · 点击楼体查看<br />
-      景点自动巡览中，<em>15s</em> 无操作自动恢复
+      <template v-if="playing">景点自动巡览中</template>
+      <template v-else>
+        已接管，<em>{{ idleSeconds }}s</em> 无操作后自动恢复巡览
+      </template>
+    </div>
+
+    <!-- OpenStreetMap 数据按 ODbL 协议使用，必须保留署名 -->
+    <div class="osm-credit">
+      地图数据 ©
+      <a
+        href="https://www.openstreetmap.org/copyright"
+        target="_blank"
+        rel="noopener"
+        >OpenStreetMap contributors</a
+      >
     </div>
 
     <div v-if="loading" class="scene-loading">城市场景构建中</div>
@@ -67,6 +82,10 @@
   import MapTools from "./components/MapTools.vue"
   import Compass from "./components/Compass.vue"
   import screenfull from "screenfull"
+  import { THEME } from "./scene/theme"
+
+  /** 人工接管后恢复巡览的空闲秒数，供操作提示显示 */
+  const idleSeconds = THEME.tour.idle
 
   const pageRef = ref(null)
   const canvasRef = ref(null)
@@ -189,7 +208,7 @@
       })
     } catch (err) {
       console.error(err)
-      error.value = "当前浏览器不支持三维展示"
+      error.value = "三维场景初始化失败"
       loading.value = false
       return
     }
@@ -302,6 +321,29 @@
       font-style: normal;
       font-weight: 600;
       color: var(--city-teal);
+    }
+  }
+
+  /* OSM 署名：操作提示下方的一行小字，不与其他控件重叠；半透明白底保证压在地图上也看得清 */
+  .osm-credit {
+    position: absolute;
+    left: 28px;
+    bottom: 8px;
+    z-index: 4;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.72);
+    font-size: 11px;
+    line-height: 14px;
+    color: var(--city-ink-soft);
+
+    a {
+      color: inherit;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
     }
   }
 </style>
