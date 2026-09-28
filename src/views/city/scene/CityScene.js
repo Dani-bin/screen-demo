@@ -326,10 +326,13 @@ export class CityScene {
   }
 
   /* ---- 供页面调用的接口 ---- */
+  /* 手动飞往景点 / 总览时先取消选中楼体，避免气泡留在原地而镜头已飞走 */
   gotoStop(index) {
+    this.selectBuilding(null)
     this.tour.gotoStop(index, true)
   }
   gotoOverview() {
+    this.selectBuilding(null)
     this.tour.gotoOverview()
   }
   zoomIn() {

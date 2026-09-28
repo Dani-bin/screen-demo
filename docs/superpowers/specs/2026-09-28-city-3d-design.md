@@ -201,6 +201,7 @@ scripts/fetch-osm-city.py     从 Overpass 拉取并预处理成上述 JSON；�
   场景未就绪时显示「—」
 - **错误态**：提示层不再用不透明底色遮住整页，层级压到面板之下，几何数据失败时面板照常可见。
   开发服务器对缺失的静态文件回退 `index.html`（HTTP 200），此时报的是 JSON 解析错误而非 404，同样走降级提示
+- **OSM 署名**：按 ODbL 要求在页面左下角操作提示下方加「地图数据 © OpenStreetMap contributors」，链接到版权页
 - **ESLint**：修复 flat config，补上 auto-import 的全局变量声明；
   `yarn lint:eslint` 带 `--fix` 会改动历史文件，城市页单独用
   `npx eslint --max-warnings 0 "src/views/city/**/*.{vue,js}"`
