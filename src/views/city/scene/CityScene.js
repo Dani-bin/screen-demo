@@ -171,7 +171,13 @@ export class CityScene {
     )
     this.root.add(this.buildings.mesh)
 
-    this.trees = createTrees(d, this.materials, this.theme)
+    // 通用树避开景点模型：用景点注册表生成的占用网格（模型三角形投影 + 替换区）
+    this.trees = createTrees(
+      d,
+      this.materials,
+      this.theme,
+      this.landmarks.occupancy
+    )
     this.root.add(this.trees.group)
 
     // 景点模型给了底座高度（markerHeight > 0）就直接用；否则按楼栋估算：

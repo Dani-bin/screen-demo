@@ -9,9 +9,14 @@
  * 景点动画件（游船、喷泉等）一律不投影——模块给这类 Mesh 设
  * userData.animated = true，注册表据此令其 castShadow = false（仍接收阴影）；
  * 其余 Mesh 一律投影并接收阴影。
+ *
+ * 占用网格：城市通用树（trees.js）只避让 OSM 楼与水面，不认识景点模型，
+ * 会从亭心、碑台、茶社屋顶里长出来。createLandmarks 把全部景点 Mesh 的
+ * 三角形投影到地面，生成 4 m 网格的占用集合 occupancy，供撒树时跳过。
  */
-import { Group } from "three"
+import { Group, Matrix4, Vector3 } from "three"
 import { buildingsInZones } from "./kit/footprint.js"
+import { pointInPolygon, polygonBounds } from "../utils.js"
 import { build as tianfu } from "./tianfu.js"
 import { build as taikooli } from "./taikooli.js"
 import { build as ifs } from "./ifs.js"
@@ -74,6 +79,122 @@ function disposeMaterial(material, textures) {
   material.dispose()
 }
 
+/* ---------------- 占用网格 ---------------- */
+
+// 网格边长（米）：约等于通用树树冠直径的一半，4 m 精度足以贴着模型边缘种树
+const OCC_CELL = 4
+// 顶点高于此值的三角形才算「实体」：铺装、台基顶面（≤ 1.0 m，见速查「地面分层」）
+// 不挡树，否则整片广场、巷道铺装都会被当成障碍
+const OCC_MIN_Y = 1.2
+// 向外膨胀的格数：通用树树冠半径 7～12 m（theme.tree.crownMin + crownVar）。
+// 膨胀 3 格保证树心离模型实体至少 12 m，最大的树冠也碰不到模型；
+// 只膨胀 2 格（8 m）时，鹤鸣茶社牌坊外 12.5 m 仍留有一棵树，大树冠会擦到模型
+const OCC_GROW = 3
+const IDENTITY = new Matrix4()
+
+/**
+ * 由景点 Mesh 与替换区生成占用网格。
+ * - Mesh：逐个三角形（按 matrixWorld 换到世界坐标）检查，任一顶点 y > OCC_MIN_Y 时，
+ *   它的 XZ 包围盒覆盖到的格子记为实体格，全部实体格再统一向外膨胀 OCC_GROW 格；
+ *   用包围盒而非精确光栅化：斜长三角形会多占几格，对「树别压模型」而言宁多勿少。
+ * - zones：格子中心落在替换区多边形内的格子全部占用（不再膨胀，替换区本身已含余量）。
+ * @param {THREE.Object3D[]} roots 景点模块返回的顶层对象（可含子节点）
+ * @param {Array} zones 世界坐标多边形数组
+ * @returns {{ cell: number, size: number, has: (x: number, z: number) => boolean }}
+ */
+export function buildOccupancy(roots, zones) {
+  // 格子键用小整数 (ix + OFF) · 2^13 + (iz + OFF)（加偏移保证非负）：
+  // 比字符串键快一个数量级，且结果 < 2^26，始终是 V8 的小整数（不装箱）。
+  // OFF = 4096 格 = ±16 km，城市数据范围约 ±3.5 km，绰绰有余
+  const OFF = 1 << 12
+  const key = (ix, iz) => ((ix + OFF) << 13) | (iz + OFF)
+  const raw = new Set() // 未膨胀的实体格
+  const cells = new Set() // 最终占用格
+  const v = new Vector3()
+  for (const root of roots) {
+    root.updateMatrixWorld(true)
+    root.traverse((mesh) => {
+      if (!mesh.isMesh || !mesh.geometry?.attributes.position) return
+      const pos = mesh.geometry.attributes.position
+      const index = mesh.geometry.index?.array
+      const n = index ? index.length : pos.count
+      // 顶点换到世界坐标，三角形逐个取用（有索引时顶点会被多次引用）；
+      // 合批器烘焙出的几何体本身就是世界坐标（matrixWorld 为单位阵），直接读原数组
+      let world = pos.array
+      if (
+        !mesh.matrixWorld.equals(IDENTITY) ||
+        pos.isInterleavedBufferAttribute ||
+        pos.itemSize !== 3
+      ) {
+        world = new Float32Array(pos.count * 3)
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld)
+          world[i * 3] = v.x
+          world[i * 3 + 1] = v.y
+          world[i * 3 + 2] = v.z
+        }
+      }
+      for (let t = 0; t + 2 < n; t += 3) {
+        let minX = Infinity
+        let maxX = -Infinity
+        let minZ = Infinity
+        let maxZ = -Infinity
+        let solid = false
+        for (let k = 0; k < 3; k++) {
+          const i = (index ? index[t + k] : t + k) * 3
+          const x = world[i]
+          const z = world[i + 2]
+          if (world[i + 1] > OCC_MIN_Y) solid = true
+          if (x < minX) minX = x
+          if (x > maxX) maxX = x
+          if (z < minZ) minZ = z
+          if (z > maxZ) maxZ = z
+        }
+        if (!solid) continue
+        const ix1 = Math.floor(maxX / OCC_CELL)
+        const iz1 = Math.floor(maxZ / OCC_CELL)
+        for (let ix = Math.floor(minX / OCC_CELL); ix <= ix1; ix++) {
+          for (let iz = Math.floor(minZ / OCC_CELL); iz <= iz1; iz++) {
+            raw.add(key(ix, iz))
+          }
+        }
+      }
+    })
+  }
+  // 实体格统一向外膨胀 OCC_GROW 格（正方形膨胀）；先去重再膨胀，
+  // 比逐个三角形外扩包围盒少做绝大部分重复标记
+  for (const k of raw) {
+    const ix = (k >> 13) - OFF
+    const iz = (k & 8191) - OFF
+    for (let dx = -OCC_GROW; dx <= OCC_GROW; dx++) {
+      for (let dz = -OCC_GROW; dz <= OCC_GROW; dz++) {
+        cells.add(key(ix + dx, iz + dz))
+      }
+    }
+  }
+  for (const poly of zones) {
+    if (!poly || poly.length < 3) continue
+    const b = polygonBounds(poly)
+    const ix1 = Math.floor(b.maxX / OCC_CELL)
+    const iz1 = Math.floor(b.maxZ / OCC_CELL)
+    for (let ix = Math.floor(b.minX / OCC_CELL); ix <= ix1; ix++) {
+      for (let iz = Math.floor(b.minZ / OCC_CELL); iz <= iz1; iz++) {
+        // 以格子中心判断是否在区内
+        const cx = (ix + 0.5) * OCC_CELL
+        const cz = (iz + 0.5) * OCC_CELL
+        if (pointInPolygon(cx, cz, poly)) cells.add(key(ix, iz))
+      }
+    }
+  }
+  return {
+    cell: OCC_CELL,
+    size: cells.size,
+    has(x, z) {
+      return cells.has(key(Math.floor(x / OCC_CELL), Math.floor(z / OCC_CELL)))
+    }
+  }
+}
+
 /**
  * 构建单个景点（lab 预览页用）。
  * 模块不存在时返回空结果；构建出错直接抛出，便于预览页显示错误。
@@ -98,6 +219,7 @@ export function buildLandmark(name, ctx) {
  *   excluded: Set<number>,      被景点替换区覆盖、不再画通用楼的楼栋索引
  *   markerHeights: number[],    各景点落点球底座高度，0 表示由 markers.js 自行估算
  *   pickables: Map<Mesh, number>, Mesh → 景点索引，供射线拾取
+ *   occupancy: { has(x, z) },   景点模型与替换区的占用网格，撒通用树时跳过（见 buildOccupancy）
  *   update: (t: number) => void, t 为累计秒数
  *   dispose: () => void
  * }}
@@ -137,12 +259,15 @@ export function createLandmarks({ geometry, spots, theme, project }) {
   })
 
   const excluded = buildingsInZones(buildings, zones)
+  // 景点 Mesh 此时都在 group 里，统一生成占用网格（含动画件的初始位置）
+  const occupancy = buildOccupancy(group.children, zones)
 
   return {
     group,
     excluded,
     markerHeights,
     pickables,
+    occupancy,
     update(t) {
       // 按景点顺序依次推进；动画出错时停用该景点的动画，
       // 避免每帧抛错打断渲染循环、刷屏报错

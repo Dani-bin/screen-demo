@@ -1,11 +1,13 @@
 /*
- * 景点标注：落点球 + HTML 标签
+ * 景点标注：悬浮定位针（小球 + 细竖线）+ HTML 标签
  * ----------------------------------------------------------
+ * 小球悬在景点模型（或所压楼顶）上方 theme.marker.hover 米，细竖线连到底座，
+ * 不再压住精细模型的亭顶、熊猫、塔尖（尺寸说明见 theme.js 的 marker 段）。
  * 标签用 CSS2DObject 挂在三维坐标上，由 CSS2DRenderer 换算成屏幕位置，
  * 样式在页面 index.vue 的非 scoped 样式里定义（.city-label）。
  */
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js"
-import { Group, Mesh, SphereGeometry } from "three"
+import { CylinderGeometry, Group, Mesh, SphereGeometry } from "three"
 import { pointInPolygon, polygonBounds } from "./utils.js"
 
 /** 点 (px, pz) 到线段 (ax, az)-(bx, bz) 的最短距离 */
@@ -76,23 +78,38 @@ export function createMarkers(
   const group = new Group()
   const labels = []
   const bases = []
+  const mk = theme.marker
   // 所有落点球只有两种尺寸：首个景点（主景点）用大球，其余共用小球
-  const mainGeo = new SphereGeometry(theme.marker.mainRadius, 24, 16)
-  const normalGeo = new SphereGeometry(theme.marker.radius, 24, 16)
+  const mainGeo = new SphereGeometry(mk.mainRadius, 24, 16)
+  const normalGeo = new SphereGeometry(mk.radius, 24, 16)
+  // 竖线：单位高度的细圆柱，底面在 y = 0，每根按长度纵向缩放
+  const stemGeo = new CylinderGeometry(mk.stemRadius, mk.stemRadius, 1, 8)
+  stemGeo.translate(0, 0.5, 0)
 
   spots.forEach((spot, i) => {
     const main = i === 0
-    const r = main ? theme.marker.mainRadius : theme.marker.radius
-    // 景点精细模型给了底座高度就直接用；否则落点压在楼上时，球与标签整体抬到楼顶
+    const r = main ? mk.mainRadius : mk.radius
+    // 景点精细模型给了底座高度就直接用；否则落点压在楼上时，定位针整体抬到楼顶
     const base =
       baseHeights[i] > 0
         ? baseHeights[i]
         : markerBaseHeight(spot.x, spot.z, r, buildings)
     bases.push(base)
+    const cy = base + mk.hover // 球心高度
     const dot = new Mesh(main ? mainGeo : normalGeo, materials.marker)
-    dot.position.set(spot.x, base + r + 3, spot.z)
+    dot.position.set(spot.x, cy, spot.z)
     dot.castShadow = true
     group.add(dot)
+
+    // 竖线从底座上方 stemGap 画到球底；太细，投影几乎看不见，不参与阴影
+    const stemLen = cy - r - (base + mk.stemGap)
+    if (stemLen > 0) {
+      const stem = new Mesh(stemGeo, materials.marker)
+      stem.position.set(spot.x, base + mk.stemGap, spot.z)
+      stem.scale.set(1, stemLen, 1)
+      stem.castShadow = false
+      group.add(stem)
+    }
 
     // 标签文字用 textContent 写入而非 innerHTML：
     // 景点数据后续可能来自接口，避免接口文本被当作 HTML 解析（XSS）
@@ -108,7 +125,7 @@ export function createMarkers(
     // 页面 CSS 里的 transform 会被覆盖，锚点只能通过 center 设置。
     // (0.5, 1) 表示标签底边中点落在锚点上，标签整体显示在落点球正上方
     label.center.set(0.5, 1)
-    label.position.set(spot.x, base + r + 3 + theme.marker.labelLift, spot.z)
+    label.position.set(spot.x, cy + r + mk.labelLift, spot.z)
     group.add(label)
     labels.push(el)
   })
@@ -123,6 +140,7 @@ export function createMarkers(
     dispose() {
       mainGeo.dispose()
       normalGeo.dispose()
+      stemGeo.dispose()
       labels.forEach((el) => el.remove())
     }
   }
