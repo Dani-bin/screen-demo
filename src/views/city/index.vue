@@ -40,7 +40,8 @@
   /** 是否处于自动巡览状态 */
   const playing = ref(true)
   /** 视角信息：指北针方位与比例尺 */
-  const view = ref({ heading: 0, scaleMeters: 0 })
+  // 每次都整体替换对象，无需深层响应，用 shallowRef 省去代理开销
+  const view = shallowRef({ heading: 0, scaleMeters: 0 })
 
   /** 三维场景实例，不做成响应式：内部持有大量 WebGL 对象，无需被 Vue 代理 */
   let scene = null
@@ -50,6 +51,7 @@
   /** 几何数据路径：生产环境 base 为 /bi/，必须经 BASE_URL 拼接 */
   const GEOMETRY_URL = `${import.meta.env.BASE_URL}city/chengdu.json`
 
+  /** 拉取预处理好的几何数据 */
   async function fetchGeometry() {
     const res = await fetch(GEOMETRY_URL)
     if (!res.ok) throw new Error(`几何数据请求失败：HTTP ${res.status}`)
@@ -59,7 +61,10 @@
   /** 浏览器是否支持 WebGL */
   function hasWebGL() {
     const c = document.createElement("canvas")
-    return Boolean(c.getContext("webgl2") || c.getContext("webgl"))
+    const gl = c.getContext("webgl2") || c.getContext("webgl")
+    // 探测用的上下文立即丢弃，不占用浏览器有限的 WebGL 上下文名额
+    gl?.getExtension("WEBGL_lose_context")?.loseContext()
+    return Boolean(gl)
   }
 
   onMounted(async () => {
@@ -92,22 +97,30 @@
     // 等面板渲染完成、容器尺寸确定后再创建场景，避免首帧按 0 尺寸初始化
     await nextTick()
     if (!alive) return
-    scene = new CityScene({
-      canvas: canvasRef.value,
-      labelLayer: labelRef.value,
-      container: pageRef.value,
-      geometry,
-      spots: data.spots,
-      onStopChange: (index) => {
-        current.value = index
-      },
-      onPlayingChange: (value) => {
-        playing.value = value
-      },
-      onViewChange: (v) => {
-        view.value = v
-      }
-    })
+    // 构造失败（WebGL 上下文创建失败等）时 CityScene 已自行释放资源，这里只做降级提示
+    try {
+      scene = new CityScene({
+        canvas: canvasRef.value,
+        labelLayer: labelRef.value,
+        container: pageRef.value,
+        geometry,
+        spots: data.spots,
+        onStopChange: (index) => {
+          current.value = index
+        },
+        onPlayingChange: (value) => {
+          playing.value = value
+        },
+        onViewChange: (v) => {
+          view.value = v
+        }
+      })
+    } catch (err) {
+      console.error(err)
+      error.value = "当前浏览器不支持三维展示"
+      loading.value = false
+      return
+    }
     // 首帧渲染完成后再撤掉加载提示
     requestAnimationFrame(() => {
       loading.value = false
