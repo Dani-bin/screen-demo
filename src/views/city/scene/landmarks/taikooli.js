@@ -153,6 +153,118 @@ const HALLS = [
   { name: "鼓楼", wallH: 4.5 }
 ]
 
+/* ---------------- 步行路径（人群用） ---------------- */
+
+// 街区地面高度：terrain.js 的地面平面（店铺之间的空地不铺装，直接露出地面）
+const GROUND_Y = -0.5
+/*
+ * 街区内的步行街（站点坐标系 u / v，同 DISTRICTS）：取重建店铺之间空隙的中线。
+ * 由店铺墙体与出檐（含 1.8～2 m 挑檐）栅格化后的净空图寻路得到——
+ * 沿净空最大的中线走、再抽稀为折线，转角 > 45° 处已切角加点：
+ *   S1 大慈寺南侧长街（北端一小段沿寺院西南角）；S2 其东南约 45 m 的另一条长街；
+ *   S3 由 S1 拐角经中部小广场直通街区东南缘的主街；S4 街区东南部横街；
+ *   S5、S6 街区中部两条较窄的里巷（落点 Apple Store 西北两侧）；
+ *   S7 街区西南缘沿街人行道（店铺与道路路缘之间，到站机位的前景）；
+ *   另有 Apple Store 东侧小广场的环路与通往西南的一段（PLAZA_LOOP 与最后一条）。
+ * 小人不避让店铺，所以 width 只取净空的一半左右；主街人多，里巷与人行道人少。
+ */
+const STREETS = [
+  {
+    uv: [
+      [108, -105],
+      [120, -57.9],
+      [125, -54],
+      [240, -55]
+    ],
+    width: 3,
+    density: 2
+  },
+  {
+    uv: [
+      [125, -6],
+      [148, -9],
+      [248, -13]
+    ],
+    width: 3,
+    density: 2
+  },
+  {
+    uv: [
+      [119, -54],
+      [116, -43],
+      [115.2, -28],
+      [111.2, -22.8],
+      [81.8, -13.2],
+      [78.5, -8],
+      [97, 133]
+    ],
+    width: 3,
+    density: 2
+  },
+  {
+    uv: [
+      [-39, 81],
+      [-26, 74],
+      [45, 74],
+      [66, 76]
+    ],
+    width: 3,
+    density: 2
+  },
+  {
+    uv: [
+      [-6, -205],
+      [0, -131],
+      [1, -130],
+      [5, -76],
+      [9, -57],
+      [10, -24]
+    ],
+    width: 1.5,
+    density: 1.2
+  },
+  {
+    uv: [
+      [38, -146],
+      [43, -28]
+    ],
+    width: 1.5,
+    density: 1.2
+  },
+  {
+    uv: [
+      [-44, -150],
+      [-40, 143]
+    ],
+    width: 2,
+    density: 1
+  },
+  {
+    // Apple Store 东侧小广场通往西南的一段（接广场环路）
+    uv: [
+      [27, 9],
+      [18, 22],
+      [4, 28],
+      [-12, 28]
+    ],
+    width: 3,
+    density: 1.5
+  }
+]
+// Apple Store 东侧小广场（约 30 × 33 m 空地）里的闭合环路：中心与半径（站点坐标系）
+const PLAZA_LOOP = { u: 27, v: -3, r: 10, n: 16, width: 3, density: 2 }
+// 大慈寺中轴甬道（香客多，段又短，密度取高些）：沿山门—中轴线（院内铺装顶面 PAVE），被殿堂（含台阶与出檐，
+// 离殿台基矩形 STEP_CLEAR 米以内）与放生池隔开成若干段，每段一条来回走的路径；
+// 短于 MIN_LEN 的段不要（殿与殿挨得太近，站不下人）
+const TEMPLE_WALK = {
+  width: 4,
+  density: 3,
+  stepClear: 3.5,
+  pondClear: 1.5,
+  wallClear: 3,
+  minLen: 8
+}
+
 /* ---------------- 字库 ---------------- */
 
 const ZIKU = {
@@ -602,11 +714,62 @@ function addZiku(b, L, cx, cz) {
   )
 }
 
+/* ---------------- 步行路径 ---------------- */
+
+/**
+ * 大慈寺中轴甬道：沿院子局部 x = gx（山门中线）自山门内侧走到后墙内侧，
+ * 每 0.5 m 采样一次，落进殿堂（外扩 stepClear）或放生池（外扩 pondClear）的采样点断开，
+ * 剩下的连续段各成一条开放路径（世界坐标）。
+ * @param {object} compound 寺院（tf / W / D / tools）
+ * @param {number} gx 山门中心的局部 x
+ * @param {object[]} halls 殿堂（含 rect）
+ * @param {object} pondRect 放生池外接矩形 { cx, cz, w, d, bearing }
+ */
+function templeAxisWalks(compound, gx, halls, pondRect) {
+  const { D, tools } = compound
+  const T = TEMPLE_WALK
+  const grow = (r, m) =>
+    rectPolygon(r.cx, r.cz, r.w + 2 * m, r.d + 2 * m, r.bearing)
+  const blocks = halls.map((h) => grow(h.rect, T.stepClear))
+  if (pondRect) blocks.push(grow(pondRect, T.pondClear))
+  const z0 = D / 2 - T.wallClear
+  const z1 = -D / 2 + T.wallClear
+  const runs = []
+  let run = null
+  for (let z = z0; z >= z1; z -= 0.5) {
+    const [x, wz] = tools.toWorld([gx, z])
+    // 路面两侧边缘也要避开（殿堂矩形是斜的，只看中线不够）
+    const hit = [-T.width / 2, 0, T.width / 2].some((o) => {
+      const [px, pz] = tools.toWorld([gx + o, z])
+      return blocks.some((poly) => pointInPolygon(px, pz, poly))
+    })
+    if (hit) {
+      if (run) runs.push(run)
+      run = null
+    } else if (run) run[1] = [x, wz]
+    else
+      run = [
+        [x, wz],
+        [x, wz]
+      ]
+  }
+  if (run) runs.push(run)
+  return runs
+    .filter(([a, c]) => Math.hypot(c[0] - a[0], c[1] - a[1]) >= T.minLen)
+    .map((points) => ({
+      points,
+      y: PAVE,
+      width: T.width,
+      closed: false,
+      density: T.density
+    }))
+}
+
 /* ---------------- 主函数 ---------------- */
 
 /**
  * @param {{ project, buildings, theme, spot }} ctx
- * @returns {{ meshes: Mesh[], zones: Array, markerHeight: number }}
+ * @returns {{ meshes: Mesh[], zones: Array, markerHeight: number, walkways: Array }}
  */
 export function build(ctx) {
   const { project, buildings, theme, spot } = ctx
@@ -846,5 +1009,37 @@ export function build(ctx) {
   }
   // 落点球坐在 Apple Store 那栋楼的屋脊上；没重建时取店铺典型屋脊高度
   const markerHeight = appleTop || SHOP.eaveMax + SHOP.ridgeH
-  return { meshes, zones, markerHeight }
+
+  // 步行路径：街区步行街（站点坐标系 → 世界）+ 大慈寺中轴甬道
+  const bu = DISTRICT_BEARING * DEG
+  const uvToXZ = ([u, v]) => [
+    spot.x + u * Math.sin(bu) + v * Math.cos(bu),
+    spot.z - u * Math.cos(bu) + v * Math.sin(bu)
+  ]
+  const walkways = STREETS.map((st) => ({
+    points: st.uv.map(uvToXZ),
+    y: GROUND_Y,
+    width: st.width,
+    closed: false,
+    density: st.density
+  }))
+  const pl = PLAZA_LOOP
+  walkways.push({
+    points: Array.from({ length: pl.n }, (_, i) => {
+      const a = (i / pl.n) * Math.PI * 2
+      return uvToXZ([pl.u + Math.cos(a) * pl.r, pl.v + Math.sin(a) * pl.r])
+    }),
+    y: GROUND_Y,
+    width: pl.width,
+    closed: true,
+    density: pl.density
+  })
+  if (compound) {
+    const [plon, plat, pw, pd, pb] = POND.fb
+    const [pcx, pcz] = project.toLocal(plon, plat)
+    const t = 2 * POND.rim
+    const pondRect = { cx: pcx, cz: pcz, w: pw + t, d: pd + t, bearing: pb }
+    walkways.push(...templeAxisWalks(compound, gx, halls, pondRect))
+  }
+  return { meshes, zones, markerHeight, walkways }
 }
