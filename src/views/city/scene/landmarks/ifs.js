@@ -50,6 +50,18 @@ const CANTI_OUT = 2 // 外挑距离
 // 熊猫高度：真实雕塑高 15 m；这里放大到 20 m（插画式夸张），保证 300 m 外的站点画面里一眼可辨
 const PANDA_H = 20
 const PANDA_S = 30 // 熊猫离裙楼红星路长边北端的距离
+const PATH_W = 2.6 // 屋顶花园小径宽
+// 小径顶面：草皮顶 + 0.2（小径高 0.25、底边下沉 0.05）
+const PATH_TOP = ROOF_Y + GRASS_T + 0.2
+// 屋顶小径上的步行路径：可走宽度（小径 2.6 m 宽，两侧各留 0.7 m 给小人身体），
+// 以及离树冠边缘的最小距离（半个可走宽度 + 小人身体半径）
+const WALK_W = 1.2
+const WALK_CLEAR = 1.4
+// 红星路一侧人行道：裙楼临街立面（外挑玻璃盒最远凸出 7 m）与红星路路缘（离立面约 28 m）之间
+// 是一片没铺装的前场，露出 terrain.js 的地面（y = -0.5）。人行道中线离立面 off 米、
+// 可走宽度 width（离立面 13～23 m：熊猫垂在立面外的后腿与身体约伸出 11 m，人不从它下面走），
+// 两端各从长边端点内收 trim 米
+const SIDEWALK = { off: 18, width: 10, trim: 4, y: -0.5, density: 1.2 }
 
 /* ---------------- 配色 ---------------- */
 
@@ -347,6 +359,7 @@ function addPodium(b, pts, edges, frontEdge) {
 /**
  * 屋顶花园：沿长轴一条蜿蜒小径 + 几条横向支路，其余位置随机种小树
  * （避开塔楼、女儿墙边、熊猫所在处与小径）。
+ * @returns {Array<Array<number[]>>} 各段小径中线（世界坐标 [x, z]），供人群步行路径使用
  */
 function addRoofGarden(b, pts, rect, towerRects, panda) {
   const f = rectFrame(rect, 0, 180)
@@ -388,11 +401,15 @@ function addRoofGarden(b, pts, rect, towerRects, panda) {
     paths.push(line)
   }
   const pathPts = []
+  const runs = []
   for (const line of paths) {
     let run = []
     const flush = () => {
       // 小径高 0.25、底边下沉 0.05：顶面高出草皮 0.2 m
-      if (run.length >= 2) b.add(sweepBar(run, 2.6, 0.25), C.path)
+      if (run.length >= 2) {
+        b.add(sweepBar(run, PATH_W, 0.25), C.path)
+        runs.push(run.map(([x, , z]) => [x, z]))
+      }
       run = []
     }
     for (const [u, v] of line) {
@@ -408,6 +425,7 @@ function addRoofGarden(b, pts, rect, towerRects, panda) {
   const rnd = mulberry32(20260929)
   const greens = THEME.tree.greens
   let planted = 0
+  const trees = []
   for (let tries = 0; tries < 900 && planted < 46; tries++) {
     const u = (rnd() - 0.5) * rect.w
     const v = (rnd() - 0.5) * rect.d
@@ -427,8 +445,55 @@ function addRoofGarden(b, pts, rect, towerRects, panda) {
       greens[Math.floor(rnd() * greens.length)],
       local(null, x, y + trunkH, z, 0, 1, 1.1, 1)
     )
+    trees.push([x, z, r])
     planted++
   }
+  return clearRuns(runs, trees)
+}
+
+/**
+ * 小径中线避开树冠：树只和小径的采样点（每 6 m 一个）保持 3.2 m，
+ * 采样点之间的小径仍可能擦到树冠。把每段小径按 1 m 重采样，
+ * 离树心不足「树冠半径 + WALK_CLEAR」的点断开，剩下长于 8 m 的连续段作为步行路径。
+ * @param {Array<Array<number[]>>} runs 小径中线（世界坐标 [x, z]）
+ * @param {Array<number[]>} trees 树 [x, z, 树冠半径]
+ */
+function clearRuns(runs, trees) {
+  const out = []
+  for (const run of runs) {
+    let cur = []
+    let len = 0
+    const flush = () => {
+      if (cur.length >= 2 && len >= 8) out.push(cur)
+      cur = []
+      len = 0
+    }
+    for (let i = 0; i < run.length - 1; i++) {
+      const [ax, az] = run[i]
+      const [bx, bz] = run[i + 1]
+      const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az)))
+      // 每段的终点留给下一段做起点（最后一段含终点）
+      const last = i === run.length - 2 ? n : n - 1
+      for (let k = 0; k <= last; k++) {
+        const x = ax + ((bx - ax) * k) / n
+        const z = az + ((bz - az) * k) / n
+        const hit = trees.some(
+          ([tx, tz, r]) => Math.hypot(x - tx, z - tz) < r + WALK_CLEAR
+        )
+        if (hit) {
+          flush()
+          continue
+        }
+        if (cur.length) {
+          const [px, pz] = cur[cur.length - 1]
+          len += Math.hypot(x - px, z - pz)
+        }
+        cur.push([x, z])
+      }
+    }
+    flush()
+  }
+  return out
 }
 
 /* ---------------- 入口 ---------------- */
@@ -525,7 +590,34 @@ export function build(ctx) {
   const pandaFrame = local(ef, alongX(PANDA_S), PODIUM_H, CANTI_OUT)
   addPanda(pb, pandaFrame, { height: PANDA_H })
   const pe = pandaFrame.elements
-  addRoofGarden(b, podiumPts, podium.rect, towerRects, [pe[12], pe[14]])
+  const gardenPaths = addRoofGarden(b, podiumPts, podium.rect, towerRects, [
+    pe[12],
+    pe[14]
+  ])
+
+  // 步行路径：屋顶花园各段小径中线 + 红星路一侧人行道（与临街长边平行）
+  const walkways = gardenPaths.map((points) => ({
+    points,
+    y: PATH_TOP,
+    width: WALK_W,
+    closed: false,
+    density: 2
+  }))
+  const sw = SIDEWALK
+  const ux = (south[0] - north[0]) / frontEdge.len
+  const uz = (south[1] - north[1]) / frontEdge.len
+  const [ox, oz] = frontEdge.out
+  const along = (p, t) => [
+    p[0] + ux * t + ox * sw.off,
+    p[1] + uz * t + oz * sw.off
+  ]
+  walkways.push({
+    points: [along(north, sw.trim), along(south, -sw.trim)],
+    y: sw.y,
+    width: sw.width,
+    closed: false,
+    density: sw.density
+  })
 
   const meshes = []
   const g = b.bake()
@@ -544,6 +636,7 @@ export function build(ctx) {
     zones,
     // 定位针的底座 = 落点处的屋顶花园草皮顶面（落点在熊猫身后 20 m 的屋顶花园里）：
     // 竖线落在草地上，小球悬在其上 14 m，高于熊猫头顶（女儿墙顶 + 0.44·PANDA_H ≈ 48.8 m）
-    markerHeight: ROOF_Y + GRASS_T
+    markerHeight: ROOF_Y + GRASS_T,
+    walkways
   }
 }
