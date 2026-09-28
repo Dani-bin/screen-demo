@@ -48,12 +48,30 @@ function normalize(r) {
 }
 
 /**
- * 按阴影约定设置 Mesh 的投影 / 接收标志（lab 预览页也调用，保证与线上一致）。
- * 动画件（userData.animated）不投影：阴影贴图静态，投影会留下不跟随的「残影」。
+ * 按阴影约定设置投影 / 接收标志（lab 预览页也调用，保证与线上一致）。
+ * 模块返回的可能是 Mesh，也可能是带子节点的 Group，因此遍历全部后代：
+ * 每个 Mesh 都接收阴影；自身或到 root 为止的任一祖先带 userData.animated 时不投影
+ * ——阴影贴图静态，动画件投影会留下不跟随的「残影」。
+ * @param {THREE.Object3D} root 景点模块返回的对象
  */
-export function applyShadowFlags(mesh) {
-  mesh.castShadow = !mesh.userData?.animated
-  mesh.receiveShadow = true
+export function applyShadowFlags(root) {
+  const visit = (obj, animatedAncestor) => {
+    const animated = animatedAncestor || Boolean(obj.userData?.animated)
+    if (obj.isMesh) {
+      obj.castShadow = !animated
+      obj.receiveShadow = true
+    }
+    for (const child of obj.children) visit(child, animated)
+  }
+  visit(root, false)
+}
+
+// 材质上可能挂贴图的属性（map、normalMap 等）：释放材质时一并释放贴图
+function disposeMaterial(material, textures) {
+  for (const value of Object.values(material)) {
+    if (value && value.isTexture) textures.add(value)
+  }
+  material.dispose()
 }
 
 /**
@@ -111,6 +129,8 @@ export function createLandmarks({ geometry, spots, theme, project }) {
     for (const mesh of r.meshes) {
       applyShadowFlags(mesh)
       group.add(mesh)
+      // 只登记模块返回的顶层对象；射线命中其子节点时，
+      // picking.js 沿父级链向上查 pickables，仍能换算回景点
       pickables.set(mesh, i)
     }
     if (r.update) updaters.push({ name: spot.name, fn: r.update })
@@ -137,9 +157,10 @@ export function createLandmarks({ geometry, spots, theme, project }) {
       }
     },
     dispose() {
-      // 几何体与材质可能被多个 Mesh 共用，先去重再释放
+      // 几何体、材质、贴图可能被多个 Mesh 共用，先去重再释放
       const geos = new Set()
       const mats = new Set()
+      const textures = new Set()
       group.traverse((obj) => {
         if (obj.geometry) geos.add(obj.geometry)
         if (obj.material) {
@@ -150,7 +171,8 @@ export function createLandmarks({ geometry, spots, theme, project }) {
         }
       })
       geos.forEach((g) => g.dispose())
-      mats.forEach((m) => m.dispose())
+      mats.forEach((m) => disposeMaterial(m, textures))
+      textures.forEach((t) => t.dispose())
       group.removeFromParent()
       group.clear()
       pickables.clear()

@@ -35,6 +35,7 @@ import { createMaterials } from "../scene/materials.js"
 import { createTerrain } from "../scene/terrain.js"
 import { createRivers, createRoads } from "../scene/roads.js"
 import { createBuildings } from "../scene/buildings.js"
+import { markerBaseHeight } from "../scene/markers.js"
 import { polygonCenter } from "../scene/utils.js"
 import { SPOTS } from "../data/cityData.js"
 import { buildingsInZones } from "../scene/landmarks/kit/footprint.js"
@@ -58,8 +59,11 @@ const SPOT_KEYS = {
   wenshu: "文殊院",
   hejiang: "合江亭"
 }
-// 单景点模式下只画景点周围这么远的通用楼
-const CONTEXT_RADIUS = 600
+// 单景点模式下只画景点周围这么远的通用楼：略大于线上停靠时的阴影收紧半径
+// （STOP_SHADOW_RADIUS = 1000），收紧范围内的投影物与线上一致
+const CONTEXT_RADIUS = 1100
+// 景点模式 shadow=tight 时的阴影半径（只用于近看细节，不作验收依据）
+const TIGHT_SPOT_RADIUS = 600
 
 const params = new URLSearchParams(location.search)
 const num = (key, fallback) => {
@@ -94,15 +98,34 @@ function buildSubject(name, data, project) {
   // ctx 与生产环境 createLandmarks 传给景点模块的完全一致；kit 工具由景点模块自行导入
   const ctx = { project, buildings: data.buildings, theme: THEME, spot }
   const r = buildLandmark(spotName, ctx)
-  const triangles = r.meshes.reduce(
-    (sum, m) => sum + m.geometry.attributes.position.count / 3,
-    0
-  )
+  // 模块可能返回带子节点的 Group：遍历全部后代 Mesh 统计三角形（有索引按索引数计）
+  let triangles = 0
+  for (const root of r.meshes) {
+    root.traverse((m) => {
+      if (!m.isMesh || !m.geometry) return
+      const g = m.geometry
+      triangles += (g.index ? g.index.count : g.attributes.position.count) / 3
+    })
+  }
+  // 注视点高度与线上 CityScene._initTour 相同：落点球底座高度 × 0.5。
+  // 底座取景点给的 markerHeight；为 0 时同 markers.js 按仍在画的楼估算
+  const hidden = buildingsInZones(data.buildings, r.zones)
+  const base =
+    r.markerHeight > 0
+      ? r.markerHeight
+      : markerBaseHeight(
+          x,
+          z,
+          SPOTS.indexOf(raw) === 0
+            ? THEME.marker.mainRadius
+            : THEME.marker.radius,
+          data.buildings.filter((b, i) => !hidden.has(i))
+        )
   return {
     ...r,
-    target: [x, Math.max(10, r.markerHeight * 0.4), z],
+    target: [x, base * 0.5, z],
     defaultDist: 420,
-    shadowRadius: CONTEXT_RADIUS,
+    shadowRadius: TIGHT_SPOT_RADIUS,
     shadowMode: "city",
     context: true,
     center: [x, z],
@@ -110,14 +133,22 @@ function buildSubject(name, data, project) {
   }
 }
 
-/** 景点周围 CONTEXT_RADIUS 内、且不在替换区里的通用楼 */
-function contextBuildings(data, center, zones) {
+/**
+ * 不画的通用楼索引：在替换区里，或离景点超过 CONTEXT_RADIUS。
+ * 交给 createBuildings 的 excluded 参数而不是过滤数组：楼栋保持原始索引，
+ * 按索引取的随机配色与线上一致
+ */
+function contextExcluded(data, center, zones) {
   const hidden = buildingsInZones(data.buildings, zones)
-  return data.buildings.filter((b, i) => {
-    if (hidden.has(i) || !b.p || !b.p.length) return false
+  data.buildings.forEach((b, i) => {
+    if (hidden.has(i)) return
+    if (!b.p || !b.p.length) return hidden.add(i)
     const [bx, bz] = polygonCenter(b.p)
-    return Math.hypot(bx - center[0], bz - center[1]) <= CONTEXT_RADIUS
+    if (Math.hypot(bx - center[0], bz - center[1]) > CONTEXT_RADIUS) {
+      hidden.add(i)
+    }
   })
+  return hidden
 }
 
 function createRenderer(canvas) {
@@ -214,8 +245,8 @@ async function main() {
   scene.add(createRivers(data.rivers, materials, THEME))
   scene.add(createRoads(data.roads, materials, THEME))
   if (subject.context) {
-    const near = contextBuildings(data, subject.center, subject.zones)
-    scene.add(createBuildings(near, THEME).mesh)
+    const excluded = contextExcluded(data, subject.center, subject.zones)
+    scene.add(createBuildings(data.buildings, THEME, excluded).mesh)
   }
   for (const m of subject.meshes) {
     // 与线上注册表同一约定：动画件（userData.animated）不投影
