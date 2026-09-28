@@ -14,6 +14,14 @@
     <!-- CSS2D 标签层：与画布同尺寸，不拦截鼠标 -->
     <div ref="labelRef" class="city-labels"></div>
 
+    <CityHead :info="info" :playing="playing" />
+
+    <!-- 左栏：城市总览 + 热门景点客流 -->
+    <div class="col-left">
+      <OverviewPanel :metrics="metrics" :tags="tags" />
+      <FlowPanel :flow="flow" />
+    </div>
+
     <div v-if="loading" class="scene-loading">城市场景构建中</div>
     <div v-if="error" class="scene-error">{{ error }}</div>
   </div>
@@ -22,6 +30,9 @@
 <script setup>
   import { CityScene } from "./scene/CityScene"
   import { fetchCityData } from "./data/cityData"
+  import CityHead from "./components/CityHead.vue"
+  import OverviewPanel from "./components/OverviewPanel.vue"
+  import FlowPanel from "./components/FlowPanel.vue"
 
   const pageRef = ref(null)
   const canvasRef = ref(null)
@@ -185,6 +196,26 @@
   .scene-error {
     color: #c0392b;
   }
+
+  /* 左右两栏面板：浮于三维画布之上，右栏为右侧工具栏留出位置 */
+  .col-left,
+  .col-right {
+    position: absolute;
+    top: 92px;
+    z-index: 4;
+    width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .col-left {
+    left: 28px;
+  }
+
+  .col-right {
+    right: 88px;
+  }
 </style>
 
 <!--
@@ -256,6 +287,46 @@
       span {
         color: rgba(255, 255, 255, 0.75);
       }
+    }
+
+    /* 面板共享外观：半透明白色圆角卡片 */
+    .panel {
+      padding: 16px 18px;
+      border-radius: 12px;
+      background: var(--city-panel);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 28px rgba(31, 45, 58, 0.12);
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: baseline;
+      margin: 0 0 12px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--city-ink);
+
+      /* 标题左侧的青绿色竖条 */
+      &::before {
+        content: "";
+        display: inline-block;
+        width: 4px;
+        height: 14px;
+        margin-right: 8px;
+        border-radius: 2px;
+        background: var(--city-teal);
+        vertical-align: -1px;
+      }
+    }
+
+    .title-en {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--city-teal);
     }
   }
 </style>
