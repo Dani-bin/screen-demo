@@ -129,7 +129,8 @@ function ridgeAxis(rect, ridgeBearing) {
  * 屋面在墙线处正好等于檐口高度；两端山墙用墙色。footprintPoints 为世界坐标（不需要 parent）。
  * @param {object} opts
  *   { eaveH, ridgeH（屋脊高出檐口的高度）, overhang = 0.6, wallColor = plaster,
- *     roofColor = roof, y = 0, rect（可选，指定外接矩形，不再切分）,
+ *     roofColor = roof, ridgeColor（可选，正脊色；缺省灰瓦配专用脊色、其他瓦色同屋面色）,
+ *     y = 0, rect（可选，指定外接矩形，不再切分）,
  *     ridgeBearing（可选，屋脊方位角，吸附到矩形较近的轴） }
  * @returns {{ rects: object[], top: number }|null} 各块的屋顶矩形与屋脊最高点；轮廓无效返回 null
  */
@@ -139,7 +140,8 @@ export function addPitchedHouse(b, footprintPoints, opts) {
     return null
   const wallColor = opts.wallColor ?? L.plaster
   const roofColor = opts.roofColor ?? L.roof
-  const ridgeColor = roofColor === L.roof ? L.roofRidge : roofColor
+  const ridgeColor =
+    opts.ridgeColor ?? (roofColor === L.roof ? L.roofRidge : roofColor)
   const go = { overhang, ridges: false, gables: false }
   const rects = []
   let top = -Infinity
