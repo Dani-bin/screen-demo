@@ -2,14 +2,16 @@
  * 单景点预览页（开发用，不进生产构建）
  * ----------------------------------------------------------
  * 打开 /city-lab.html?landmark=kit&yaw=210&pitch=30&dist=160
- *   landmark  kit（构件样例）或景点英文键（Task 3 接入后可用）
+ *   landmark  kit（构件样例）或景点英文键 tianfu | taikooli | ifs | kuanzhai | peoplesPark | wenshu | hejiang
  *   yaw       相机方位角（度，相对正北顺时针；相机位于注视点的这个方向上）
  *   pitch     俯仰角（度，0 为平视）
  *   dist      相机到注视点距离（米）
  *   y         注视点高度（米，缺省取景点 / 样例给的推荐值）
  *   focus     仅 kit：对准某件样例（hall | hall2 | twin | lhouse | pagoda | panda | pavilion | house | disc | boat | totem）
- *   shadow    city：阴影范围 / 偏移与相机 near = 20 完全照搬城市场景（景点模式默认，所见即线上效果，
- *             near = 20 时近景距离须 ≥ 300 m，验收截图按此取 dist）；
+ *   shadow    city：阴影与相机 near = 20 完全照搬城市场景（景点模式默认，所见即线上效果，
+ *             near = 20 时近景距离须 ≥ 300 m，验收截图按此取 dist）。景点模式下等同线上
+ *             「巡览停靠该站」时的阴影：按站点收紧到景点周围 ±1000 m（shadow.js 的 applyStopShadow）；
+ *             kit 指定 shadow=city 时没有站点，用整城阴影（applyCityShadow）；
  *             tight：阴影收紧到注视点周围、相机 near = 1（kit 默认，适合近看构件造型）
  * 地面、道路、河流、光照颜色与强度与城市场景一致（阴影开启）。
  * 只渲染一帧，完成后设 window.__labReady = true（静态截图用，省 CPU）；
@@ -36,6 +38,12 @@ import { createBuildings } from "../scene/buildings.js"
 import { polygonCenter } from "../scene/utils.js"
 import { SPOTS } from "../data/cityData.js"
 import { buildingsInZones } from "../scene/landmarks/kit/footprint.js"
+import { applyShadowFlags, buildLandmark } from "../scene/landmarks/index.js"
+import {
+  STOP_SHADOW_RADIUS,
+  applyCityShadow,
+  applyStopShadow
+} from "../scene/shadow.js"
 import { buildKit } from "./kitShowcase.js"
 
 const DEG = Math.PI / 180
@@ -59,14 +67,6 @@ const num = (key, fallback) => {
   return Number.isFinite(v) ? v : fallback
 }
 
-/* ============================================================
- * 景点构建入口（Task 3 接入点）
- * Task 3 把下面这行换成：
- *   import { buildLandmark } from "../scene/landmarks/index.js"
- * 其余代码无需改动。
- * ============================================================ */
-const buildLandmark = null
-
 /**
  * 构建预览对象。
  * @returns {{ meshes, zones, target: number[], defaultDist: number,
@@ -89,11 +89,6 @@ function buildSubject(name, data, project) {
   const spotName = SPOT_KEYS[name]
   const raw = SPOTS.find((s) => s.name === spotName)
   if (!raw) throw new Error(`未知景点键：${name}`)
-  if (!buildLandmark) {
-    throw new Error(
-      "单景点预览需 Task 3 接入 buildLandmark，当前仅支持 landmark=kit"
-    )
-  }
   const [x, z] = project.toLocal(raw.lon, raw.lat)
   const spot = { ...raw, x, z }
   // ctx 与生产环境 createLandmarks 传给景点模块的完全一致；kit 工具由景点模块自行导入
@@ -139,21 +134,21 @@ function createRenderer(canvas) {
 
 /**
  * 光照颜色、强度、方向与 CityScene 相同。阴影两种模式：
- *   city  —— 太阳位置、阴影正交范围、bias / normalBias 全部照搬 CityScene（整城一张阴影贴图）；
+ *   city  —— 与 CityScene 共用 shadow.js：有景点中心 center 时按站点收紧（±STOP_SHADOW_RADIUS，
+ *            同线上巡览停靠该站），否则整城一张阴影贴图；
  *   tight —— 太阳沿同一方向对准注视点，正交范围收紧到周围 radius 米，近景阴影更实。
  */
-function addLights(scene, target, radius, mode) {
+function addLights(scene, target, radius, mode, center) {
   const Lt = THEME.light
   scene.add(new HemisphereLight(Lt.hemiSky, Lt.hemiGround, Lt.hemiIntensity))
   const sun = new DirectionalLight(Lt.sun, Lt.sunIntensity)
   sun.castShadow = true
   sun.shadow.mapSize.set(Lt.shadowMapSize, Lt.shadowMapSize)
   if (mode === "city") {
-    // 与 CityScene._initScene 一致：太阳在 sunPosition、target 在原点
-    sun.position.set(...Lt.sunPosition)
-    Object.assign(sun.shadow.camera, Lt.shadowBox)
-    sun.shadow.bias = Lt.shadowBias
-    sun.shadow.normalBias = Lt.shadowNormalBias
+    // 与 CityScene 完全一致：停靠站点时 _fitShadow 以景点落点（地面）为中心收紧
+    if (center) {
+      applyStopShadow(sun, Lt, [center[0], 0, center[1]], STOP_SHADOW_RADIUS)
+    } else applyCityShadow(sun, Lt)
   } else {
     const dir = new Vector3(...Lt.sunPosition).normalize()
     const t = new Vector3(target[0], 0, target[2])
@@ -170,8 +165,8 @@ function addLights(scene, target, radius, mode) {
     // 深度范围约 3·radius 米：bias × 范围 ≈ 0.1 m；小构件用很小的法线偏移，避免阴影漏光
     sun.shadow.bias = -0.1 / (radius * 3)
     sun.shadow.normalBias = 0.05
+    sun.shadow.camera.updateProjectionMatrix()
   }
-  sun.shadow.camera.updateProjectionMatrix()
   scene.add(sun, sun.target)
 }
 
@@ -223,11 +218,17 @@ async function main() {
     scene.add(createBuildings(near, THEME).mesh)
   }
   for (const m of subject.meshes) {
-    m.castShadow = true
-    m.receiveShadow = true
+    // 与线上注册表同一约定：动画件（userData.animated）不投影
+    applyShadowFlags(m)
     scene.add(m)
   }
-  addLights(scene, subject.target, subject.shadowRadius, shadowMode)
+  addLights(
+    scene,
+    subject.target,
+    subject.shadowRadius,
+    shadowMode,
+    subject.center
+  )
   const [tx, ty, tz] = subject.target
   placeCamera(camera, { x: tx, y: ty, z: tz, defaultDist: subject.defaultDist })
 

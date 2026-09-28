@@ -59,12 +59,20 @@ export function markerBaseHeight(x, z, radius, buildings) {
 /**
  * @param {Array} spots 景点数组（已含 x / z 局部坐标）
  * @param {Array} buildings 楼栋数组，用于把落点球抬到所压楼体的楼顶（见 markerBaseHeight）
+ * @param {number[]} [baseHeights] 外部给定的底座高度（景点精细模型的 markerHeight）；
+ *   baseHeights[i] > 0 时直接使用，否则按 buildings 估算
  * @returns {{ group: Group, bases: number[], setActive: Function, dispose: Function }}
  *   bases 为各景点落点球的底座高度（米），便于测试与调试。
  *   dispose 只释放几何体与标签 DOM，不会把 group 移出场景；
  *   调用方需自行 group.removeFromParent()（或 scene.remove(group)）。
  */
-export function createMarkers(spots, materials, theme, buildings = []) {
+export function createMarkers(
+  spots,
+  materials,
+  theme,
+  buildings = [],
+  baseHeights = []
+) {
   const group = new Group()
   const labels = []
   const bases = []
@@ -75,8 +83,11 @@ export function createMarkers(spots, materials, theme, buildings = []) {
   spots.forEach((spot, i) => {
     const main = i === 0
     const r = main ? theme.marker.mainRadius : theme.marker.radius
-    // 落点压在楼上时，球与标签整体抬到楼顶
-    const base = markerBaseHeight(spot.x, spot.z, r, buildings)
+    // 景点精细模型给了底座高度就直接用；否则落点压在楼上时，球与标签整体抬到楼顶
+    const base =
+      baseHeights[i] > 0
+        ? baseHeights[i]
+        : markerBaseHeight(spot.x, spot.z, r, buildings)
     bases.push(base)
     const dot = new Mesh(main ? mainGeo : normalGeo, materials.marker)
     dot.position.set(spot.x, base + r + 3, spot.z)

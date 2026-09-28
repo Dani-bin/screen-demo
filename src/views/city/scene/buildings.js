@@ -171,9 +171,13 @@ export function applyWindowShader(material, theme) {
 
 /**
  * 全部楼栋 → 单个 Mesh。
+ * @param {Array} buildings 楼栋数组
+ * @param {object} theme THEME
+ * @param {Set<number>} [excluded] 不画的楼栋索引（已被景点精细模型替换）；
+ *   跳过的楼不参与合并，faceToBuilding 仍记录原始索引，拾取结果与 buildings 下标对应
  * @returns {{ mesh: Mesh, material: MeshStandardMaterial, faceToBuilding: Int32Array, dispose: Function }}
  */
-export function createBuildings(buildings, theme) {
+export function createBuildings(buildings, theme, excluded = new Set()) {
   // 材质先建：即使没有有效楼栋，调用方也能统一 dispose
   const material = applyWindowShader(
     new MeshStandardMaterial({
@@ -188,6 +192,7 @@ export function createBuildings(buildings, theme) {
   const geos = []
   const owners = [] // 每个几何体对应的楼栋索引
   buildings.forEach((b, i) => {
+    if (excluded.has(i)) return
     const g = extrudeBuilding(b)
     if (!g) return
     paintBuilding(g, b, i, theme, top)
