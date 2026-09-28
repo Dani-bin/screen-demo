@@ -11,6 +11,13 @@
  *
  * 定位：OSM 数据里合江亭没有名称、安顺廊桥不在建筑数据中（桥不是 building），
  * 先按名称查楼，查不到时按设计坐标与朝向放置（见 PAVILION / BRIDGE 常量）。
+ *
+ * 插画式放大：合江亭真实体量（台基 22 × 14、亭高约 15 m）在能与廊桥同框的镜头里
+ * 只有约 100 像素宽，认不出连体双亭。因此亭子一组（台基、栏杆、台阶、花坛、双亭）
+ * 整体按 PAV_SCALE = 1.6 倍同比放大，与纪念碑 1.6 倍、千佛塔 1.4 倍、熊猫 20 m 一致；
+ * 下面的尺寸常量都写真实尺寸，放大只在坐标系上做一次。廊桥、游船、邻楼不放大。
+ * 放大后的台基若仍以 OSM 亭心为中心，两个前角会伸进两江约 12 m，
+ * 故整组向陆地（西北）平移 PAV_SHIFT，前角入水不超过约 4 m（与放大前相当，视作驳岸）。
  */
 import { ExtrudeGeometry, Mesh, Path, Shape, Vector3 } from "three"
 import { THEME } from "../theme.js"
@@ -60,6 +67,11 @@ const RIVER_Y = 0.35 // 河面高度（roads.js 的河流水面）
 
 const TERRACE = { w: 22, d: 14, h: 3.5 } // 花岗岩台基（局部 X 沿长轴）
 const PAV_R = 4.1 // 单亭外接半径：连体总长 4·r·cos30° ≈ 14.2、宽 2r = 8.2
+// 插画式放大，真实尺寸见常量（原因见文件头）
+const PAV_SCALE = 1.6
+// 放大后整组在亭子坐标系里的平移（米）：沿长轴 −2、向陆地（-Z，西北）14。
+// Node 按水面多边形与河道带宽核对过：台基前角入水约 3.95 m（放大前为 3.9 m）
+const PAV_SHIFT = [-2, -14]
 
 /* ---------------- 安顺廊桥尺寸 ---------------- */
 
@@ -151,8 +163,8 @@ function addFlight(b, parent, x, zEdge, width, h) {
 /**
  * 合江亭：花岗岩台基 + 汉白玉栏杆 + 两道台阶（朝陆地一侧的长边，左右各一道，
  * 中间夹一方花坛，与照片中两侧登台的形制一致）+ 连体双亭。
- * @param {Matrix4} f 亭子坐标系：局部 X 沿长轴，-Z 朝陆地（西北）
- * @returns {number} 宝顶最高点（米）
+ * @param {Matrix4} f 亭子坐标系：局部 X 沿长轴，-Z 朝陆地（西北）；可含等比放大
+ * @returns {number} 宝顶最高点（f 的局部米数，未乘放大倍数）
  */
 function buildPavilion(b, f) {
   const { w, d, h } = TERRACE
@@ -527,7 +539,11 @@ export function build(ctx) {
   // 合江亭：局部 X 沿长轴（frame 的 +X 指向 bearing + 90°，故传 bearing − 90）
   const pav = locate(ctx, PAVILION)
   const fp = frame(pav.x, 0, pav.z, pav.bearing - 90)
-  const pavTop = buildPavilion(b, fp)
+  // 亭子一组：平移到陆地一侧后等比放大 PAV_SCALE（buildPavilion 内部仍按真实尺寸）
+  const S = PAV_SCALE
+  const fs = local(fp, PAV_SHIFT[0], 0, PAV_SHIFT[1], 0, S, S, S)
+  const pavTop = buildPavilion(b, fs) * S
+  const pavC = new Vector3().applyMatrix4(fs) // 放大后亭子组中心（世界坐标）
   const neighbourZones = lowerNeighbour(b, ctx)
 
   // 安顺廊桥：局部 X 沿桥长；查不到时沿长轴平移 shift 米，让两端落在岸上
@@ -549,11 +565,13 @@ export function build(ctx) {
       color: k === 4 ? THEME.tree.yellow : greens[k % 4]
     })
   }
+  // 亭子旁的树（fp 局部坐标，未放大）：放大后的台基占 x −19.6～15.6、z −31.6～−2.8，
+  // 这几棵都在台基与台阶外 ≥ 0.8 m、不落水、离楼 ≥ 8 m（Node 核对）
   const PAV_TREES = [
-    [-15, -4, 3.8],
-    [-12, -15, 4.2],
-    [-6, -20, 3.6],
-    [-22, -12, 4.5]
+    [-17, -36, 3.8],
+    [16, -30, 4],
+    [-5, -40, 4.2],
+    [8, -40, 3.6]
   ]
   PAV_TREES.forEach(([x, z, s], k) => treeAt(fp, x, z, s, k))
   const BRIDGE_TREES = [
@@ -591,7 +609,13 @@ export function build(ctx) {
   meshes.push(boat)
 
   const zones = [
-    rectPolygon(pav.x, pav.z, TERRACE.w + 6, TERRACE.d + 12, pav.bearing),
+    rectPolygon(
+      pavC.x,
+      pavC.z,
+      (TERRACE.w + 6) * S,
+      (TERRACE.d + 12) * S,
+      pav.bearing
+    ),
     rectPolygon(bx, bz, BRIDGE_LEN + 2 * RAMP.len + 4, 18, br.bearing),
     ...neighbourZones
   ]
