@@ -19,6 +19,7 @@
  * 墙体改回轮廓（屋顶仍盖外接矩形），避免新墙伸进旁边没替换的楼里。
  */
 import { Mesh } from "three"
+import { GROUND_Y } from "../terrain.js"
 import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
 import {
   clipHalfPlane,
@@ -155,8 +156,6 @@ const HALLS = [
 
 /* ---------------- 步行路径（人群用） ---------------- */
 
-// 街区地面高度：terrain.js 的地面平面（店铺之间的空地不铺装，直接露出地面）
-const GROUND_Y = -0.5
 /*
  * 街区内的步行街（站点坐标系 u / v，同 DISTRICTS）：取重建店铺之间空隙的中线。
  * 由店铺墙体与出檐（含 1.8～2 m 挑檐）栅格化后的净空图寻路得到——
@@ -167,6 +166,11 @@ const GROUND_Y = -0.5
  *   S7 街区西南缘沿街人行道（店铺与道路路缘之间，到站机位的前景）；
  *   另有 Apple Store 东侧小广场的环路与通往西南的一段（PLAZA_LOOP 与最后一条）。
  * 小人不避让店铺，所以 width 只取净空的一半左右；主街人多，里巷与人行道人少。
+ * 路面高度 GROUND_Y：店铺之间的空地不铺装，直接露出 terrain.js 的地面平面。
+ *
+ * 注意：这些折线是离线寻路后写死的，依赖当前 public/city/chengdu.json 的楼栋轮廓
+ * 与本文件的店铺参数（SHOP 尺寸、挑檐、随机种子等）。数据或参数变动后，
+ * 需用步行路径校验脚本（逐点检查落脚面、头顶净空、保留楼与身体外扩）重新校验。
  */
 const STREETS = [
   {
@@ -202,13 +206,15 @@ const STREETS = [
     density: 2
   },
   {
+    // S4 横街：东端（站点附近）两侧紧贴保留的 OSM 楼，宽 3 时贴边小人的身体
+    // 会嵌进楼墙约 0.3 m，故收窄到 2.4（身体外扩 0.8 m 校验无坏点）
     uv: [
       [-39, 81],
       [-26, 74],
       [45, 74],
       [66, 76]
     ],
-    width: 3,
+    width: 2.4,
     density: 2
   },
   {
@@ -255,14 +261,15 @@ const STREETS = [
 const PLAZA_LOOP = { u: 27, v: -3, r: 10, n: 16, width: 3, density: 2 }
 // 大慈寺中轴甬道（香客多，段又短，密度取高些）：沿山门—中轴线（院内铺装顶面 PAVE），被殿堂（含台阶与出檐，
 // 离殿台基矩形 STEP_CLEAR 米以内）与放生池隔开成若干段，每段一条来回走的路径；
-// 短于 MIN_LEN 的段不要（殿与殿挨得太近，站不下人）
+// 短于 minLen 的段不要：殿与殿挨得太近，段太短时小人只能原地来回踱步。
+// 取 15 m：当前数据下中轴被切成 9、16、23、14 m 四段，保留 16、23 m 两段
 const TEMPLE_WALK = {
   width: 4,
   density: 3,
   stepClear: 3.5,
   pondClear: 1.5,
   wallClear: 3,
-  minLen: 8
+  minLen: 15
 }
 
 /* ---------------- 字库 ---------------- */
