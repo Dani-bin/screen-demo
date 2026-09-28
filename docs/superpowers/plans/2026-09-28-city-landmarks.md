@@ -108,7 +108,8 @@ git commit -m "feat(city): 扩大数据范围、纠正景点坐标、支持 ?spo
 
 ### Task 2: 景点构件库 kit 与单景点预览页
 
-**Files:** Create `src/views/city/scene/landmarks/kit/{builder,footprint,roofs,parts,figures}.js`、`city-lab.html`、`src/views/city/lab/lab.js`；Modify `src/views/city/scene/theme.js`
+**Files:** Create `src/views/city/scene/landmarks/kit/{builder,footprint,shapes,roofs,common,parts,towers,figures}.js`、`city-lab.html`、`src/views/city/lab/{lab,kitShowcase}.js`；Modify `src/views/city/scene/theme.js`
+（实现时拆分：`shapes.js` 基础几何体、`towers.js` 亭与塔、`common.js` 内部小工具、`kitShowcase.js` 构件陈列；`addPavilion`/`addPagoda` 仍从 `parts.js` 导入。）
 
 - [ ] **Step 1: theme.js 新增 landmark 配色段**
 
@@ -227,9 +228,44 @@ Expected：逐项 `ok`，最后一行 `kit ok`。
 - [ ] **Step 9: Lint 并提交**
 
 ```bash
-git add src/views/city/scene/theme.js src/views/city/scene/landmarks/kit city-lab.html src/views/city/lab/lab.js
+git add src/views/city/scene/theme.js src/views/city/scene/landmarks/kit city-lab.html src/views/city/lab/lab.js src/views/city/lab/kitShowcase.js docs/superpowers/plans/2026-09-28-city-landmarks.md
 git commit -m "feat(city): 景点构件库与单景点预览页"
 ```
+
+#### 实现记录：最终 API 与相对上文的偏差（Task 3～10 以此为准）
+
+通用约定：所有构件底在局部 y = 0、水平居中；返回非索引几何体。正多边形朝向统一为
+「一条边正对 +Z」，顶点 k 在 θ = π/n + k·2π/n（x = r·sin θ，z = r·cos θ），六边形时 ±X 为顶点、±Z 为边
+（两座六角亭共用一条边时，应沿局部 Z 排列，或把 frame 转 90°）。
+
+- **builder.js**：`add()` 总是复制输入再释放原件，所以同一模板几何体可以反复 `add`；`bake()` 之后合批器清空、可继续复用，并算好包围盒 / 包围球。
+- **footprint.js**：新增 `rectFrame(rect, y = 0, frontBearing = 180)` → Matrix4：局部 X 沿长边，+Z 取两条长边法向里更接近 `frontBearing` 的那一个（按 OSM 轮廓放 `addHall` 用这个）。
+- **shapes.js（新增）**：`polygonVertex(sides, r, k)`、`fromTriangles(positions)`、`dropBottom(geo)`、`box(w, h, d, { bottom })`、`prism(sides, rBottom, rTop, h, { top, bottom })`、`cylinder(rBottom, rTop, h, { segments, caps })`、`sphere(r, ws, hs)`（底在 0）、`sweepBar(points3d, w, h, { sink })`。
+- **roofs.js**：
+  - 所有屋顶都接受 `ridges`（默认 true；false 时只返回屋面）、`segS`、`segT`、`thick`（封檐板厚，默认 max(0.08, 0.05h)）选项。檐口外沿挂竖直封檐板，所以几何体最低点在 y = -thick。
+  - 新增只返回屋脊的出口：`hipRidges`、`pyramidRidges`、`gableRidge`，以及悬山山墙 `gableWalls`；`gableRoof` 加了 `gables` 选项（默认 true）。这样屋面、屋脊、山墙可以分别配色。
+  - `hipRidges` 含 4 条戗脊，外加正脊与两端吻兽块（吻兽高 ≈ 0.13h），所以 `hipRoof(20, 12, 5)` 最高点是 5.54 而不是 5.4。攒尖垂脊止于 t = 0.92，顶点留给宝顶。
+  - 有起翘时，s 方向网格向两端加密（曲面公式不变）；`gableRoof` 默认 `segS = 2`（沿檐口无起翘）。
+  - 导出 `roofHeight(s, t, h, curl, pow)`（曲面高度公式）。
+- **parts.js**：
+  - `addHall`：w × d 是台基（即 OSM 轮廓）尺寸，w 沿局部 X（屋脊方向）；檐柱内缩 clamp(0.1 × 短边, 0.5, 1.5)。新增选项 `steps`、`spacing`、`columnRadius`；缺省 `curl = 0.3`、`ridge = 0.55`、`roofH = 0.42 × 柱网进深`（悬山 0.3）、`overhang = clamp(0.16 × 进深, 0.8, 3)`。
+  - 重檐的上层高度不是「roofH × 0.6」：下层截断檐顶再往上露出 0.4 × wallH 的上层墙，上层屋顶檐口约为下层的 80%。悬山殿的山墙用墙色；`double` 只对四坡顶生效。
+  - 所有屋顶按「柱线外 0.5 m 处屋面 = 柱顶」下沉落位，檐口垂到柱顶以下，额枋不会戳穿瓦面。
+  - `addColumns` 返回柱位 `[[x, z], ...]`；`addWalls` 的 `door: false` 表示不开门；`addBalustrade` 新增 `y` 选项，并加了实心栏板；`addLantern` 的 (x, y, z) 是球心。
+  - `addPitchedHouse` 新增 `y` 选项。`ridgeH` 指屋脊高出檐口的高度。返回 `{ rect, top }`（轮廓无效时返回 null）。
+  - 新增 `palette(colors)`，键为 platform / column / wall / lattice / roof / ridge / finial / trim。
+- **towers.js（由 parts.js 转出）**：
+  - `addPavilion`：新增 `overhang`（缺省 0.35·radius + 0.3）、`curl`（缺省 0.3）、`columnRadius` 选项；有坐凳栏，正面留口。重檐时上层檐口半径为下层的 72%，上层短墙露出 0.45 × colH（花格色）。琉璃瓦的屋脊取同色压暗。
+  - `addPagoda`：首层塔身较高；每面一块贴金色块；檐口 `curl = 0.38`；总高（含塔刹）严格等于 `height`。11 层 21 m 约 5.9k 三角形。
+- **figures.js**：
+  - `addPanda` 的局部原点在女儿墙顶外沿（y = 0 墙顶，z = 0 外立面，墙在 z < 0 一侧）。脚底约 -0.56·height、耳尖约 +0.44·height；前爪、鼻尖伸进墙内约 0.36·height。目前只有 `"climb"` 一种姿态。
+  - `addBoat`：船底在 y = 0，船头朝 +X，船舷外张（上宽下窄，比「上窄下宽」更像船），另加金色舷边；顶棚是黄色小悬山。
+  - `addSunbirdDisc`：光芒是 12 道旋转的镰刀形，外加一道外圈细环。
+  - `addTotem`：总高 h 含顶部金球；柱身深绿 `#2F5A48` 以常量形式写在 figures.js 里。
+- **lab**：
+  - 新增 `focus` 参数：kit 时对准某件样例（hall | hall2 | pagoda | panda | pavilion | house | disc | boat | totem）。
+  - Task 3 的接入点是 lab.js 里的 `const buildLandmark = null`，换成 `import { buildLandmark } from "../scene/landmarks/index.js"` 即可；景点键映射、600 m 通用楼筛选、替换区排除都已写好。
+  - 预览页把阴影正交范围收紧到注视点周围（kit 110 m、景点 600 m），相机 near = 1；三角形统计挂在 `window.__labStats`，失败时设 `window.__labError`。
 
 ---
 

@@ -88,6 +88,31 @@ export const THEME = {
     shadowNormalBias: 1
   },
 
+  /* ---- 景点精细模型配色（依据实景照片，略提饱和度贴近插画风） ---- */
+  landmark: {
+    roof: "#4A5361", // 古建灰瓦（偏蓝石板灰）
+    roofRidge: "#3A414C", // 正脊、垂脊
+    glaze: "#E8B838", // 金黄琉璃瓦 / 宝顶
+    gold: "#D9A93C", // 贴金、神鸟金盘
+    column: "#B8352B", // 红柱 / 红木
+    lattice: "#8E2A22", // 深红花格门窗
+    ochreWall: "#D9A640", // 赭黄院墙
+    redWall: "#A33A2E", // 寺院红墙
+    marble: "#EFEAE0", // 汉白玉 / 浅石栏杆
+    granite: "#B9B6AE", // 台基花岗岩
+    brick: "#6B7076", // 青砖
+    plaster: "#EDE6D6", // 白灰墙
+    timber: "#5A4A3C", // 深木格栅
+    iron: "#3A3C40", // 铸铁
+    pagodaRed: "#8A2E26", // 塔身暗红
+    pandaBlack: "#1E1E22",
+    pandaWhite: "#F4F4F0",
+    lantern: "#D8352A",
+    stonePave: "#CFCAC0", // 广场石材铺装
+    glass: "#6FA7D6",
+    beige: "#E6D6A6"
+  },
+
   /* ---- 景点标注 ---- */
   /* labelLift：标签锚点在落点球心上方的高度（米）：取普通球半径，锚点即球顶；标签再由 CSS 固定上抬 40px */
   marker: { color: "#ff7a45", radius: 12, mainRadius: 18, labelLift: 12 },
