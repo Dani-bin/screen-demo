@@ -10,6 +10,8 @@
  *      碑外一圈圆形铺装小广场（Φ48）与几棵大树。
  *   2. 鹤鸣茶社：公园湖（OSM 无名水面）北岸，三段灰瓦开敞茶廊围出一个茶园院子，
  *      西侧单檐牌坊入口（黑底匾额），廊下与院中铺满竹椅色小方块，院里几把红伞。
+ *   3. 返回 walkways（步行路径，人群系统据此在到站时生成行人）：碑台外的广场环路、
+ *      广场到茶社牌坊的园路、茶社院内石板路。
  *
  * 插画化夸张：纪念碑真实尺寸（总高 31.86、碑身宽 2.2 m）在生产相机 300 m 以上的镜头里
  * 只有十几个像素宽，碑身细得像一根线，认不出四层碑座与题字板。
@@ -112,6 +114,34 @@ const GALLERIES = [
 ]
 const PAILOU = { x: -8, z: 9.5 } // 牌坊：站在地坪西沿，朝西（局部 -X）
 const CHAIR = "#C9A46A" // 竹椅色
+
+/* ---------------- 步行路径（人群用，见 crowd.js） ---------------- */
+
+// 碑台环路：圆形广场内圈（顶 PLAZA_Y）上一圈。碑台放大后四向台阶脚（含斜垂带）
+// 离碑心约 20.0 m，内圈浅石外沿在 PLAZA_R − 1.2 = 22.8 m：环路取中线 21.8、
+// 可走宽 1.2（小人身体半径约 0.2 × 身高，4 m 身高时约 0.86 m，贴不到台阶也踩不出内圈）。
+// 环路会跨过四条斜向的放射状分隔条（高出铺面 0.15 m 的装饰条），视作铺面纹样
+const RING = { r: 21.8, width: 1.2, segments: 32 }
+// 园路：从广场东南侧（碑身局部 +X 台阶正对的方向，两棵大树之间的空当）出发，
+// 穿过公园草坪（绿地顶面 0.2）到茶社牌坊外台阶脚。
+// 中间折点为世界坐标里相对碑心的偏移（米），按通用树（树干 2 m 内不走、
+// 头顶不钻进低垂的树冠）、湖面与保留楼逐点核对过；拐角都在 40° 以内
+const GARDEN_Y = 0.2 // 公园绿地顶面（terrain.js）
+const GARDEN_PATH = [
+  [31.5, 17.5],
+  [60.8, 38],
+  [79, 78],
+  [101, 138],
+  [127, 157]
+]
+// 园路起点：广场外沿（PLAZA_R = 24）外 1.8 m；终点：牌坊台阶脚外（茶社局部 x）
+const GARDEN_START_R = PLAZA_R + 1.8
+const GARDEN_END_X = TEA_BASE.x0 - 2.6
+// 茶社院内石板路：从牌坊内侧（牌坊下额枋离地 3.7 m，比小人矮，不从牌坊下穿过）
+// 到东廊台基前，顶面 = 地坪 + 石板 0.18。中线比石板路中线（PAILOU.z）偏北 0.5 m，
+// 让开院中大树低垂的树冠；可走宽 0.5（两侧竹椅离中线约 1.1 m）
+const COURT = { x0: -6.7, x1: 18.2, z: PAILOU.z - 0.5, y: TEA_BASE.h + 0.18 }
+const COURT_W = 0.5
 
 /* ---------------- 通用小工具 ---------------- */
 
@@ -811,5 +841,29 @@ export function build(ctx) {
   const [tcx, tcz] = toWorld(ft, (x0 + x1) / 2, (z0 + z1) / 2)
   zones.push(rectPolygon(tcx, tcz, x1 - x0 + 2, z1 - z0 + 2, tea.bearing))
 
-  return { meshes, zones, markerHeight: monTop + 2 }
+  // 步行路径：碑台环路（闭合）、广场到茶社的园路、茶社院内石板路（世界坐标）
+  const ring = []
+  for (let k = 0; k < RING.segments; k++) {
+    const a = (k / RING.segments) * Math.PI * 2
+    ring.push(toWorld(fp, RING.r * Math.sin(a), RING.r * Math.cos(a)))
+  }
+  const garden = [
+    toWorld(fp, GARDEN_START_R, 0),
+    ...GARDEN_PATH.map(([dx, dz]) => [mon.x + dx, mon.z + dz]),
+    toWorld(ft, GARDEN_END_X, PAILOU.z)
+  ]
+  // 相对密度：本站路径总长约 360 m，按 3.5～4 倍密度约 50 人（每站 40～120）
+  const walkways = [
+    { points: ring, y: PLAZA_Y, width: RING.width, closed: true, density: 3.5 },
+    { points: garden, y: GARDEN_Y, width: 2.4, closed: false, density: 3.5 },
+    {
+      points: [toWorld(ft, COURT.x0, COURT.z), toWorld(ft, COURT.x1, COURT.z)],
+      y: COURT.y,
+      width: COURT_W,
+      closed: false,
+      density: 4
+    }
+  ]
+
+  return { meshes, zones, markerHeight: monTop + 2, walkways }
 }
