@@ -23,6 +23,7 @@
  */
 import { ExtrudeGeometry, Mesh, Path, Shape, Vector3 } from "three"
 import { THEME } from "../theme.js"
+import { GROUND_Y } from "../terrain.js"
 import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
 import {
   centroid,
@@ -40,6 +41,7 @@ import {
   eaveDrop
 } from "./kit/parts.js"
 import { addBoat, addTree } from "./kit/figures.js"
+import { roundedLoop } from "./kit/walkways.js"
 
 const L = THEME.landmark
 
@@ -98,14 +100,16 @@ const COPING = 0.5 // 桥面压面石厚度：石桥体只挤出到 DECK_H − C
 
 // 台基环路：亭子组坐标系 fs 的局部坐标（真实尺寸，放大在坐标系上）里的圆角矩形，
 // 夹在双亭台座与台基栏杆（放大后高 1.6 m）之间。六角台座的尖角正对长边，
-// 尖角处净宽只剩约 1 m，故可走宽度取 0.6 m（世界米）；路面 = 台基顶（TERRACE.h × PAV_SCALE）
-const TERRACE_WALK = { x: 9.3, z: 5.78, r: 1.2, width: 0.6, density: 3.5 }
+// 尖角处净宽只剩约 1 m，故可走宽度取 0.5 m（世界米）：身体高度上离栏杆顶 ≥ 0.86 m
+// （身体半径，4 m 身高）；路面 = 台基顶（TERRACE.h × PAV_SCALE）
+const TERRACE_WALK = { x: 9.3, z: 5.78, r: 1.2, width: 0.5, density: 3.5 }
 // 廊桥桥面：木廊芯体是实心的，只能走柱列与桥面石栏之间的边道。中部、两端楼阁的
-// 二层腰檐伸到边道上方、离桥面只有约 3.9 m，小人（身高 4 m）会顶到檐口，
+// 二层腰檐伸到边道上方、离桥面只有约 3.7～3.8 m（实测），小人（身高 4 m）会顶到檐口，
 // 故只取两段长廊（腰檐出檐短）下的边道：桥坐标系 |x| ∈ [9.6, 27]、z = ±5.6，
-// 四段各自走到端点折返。路面 = 压面石顶 DECK_H
-const DECK_WALK = { x0: 9.6, x1: 27, z: 5.6, width: 0.4, density: 5 }
-// 河岸步道：亭子西北、南河北岸的空地（城市地面 y = 0），离水边约 4 m，
+// 四段各自走到端点折返。可走宽 0.8：边道腿部净距约 0.85 m（腿外缘需 0.63），
+// 身体高度 1 m 内无遮挡，宽 0.8 时小人不会排成一条线。路面 = 压面石顶 DECK_H
+const DECK_WALK = { x0: 9.6, x1: 27, z: 5.6, width: 0.8, density: 4 }
+// 河岸步道：亭子西北、南河北岸的空地（城市地面平面 GROUND_Y = −0.5），离水边约 4 m，
 // 从上游一路走到台基西侧；fp 局部坐标（未放大），按水面、河道带、邻楼与通用树核对过
 const RIVERSIDE = {
   points: [
@@ -641,25 +645,19 @@ export function build(ctx) {
     wp.set(x, 0, z).applyMatrix4(m)
     return [wp.x, wp.z]
   }
-  // 台基环路：四角各 4 段圆弧（每段转 22.5°），不出现急转
+  // 台基环路：亭子组局部坐标里的圆角矩形（四角圆弧，不出现急转），再换到世界坐标
   const tw = TERRACE_WALK
-  const ring = []
-  const corners = [
-    [tw.x - tw.r, -tw.z + tw.r, -90],
-    [tw.x - tw.r, tw.z - tw.r, 0],
-    [-tw.x + tw.r, tw.z - tw.r, 90],
-    [-tw.x + tw.r, -tw.z + tw.r, 180]
-  ]
-  for (const [cx0, cz0, a0] of corners) {
-    for (let k = 0; k <= 4; k++) {
-      const a = ((a0 + k * 22.5) * Math.PI) / 180
-      ring.push(xz(fs, cx0 + tw.r * Math.cos(a), cz0 + tw.r * Math.sin(a)))
-    }
-  }
+  const ring = roundedLoop({
+    x0: -tw.x,
+    x1: tw.x,
+    z0: -tw.z,
+    z1: tw.z,
+    r: tw.r
+  }).map(([x, z]) => xz(fs, x, z))
   const walkways = [
     {
       points: RIVERSIDE.points.map(([x, z]) => xz(fp, x, z)),
-      y: 0,
+      y: GROUND_Y,
       width: RIVERSIDE.width,
       closed: false,
       density: RIVERSIDE.density
