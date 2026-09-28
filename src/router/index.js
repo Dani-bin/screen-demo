@@ -22,6 +22,12 @@ const routes = [
     path: "/school",
     name: "School",
     component: () => import("@/views/school/index.vue")
+  },
+  {
+    // 城市三维总览：独立页面，自带外壳，不加载百度地图
+    path: "/city",
+    name: "City",
+    component: () => import("@/views/city/index.vue")
   }
 ]
 
