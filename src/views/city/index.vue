@@ -37,27 +37,39 @@
     return res.json()
   }
 
+  /** 组件是否仍存活：异步取数期间用户可能已切走路由，之后不能再写状态或建场景 */
+  let alive = true
+
   onMounted(async () => {
+    // 业务数据为静态，先到位，面板可先渲染
+    const data = await fetchCityData()
+    if (!alive) return
+    info.value = data.info
+    metrics.value = data.metrics
+    tags.value = data.tags
+    flow.value = data.flow
+    spots.value = data.spots
+
+    // 几何数据失败只影响三维场景，面板照常显示
+    let geometry
     try {
-      const [data, geometry] = await Promise.all([
-        fetchCityData(),
-        fetchGeometry()
-      ])
-      info.value = data.info
-      metrics.value = data.metrics
-      tags.value = data.tags
-      flow.value = data.flow
-      spots.value = data.spots
-      console.log("几何数据加载完成", {
-        buildings: geometry.buildings.length,
-        roads: geometry.roads.length
-      })
+      geometry = await fetchGeometry()
     } catch (err) {
       console.error(err)
       error.value = "城市数据加载失败"
-    } finally {
       loading.value = false
+      return
     }
+    if (!alive) return
+    console.log("几何数据加载完成", {
+      buildings: geometry.buildings.length,
+      roads: geometry.roads.length
+    })
+    loading.value = false
+  })
+
+  onUnmounted(() => {
+    alive = false
   })
 </script>
 
