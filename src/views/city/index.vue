@@ -137,12 +137,8 @@
   }
 
   onMounted(async () => {
-    if (!hasWebGL()) {
-      error.value = "当前浏览器不支持三维展示"
-      loading.value = false
-      return
-    }
-    // 业务数据为静态，先到位，面板可先渲染
+    // 业务数据为静态，先到位，面板可先渲染；
+    // 放在 WebGL 检测之前，浏览器不支持三维时面板照常显示
     const data = await fetchCityData()
     if (!alive) return
     info.value = data.info
@@ -150,6 +146,13 @@
     tags.value = data.tags
     flow.value = data.flow
     spots.value = data.spots
+
+    // 不支持 WebGL：只降级三维场景，跳过几何数据请求
+    if (!hasWebGL()) {
+      error.value = "当前浏览器不支持三维展示"
+      loading.value = false
+      return
+    }
 
     // 几何数据失败只影响三维场景，面板照常显示
     let geometry
