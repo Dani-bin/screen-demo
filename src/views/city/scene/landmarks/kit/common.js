@@ -52,7 +52,12 @@ export function eaveDrop(halfDepth, overhang, h, pow = 1.5, margin = 0.35) {
   return roofHeight(0, t, h, 0, pow)
 }
 
-/** 正 n 边形每条边上放一个构件：局部 X 沿边、+Z 朝外，位于边中点 */
+/**
+ * 正 n 边形第 k 条边上的坐标系（给沿边摆放的构件用：额枋、坐凳、塔身贴面等）。
+ * 原点在边中点（边心距处）、高度 y；局部 X 沿边、局部 +Z 朝外。
+ * 边 k 连接顶点 k 与 k+1（顶点约定见 shapes.js），边 sides-1 正对 +Z。
+ * @returns {Matrix4}
+ */
 export function edgeFrame(parent, sides, radius, k, y) {
   const a = Math.PI / sides + ((k + 0.5) * 2 * Math.PI) / sides
   const ap = radius * Math.cos(Math.PI / sides)

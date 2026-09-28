@@ -120,6 +120,37 @@ export function buildKit() {
       addLantern(b, frame(0, 0, 0), x, PAD + 3.5, 20.6, { r: 0.45 })
     }
   })
+  item("twin", [-64, 5, 38], 40, () => {
+    // 连体双亭（合江亭式）：沿 X 排列，每座绕 Y 转 π/2 后边 5 朝 +X、边 2 朝 -X，
+    // 中心相距 2·r·cos30° 即共用一条边（两根柱）；openEdges [2, 5] 让共用边与外侧入口都不设坐凳
+    const r = 3.4
+    const a = r * Math.cos(Math.PI / 6)
+    for (const sx of [-1, 1]) {
+      addPavilion(b, local(frame(-64, PAD, 38), sx * a, 0, 0, Math.PI / 2), {
+        sides: 6,
+        radius: r,
+        colH: 3.2,
+        platformH: 0.8,
+        roofColor: L.glaze,
+        openEdges: [2, 5]
+      })
+    }
+  })
+  item("lhouse", [-37, 4, 38], 40, () => {
+    // L 形轮廓：充满度 0.69，按长边中点切成两块矩形，各自盖顶
+    addPitchedHouse(
+      b,
+      [
+        [-44, 33],
+        [-30, 33],
+        [-30, 38],
+        [-38, 38],
+        [-38, 44],
+        [-44, 44]
+      ],
+      { eaveH: 5, ridgeH: 2.5, y: PAD, wallColor: L.plaster }
+    )
+  })
   item("disc", [2, 1, 22], 45, () =>
     addSunbirdDisc(b, frame(2, PAD, 22), { radius: 13 })
   )

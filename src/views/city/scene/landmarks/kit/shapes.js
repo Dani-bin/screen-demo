@@ -86,7 +86,7 @@ export function prism(sides, rBottom, rTop, h, opts = {}) {
     const [x1, z1] = polygonVertex(sides, rBottom, k + 1)
     const [u0, w0] = polygonVertex(sides, rTop, k)
     const [u1, w1] = polygonVertex(sides, rTop, k + 1)
-    // 侧面：从外侧看逆时针（k 增大方向即从上往下看顺时针，见约定）
+    // 侧面：k 增大方向在「从上往下看、北在上」时为逆时针（+Z 转向 +X，见约定）
     pos.push(x0, 0, z0, u1, h, w1, u0, h, w0)
     pos.push(x0, 0, z0, x1, 0, z1, u1, h, w1)
     if (top && rTop > 0) pos.push(0, h, 0, u0, h, w0, u1, h, w1)

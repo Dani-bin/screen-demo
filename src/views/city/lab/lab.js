@@ -7,9 +7,13 @@
  *   pitch     俯仰角（度，0 为平视）
  *   dist      相机到注视点距离（米）
  *   y         注视点高度（米，缺省取景点 / 样例给的推荐值）
- *   focus     仅 kit：对准某件样例（hall | hall2 | pagoda | panda | pavilion | house | disc | boat | totem）
- * 地面、道路、河流、光照与城市场景一致（阴影开启，阴影范围收紧到预览区域）。
- * 只渲染一帧，完成后设 window.__labReady = true（静态截图用，省 CPU）。
+ *   focus     仅 kit：对准某件样例（hall | hall2 | twin | lhouse | pagoda | panda | pavilion | house | disc | boat | totem）
+ *   shadow    city：阴影范围 / 偏移与相机 near = 20 完全照搬城市场景（景点模式默认，所见即线上效果，
+ *             near = 20 时近景距离须 ≥ 300 m，验收截图按此取 dist）；
+ *             tight：阴影收紧到注视点周围、相机 near = 1（kit 默认，适合近看构件造型）
+ * 地面、道路、河流、光照颜色与强度与城市场景一致（阴影开启）。
+ * 只渲染一帧，完成后设 window.__labReady = true（静态截图用，省 CPU）；
+ * 出错时同时设 __labError（错误信息）与 __labReady，截图脚本不必干等到超时。
  */
 import {
   Color,
@@ -31,7 +35,7 @@ import { createRivers, createRoads } from "../scene/roads.js"
 import { createBuildings } from "../scene/buildings.js"
 import { polygonCenter } from "../scene/utils.js"
 import { SPOTS } from "../data/cityData.js"
-import * as footprint from "../scene/landmarks/kit/footprint.js"
+import { buildingsInZones } from "../scene/landmarks/kit/footprint.js"
 import { buildKit } from "./kitShowcase.js"
 
 const DEG = Math.PI / 180
@@ -78,6 +82,7 @@ function buildSubject(name, data, project) {
       target: f ? f.slice(0, 3) : kit.target,
       defaultDist: f ? f[3] : 160,
       shadowRadius: 110,
+      shadowMode: "tight",
       context: false
     }
   }
@@ -91,14 +96,8 @@ function buildSubject(name, data, project) {
   }
   const [x, z] = project.toLocal(raw.lon, raw.lat)
   const spot = { ...raw, x, z }
-  // ctx 与 createLandmarks 传给景点模块的一致
-  const ctx = {
-    project,
-    buildings: data.buildings,
-    theme: THEME,
-    spot,
-    footprint
-  }
+  // ctx 与生产环境 createLandmarks 传给景点模块的完全一致；kit 工具由景点模块自行导入
+  const ctx = { project, buildings: data.buildings, theme: THEME, spot }
   const r = buildLandmark(spotName, ctx)
   const triangles = r.meshes.reduce(
     (sum, m) => sum + m.geometry.attributes.position.count / 3,
@@ -109,6 +108,7 @@ function buildSubject(name, data, project) {
     target: [x, Math.max(10, r.markerHeight * 0.4), z],
     defaultDist: 420,
     shadowRadius: CONTEXT_RADIUS,
+    shadowMode: "city",
     context: true,
     center: [x, z],
     stats: { total: triangles, meshes: r.meshes.length }
@@ -117,7 +117,7 @@ function buildSubject(name, data, project) {
 
 /** 景点周围 CONTEXT_RADIUS 内、且不在替换区里的通用楼 */
 function contextBuildings(data, center, zones) {
-  const hidden = footprint.buildingsInZones(data.buildings, zones)
+  const hidden = buildingsInZones(data.buildings, zones)
   return data.buildings.filter((b, i) => {
     if (hidden.has(i) || !b.p || !b.p.length) return false
     const [bx, bz] = polygonCenter(b.p)
@@ -137,29 +137,41 @@ function createRenderer(canvas) {
   return renderer
 }
 
-/** 光照与 CityScene 相同；阴影正交范围收紧到注视点周围 radius 米，近景阴影更实 */
-function addLights(scene, target, radius) {
+/**
+ * 光照颜色、强度、方向与 CityScene 相同。阴影两种模式：
+ *   city  —— 太阳位置、阴影正交范围、bias / normalBias 全部照搬 CityScene（整城一张阴影贴图）；
+ *   tight —— 太阳沿同一方向对准注视点，正交范围收紧到周围 radius 米，近景阴影更实。
+ */
+function addLights(scene, target, radius, mode) {
   const Lt = THEME.light
   scene.add(new HemisphereLight(Lt.hemiSky, Lt.hemiGround, Lt.hemiIntensity))
   const sun = new DirectionalLight(Lt.sun, Lt.sunIntensity)
-  const dir = new Vector3(...Lt.sunPosition).normalize()
-  const t = new Vector3(target[0], 0, target[2])
-  sun.position.copy(t).addScaledVector(dir, 2000)
-  sun.target.position.copy(t)
   sun.castShadow = true
   sun.shadow.mapSize.set(Lt.shadowMapSize, Lt.shadowMapSize)
-  Object.assign(sun.shadow.camera, {
-    left: -radius,
-    right: radius,
-    top: radius,
-    bottom: -radius,
-    near: 2000 - radius * 1.5,
-    far: 2000 + radius * 1.5
-  })
+  if (mode === "city") {
+    // 与 CityScene._initScene 一致：太阳在 sunPosition、target 在原点
+    sun.position.set(...Lt.sunPosition)
+    Object.assign(sun.shadow.camera, Lt.shadowBox)
+    sun.shadow.bias = Lt.shadowBias
+    sun.shadow.normalBias = Lt.shadowNormalBias
+  } else {
+    const dir = new Vector3(...Lt.sunPosition).normalize()
+    const t = new Vector3(target[0], 0, target[2])
+    sun.position.copy(t).addScaledVector(dir, 2000)
+    sun.target.position.copy(t)
+    Object.assign(sun.shadow.camera, {
+      left: -radius,
+      right: radius,
+      top: radius,
+      bottom: -radius,
+      near: 2000 - radius * 1.5,
+      far: 2000 + radius * 1.5
+    })
+    // 深度范围约 3·radius 米：bias × 范围 ≈ 0.1 m；小构件用很小的法线偏移，避免阴影漏光
+    sun.shadow.bias = -0.1 / (radius * 3)
+    sun.shadow.normalBias = 0.05
+  }
   sun.shadow.camera.updateProjectionMatrix()
-  // 深度范围约 3·radius 米：bias × 范围 ≈ 0.1 m；小构件用很小的法线偏移，避免阴影漏光
-  sun.shadow.bias = -0.1 / (radius * 3)
-  sun.shadow.normalBias = 0.05
   scene.add(sun, sun.target)
 }
 
@@ -185,6 +197,11 @@ async function main() {
   const project = createProjection(data.meta.origin)
   const name = params.get("landmark") || "kit"
   const subject = buildSubject(name, data, project)
+  const shadowParam = params.get("shadow")
+  const shadowMode =
+    shadowParam === "city" || shadowParam === "tight"
+      ? shadowParam
+      : subject.shadowMode
 
   const renderer = createRenderer(canvas)
   const scene = new Scene()
@@ -192,7 +209,8 @@ async function main() {
   const camera = new PerspectiveCamera(
     THEME.camera.fov,
     window.innerWidth / window.innerHeight,
-    1,
+    // city 模式与线上相同（near = 20，深度精度一致）；tight 模式要贴近看构件，near = 1
+    shadowMode === "city" ? THEME.camera.near : 1,
     THEME.camera.far
   )
 
@@ -209,12 +227,12 @@ async function main() {
     m.receiveShadow = true
     scene.add(m)
   }
-  addLights(scene, subject.target, subject.shadowRadius)
+  addLights(scene, subject.target, subject.shadowRadius, shadowMode)
   const [tx, ty, tz] = subject.target
   placeCamera(camera, { x: tx, y: ty, z: tz, defaultDist: subject.defaultDist })
 
   window.__labStats = subject.stats
-  info.textContent = `${name}  三角形 ${subject.stats?.total ?? "-"}`
+  info.textContent = `${name}  阴影 ${shadowMode}  三角形 ${subject.stats?.total ?? "-"}`
 
   // 场景静态：阴影只画一次；只渲染一帧，之后不再循环
   renderer.shadowMap.autoUpdate = false
@@ -233,4 +251,6 @@ main().catch((err) => {
   const info = document.getElementById("info")
   if (info) info.textContent = `预览失败：${err.message}`
   window.__labError = err.message
+  // 出错也视为「就绪」，截图脚本立即截图（画面上有错误提示），不必等超时
+  window.__labReady = true
 })
