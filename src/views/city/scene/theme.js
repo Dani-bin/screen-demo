@@ -46,7 +46,7 @@ export const THEME = {
     yellow: "#f5c842",
     yellowRatio: 0.22,
     trunk: "#9a6b3f",
-    parkAreaPerTree: 900, // 公园每 900 ㎡ 一棵
+    parkAreaPerTree: 900, // 公园包围盒每 900 ㎡ 一棵（按包围盒面积计，实际密度更高）
     parkMaxPerPolygon: 400,
     riverStep: 34, // 河岸每 34m 一棵
     riverOffset: 34, // 距河中心线 34m
