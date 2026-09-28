@@ -10,17 +10,20 @@ import { Group, Mesh, SphereGeometry } from "three"
 /**
  * @param {Array} spots 景点数组（已含 x / z 局部坐标）
  * @returns {{ group: Group, setActive: Function, dispose: Function }}
+ *   dispose 只释放几何体与标签 DOM，不会把 group 移出场景；
+ *   调用方需自行 group.removeFromParent()（或 scene.remove(group)）。
  */
 export function createMarkers(spots, materials, theme) {
   const group = new Group()
   const labels = []
-  const geos = []
+  // 所有落点球只有两种尺寸：首个景点（主景点）用大球，其余共用小球
+  const mainGeo = new SphereGeometry(theme.marker.mainRadius, 24, 16)
+  const normalGeo = new SphereGeometry(theme.marker.radius, 24, 16)
 
   spots.forEach((spot, i) => {
-    const r = i === 0 ? theme.marker.mainRadius : theme.marker.radius
-    const geo = new SphereGeometry(r, 24, 16)
-    geos.push(geo)
-    const dot = new Mesh(geo, materials.marker)
+    const main = i === 0
+    const r = main ? theme.marker.mainRadius : theme.marker.radius
+    const dot = new Mesh(main ? mainGeo : normalGeo, materials.marker)
     dot.position.set(spot.x, r + 3, spot.z)
     dot.castShadow = true
     group.add(dot)
@@ -35,6 +38,10 @@ export function createMarkers(spots, materials, theme) {
     en.textContent = spot.en
     el.append(name, en)
     const label = new CSS2DObject(el)
+    // CSS2DRenderer 每帧都会写内联 transform: translate(-cx%, -cy%) translate(x, y)，
+    // 页面 CSS 里的 transform 会被覆盖，锚点只能通过 center 设置。
+    // (0.5, 1) 表示标签底边中点落在锚点上，标签整体显示在落点球正上方
+    label.center.set(0.5, 1)
     label.position.set(spot.x, r + 3 + theme.marker.labelLift, spot.z)
     group.add(label)
     labels.push(el)
@@ -47,7 +54,8 @@ export function createMarkers(spots, materials, theme) {
       labels.forEach((el, i) => el.classList.toggle("is-active", i === index))
     },
     dispose() {
-      geos.forEach((g) => g.dispose())
+      mainGeo.dispose()
+      normalGeo.dispose()
       labels.forEach((el) => el.remove())
     }
   }
