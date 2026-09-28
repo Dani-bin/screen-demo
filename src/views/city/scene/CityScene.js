@@ -50,7 +50,7 @@ export class CityScene {
    * @param {HTMLElement} options.labelLayer CSS2D 标签容器（铺满场景、pointer-events: none）
    * @param {HTMLElement} options.container 用于测量渲染尺寸
    * @param {object} options.geometry 预处理几何数据
-   * @param {Array} options.spots 景点数组（含 lon / lat / cam.offset）
+   * @param {Array} options.spots 景点数组（含 lon / lat / cam.offset，可选 cam.look）
    * @param {number} [options.startStop=0] 起始停靠站索引，越界时取 0
    * @param {Function} options.onStopChange 停靠站变化 (index)
    * @param {Function} options.onPlayingChange 巡览状态变化 (playing)
@@ -213,13 +213,18 @@ export class CityScene {
     // 每站机位：景点落点 + 偏移，注视景点落点。
     // 高层地标的落点球在楼顶，注视点仍在地面会把球挤到画面顶部；
     // 注视点与相机一起抬高底座高度的一半，让地标（楼体 + 落点球）居中。
+    // 注视点还可按 cam.look（[dx, dz] 米）水平平移：景点由相距较远的两处组成时
+    // （人民公园的纪念碑与鹤鸣茶社、合江亭与安顺廊桥），对准两者之间才能同框。
     // 依赖 markers.bases，因此必须在 _buildCity 之后调用
     const stops = this.spots.map((s, i) => {
       const lift = this.markers.bases[i] * 0.5
       const off = s.cam.offset
+      const [lx, lz] = s.cam.look || [0, 0]
+      const tx = s.x + lx
+      const tz = s.z + lz
       return {
-        p: [s.x + off[0], off[1] + lift, s.z + off[2]],
-        t: [s.x, lift, s.z]
+        p: [tx + off[0], off[1] + lift, tz + off[2]],
+        t: [tx, lift, tz]
       }
     })
     this.tour = new CameraTour({
@@ -447,7 +452,7 @@ export class CityScene {
     this.tour.update(dt)
     // 停靠时人工拉远到收紧范围之外：恢复整城阴影，免得视野外圈的楼没有影子。
     // 恢复后不会因拉近而重新收紧，只在下一次飞抵站点时收紧；
-    // 因此各站机位距离（cityData.js 的 cam.offset，目前约 850～1150 m）必须小于该阈值，
+    // 因此各站机位距离（cityData.js 的 cam.offset，目前约 440～720 m）必须小于该阈值，
     // 否则一飞抵就会被这里立即恢复
     if (
       this.shadowFitted &&
