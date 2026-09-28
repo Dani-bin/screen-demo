@@ -1,12 +1,14 @@
 /*
  * 单景点预览页（开发用，不进生产构建）
  * ----------------------------------------------------------
- * 打开 /city-lab.html?landmark=kit&yaw=210&pitch=30&dist=160
+ * 打开 /city-lab.html?landmark=kit&yaw=210&pitch=30&dist=160（可加 &tx=&tz=）
  *   landmark  kit（构件样例）或景点英文键 tianfu | taikooli | ifs | kuanzhai | peoplesPark | wenshu | hejiang
  *   yaw       相机方位角（度，相对正北顺时针；相机位于注视点的这个方向上）
  *   pitch     俯仰角（度，0 为平视）
  *   dist      相机到注视点距离（米）
  *   y         注视点高度（米，缺省取景点 / 样例给的推荐值）
+ *   tx / tz   注视点水平平移（米，X 向东、Z 向南，相对景点落点 / 样例注视点），
+ *             用于近看离落点较远的构件（如合江亭站的安顺廊桥、人民公园站的鹤鸣茶社）
  *   focus     仅 kit：对准某件样例（hall | hall2 | twin | lhouse | pagoda | panda | pavilion | house | disc | boat | totem）
  *   shadow    city：阴影与相机 near = 20 完全照搬城市场景（景点模式默认，所见即线上效果，
  *             near = 20 时近景距离须 ≥ 300 m，验收截图按此取 dist）。景点模式下等同线上
@@ -205,7 +207,11 @@ function placeCamera(camera, target) {
   const yaw = num("yaw", 210) * DEG
   const pitch = num("pitch", 30) * DEG
   const dist = num("dist", target.defaultDist)
-  const t = new Vector3(target.x, num("y", target.y), target.z)
+  const t = new Vector3(
+    target.x + num("tx", 0),
+    num("y", target.y),
+    target.z + num("tz", 0)
+  )
   // 方位角 → 水平方向：北为 -Z、东为 +X
   const h = Math.cos(pitch) * dist
   camera.position.set(

@@ -1,5 +1,5 @@
 /*
- * 小件：低多边形熊猫、游船、太阳神鸟金盘、图腾柱
+ * 小件：低多边形熊猫、游船、太阳神鸟金盘、图腾柱、低多边形树
  * ----------------------------------------------------------
  * 与 parts.js 相同：addXxx(b, parent, opts) 直接加进 ColorBuilder，parent 为 frame。
  * 熊猫要配 flatMaterial()（棱面分明的折纸感），应单独放进一个 ColorBuilder；
@@ -345,4 +345,63 @@ export function addTotem(b, parent, { h = 12, r = 0.6 } = {}) {
     local(parent, 0, capTop - capH, 0)
   )
   b.add(sphere(ball, 14, 10), L.gold, local(parent, 0, capTop - 0.05 * r, 0))
+}
+
+/* ---------------- 低多边形树 ---------------- */
+
+// 树冠模板（按细分级别缓存）：单位二十面体、去掉平滑法线，合批器按面重算，
+// 得到与城市通用树一致的棱面。ColorBuilder.add 会复制一份再变换，模板可反复传入
+const CROWNS = new Map()
+function crownTemplate(detail) {
+  let g = CROWNS.get(detail)
+  if (!g) {
+    g = new IcosahedronGeometry(1, detail)
+    g.deleteAttribute("normal")
+    CROWNS.set(detail, g)
+  }
+  return g
+}
+
+/**
+ * 低多边形树：六棱柱树干 + 二十面体树冠（竖向拉长 1.15 倍，平面着色，与城市通用树一致），
+ * 直接加进 ColorBuilder（配 landmarkMaterial）。
+ * (x, y, z) 为世界坐标的树根，y 为树干底高度（地面、铺装或台基顶）。
+ * 树冠中心在树根以上 trunkH + 0.95 r，树冠下沿离树根 trunkH − 0.2 r；
+ * 树干高 trunkH + 0.4 r，顶端伸进树冠，树冠下沿不露缝。
+ * @param {ColorBuilder} b
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ * @param {object} opts
+ * @param {number} opts.r 树冠半径（米）
+ * @param {string|Color} opts.color 树冠颜色
+ * @param {number} [opts.trunkH=0.75·r] 见上
+ * @param {string|Color} [opts.trunkColor=THEME.tree.trunk]
+ * @param {number} [opts.trunkR=0.12·r] 树干底半径（顶端收为 0.75 倍）
+ * @param {number} [opts.yaw=0] 树冠绕竖轴转角（弧度），多棵树时打散棱面朝向
+ * @param {number} [opts.detail=1] 二十面体细分级别：1 为 80 面，0 为 20 面（远处小树省三角形）
+ * @returns {number} 树冠顶高度
+ */
+export function addTree(b, x, y, z, opts) {
+  const {
+    r,
+    color,
+    trunkH = 0.75 * r,
+    trunkColor = THEME.tree.trunk,
+    trunkR = 0.12 * r,
+    yaw = 0,
+    detail = 1
+  } = opts
+  b.add(
+    cylinder(trunkR, trunkR * 0.75, trunkH + 0.4 * r, { segments: 6 }),
+    trunkColor,
+    local(null, x, y, z)
+  )
+  const cy = y + trunkH + 0.95 * r
+  b.add(
+    crownTemplate(detail),
+    color,
+    local(null, x, cy, z, yaw, r, 1.15 * r, r)
+  )
+  return cy + 1.15 * r
 }

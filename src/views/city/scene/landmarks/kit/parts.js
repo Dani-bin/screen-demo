@@ -20,7 +20,7 @@ import {
 } from "./roofs.js"
 import { L, addTop, clamp, eaveDrop, palette } from "./common.js"
 
-export { palette, edgeFrame } from "./common.js"
+export { palette, edgeFrame, eaveDrop, clamp } from "./common.js"
 export { addPavilion, addPagoda } from "./towers.js"
 export { addPitchedHouse, housePieces } from "./houses.js"
 

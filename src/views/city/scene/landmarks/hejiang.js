@@ -12,14 +12,7 @@
  * 定位：OSM 数据里合江亭没有名称、安顺廊桥不在建筑数据中（桥不是 building），
  * 先按名称查楼，查不到时按设计坐标与朝向放置（见 PAVILION / BRIDGE 常量）。
  */
-import {
-  ExtrudeGeometry,
-  IcosahedronGeometry,
-  Mesh,
-  Path,
-  Shape,
-  Vector3
-} from "three"
+import { ExtrudeGeometry, Mesh, Path, Shape, Vector3 } from "three"
 import { THEME } from "../theme.js"
 import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
 import {
@@ -28,16 +21,16 @@ import {
   minAreaRect,
   rectPolygon
 } from "./kit/footprint.js"
-import { box, cylinder, sweepBar } from "./kit/shapes.js"
+import { box, sweepBar } from "./kit/shapes.js"
 import { hipRidges, hipRoof } from "./kit/roofs.js"
-import { eaveDrop } from "./kit/common.js"
 import {
   addBalustrade,
   addColumns,
   addPavilion,
-  addPlatform
+  addPlatform,
+  eaveDrop
 } from "./kit/parts.js"
-import { addBoat } from "./kit/figures.js"
+import { addBoat, addTree } from "./kit/figures.js"
 
 const L = THEME.landmark
 
@@ -112,23 +105,6 @@ function railRing(b, parent, w, d, y, h, color) {
   for (const sx of [-1, 1]) {
     b.add(box(t, h, d), color, local(parent, sx * (w / 2 + 0.05), y, 0))
   }
-}
-
-/**
- * 低多边形树：六棱柱树干 + 二十面体树冠（平面着色，与城市通用树一致）。
- * (x, z) 为世界坐标，s 为树冠半径。
- */
-function addTree(b, x, z, s, color) {
-  const trunkH = 0.75 * s
-  b.add(
-    cylinder(0.12 * s, 0.09 * s, trunkH + 0.4 * s, { segments: 6 }),
-    THEME.tree.trunk,
-    local(null, x, 0, z)
-  )
-  const crown = new IcosahedronGeometry(1, 1)
-  // 删掉平滑法线，合批器会按面重算，得到棱面分明的树冠
-  crown.deleteAttribute("normal")
-  b.add(crown, color, local(null, x, trunkH + 0.95 * s, z, 0, s, 1.15 * s, s))
 }
 
 /* ---------------- 合江亭 ---------------- */
@@ -568,7 +544,10 @@ export function build(ctx) {
   const treeAt = (m, x, z, s, k) => {
     // 局部 (x, 0, z) 经 frame 矩阵换成世界坐标
     p.set(x, 0, z).applyMatrix4(m)
-    addTree(b, p.x, p.z, s, k === 4 ? THEME.tree.yellow : greens[k % 4])
+    addTree(b, p.x, 0, p.z, {
+      r: s,
+      color: k === 4 ? THEME.tree.yellow : greens[k % 4]
+    })
   }
   const PAV_TREES = [
     [-15, -4, 3.8],

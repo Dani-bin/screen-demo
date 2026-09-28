@@ -18,7 +18,7 @@
  * 店铺墙体默认取切块的外接矩形；外接矩形比轮廓大太多、或会压到保留的通用楼时，
  * 墙体改回轮廓（屋顶仍盖外接矩形），避免新墙伸进旁边没替换的楼里。
  */
-import { IcosahedronGeometry, Mesh } from "three"
+import { Mesh } from "three"
 import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
 import {
   clipHalfPlane,
@@ -28,9 +28,10 @@ import {
   rectFrame,
   rectPolygon
 } from "./kit/footprint.js"
-import { box, cylinder, prism } from "./kit/shapes.js"
+import { box, prism } from "./kit/shapes.js"
 import { gableRidge, gableRoof, gableWalls, roofHeight } from "./kit/roofs.js"
 import { addHall, addPagoda, housePieces } from "./kit/parts.js"
+import { addTree } from "./kit/figures.js"
 import { extrudeBuilding } from "../buildings.js"
 import {
   mulberry32,
@@ -215,26 +216,6 @@ export function polygonsOverlap(A, B) {
   return (
     A.some(([x, z]) => pointInPolygon(x, z, B)) ||
     B.some(([x, z]) => pointInPolygon(x, z, A))
-  )
-}
-
-/**
- * 低多边形树：六棱柱树干 + 二十面体树冠（删掉法线由合批器按面重算，棱面分明）。
- * (x, y, z) 为世界坐标树根，s 为树冠半径。
- */
-function addTree(b, x, y, z, s, color, trunk) {
-  const trunkH = 0.75 * s
-  b.add(
-    cylinder(0.12 * s, 0.09 * s, trunkH + 0.4 * s, { segments: 6 }),
-    trunk,
-    local(null, x, y, z)
-  )
-  const crown = new IcosahedronGeometry(1, 1)
-  crown.deleteAttribute("normal")
-  b.add(
-    crown,
-    color,
-    local(null, x, y + trunkH + 0.95 * s, z, 0, s, 1.15 * s, s)
   )
 }
 
@@ -590,7 +571,11 @@ function addCompoundTrees(b, tools, W, D, gx, blockers, greens, trunk) {
       if (!keep || Math.abs(lx - gx) < 7) continue
       const [x, z] = tools.toWorld([lx, lz])
       if (!clear(x, z)) continue
-      addTree(b, x, PAVE, z, s, greens[k++ % greens.length], trunk)
+      addTree(b, x, PAVE, z, {
+        r: s,
+        color: greens[k++ % greens.length],
+        trunkColor: trunk
+      })
     }
   }
 }
