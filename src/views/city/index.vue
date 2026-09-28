@@ -108,7 +108,7 @@
   const view = shallowRef({ heading: 0, scaleMeters: 0 })
 
   /*
-   * 深链接起始站：#/city?spot=N 让镜头直接停在第 N 个景点，
+   * 深链接起始站：#/city?spot=N 让巡览从第 N 站开始（飞抵后照常停留、再去下一站），
    * 用于分享某个景点的大屏画面、逐景点截图验收。缺省或非法时为 NaN，由场景回退到第 0 站
    */
   const route = useRoute()
