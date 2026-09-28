@@ -113,8 +113,8 @@ const COURT = { minSide: 17, depthMin: 5, depthMax: 7, ratio: 0.3, open: 5 }
 // 随机种子（确定性随机：同一份数据每次加载结果相同）
 const SEED = 20260929
 
-// 灯笼：沿巷每 12 m 一个，灯笼顶离巷面 3.5 m
-const LANTERN = { step: 12, r: 0.4, top: 3.5 }
+// 灯笼：沿巷每 12 m 一个，灯笼顶离巷面 3.5 m；民居檐下的灯笼球心离墙面 out 米
+const LANTERN = { step: 12, r: 0.4, top: 3.5, out: 0.45 }
 // 巷面收口时离保留楼轮廓留的空隙（米）
 const END_GAP = 0.5
 
@@ -261,6 +261,35 @@ function courtyard(points) {
     wings,
     court: { u: r.cx, v: r.cz, open: Math.min(r.w, r.d) - 2 * D }
   }
+}
+
+/* ---------------- 步行路径 ---------------- */
+
+// 小人身体半径：crowd.js 低多边形小人躯干底部半径为 0.2 × 身高（身高 4 m 时 0.8 m）
+const BODY_R = THEME.crowd.height * 0.2
+// 身体离障碍再留的余量（米），防止贴着灯笼、树干擦过
+const WALK_MARGIN = 0.05
+
+/**
+ * 巷一侧（side = -1 为北侧、1 为南侧，即 v 的负 / 正方向）从墙面往巷中心要让出的距离：
+ * 可走带的边缘 + 身体半径不能碰到该侧伸进巷子的东西。
+ *   - 民居一侧：檐下灯笼伸到离墙 LANTERN.out + r（0.85 m），出檐 0.6 m 在它以内；
+ *   - 井巷子南侧文化墙：墙上灯笼伸到离墙 WALL_LANTERN_OUT + r（1.0 m）；
+ *   - 宽巷子：两侧行道树树干立在巷面上，离墙 fromWall、半径最大 min(0.12 rMax, 0.45)，
+ *     比灯笼伸得更远（约 2 m），宽巷子两侧都按树干算（树左右交替种）。
+ * 行道树树冠底离巷面约 4.1～4.5 m，在 4 m 小人头顶之上，不再为树冠收窄。
+ * @param {boolean} isKuan 是否宽巷子
+ * @param {boolean} isJing 是否井巷子
+ * @param {number} side -1 北侧 / 1 南侧
+ */
+function walkClear(isKuan, isJing, side) {
+  let reach = Math.max(HOUSE.overhang, LANTERN.out + LANTERN.r)
+  if (isJing && side > 0) reach = WALL_LANTERN_OUT + LANTERN.r
+  if (isKuan) {
+    const trunkR = Math.min(0.12 * LANE_TREES.rMax, 0.45)
+    reach = Math.max(reach, LANE_TREES.fromWall + trunkR)
+  }
+  return reach + BODY_R + WALK_MARGIN
 }
 
 /* ---------------- 构件 ---------------- */
@@ -602,10 +631,10 @@ export function build(ctx) {
           addLanternLite(b, F, u, y, wallFace - WALL_LANTERN_OUT, LANTERN.r)
           continue
         }
-        // 身后（墙内 1 m 处）有房才挂；挂在檐下，离墙面 0.45 m（出檐 0.6 m 以内）
+        // 身后（墙内 1 m 处）有房才挂；挂在檐下，离墙面 LANTERN.out（出檐 0.6 m 以内）
         if (!occupied(u, edge + side * 1)) continue
         const y = LANE_Y + LANTERN.top - LANTERN.r * 1.4
-        addLanternLite(b, F, u, y, edge - side * 0.45, LANTERN.r)
+        addLanternLite(b, F, u, y, edge - side * LANTERN.out, LANTERN.r)
       }
     }
   }
@@ -754,15 +783,21 @@ export function build(ctx) {
       laneTrees
     }
   }
-  // 步行路径：三条巷的中线（用收口后的两端，不会走进保留楼），换到世界坐标；
-  // 可走宽度比巷宽（墙到墙）窄 1.5 m，小人不贴墙；宽巷子游人最多
-  const walkways = lanes.map((l) => ({
-    points: [toXZ([l.u0, l.v]), toXZ([l.u1, l.v])],
-    y: LANE_Y,
-    width: l.width - 1.5,
-    closed: false,
-    density: l === kuan ? 1.5 : 1
-  }))
+  // 步行路径：三条巷（用收口后的两端，不会走进保留楼），换到世界坐标；宽巷子游人最多。
+  // 可走带 = 巷宽（墙到墙）两侧各扣掉 walkClear(l, side)，贴边走的小人身体
+  // 不会穿过檐下灯笼、文化墙灯笼和宽巷子行道树树干；两侧扣得不一样时中线相应偏移
+  const walkways = lanes.map((l) => {
+    const lo = l.v - l.width / 2 + walkClear(l === kuan, l === jing, -1)
+    const hi = l.v + l.width / 2 - walkClear(l === kuan, l === jing, 1)
+    const v = (lo + hi) / 2
+    return {
+      points: [toXZ([l.u0, v]), toXZ([l.u1, v])],
+      y: LANE_Y,
+      width: hi - lo,
+      closed: false,
+      density: l === kuan ? 1.5 : 1
+    }
+  })
 
   return {
     meshes: mesh ? [mesh] : [],

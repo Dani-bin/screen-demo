@@ -14,6 +14,7 @@
 import { BackSide, Mesh } from "three"
 import { THEME } from "../theme.js"
 import { mulberry32, pointInPolygon } from "../utils.js"
+import { GROUND_Y } from "../terrain.js"
 import {
   ColorBuilder,
   flatMaterial,
@@ -51,17 +52,25 @@ const CANTI_OUT = 2 // 外挑距离
 const PANDA_H = 20
 const PANDA_S = 30 // 熊猫离裙楼红星路长边北端的距离
 const PATH_W = 2.6 // 屋顶花园小径宽
-// 小径顶面：草皮顶 + 0.2（小径高 0.25、底边下沉 0.05）
-const PATH_TOP = ROOF_Y + GRASS_T + 0.2
-// 屋顶小径上的步行路径：可走宽度（小径 2.6 m 宽，两侧各留 0.7 m 给小人身体），
-// 以及离树冠边缘的最小距离（半个可走宽度 + 小人身体半径）
+// 小径截面：高 PATH_H、底边下沉进草皮 PATH_SINK（建模与步行路径共用这两个常量）
+const PATH_H = 0.25
+const PATH_SINK = 0.05
+// 小径顶面 = 草皮顶 + PATH_H − PATH_SINK（即高出草皮 0.2 m），人就走在这个面上
+const PATH_TOP = ROOF_Y + GRASS_T + PATH_H - PATH_SINK
+// 屋顶小径上的步行路径可走宽度（小径 2.6 m 宽，中线两侧各 0.6 m 内走人）
 const WALK_W = 1.2
-const WALK_CLEAR = 1.4
+// 小径中线离树冠边缘的最小距离 = 半个可走宽度 + 小人身体半径。
+// 身体半径按 crowd.js 的低多边形小人取身高的 0.2（身高 4 m 时 0.8 m），
+// 这样调整 THEME.crowd.height 时这里自动跟着变
+const WALK_CLEAR = WALK_W / 2 + THEME.crowd.height * 0.2
+// 屋顶小径被树冠断开后，短于这个长度的零碎段丢弃：
+// 太短的段上小人只能来回踱步，看上去像原地打转
+const MIN_RUN = 15
 // 红星路一侧人行道：裙楼临街立面（外挑玻璃盒最远凸出 7 m）与红星路路缘（离立面约 28 m）之间
-// 是一片没铺装的前场，露出 terrain.js 的地面（y = -0.5）。人行道中线离立面 off 米、
+// 是一片没铺装的前场，露出 terrain.js 的地面（y = GROUND_Y）。人行道中线离立面 off 米、
 // 可走宽度 width（离立面 13～23 m：熊猫垂在立面外的后腿与身体约伸出 11 m，人不从它下面走），
 // 两端各从长边端点内收 trim 米
-const SIDEWALK = { off: 18, width: 10, trim: 4, y: -0.5, density: 1.2 }
+const SIDEWALK = { off: 18, width: 10, trim: 4, y: GROUND_Y, density: 1.2 }
 
 /* ---------------- 配色 ---------------- */
 
@@ -405,9 +414,9 @@ function addRoofGarden(b, pts, rect, towerRects, panda) {
   for (const line of paths) {
     let run = []
     const flush = () => {
-      // 小径高 0.25、底边下沉 0.05：顶面高出草皮 0.2 m
+      // 小径高 PATH_H、底边下沉 PATH_SINK：顶面正好是 PATH_TOP
       if (run.length >= 2) {
-        b.add(sweepBar(run, PATH_W, 0.25), C.path)
+        b.add(sweepBar(run, PATH_W, PATH_H), C.path)
         runs.push(run.map(([x, , z]) => [x, z]))
       }
       run = []
@@ -415,7 +424,7 @@ function addRoofGarden(b, pts, rect, towerRects, panda) {
     for (const [u, v] of line) {
       const [x, z] = toWorld(u, v)
       if (inside(x, z, 2.5)) {
-        run.push([x, y - 0.05, z])
+        run.push([x, y - PATH_SINK, z])
         pathPts.push([x, z])
       } else flush()
     }
@@ -454,7 +463,7 @@ function addRoofGarden(b, pts, rect, towerRects, panda) {
 /**
  * 小径中线避开树冠：树只和小径的采样点（每 6 m 一个）保持 3.2 m，
  * 采样点之间的小径仍可能擦到树冠。把每段小径按 1 m 重采样，
- * 离树心不足「树冠半径 + WALK_CLEAR」的点断开，剩下长于 8 m 的连续段作为步行路径。
+ * 离树心不足「树冠半径 + WALK_CLEAR」的点断开，剩下不短于 MIN_RUN 的连续段作为步行路径。
  * @param {Array<Array<number[]>>} runs 小径中线（世界坐标 [x, z]）
  * @param {Array<number[]>} trees 树 [x, z, 树冠半径]
  */
@@ -464,7 +473,7 @@ function clearRuns(runs, trees) {
     let cur = []
     let len = 0
     const flush = () => {
-      if (cur.length >= 2 && len >= 8) out.push(cur)
+      if (cur.length >= 2 && len >= MIN_RUN) out.push(cur)
       cur = []
       len = 0
     }
