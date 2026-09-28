@@ -11,12 +11,14 @@
         --out public/city/hangzhou.json
 
 输出结构（坐标为以 origin 为原点的米制局部坐标，X 向东、Z 向南）：
-    meta      城市名、原点经纬度、范围
+    meta      城市名、原点经纬度、范围、clip 裁剪矩形 [xmin, zmin, xmax, zmax]
     buildings [{ p: [[x, z], ...], h: 楼高(米), n: 楼名或 null }]
     roads     [{ p: [[x, z], ...], c: "a"|"b"|"c"|"d" }]   a 主干 b 次干 c 支路 d 街巷
     water     [[[x, z], ...]]   水面多边形
     parks     [[[x, z], ...]]   绿地多边形
     rivers    [[[x, z], ...]]   河流中心线（按宽度挤成带状面）
+
+道路与河流中心线会裁剪到「范围 + --clip-margin 米」的矩形内；建筑 / 水面 / 绿地多边形不裁剪。
 
 原始响应会缓存到 scripts/osm-cache/，重复运行不再请求网络。
 """
@@ -81,9 +83,9 @@ def overpass(query, cache_dir):
                 text = resp.read().decode("utf-8")
             data = json.loads(text)
             # Overpass 超时 / 内存不足时也可能返回 200，但带 remark 且 elements 被截断，
-            # 这种残缺响应不能写入缓存，抛出异常走重试
-            if "remark" in data or not data.get("elements"):
-                raise RuntimeError(f"响应残缺：{data.get('remark', '无 elements')}")
+            # 这种残缺响应不能写入缓存，抛出异常走重试（elements 为空不算：某些范围内确实可能没有数据）
+            if "remark" in data:
+                raise RuntimeError(f"响应残缺：{data['remark']}")
             with open(cache_file, "w", encoding="utf-8") as f:
                 json.dump(data, f)
             return data
@@ -152,6 +154,63 @@ def stitch_rings(ways):
     return rings
 
 
+def clip_polyline(points, xmin, zmin, xmax, zmax):
+    """把折线裁剪到矩形内，返回若干段折线（离开矩形再进入时断开成多段）。
+
+    Overpass 返回的是与范围相交的整条 way，河流中心线会延伸到十几公里外、道路也会伸出城区很远，
+    既跑出地面又浪费 GPU，所以在数据源头裁掉。逐段用 Liang–Barsky 算法求线段在矩形内的参数区间
+    [t0, t1]：t0 > 0 表示从外面进入（新开一段），t1 < 1 表示从里面离开（结束当前段）。
+    新交点与其余坐标一样保留 1 位小数，并去掉连续重复点；不足 2 个点的段丢弃。
+    """
+    def snap(x, z):
+        # 保留 1 位小数，并夹回矩形内，避免浮点误差让交点落到边界外一丝
+        return [min(max(round(x, 1), xmin), xmax), min(max(round(z, 1), zmin), zmax)]
+
+    pieces, cur = [], []
+
+    def flush():
+        # 结束当前段：去连续重复点后，至少 2 个点才保留
+        nonlocal cur
+        dedup = []
+        for q in cur:
+            if not dedup or q != dedup[-1]:
+                dedup.append(q)
+        if len(dedup) >= 2:
+            pieces.append(dedup)
+        cur = []
+
+    for (x0, z0), (x1, z1) in zip(points, points[1:]):
+        dx, dz = x1 - x0, z1 - z0
+        t0, t1 = 0.0, 1.0
+        inside = True
+        # Liang–Barsky：依次对左、右、上、下四条边收缩参数区间
+        for pk, qk in ((-dx, x0 - xmin), (dx, xmax - x0), (-dz, z0 - zmin), (dz, zmax - z0)):
+            if pk == 0:
+                if qk < 0:  # 与该边平行且在外侧
+                    inside = False
+                    break
+            else:
+                t = qk / pk
+                if pk < 0:
+                    t0 = max(t0, t)
+                else:
+                    t1 = min(t1, t)
+                if t0 > t1:
+                    inside = False
+                    break
+        if not inside:
+            flush()  # 整段在矩形外：若之前在内部，则在此断开
+            continue
+        if t0 > 0 or not cur:
+            flush()  # 从外面进入（或折线起点）：新开一段
+            cur.append(snap(x0 + t0 * dx, z0 + t0 * dz))
+        cur.append(snap(x0 + t1 * dx, z0 + t1 * dz))
+        if t1 < 1:
+            flush()  # 从里面离开矩形：结束当前段
+    flush()
+    return pieces
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--city", default="成都")
@@ -159,6 +218,7 @@ def main():
     ap.add_argument("--origin", default="104.0657,30.6574", help="lon,lat，作为局部坐标原点")
     ap.add_argument("--out", default="public/city/chengdu.json")
     ap.add_argument("--cache-dir", default="scripts/osm-cache")
+    ap.add_argument("--clip-margin", type=float, default=300, help="道路 / 河流裁剪矩形在范围外扩的米数")
     args = ap.parse_args()
 
     south, west, north, east = [float(v) for v in args.bbox.split(",")]
@@ -183,6 +243,14 @@ def main():
             pts = pts[:-1]  # 去掉闭合重复点
         return pts
 
+    # 裁剪矩形：范围四角投影到局部坐标，再向外扩 clip_margin 米（北在 -Z，所以取 min / max）
+    corners = [to_local({"lon": lon, "lat": lat}) for lon in (west, east) for lat in (south, north)]
+    xmin = round(min(c[0] for c in corners) - args.clip_margin, 1)
+    xmax = round(max(c[0] for c in corners) + args.clip_margin, 1)
+    zmin = round(min(c[1] for c in corners) - args.clip_margin, 1)
+    zmax = round(max(c[1] for c in corners) + args.clip_margin, 1)
+    clip = [xmin, zmin, xmax, zmax]
+
     print("拉取建筑…")
     raw_b = overpass(f'[out:json][timeout:120];(way["building"]{bbox};);out geom;', args.cache_dir)
     buildings = []
@@ -198,11 +266,14 @@ def main():
     print("拉取道路…")
     kinds = "|".join(ROAD_CLASS.keys())
     raw_r = overpass(f'[out:json][timeout:120];(way["highway"~"^({kinds})$"]{bbox};);out geom;', args.cache_dir)
-    roads = [
-        {"p": [to_local(n) for n in w["geometry"]], "c": ROAD_CLASS[w["tags"]["highway"]]}
-        for w in raw_r["elements"]
-        if w["type"] == "way" and len(w.get("geometry", [])) > 1
-    ]
+    roads = []
+    for w in raw_r["elements"]:
+        if w["type"] != "way" or len(w.get("geometry", [])) < 2:
+            continue
+        c = ROAD_CLASS[w["tags"]["highway"]]
+        # 裁剪到城区矩形，一条 way 可能被切成多段，每段保留原道路等级
+        for piece in clip_polyline([to_local(n) for n in w["geometry"]], *clip):
+            roads.append({"p": piece, "c": c})
 
     print("拉取水系与绿地…")
     raw_l = overpass(
@@ -219,7 +290,8 @@ def main():
         is_water = tags.get("natural") == "water" or "waterway" in tags
         if e["type"] == "way":
             if "waterway" in tags:
-                rivers.append([to_local(n) for n in e.get("geometry", [])])
+                # 河流中心线同样裁剪到城区矩形，可能切成多段
+                rivers.extend(clip_polyline([to_local(n) for n in e.get("geometry", [])], *clip))
                 continue
             p = ring(e.get("geometry", []))
             if len(p) >= 3:
@@ -233,7 +305,7 @@ def main():
                     (water if is_water else parks).append(p)
 
     out = {
-        "meta": {"city": args.city, "origin": [lon0, lat0], "bbox": [south, west, north, east]},
+        "meta": {"city": args.city, "origin": [lon0, lat0], "bbox": [south, west, north, east], "clip": clip},
         "buildings": buildings, "roads": roads, "water": water, "parks": parks, "rivers": rivers,
     }
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
