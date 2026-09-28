@@ -17,6 +17,13 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 
 const GROUND_SIZE = 30000
 
+/**
+ * 地面平面高度（米）。略低于 0，给绿地 0.2、水面 0.3、道路 0.5+ 留出错层；
+ * 景点里直接露出地面的步行区（天府广场轴线、IFS 前场、太古里街巷等）
+ * 的落脚高度都引用这个常量，改动时人流路径会随之同步。
+ */
+export const GROUND_Y = -0.5
+
 /** 把 [[x, z], ...] 转成 Shape */
 export function polygonToShape(points) {
   return new Shape(points.map(([x, z]) => new Vector2(x, -z)))
@@ -53,7 +60,7 @@ export function createTerrain(data, materials) {
     materials.ground
   )
   ground.rotation.x = -Math.PI / 2
-  ground.position.y = -0.5
+  ground.position.y = GROUND_Y
   ground.receiveShadow = true
   group.add(ground)
 
