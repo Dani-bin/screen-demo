@@ -26,7 +26,7 @@
  *   - 注：OSM 的「辛亥保路纪念广场」（约 48 × 48 的圆形步行区）在纪念碑东南约 100 m，
  *     并不环绕碑台；这里按任务约定把同尺寸的圆形铺装广场放在碑台周围。
  */
-import { IcosahedronGeometry, Matrix4, Mesh } from "three"
+import { Matrix4, Mesh } from "three"
 import { THEME } from "../theme.js"
 import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
 import {
@@ -47,8 +47,8 @@ import {
   pyramidRoof,
   roofHeight
 } from "./kit/roofs.js"
-import { eaveDrop } from "./kit/common.js"
-import { addBalustrade, addColumns, addLantern } from "./kit/parts.js"
+import { addBalustrade, addColumns, addLantern, eaveDrop } from "./kit/parts.js"
+import { addTree } from "./kit/figures.js"
 
 const L = THEME.landmark
 const DEG = Math.PI / 180
@@ -195,27 +195,6 @@ function wedge(w, h, len) {
     [x1, 0, len]
   ]
   return fromTriangles(tris.flat())
-}
-
-/**
- * 低多边形树：六棱柱树干 + 二十面体树冠（平面着色，与城市通用树一致）。
- * (x, z) 为世界坐标，s 为树冠半径。
- */
-function addTree(b, x, z, s, color, y = 0) {
-  const trunkH = 0.75 * s
-  b.add(
-    cylinder(0.12 * s, 0.09 * s, trunkH + 0.4 * s, { segments: 6 }),
-    THEME.tree.trunk,
-    local(null, x, y, z)
-  )
-  const crown = new IcosahedronGeometry(1, 1)
-  // 删掉平滑法线，合批器会按面重算，得到棱面分明的树冠
-  crown.deleteAttribute("normal")
-  b.add(
-    crown,
-    color,
-    local(null, x, y + trunkH + 0.95 * s, z, 0, s, 1.15 * s, s)
-  )
 }
 
 /** 把坐标系 m 里的局部点 (x, z) 换成世界坐标 [x, z]（m 只含平移、绕 Y 旋转与等比缩放） */
@@ -795,7 +774,10 @@ export function build(ctx) {
     const rr = PLAZA_R + 6 + (k % 2) * 3
     const [x, z] = toWorld(fp, rr * Math.sin(a), rr * Math.cos(a))
     if (!clear(x, z, 16)) continue
-    addTree(b, x, z, 6 + (k % 3), k === 5 ? THEME.tree.yellow : greens[k % 4])
+    addTree(b, x, 0, z, {
+      r: 6 + (k % 3),
+      color: k === 5 ? THEME.tree.yellow : greens[k % 4]
+    })
   }
 
   // 鹤鸣茶社：局部 X 沿湖岸（frame 的 +X 指向 bearing + 90°，故传 bearing − 90）
@@ -813,7 +795,10 @@ export function build(ctx) {
   TEA_TREES.forEach(([x, z, s], k) => {
     const [wx, wz] = toWorld(ft, x, z)
     // 院中那棵从地坪上长出来
-    addTree(b, wx, wz, s, greens[(k + 1) % 4], k === 0 ? TEA_BASE.h : 0)
+    addTree(b, wx, k === 0 ? TEA_BASE.h : 0, wz, {
+      r: s,
+      color: greens[(k + 1) % 4]
+    })
   })
 
   const g = b.bake()

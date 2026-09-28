@@ -31,7 +31,7 @@
  *     真正的现代公寓（building=apartments）估高 ≥ 30 m，仍留给通用楼层。
  * zones 只返回被重建楼各自的外接矩形（外扩 0.5 m），不会误删其他楼。
  */
-import { IcosahedronGeometry, Mesh } from "three"
+import { Mesh } from "three"
 import { THEME } from "../theme.js"
 import { mulberry32, pointInPolygon, polygonBounds } from "../utils.js"
 import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
@@ -46,6 +46,7 @@ import {
 import { box, cylinder, sphere } from "./kit/shapes.js"
 import { gableRidge, gableRoof } from "./kit/roofs.js"
 import { addPitchedHouse, housePieces } from "./kit/parts.js"
+import { addTree } from "./kit/figures.js"
 
 const L = THEME.landmark
 const DEG = Math.PI / 180
@@ -298,30 +299,6 @@ function shadeHex(hex, k) {
       .toString(16)
       .padStart(2, "0")
   return `#${ch(16)}${ch(8)}${ch(0)}`
-}
-
-/**
- * 低多边形树：六棱柱树干 + 二十面体树冠（平面着色，与城市通用树一致）。
- * tpl 为共用的树冠模板（ColorBuilder.add 会复制一份再变换，模板可反复传入）；
- * (x, z) 为世界坐标，y0 为树干底高度，s 为树冠半径，crownY 为树冠中心高度。
- * 树干伸进树冠 0.4 s，不会在树冠下沿露缝。
- */
-function addTree(b, tpl, x, y0, z, s, crownY, color) {
-  const r = Math.min(0.12 * s, 0.45)
-  b.add(
-    cylinder(r, r * 0.75, crownY - 0.6 * s - y0, { segments: 6 }),
-    THEME.tree.trunk,
-    local(null, x, y0, z)
-  )
-  b.add(tpl, color, local(null, x, crownY - 1.15 * s, z, 0, s, 1.15 * s, s))
-}
-
-/** 二十面体树冠模板：底在 y = 0、中心在 y = 1、半径 1，去掉平滑法线（合批器按面重算，棱面分明） */
-function crownTemplate(detail) {
-  const g = new IcosahedronGeometry(1, detail)
-  g.deleteAttribute("normal")
-  g.translate(0, 1, 0)
-  return g
 }
 
 /**
@@ -654,8 +631,6 @@ export function build(ctx) {
   /* ---- 8. 树 ---- */
   const trand = mulberry32(SEED + 7)
   const greens = THEME.tree.greens
-  const fine = crownTemplate(1) // 天井树：细分二十面体（80 面）
-  const coarse = crownTemplate(0) // 其余树：二十面体（20 面）
   const nearPoly = ({ bb, p }, u, v, d) =>
     u > bb.minX - d &&
     u < bb.maxX + d &&
@@ -713,8 +688,14 @@ export function build(ctx) {
   }
   trees.forEach((t, k) => {
     const [x, z] = toXZ([t.u, t.v])
-    const tpl = t.court ? fine : coarse
-    addTree(b, tpl, x, 0, z, t.s, t.crownY, greens[k % greens.length])
+    // 天井树用细分二十面体（80 面），其余树用二十面体（20 面）
+    addTree(b, x, 0, z, {
+      r: t.s,
+      trunkH: t.crownY - 0.95 * t.s, // 让树冠中心正好落在 crownY
+      trunkR: Math.min(0.12 * t.s, 0.45),
+      color: greens[k % greens.length],
+      detail: t.court ? 1 : 0
+    })
   })
 
   // 宽巷子两侧行道大树：沿巷均布、左右交替，落在两盏灯笼正中；树干立在巷面上，
@@ -735,11 +716,15 @@ export function build(ctx) {
     const s = LANE_TREES.rMin + (LANE_TREES.rMax - LANE_TREES.rMin) * trand()
     if (kept.some((q) => nearPoly(q, u, v, s + TREE.clear))) continue
     const [x, z] = toXZ([u, v])
-    addTree(b, coarse, x, LANE_Y, z, s, LANE_TREES.crownY, greens[(k + 1) % 4])
+    addTree(b, x, LANE_Y, z, {
+      r: s,
+      trunkH: LANE_TREES.crownY - LANE_Y - 0.95 * s,
+      trunkR: Math.min(0.12 * s, 0.45),
+      color: greens[(k + 1) % 4],
+      detail: 0
+    })
     laneTrees++
   }
-  fine.dispose()
-  coarse.dispose()
 
   /* ---- 落点高度 ---- */
   // 景区中心（街区坐标系原点）所在或最近的民居屋脊高度，与牌坊高度取大

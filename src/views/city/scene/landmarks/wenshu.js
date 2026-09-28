@@ -13,7 +13,7 @@
  * 院内其余 OSM 楼（僧寮、廊房、客堂等）一律改成灰瓦坡顶的寺院附属房；
  * 跨在院墙上的低层楼也一并替换，院墙在它们处断开、由房子本身接上。
  */
-import { FrontSide, IcosahedronGeometry, Mesh } from "three"
+import { FrontSide, Mesh } from "three"
 import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
 import {
   buildingsInZones,
@@ -38,9 +38,11 @@ import {
   addHall,
   addPagoda,
   addPitchedHouse,
-  addPlatform
+  addPlatform,
+  clamp,
+  eaveDrop
 } from "./kit/parts.js"
-import { clamp, eaveDrop } from "./kit/common.js"
+import { addTree } from "./kit/figures.js"
 import { mulberry32, pointInPolygon } from "../utils.js"
 
 const DEG = Math.PI / 180
@@ -435,30 +437,18 @@ function scatterTrees(axis, poly, obstacles, pagodaPos, pagodaR, greens, maxN) {
   return picked
 }
 
-/** 一棵低多边形大树：树下圆形草地（加进地面批 gb）+ 树干 + 二十面体树冠（略拉高） */
-function addTree(b, gb, t, trunkColor) {
-  const base = frame(t.x, PAVE, t.z)
-  gb.add(prism(8, t.r * 0.9, t.r * 0.9, 0.15), LAWN, base)
-  b.add(
-    cylinder(0.55, 0.4, t.trunk + 1, { segments: 6 }),
+/** 一棵低多边形大树：树下圆形草地（加进地面批 gb）+ kit 的低多边形树（树冠略拉高） */
+function addBigTree(b, gb, t, trunkColor) {
+  gb.add(prism(8, t.r * 0.9, t.r * 0.9, 0.15), LAWN, frame(t.x, PAVE, t.z))
+  addTree(b, t.x, PAVE, t.z, {
+    r: t.r,
+    // 树冠中心在铺装以上 t.trunk + 0.9 r（与原先一致）
+    trunkH: t.trunk - 0.05 * t.r,
+    trunkR: 0.55,
     trunkColor,
-    local(base, 0, 0, 0)
-  )
-  const crown = new IcosahedronGeometry(1, 1)
-  b.add(
-    crown,
-    t.color,
-    local(
-      base,
-      0,
-      t.trunk + t.r * 0.9,
-      0,
-      t.key * Math.PI * 2,
-      t.r,
-      t.r * 1.15,
-      t.r
-    )
-  )
+    color: t.color,
+    yaw: t.key * Math.PI * 2
+  })
 }
 
 /* ---------------- 院落辅助 ---------------- */
@@ -836,7 +826,7 @@ export function build(ctx) {
     theme.tree.greens,
     18
   )
-  for (const t of trees) addTree(b, gb, t, theme.tree.trunk)
+  for (const t of trees) addBigTree(b, gb, t, theme.tree.trunk)
 
   const meshes = []
   const g = b.bake()
