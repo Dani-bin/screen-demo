@@ -45,6 +45,7 @@ export class CityScene {
    * @param {HTMLElement} options.container 用于测量渲染尺寸
    * @param {object} options.geometry 预处理几何数据
    * @param {Array} options.spots 景点数组（含 lon / lat / cam.offset）
+   * @param {number} [options.startStop=0] 起始停靠站索引，越界时取 0
    * @param {Function} options.onStopChange 停靠站变化 (index)
    * @param {Function} options.onPlayingChange 巡览状态变化 (playing)
    * @param {Function} options.onViewChange 视角变化 ({ heading, scaleMeters })
@@ -207,7 +208,11 @@ export class CityScene {
       },
       reduceMotion
     })
-    this.tour.gotoStop(0, false)
+    // 起始站由深链接 ?spot=N 指定；非整数或越界时回到第 0 站
+    const start = options.startStop
+    const startStop =
+      Number.isInteger(start) && start >= 0 && start < stops.length ? start : 0
+    this.tour.gotoStop(startStop, false)
   }
 
   _initEvents() {

@@ -107,6 +107,13 @@
   // 每次都整体替换对象，无需深层响应，用 shallowRef 省去代理开销
   const view = shallowRef({ heading: 0, scaleMeters: 0 })
 
+  /*
+   * 深链接起始站：#/city?spot=N 让镜头直接停在第 N 个景点，
+   * 用于分享某个景点的大屏画面、逐景点截图验收。缺省或非法时为 NaN，由场景回退到第 0 站
+   */
+  const route = useRoute()
+  const startStop = Number.parseInt(route.query.spot, 10)
+
   /** 三维场景实例，不做成响应式：内部持有大量 WebGL 对象，无需被 Vue 代理 */
   let scene = null
   /** 组件是否仍存活：异步取数期间用户可能已切走路由，之后不能再写状态或建场景 */
@@ -196,6 +203,7 @@
         container: pageRef.value,
         geometry,
         spots: data.spots,
+        startStop,
         onStopChange: (index) => {
           current.value = index
         },

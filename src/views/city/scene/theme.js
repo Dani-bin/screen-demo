@@ -108,7 +108,9 @@ export const THEME = {
     pitchMax: 80,
     radiusMin: 300,
     radiusMax: 6000,
-    bounds: { x: [-2100, 2900], z: [-2400, 2000] } // 注视点可移动范围
+    // 注视点可移动范围：依据 chengdu.json 的 meta.clip（x -2761～3393，z -3461～2665），
+    // 四周各内缩约 150～360 米，避免镜头移到数据边缘外
+    bounds: { x: [-2600, 3100], z: [-3100, 2300] }
   },
   tour: { fly: 2, hold: 8, idle: 15, drift: 0.004 }, // 秒；drift 为停靠时环绕速度（弧度/秒）
 

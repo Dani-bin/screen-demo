@@ -214,7 +214,7 @@ def clip_polyline(points, xmin, zmin, xmax, zmax):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--city", default="成都")
-    ap.add_argument("--bbox", default="30.640,104.045,30.678,104.095", help="south,west,north,east")
+    ap.add_argument("--bbox", default="30.636,104.040,30.686,104.098", help="south,west,north,east")
     ap.add_argument("--origin", default="104.0657,30.6574", help="lon,lat，作为局部坐标原点")
     ap.add_argument("--out", default="public/city/chengdu.json")
     ap.add_argument("--cache-dir", default="scripts/osm-cache")
