@@ -2,7 +2,8 @@
  * 景点注册表
  * ----------------------------------------------------------
  * 景点顺序与 cityData.js 的 SPOTS 一一对应（按景点名匹配，不依赖数组下标），
- * 每个模块 build(ctx) 返回 { meshes, zones, markerHeight, update? }。
+ * 每个模块 build(ctx) 返回 { meshes, zones, markerHeight, update?, walkways? }；
+ * walkways 为该景点的步行路径，到站时交给人群系统（crowd.js）生成行人。
  * 单个景点构建失败只跳过该景点并打印错误，不影响城市其他部分。
  *
  * 阴影约定：城市阴影贴图是静态的（只在必要时重绘一次），因此
@@ -38,7 +39,13 @@ export const LANDMARK_MODULES = {
 
 /** 空结果：模块不存在或构建失败时使用 */
 function emptyResult() {
-  return { meshes: [], zones: [], markerHeight: 0, update: null }
+  return {
+    meshes: [],
+    zones: [],
+    markerHeight: 0,
+    update: null,
+    walkways: []
+  }
 }
 
 /** 把模块返回值规整为完整结构，缺字段或类型不对时取默认值 */
@@ -48,7 +55,11 @@ function normalize(r) {
     meshes: Array.isArray(r.meshes) ? r.meshes.filter(Boolean) : [],
     zones: Array.isArray(r.zones) ? r.zones : [],
     markerHeight: r.markerHeight > 0 ? r.markerHeight : 0,
-    update: typeof r.update === "function" ? r.update : null
+    update: typeof r.update === "function" ? r.update : null,
+    // 步行路径（人群用，格式见 crowd.js 文件头）；只做粗筛，细节由 crowd 校验
+    walkways: Array.isArray(r.walkways)
+      ? r.walkways.filter((w) => w && Array.isArray(w.points))
+      : []
   }
 }
 
@@ -218,6 +229,7 @@ export function buildLandmark(name, ctx) {
  *   group: Group,
  *   excluded: Set<number>,      被景点替换区覆盖、不再画通用楼的楼栋索引
  *   markerHeights: number[],    各景点落点球底座高度，0 表示由 markers.js 自行估算
+ *   walkwaysBySpot: Array[],    各景点步行路径（无则为空数组），到站时生成人群
  *   pickables: Map<Mesh, number>, Mesh → 景点索引，供射线拾取
  *   occupancy: { has(x, z) },   景点模型与替换区的占用网格，撒通用树时跳过（见 buildOccupancy）
  *   update: (t: number) => void, t 为累计秒数
@@ -230,6 +242,7 @@ export function createLandmarks({ geometry, spots, theme, project }) {
   const buildings = geometry.buildings || []
   const pickables = new Map()
   const markerHeights = []
+  const walkwaysBySpot = []
   const zones = []
   const updaters = [] // { name, fn, broken? }
 
@@ -247,6 +260,7 @@ export function createLandmarks({ geometry, spots, theme, project }) {
       }
     }
     markerHeights[i] = r.markerHeight
+    walkwaysBySpot[i] = r.walkways
     zones.push(...r.zones)
     for (const mesh of r.meshes) {
       applyShadowFlags(mesh)
@@ -266,6 +280,7 @@ export function createLandmarks({ geometry, spots, theme, project }) {
     group,
     excluded,
     markerHeights,
+    walkwaysBySpot,
     pickables,
     occupancy,
     update(t) {

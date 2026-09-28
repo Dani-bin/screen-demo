@@ -35,6 +35,7 @@ import { CameraTour } from "./cameraTour.js"
 import { createPicker } from "./picking.js"
 import { polygonCenter } from "./utils.js"
 import { createLandmarks } from "./landmarks/index.js"
+import { createCrowd } from "./crowd.js"
 import {
   STOP_SHADOW_RADIUS,
   applyCityShadow,
@@ -66,6 +67,10 @@ export class CityScene {
     this.disposed = false
     this.onViewChange = options.onViewChange || (() => {})
     this.lastView = { heading: NaN, scaleMeters: NaN }
+    // 减少动态：巡览跳过飞行动画、景点人群原地站立
+    this.reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
 
     // 构造中途失败（如 WebGL 上下文创建失败、数据异常）时，
     // 已创建的 GPU 资源与事件监听要先释放再抛出，由页面显示降级提示
@@ -164,6 +169,11 @@ export class CityScene {
     this.root.add(this.landmarks.group)
     this.elapsed = 0 // 景点动画用的累计秒数
 
+    // 景点人流：全城一套实例网格，飞抵站点时在该站步行路径上生成，离站淡出。
+    // 挂在 root 而不是景点组下：射线拾取只查景点组，点到行人不会误触发飞往景点
+    this.crowd = createCrowd(this.theme, { reduceMotion: this.reduceMotion })
+    this.root.add(this.crowd.group)
+
     this.buildings = createBuildings(
       d.buildings,
       this.theme,
@@ -207,9 +217,7 @@ export class CityScene {
   }
 
   _initTour(options) {
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches
+    const reduceMotion = this.reduceMotion
     // 每站机位：景点落点 + 偏移，注视景点落点。
     // 高层地标的落点球在楼顶，注视点仍在地面会把球挤到画面顶部；
     // 注视点与相机一起抬高底座高度的一半，让地标（楼体 + 落点球）居中。
@@ -238,12 +246,19 @@ export class CityScene {
         this.markers.setActive(index)
         // 离站飞往下一站：先恢复整城阴影，飞行途中沿途楼体照常有影；飞抵后再收紧
         this._resetShadow()
+        // 离站：上一站的行人淡出回收
+        this.crowd.hide()
         if (options.onStopChange) options.onStopChange(index)
       },
-      // 飞抵站点：阴影收紧到站点周围，景点细部阴影清晰
+      // 飞抵站点：阴影收紧到站点周围，景点细部阴影清晰；
+      // 在该站步行路径上生成行人（种子固定，每次到站画面一致）
       onArrive: (index) => {
         const s = this.spots[index]
         this._fitShadow([s.x, 0, s.z], STOP_SHADOW_RADIUS)
+        this.crowd.show(
+          this.landmarks.walkwaysBySpot[index] || [],
+          1000 + index
+        )
       },
       onPlayingChange: (playing) => {
         // 巡览恢复时清掉人工选中的楼体，避免气泡跟着镜头飘到下一站
@@ -387,6 +402,8 @@ export class CityScene {
   gotoOverview() {
     this.selectBuilding(null)
     this._resetShadow()
+    // 总览尺度下小人看不见，淡出回收
+    this.crowd.hide()
     this.tour.gotoOverview()
   }
   zoomIn() {
@@ -462,6 +479,7 @@ export class CityScene {
     }
     this.elapsed += dt
     this.landmarks.update(this.elapsed)
+    this.crowd.update(dt)
     this._emitView()
     this.renderer.render(this.scene, this.camera)
     this.labelRenderer.render(this.scene, this.camera)
@@ -497,6 +515,7 @@ export class CityScene {
     if (this.root) this.selectBuilding(null)
     this.tour?.dispose()
     this.landmarks?.dispose()
+    this.crowd?.dispose()
     this.markers?.dispose()
     this.trees?.dispose()
     this.buildings?.dispose()
