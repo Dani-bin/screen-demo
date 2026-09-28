@@ -22,7 +22,7 @@
 
 **Files:** Create `src/views/city/scene/crowd.js`；Modify `src/views/city/scene/theme.js`、`landmarks/index.js`、`CityScene.js`、`src/views/city/lab/lab.js`、`landmarks/kuanzhai.js`（只加 walkways）
 
-- [ ] **Step 1: theme.js 新增 crowd 段**
+- [x] **Step 1: theme.js 新增 crowd 段**
 
 ```js
   /* ---- 景点人流（插画式放大：真人约 1.7 m，到站 300～720 m 外只有几个像素） ---- */
@@ -42,7 +42,7 @@
   },
 ```
 
-- [ ] **Step 2: crowd.js**
+- [x] **Step 2: crowd.js**
 
 按设计文档「crowd 模块」实现，要点：
 - 几何（局部 y=0 为脚底，身高 h）：身体 = 8 边圆台（底半径 0.2h、顶半径 0.16h、高 0.36h，底在 0.36h）；头 = 球（半径 0.11h，中心 0.86h）；发片 = 球的上半部（半径 0.115h，同中心，稍压扁，与头同一实例矩阵）；腿 = 6 边圆柱（半径 0.06h、长 0.38h，顶端在髋 0.38h 处，几何原点平移到髋部，便于绕 X 轴摆动）。左右腿分别一个 InstancedMesh（相位相差 π）。
@@ -54,23 +54,23 @@
 - 随机用 `utils.js` 的 `mulberry32(seed)`。
 - 只在有活跃人时更新矩阵；`instanceMatrix.needsUpdate = true`。
 
-- [ ] **Step 3: 注册表与场景接入**
+- [x] **Step 3: 注册表与场景接入**
 
 - `landmarks/index.js`：build 结果里的 `walkways`（缺省 `[]`）汇总为 `walkwaysBySpot`，随 `createLandmarks` 返回。
 - `CityScene`：创建 crowd（加入 root）；`onArrive(i)` → `crowd.show(walkwaysBySpot[i], 1000 + i)`；`onStopChange`（离站）与 `gotoOverview` → `crowd.hide()`；`_loop` → `crowd.update(dt)`；`dispose` → `crowd.dispose()`。拾取忽略人群。
 - lab.js：景点模式默认显示人群（`people=0` 关闭）；显示后先 `update` 推进 3 秒（固定 60 步）再渲染首帧；陈列页 `landmark=kit` 增加一组人群样例（一条 40 m 直线路径，10 人），用于检查造型。
 
-- [ ] **Step 4: 宽窄巷子 walkways**
+- [x] **Step 4: 宽窄巷子 walkways**
 
 在 `kuanzhai.js` 的返回里加 `walkways`：三条巷道中线（用已算好的裁剪后端点，街区坐标换算到世界坐标），`y = 1.0`，宽度取巷宽减 1.5 m，宽巷子 density 1.5、窄巷子 1、井巷子 1。
 
-- [ ] **Step 5: 验证**
+- [x] **Step 5: 验证**
 
 - Node：`crowd` 冒烟——一条 100 m 直线路径，show 后推进 10 s，所有人都在路径 ± width/2 内、y 等于路面、无 NaN；开放路径端点折返有效；hide 后 1 s 内 count 为 0；推进 120 人一帧的耗时 < 1 ms（取 1000 帧平均）。
 - lab：`city-lab.html?landmark=kit` 近看人群样例（shadow=tight），确认头、发、身体、腿比例与配色；`city-lab.html?landmark=kuanzhai&yaw=298&pitch=35&dist=320` 截图，确认巷道里有人；再用 `--eval` 推进后连拍第二帧（或两次截图间隔 1 s），确认位置变化。
 - 城市页：`#/city?spot=3`（约 16 s 延迟）截图，确认到站后巷道里出现人群；控制台无报错。
 
-- [ ] **Step 6: Lint 并提交**
+- [x] **Step 6: Lint 并提交**
 
 ```bash
 git add src/views/city/scene/crowd.js src/views/city/scene/theme.js src/views/city/scene/landmarks/index.js src/views/city/scene/CityScene.js src/views/city/lab/lab.js src/views/city/lab/kitShowcase.js src/views/city/scene/landmarks/kuanzhai.js
@@ -83,22 +83,24 @@ git commit -m "feat(city): 景点人流系统，宽窄巷子巷道行人"
 
 每个景点模块只加 `walkways` 字段，不改模型。路径必须落在可走的面上（铺装、巷道、甬道、屋顶花园小径、桥面、步道），不穿楼、不落水、不悬空；路面高度用模块里已有的常量。
 
-- **天府广场**：铺装顶面高度；3～4 条贯穿广场的散步线（避开草坪与喷泉）、金盘外环（闭合）、科技馆前南北轴线；下沉广场里一条环路（下沉地面高度）。
-- **春熙路·太古里**：街区内 3～4 条主要步行街（取重建店铺之间的空隙中线）、大慈寺中轴甬道（铺装高度）。
-- **成都 IFS**：屋顶花园已有小径的中线（草皮顶面 + 路面厚度）、红星路一侧人行道（地面 0.9）。
-- **人民公园**：纪念碑广场环路（闭合）、广场通往茶社的园路、茶社院内一条短路。
-- **文殊院**：中轴甬道、东院环路、塔周环路（闭合，塔放大后的石台外）。
-- **合江亭**：河岸步道（亭子一侧）、廊桥桥面全长（桥面高度）、亭子台基上一小段环路。
+- [x] **天府广场**：铺装顶面高度；3～4 条贯穿广场的散步线（避开草坪与喷泉）、金盘外环（闭合）、科技馆前南北轴线；下沉广场里一条环路（下沉地面高度）。
+- [x] **春熙路·太古里**：街区内 3～4 条主要步行街（取重建店铺之间的空隙中线）、大慈寺中轴甬道（铺装高度）。
+- [x] **成都 IFS**：屋顶花园已有小径的中线（草皮顶面 + 路面厚度）、红星路一侧人行道（地面 0.9）。
+- [x] **人民公园**：纪念碑广场环路（闭合）、广场通往茶社的园路、茶社院内一条短路。
+- [x] **文殊院**：中轴甬道、东院环路、塔周环路（闭合，塔放大后的石台外）。
+- [x] **合江亭**：河岸步道（亭子一侧）、廊桥桥面全长（桥面高度）、亭子台基上一小段环路。
 
 每个景点截图 `#/city?spot=N`，确认人群分布自然。可由 1～2 个实现者完成，改动只在各景点模块。
 
 提交：`feat(city): 其余景点步行路径与人流`（可按景点分多次提交）。
 
+> 实施时与上面清单的偏差（合江亭只走两段长廊外侧边道、文殊院塔周为 255° 圆弧、IFS 人行道在地面 −0.5 等）见设计文档「实现记录」。
+
 ---
 
 ### Task 3: 验收与文档
 
-- 7 站截图（`#/city?spot=0..6`），每站连拍两帧确认在走动。
-- 性能：7 站各自人数、人群系统每帧耗时。
-- 设计文档状态改「已实现」，追加实现记录；`CLAUDE.md` 的 city 说明补一句人群与 `people=0`。
-- Lint 门槛、`yarn build` 成功后删除 dist/。
+- [x] 7 站截图（`#/city?spot=0..6`），每站连拍两帧确认在走动。
+- [x] 性能：7 站各自人数、人群系统每帧耗时。
+- [x] 设计文档状态改「已实现」，追加实现记录；`CLAUDE.md` 的 city 说明补一句人群与 `people=0`。
+- [x] Lint 门槛、`yarn build` 成功后删除 dist/。
