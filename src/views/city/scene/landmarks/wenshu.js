@@ -12,6 +12,10 @@
  * 西墙包住西侧僧寮，北墙在院内最北的楼之后，西北角斜切让开院外的通用高楼。
  * 院内其余 OSM 楼（僧寮、廊房、客堂等）一律改成灰瓦坡顶的寺院附属房；
  * 跨在院墙上的低层楼也一并替换，院墙在它们处断开、由房子本身接上。
+ *
+ * 另返回 walkways（步行路径，人群系统到站时在上面生成行人）：
+ * 中轴甬道（被殿身与踏步分成几段）、东院（玉佛殿、祖堂、三圣殿围合的小院）环路、
+ * 东侧空院环路、千佛和平塔塔周路（放大后的石台外）。
  */
 import { FrontSide, Mesh } from "three"
 import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
@@ -69,6 +73,23 @@ const STRADDLE_MAX_H = 20
 const PAGODA_SCALE = 1.4
 // 山门前的前院铺装（盖住山门台阶与两侧附属房的前半截）
 const FORECOURT = { u0: -10.5, v0: -40, v1: 34 }
+
+/*
+ * 步行路径（人群用，见 crowd.js）。坐标为中轴坐标 (u, v)，按当前 OSM 数据逐点核对过：
+ * 不进殿、附属房、树下草地与塔台，离墙、柱、栏杆 ≥ 0.5 m（小人身体半径约 0.6 m）。
+ */
+// 中轴甬道：顶面 = 铺装 + 0.15；各殿（含前后踏步）两端再留 0.9 m，
+// 余下长度 ≥ 5 m 的空当各成一段（走到端点折返）
+const AXIS_WALK = { margin: 0.9, minLen: 5, width: 4, density: 3 }
+// 东院：玉佛殿、祖堂与南面三圣殿围出的小院（u 95～111、v 49～71），院内一圈圆角环路
+const EAST_COURT = { u0: 97.4, u1: 109, v0: 51.4, v1: 68.4, r: 3, density: 3 }
+// 东侧空院：祖堂以东、文殊阁以南的大片铺装院（院中两棵古树被环路围住），圆角环路
+const EAST_YARD = { u0: 131, u1: 186, v0: 48, v1: 86, r: 7, density: 3.5 }
+// 塔周路：塔心半径 11 m 的圆弧（石台放大后外接半径 9.1 m）。塔台南侧（+v）紧贴一栋
+// 廊房，无法绕满一圈，圆弧从廊房东端绕过塔的北、西、南（正面踏步）到廊房西端，
+// 两端折返；角度从 +u 起、向 +v 量（度）
+const PAGODA_WALK = { r: 11, from: 140, to: 395, step: 15, density: 3.5 }
+const WALK_W = 1.4 // 环路、塔周路的可走宽度
 
 // 本景点专用色（kit 配色表里没有的）：
 // 院内红砂石铺地（照片里院子是偏红的砂石板）、文殊阁额枋青绿彩画、树下草地
@@ -551,6 +572,56 @@ function wallPieces(a, b, polygons) {
   return out
 }
 
+/* ---------------- 步行路径 ---------------- */
+
+/**
+ * 圆角矩形环路（中轴坐标）：四角各用 4 段圆弧（每段转 22.5°），不出现急转。
+ * @returns {Array<[number, number]>} 闭合折线顶点 [u, v]（首尾不重复）
+ */
+function roundedLoop({ u0, u1, v0, v1, r }) {
+  const pts = []
+  // 四个圆角的圆心与起始角（角度从 +u 向 +v 量），逆 u→v 方向依次绕行
+  const corners = [
+    [u1 - r, v0 + r, -90],
+    [u1 - r, v1 - r, 0],
+    [u0 + r, v1 - r, 90],
+    [u0 + r, v0 + r, 180]
+  ]
+  for (const [cu, cv, a0] of corners) {
+    for (let k = 0; k <= 4; k++) {
+      const a = ((a0 + k * 22.5) * Math.PI) / 180
+      pts.push([cu + r * Math.cos(a), cv + r * Math.sin(a)])
+    }
+  }
+  return pts
+}
+
+/**
+ * 中轴甬道分段：从甬道全长里扣掉各殿（含踏步）占去的区间，余下的空当即步行段。
+ * @param {Array<[number, number]>} blocked 各殿占去的 [u 起, u 止]
+ * @param {number} u0 甬道起点
+ * @param {number} u1 甬道终点
+ * @returns {Array<[number, number]>} 步行段 [u 起, u 止]
+ */
+function axisGaps(blocked, u0, u1) {
+  const spans = blocked
+    .map(([a, e]) => [a - AXIS_WALK.margin, e + AXIS_WALK.margin])
+    .sort((p, q) => p[0] - q[0])
+  const out = []
+  let t = u0
+  for (const [a, e] of spans) {
+    if (a - t >= AXIS_WALK.minLen) out.push([t, a])
+    t = Math.max(t, e)
+  }
+  if (u1 - t >= AXIS_WALK.minLen) out.push([t, u1])
+  return out
+}
+
+/** addPlatform 的踏步水平长度（级数 round(h / 0.3)，踏步深 0.35，见 parts.js） */
+function stepRun(h) {
+  return (Math.max(1, Math.round(h / 0.3)) - 1) * 0.35
+}
+
 /* ---------------- 主函数 ---------------- */
 
 /**
@@ -695,6 +766,21 @@ export function build(ctx) {
 
   /* ---- 中轴殿堂、东院殿堂、钟鼓楼 ---- */
   let markerHeight = 0
+  // 压在中轴甬道上的殿（含前后踏步）沿中轴占去的区间，供步行路径分段
+  const axisBlocked = []
+  // 殿轮廓投影到中轴坐标；轮廓跨过中轴线（v 范围含 0）即压在甬道上。
+  // 前踏步在 -u 一侧（殿正面朝山门），steps 为 both 时后踏步在 +u 一侧
+  const blockAxis = (rect, platformH, steps) => {
+    const uv = toAxisPoly(rectPts(rect))
+    const vs = uv.map((p) => p[1])
+    if (Math.min(...vs) > -1 || Math.max(...vs) < 1) return
+    const us = uv.map((p) => p[0])
+    const run = stepRun(platformH)
+    axisBlocked.push([
+      Math.min(...us) - run,
+      Math.max(...us) + (steps === "both" ? run : 0)
+    ])
+  }
   for (const hall of HALLS) {
     const loc = hall.name === SHANMEN ? shan : locate(ctx, hall.name, hall.fb)
     const { rect } = loc
@@ -712,6 +798,9 @@ export function build(ctx) {
       steps: hall.steps ?? "front"
     })
     obstacles.push(rect)
+    if (!hall.side) {
+      blockAxis(rect, hall.platformH ?? 1.2, hall.steps ?? "front")
+    }
     // 山门等跨墙的殿：院墙在其轮廓处断开
     builtPolys.push(toAxisPoly(loc.points ?? rectPts(rect)))
     if (hall.main) markerHeight = PAVE + top
@@ -725,6 +814,7 @@ export function build(ctx) {
     platformH: 1.5
   })
   obstacles.push(ge.rect)
+  blockAxis(ge.rect, 1.5, "front")
 
   /* ---- 千佛和平塔（插画式放大，真实通高 21 m） ---- */
   const pi = findBuilding(buildings, PAGODA.name, {
@@ -824,5 +914,47 @@ export function build(ctx) {
     mat.side = FrontSide
     meshes.push(new Mesh(gg, mat))
   }
-  return { meshes, zones, markerHeight }
+  /* ---- 步行路径（世界坐标） ---- */
+  const toWorldPts = (uv) => uv.map(([u, v]) => axis.toWorld(u, v))
+  const walkways = []
+  // 中轴甬道各段（甬道顶面比铺装高 0.15）
+  for (const [u0, u1] of axisGaps(axisBlocked, FORECOURT.u0 + 1, pathEnd)) {
+    walkways.push({
+      points: toWorldPts([
+        [u0, 0],
+        [u1, 0]
+      ]),
+      y: PAVE + 0.15,
+      width: AXIS_WALK.width,
+      closed: false,
+      density: AXIS_WALK.density
+    })
+  }
+  // 东院环路、东侧空院环路（铺装面）
+  for (const loop of [EAST_COURT, EAST_YARD]) {
+    walkways.push({
+      points: toWorldPts(roundedLoop(loop)),
+      y: PAVE,
+      width: WALK_W,
+      closed: true,
+      density: loop.density
+    })
+  }
+  // 塔周路：圆弧（塔心在中轴坐标里的位置由世界坐标换算）
+  const [pu, pv] = axis.toAxis(pagodaPos[0], pagodaPos[1])
+  const arc = []
+  const { r, from, to, step } = PAGODA_WALK
+  for (let a = from; a <= to + 1e-6; a += step) {
+    const t = (a * Math.PI) / 180
+    arc.push([pu + r * Math.cos(t), pv + r * Math.sin(t)])
+  }
+  walkways.push({
+    points: toWorldPts(arc),
+    y: PAVE,
+    width: WALK_W,
+    closed: false,
+    density: PAGODA_WALK.density
+  })
+
+  return { meshes, zones, markerHeight, walkways }
 }
