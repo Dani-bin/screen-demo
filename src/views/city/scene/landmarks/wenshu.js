@@ -49,6 +49,7 @@ import {
   eaveDrop
 } from "./kit/parts.js"
 import { addTree } from "./kit/figures.js"
+import { roundedLoop } from "./kit/walkways.js"
 import { mulberry32, pointInPolygon } from "../utils.js"
 
 const DEG = Math.PI / 180
@@ -76,15 +77,22 @@ const FORECOURT = { u0: -10.5, v0: -40, v1: 34 }
 
 /*
  * 步行路径（人群用，见 crowd.js）。坐标为中轴坐标 (u, v)，按当前 OSM 数据逐点核对过：
- * 不进殿、附属房、树下草地与塔台，离墙、柱、栏杆 ≥ 0.5 m（小人身体半径约 0.6 m）。
+ * 不进殿、附属房、树下草地与塔台，离墙、柱、栏杆大于小人身体半径
+ * （身体半径 0.2 × 身高，4 m 身高、个体最高 1.08 倍时约 0.86 m）。
  */
-// 中轴甬道：顶面 = 铺装 + 0.15；各殿（含前后踏步）两端再留 0.9 m，
-// 余下长度 ≥ 5 m 的空当各成一段（走到端点折返）
-const AXIS_WALK = { margin: 0.9, minLen: 5, width: 4, density: 3 }
+// 中轴甬道石板高出院内铺装的厚度（模型与步行路径共用）
+const AXIS_PATH_H = 0.15
+// 小人身体半径（米，取整到 0.9）：判断殿是否压到甬道可走带、殿两端留空都用它
+const BODY_R = 0.9
+// 中轴甬道：顶面 = 铺装 + AXIS_PATH_H；各殿（含前后踏步）两端再留 margin，
+// 余下长度 ≥ minLen 的空当各成一段（走到端点折返）。minLen 取 15 m（与太古里、IFS 一致）：
+// 殿与殿之间 6～10 m 的短空当只容 1 人、2～4 s 就折返，像站岗，不设路径
+const AXIS_WALK = { margin: BODY_R, minLen: 15, width: 4, density: 3 }
 // 东院：玉佛殿、祖堂与南面三圣殿围出的小院（u 95～111、v 49～71），院内一圈圆角环路
 const EAST_COURT = { u0: 97.4, u1: 109, v0: 51.4, v1: 68.4, r: 3, density: 3 }
 // 东侧空院：祖堂以东、文殊阁以南的大片铺装院（院中两棵古树被环路围住），圆角环路
-const EAST_YARD = { u0: 131, u1: 186, v0: 48, v1: 86, r: 7, density: 3.5 }
+// 中轴短段取消后由这里补人数（density 4）
+const EAST_YARD = { u0: 131, u1: 186, v0: 48, v1: 86, r: 7, density: 4 }
 // 塔周路：塔心半径 11 m 的圆弧（石台放大后外接半径 9.1 m）。塔台南侧（+v）紧贴一栋
 // 廊房，无法绕满一圈，圆弧从廊房东端绕过塔的北、西、南（正面踏步）到廊房西端，
 // 两端折返；角度从 +u 起、向 +v 量（度）
@@ -575,28 +583,6 @@ function wallPieces(a, b, polygons) {
 /* ---------------- 步行路径 ---------------- */
 
 /**
- * 圆角矩形环路（中轴坐标）：四角各用 4 段圆弧（每段转 22.5°），不出现急转。
- * @returns {Array<[number, number]>} 闭合折线顶点 [u, v]（首尾不重复）
- */
-function roundedLoop({ u0, u1, v0, v1, r }) {
-  const pts = []
-  // 四个圆角的圆心与起始角（角度从 +u 向 +v 量），逆 u→v 方向依次绕行
-  const corners = [
-    [u1 - r, v0 + r, -90],
-    [u1 - r, v1 - r, 0],
-    [u0 + r, v1 - r, 90],
-    [u0 + r, v0 + r, 180]
-  ]
-  for (const [cu, cv, a0] of corners) {
-    for (let k = 0; k <= 4; k++) {
-      const a = ((a0 + k * 22.5) * Math.PI) / 180
-      pts.push([cu + r * Math.cos(a), cv + r * Math.sin(a)])
-    }
-  }
-  return pts
-}
-
-/**
  * 中轴甬道分段：从甬道全长里扣掉各殿（含踏步）占去的区间，余下的空当即步行段。
  * @param {Array<[number, number]>} blocked 各殿占去的 [u 起, u 止]
  * @param {number} u0 甬道起点
@@ -756,10 +742,10 @@ export function build(ctx) {
     PAVE_COLOR,
     local(A, (FORECOURT.v0 + FORECOURT.v1) / 2, 0, (-FORECOURT.u0 - 1) / 2)
   )
-  // 中轴甬道：高出铺装 0.15 m（贴面离底面过近会闪烁）
+  // 中轴甬道：高出铺装 AXIS_PATH_H（贴面离底面过近会闪烁）
   const pathEnd = CHAMFER.u0 - 2
   gb.add(
-    box(7, 0.15, pathEnd - FORECOURT.u0 - 1),
+    box(7, AXIS_PATH_H, pathEnd - FORECOURT.u0 - 1),
     L.granite,
     local(A, 0, PAVE, -(pathEnd + FORECOURT.u0 + 1) / 2)
   )
@@ -768,12 +754,14 @@ export function build(ctx) {
   let markerHeight = 0
   // 压在中轴甬道上的殿（含前后踏步）沿中轴占去的区间，供步行路径分段
   const axisBlocked = []
-  // 殿轮廓投影到中轴坐标；轮廓跨过中轴线（v 范围含 0）即压在甬道上。
+  // 殿轮廓投影到中轴坐标；轮廓的 v 范围与甬道可走带（中线两侧 width / 2，
+  // 再外扩一个身体半径 BODY_R）相交即压在甬道上。
   // 前踏步在 -u 一侧（殿正面朝山门），steps 为 both 时后踏步在 +u 一侧
+  const axisHalf = AXIS_WALK.width / 2 + BODY_R
   const blockAxis = (rect, platformH, steps) => {
     const uv = toAxisPoly(rectPts(rect))
     const vs = uv.map((p) => p[1])
-    if (Math.min(...vs) > -1 || Math.max(...vs) < 1) return
+    if (Math.min(...vs) > axisHalf || Math.max(...vs) < -axisHalf) return
     const us = uv.map((p) => p[0])
     const run = stepRun(platformH)
     axisBlocked.push([
@@ -917,14 +905,14 @@ export function build(ctx) {
   /* ---- 步行路径（世界坐标） ---- */
   const toWorldPts = (uv) => uv.map(([u, v]) => axis.toWorld(u, v))
   const walkways = []
-  // 中轴甬道各段（甬道顶面比铺装高 0.15）
+  // 中轴甬道各段（甬道顶面比铺装高 AXIS_PATH_H）
   for (const [u0, u1] of axisGaps(axisBlocked, FORECOURT.u0 + 1, pathEnd)) {
     walkways.push({
       points: toWorldPts([
         [u0, 0],
         [u1, 0]
       ]),
-      y: PAVE + 0.15,
+      y: PAVE + AXIS_PATH_H,
       width: AXIS_WALK.width,
       closed: false,
       density: AXIS_WALK.density
@@ -933,7 +921,15 @@ export function build(ctx) {
   // 东院环路、东侧空院环路（铺装面）
   for (const loop of [EAST_COURT, EAST_YARD]) {
     walkways.push({
-      points: toWorldPts(roundedLoop(loop)),
+      points: toWorldPts(
+        roundedLoop({
+          x0: loop.u0,
+          x1: loop.u1,
+          z0: loop.v0,
+          z1: loop.v1,
+          r: loop.r
+        })
+      ),
       y: PAVE,
       width: WALK_W,
       closed: true,
