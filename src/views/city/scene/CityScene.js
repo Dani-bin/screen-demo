@@ -452,7 +452,7 @@ export class CityScene {
     this.tour.update(dt)
     // 停靠时人工拉远到收紧范围之外：恢复整城阴影，免得视野外圈的楼没有影子。
     // 恢复后不会因拉近而重新收紧，只在下一次飞抵站点时收紧；
-    // 因此各站机位距离（cityData.js 的 cam.offset，目前约 440～720 m）必须小于该阈值，
+    // 因此各站机位距离（cityData.js 的 cam.offset，目前约 300～720 m）必须小于该阈值，
     // 否则一飞抵就会被这里立即恢复
     if (
       this.shadowFitted &&
