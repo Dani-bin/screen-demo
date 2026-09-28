@@ -178,7 +178,6 @@ Node 测试：矩形 `[[0,0],[40,0],[40,10],[0,10]]` 绕原点旋转 30° 后求
 - `gableRoof(w, d, h, { overhang = 0.6, sag = 1.3 })`：双坡悬山，屋脊沿 X；两坡按上面的曲面公式（无起翘，指数用 `sag`），两端补竖直山墙三角形，并加正脊。
 - `pyramidRoof(sides, radius, h, { overhang = 0.8, curl = 0.45, tMax = 1 })`：n 边攒尖。檐口为外接半径 `radius + overhang` 的正 n 边形，屋脊退化为顶点；`tMax < 1` 时截断。
 - `finial(h)`：宝顶，底座小圆柱 + 两个球 + 尖锥，底在 y=0。
-- `ridgeBar(len, h, w)`：独立屋脊条（给需要自定义屋脊的地方用）。
 
 Node 测试：`hipRoof(20, 12, 5)` 的包围盒 `x∈[-10.8, 10.8]`、`y∈[0, ≈5.4]`；檐口四角点的 y ≈ `curl × h`（起翘生效）；`pyramidRoof(6, 4, 3)` 顶点 y ≈ 3；所有顶点无 NaN。
 

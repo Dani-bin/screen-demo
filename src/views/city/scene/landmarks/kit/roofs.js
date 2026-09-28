@@ -429,8 +429,3 @@ export function finial(h) {
   cone.translate(0, 0.64 * h, 0)
   return merge([base, ball1, ball2, cone])
 }
-
-/** 独立屋脊条：长 len（沿 X）、高 h、宽 w（沿 Z），底在 y = 0、水平居中 */
-export function ridgeBar(len, h, w) {
-  return box(len, h, w)
-}

@@ -11,7 +11,7 @@
  *   背朝街、头和前爪探进屋顶花园、后腿垂在立面外。
  * 替换区覆盖 4 座塔、裙楼与塔 3 / 塔 4 之间的一小段附楼（OSM 无名，高 6.6）。
  */
-import { BackSide, ExtrudeGeometry, Mesh, Shape } from "three"
+import { BackSide, Mesh } from "three"
 import { THEME } from "../theme.js"
 import { mulberry32, pointInPolygon } from "../utils.js"
 import {
@@ -21,12 +21,20 @@ import {
   local
 } from "./kit/builder.js"
 import {
+  bearingDiff,
+  distToSegment,
   findBuilding,
   minAreaRect,
   rectFrame,
   rectPolygon
 } from "./kit/footprint.js"
-import { box, cylinder, dropBottom, sphere, sweepBar } from "./kit/shapes.js"
+import {
+  box,
+  cylinder,
+  extrudePolygon,
+  sphere,
+  sweepBar
+} from "./kit/shapes.js"
 import { addPanda } from "./kit/figures.js"
 
 const DEG = Math.PI / 180
@@ -42,8 +50,6 @@ const CANTI_OUT = 2 // 外挑距离
 // 熊猫高度：真实雕塑高 15 m；这里放大到 20 m（插画式夸张），保证 300 m 外的站点画面里一眼可辨
 const PANDA_H = 20
 const PANDA_S = 30 // 熊猫离裙楼红星路长边北端的距离
-// 熊猫头顶相对女儿墙顶的高度（addPanda：耳尖约在 +0.44·height）
-const PANDA_TOP = 0.44 * PANDA_H
 
 /* ---------------- 配色 ---------------- */
 
@@ -92,19 +98,6 @@ const TOWERS = [
 /* ---------------- 几何小工具 ---------------- */
 
 /**
- * 任意简单多边形（世界坐标 [x, z]，可凹）竖直挤出：底 y0、高 h，去掉底面。
- * Shape 的 (x, y) 取 (x, -z)，挤出方向 +Z，再绕 X 轴转 -90°：
- * (x, -z, e) → (x, e, z)，正好回到世界坐标（旋转不含镜像，法线仍朝外）。
- */
-function extrudePolygon(pts, y0, h) {
-  const shape = new Shape(pts.map(([x, z]) => ({ x, y: -z })))
-  const g = new ExtrudeGeometry(shape, { depth: h, bevelEnabled: false })
-  g.rotateX(-Math.PI / 2)
-  g.translate(0, y0, 0)
-  return dropBottom(g)
-}
-
-/**
  * 多边形各条边的坐标系：原点在边中点（y = 0），局部 X 沿边、局部 +Z 指向多边形外侧。
  * 局部 X 旋转 a 后为 (cos a, -sin a)、+Z 为 (sin a, cos a)；
  * 若 +Z 指向内侧就把 a 加 π（边反向，构件左右对称不受影响），从而不需要镜像。
@@ -136,18 +129,6 @@ function edgeFrames(pts) {
 
 /** 方位角（度）：北为 -Z、东为 +X */
 const bearingOf = (x, z) => (((Math.atan2(x, -z) / DEG) % 360) + 360) % 360
-const angleDiff = (p, q) => Math.abs(((p - q + 540) % 360) - 180)
-
-/** 点到线段的距离 */
-function segDist(px, pz, a, b) {
-  const dx = b[0] - a[0]
-  const dz = b[1] - a[1]
-  const t = Math.max(
-    0,
-    Math.min(1, ((px - a[0]) * dx + (pz - a[1]) * dz) / (dx * dx + dz * dz))
-  )
-  return Math.hypot(px - a[0] - dx * t, pz - a[1] - dz * t)
-}
 
 /** 两个 sRGB 颜色按 t 插值（返回 sRGB 十六进制串，交给 ColorBuilder 统一转线性） */
 function mix(c1, c2, t) {
@@ -328,7 +309,7 @@ function addIfsLetters(b, f) {
  * frontEdge（红星路长边）上部石材体量外挑 CANTI_OUT。
  */
 function addPodium(b, pts, edges, frontEdge) {
-  b.add(extrudePolygon(pts, 0, ROOF_Y), C.stone)
+  b.add(extrudePolygon(pts, [], 0, ROOF_Y), C.stone)
   for (const e of edges) {
     const front = e === frontEdge
     const o = front ? CANTI_OUT : 0
@@ -360,7 +341,7 @@ function addPodium(b, pts, edges, frontEdge) {
     )
   }
   // 屋顶草皮
-  b.add(extrudePolygon(pts, ROOF_Y, GRASS_T), C.grass)
+  b.add(extrudePolygon(pts, [], ROOF_Y, ROOF_Y + GRASS_T), C.grass)
 }
 
 /**
@@ -376,7 +357,7 @@ function addRoofGarden(b, pts, rect, towerRects, panda) {
   const inside = (x, z, margin) => {
     if (!pointInPolygon(x, z, pts)) return false
     for (let i = 0; i < pts.length; i++) {
-      if (segDist(x, z, pts[i], pts[(i + 1) % pts.length]) < margin)
+      if (distToSegment(x, z, pts[i], pts[(i + 1) % pts.length]) < margin)
         return false
     }
     for (const r of towerRects) {
@@ -483,7 +464,7 @@ export function build(ctx) {
   // 红星路长边：外法向最接近「长轴方位 - 90°」（西北偏西）的边里最长的一条
   const streetBearing = (podium.rect.bearing + 270) % 360
   const offStreet = (e) =>
-    angleDiff(bearingOf(e.out[0], e.out[1]), streetBearing)
+    bearingDiff(bearingOf(e.out[0], e.out[1]), streetBearing)
   const maxLen = Math.max(...edges.map((e) => e.len))
   const frontEdge =
     edges.filter((e) => offStreet(e) < 30).sort((p, q) => q.len - p.len)[0] ||
@@ -561,7 +542,8 @@ export function build(ctx) {
   return {
     meshes,
     zones,
-    // 落点球坐在熊猫头顶高度
-    markerHeight: PODIUM_H + PANDA_TOP
+    // 定位针的底座 = 落点处的屋顶花园草皮顶面（落点在熊猫身后 20 m 的屋顶花园里）：
+    // 竖线落在草地上，小球悬在其上 14 m，高于熊猫头顶（女儿墙顶 + 0.44·PANDA_H ≈ 48.8 m）
+    markerHeight: ROOF_Y + GRASS_T
   }
 }

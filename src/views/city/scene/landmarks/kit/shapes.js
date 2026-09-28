@@ -14,7 +14,11 @@ import {
   BufferAttribute,
   BufferGeometry,
   CylinderGeometry,
-  SphereGeometry
+  ExtrudeGeometry,
+  Path,
+  Shape,
+  SphereGeometry,
+  Vector2
 } from "three"
 
 /**
@@ -60,6 +64,31 @@ export function dropBottom(geometry) {
   out.setAttribute("position", new BufferAttribute(new Float32Array(pos), 3))
   out.setAttribute("normal", new BufferAttribute(new Float32Array(nor), 3))
   return out
+}
+
+/**
+ * 平面多边形竖直挤出成 y0～y1 的实体（可凹、可带洞），去掉底面。
+ * 点坐标为 [x, z]（与传入的坐标系一致，世界坐标或局部坐标均可）。
+ * Shape 的 (x, y) 对应 (x, z)：绕 X 轴转 +90° 后挤出方向朝 -Y，再上移到 y1
+ * （旋转不含镜像，法线仍朝外）。
+ * @param {Array<[number, number]>} outer 外轮廓
+ * @param {Array<Array<[number, number]>>} holes 洞（可为空数组）
+ * @param {number} y0 底面高度
+ * @param {number} y1 顶面高度
+ */
+export function extrudePolygon(outer, holes, y0, y1) {
+  const shape = new Shape(outer.map(([x, z]) => new Vector2(x, z)))
+  for (const h of holes) {
+    shape.holes.push(new Path(h.map(([x, z]) => new Vector2(x, z))))
+  }
+  const g = new ExtrudeGeometry(shape, {
+    depth: y1 - y0,
+    bevelEnabled: false,
+    curveSegments: 1
+  })
+  g.rotateX(Math.PI / 2)
+  g.translate(0, y1, 0)
+  return dropBottom(g)
 }
 
 /**

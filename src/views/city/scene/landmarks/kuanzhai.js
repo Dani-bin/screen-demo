@@ -39,6 +39,7 @@ import {
   centroid,
   circlePolygon,
   clipHalfPlane,
+  distToSegment,
   minAreaRect,
   polygonArea,
   rectPolygon
@@ -170,23 +171,11 @@ function districtAxes(spot) {
 
 /* ---------------- 几何小工具（街区坐标系下） ---------------- */
 
-/** 点到线段距离 */
-function segDist(px, pz, [ax, az], [bx, bz]) {
-  const dx = bx - ax
-  const dz = bz - az
-  const len2 = dx * dx + dz * dz
-  const t =
-    len2 > 0
-      ? Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / len2))
-      : 0
-  return Math.hypot(px - ax - t * dx, pz - az - t * dz)
-}
-
 /** 点到多边形边界的最短距离 */
 function edgeDist(px, pz, poly) {
   let d = Infinity
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    d = Math.min(d, segDist(px, pz, poly[j], poly[i]))
+    d = Math.min(d, distToSegment(px, pz, poly[j], poly[i]))
   }
   return d
 }

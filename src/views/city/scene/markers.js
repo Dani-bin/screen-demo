@@ -9,17 +9,7 @@
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js"
 import { CylinderGeometry, Group, Mesh, SphereGeometry } from "three"
 import { pointInPolygon, polygonBounds } from "./utils.js"
-
-/** 点 (px, pz) 到线段 (ax, az)-(bx, bz) 的最短距离 */
-function distToSegment(px, pz, ax, az, bx, bz) {
-  const dx = bx - ax
-  const dz = bz - az
-  const len2 = dx * dx + dz * dz
-  // 退化线段（两端点重合）直接取到端点的距离
-  let k = len2 > 0 ? ((px - ax) * dx + (pz - az) * dz) / len2 : 0
-  k = Math.max(0, Math.min(1, k))
-  return Math.hypot(px - (ax + dx * k), pz - (az + dz * k))
-}
+import { distToSegment } from "./landmarks/kit/footprint.js"
 
 /**
  * 落点球的底座高度（米）。
@@ -49,9 +39,7 @@ export function markerBaseHeight(x, z, radius, buildings) {
       continue
     let hit = pointInPolygon(x, z, b.p)
     for (let i = 0, j = b.p.length - 1; !hit && i < b.p.length; j = i++) {
-      const [ax, az] = b.p[j]
-      const [bx, bz] = b.p[i]
-      if (distToSegment(x, z, ax, az, bx, bz) <= reach) hit = true
+      if (distToSegment(x, z, b.p[j], b.p[i]) <= reach) hit = true
     }
     if (hit) base = b.h
   }

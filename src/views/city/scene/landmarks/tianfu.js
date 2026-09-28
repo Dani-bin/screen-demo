@@ -14,25 +14,22 @@
  * 广场内的草坪取自 OSM 公园面（相对广场中心），与城市树木层撒树的范围一致，
  * 这样通用树木正好长在草坪上，而不会戳进喷泉或下沉广场。
  */
-import {
-  BackSide,
-  ExtrudeGeometry,
-  Matrix4,
-  Mesh,
-  Path,
-  Quaternion,
-  Shape,
-  Vector2,
-  Vector3
-} from "three"
+import { BackSide, Matrix4, Mesh, Quaternion, Vector3 } from "three"
 import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
 import {
+  circlePolygon,
   findBuilding,
   minAreaRect,
   rectFrame,
   rectPolygon
 } from "./kit/footprint.js"
-import { box, cylinder, dropBottom, sphere, sweepBar } from "./kit/shapes.js"
+import {
+  box,
+  cylinder,
+  extrudePolygon,
+  sphere,
+  sweepBar
+} from "./kit/shapes.js"
 import { addBalustrade, addPlatform } from "./kit/parts.js"
 import { addSunbirdDisc, addTotem } from "./kit/figures.js"
 import { THEME } from "../theme.js"
@@ -310,33 +307,6 @@ const C = {
 /* ---------------- 小工具 ---------------- */
 
 /**
- * 平面多边形（局部 [x, z]，可带洞）挤出成 y0～y1 的实体，去掉底面。
- * Shape 的 (x, y) 对应局部 (x, z)：绕 X 轴转 +90° 后挤出方向朝 -Y，再上移到 y1。
- */
-function extrude(outer, holes, y0, y1) {
-  const shape = new Shape(outer.map(([x, z]) => new Vector2(x, z)))
-  for (const h of holes) {
-    shape.holes.push(new Path(h.map(([x, z]) => new Vector2(x, z))))
-  }
-  const g = new ExtrudeGeometry(shape, {
-    depth: y1 - y0,
-    bevelEnabled: false,
-    curveSegments: 1
-  })
-  g.rotateX(Math.PI / 2)
-  g.translate(0, y1, 0)
-  return dropBottom(g)
-}
-
-/** 圆周上的 n 个点（局部 [x, z]） */
-function circlePts(cx, cz, r, n) {
-  return Array.from({ length: n }, (_, k) => {
-    const a = (k / n) * Math.PI * 2
-    return [cx + Math.cos(a) * r, cz + Math.sin(a) * r]
-  })
-}
-
-/**
  * 圆角矩形外轮廓：从南边中点出发，经西南 → 西北 → 北边中点 → 东北 → 东南回到起点。
  * 返回 { west, east } 两段折线（都含两端中点），便于与 S 形分界线拼成东西两半。
  */
@@ -397,7 +367,11 @@ function buildSquare(b, jets, f) {
   const { w, d, r } = SQUARE
   // 外沿低台阶：整块圆角矩形外扩 1.5 m，顶面 CURB_H
   const g = roundedRectHalves(w, d, r, CURB_W)
-  b.add(extrude([...g.west, ...g.east.slice(1, -1)], [], 0, CURB_H), C.curb, f)
+  b.add(
+    extrudePolygon([...g.west, ...g.east.slice(1, -1)], [], 0, CURB_H),
+    C.curb,
+    f
+  )
 
   // S 形分界线：北端 → 南端采样
   const n = 40
@@ -408,11 +382,11 @@ function buildSquare(b, jets, f) {
   const inner = s.slice(1, -1)
   const half = roundedRectHalves(w, d, r)
   // 西半：外轮廓（南中点 → 西侧 → 北中点）+ 分界线（北 → 南）
-  b.add(extrude([...half.west, ...inner], [], 0, PAVE), C.paveWest, f)
+  b.add(extrudePolygon([...half.west, ...inner], [], 0, PAVE), C.paveWest, f)
   // 东半：外轮廓（北中点 → 东侧 → 南中点）+ 分界线（南 → 北），挖出下沉广场
-  const hole = circlePts(SUNKEN.x, SUNKEN.z, SUNKEN.r, 48)
+  const hole = circlePolygon(SUNKEN.x, SUNKEN.z, SUNKEN.r, 48)
   b.add(
-    extrude([...half.east, ...inner.slice().reverse()], [hole], 0, PAVE),
+    extrudePolygon([...half.east, ...inner.slice().reverse()], [hole], 0, PAVE),
     C.paveEast,
     f
   )
@@ -432,7 +406,7 @@ function buildSquare(b, jets, f) {
 
   // 草坪：高出铺装 0.3 m 的绿地
   for (const poly of LAWNS) {
-    b.add(extrude(poly, [], PAVE - 0.1, PAVE + 0.3), C.lawn, f)
+    b.add(extrudePolygon(poly, [], PAVE - 0.1, PAVE + 0.3), C.lawn, f)
   }
   // 12 根文化图腾柱
   for (const [x, z] of TOTEMS) {
@@ -443,21 +417,26 @@ function buildSquare(b, jets, f) {
 /** 东半下沉广场：坑底 + 一圈台阶 + 汉白玉栏杆 + 中心金色螺旋雕塑 */
 function buildSunken(b, f) {
   const { x, z, r, floor, steps, tread } = SUNKEN
-  const outer = circlePts(x, z, r, 48)
-  b.add(extrude(outer, [], 0, floor), C.sunkenFloor, f)
+  const outer = circlePolygon(x, z, r, 48)
+  b.add(extrudePolygon(outer, [], 0, floor), C.sunkenFloor, f)
   // 台阶：由外向内逐级降低，每级是一个环形实体（外缘与铺装洞口重合）
   const rise = (PAVE - floor) / steps
   for (let k = 1; k < steps; k++) {
     const rin = r - tread * (steps - k)
     b.add(
-      extrude(outer, [circlePts(x, z, rin, 48)], 0, floor + rise * k),
+      extrudePolygon(
+        outer,
+        [circlePolygon(x, z, rin, 48)],
+        0,
+        floor + rise * k
+      ),
       k % 2 ? C.step : C.rim,
       f
     )
   }
   // 洞口一圈栏杆
   addBalustrade(b, f, {
-    points: circlePts(x, z, r + 0.4, 28),
+    points: circlePolygon(x, z, r + 0.4, 28),
     y: PAVE,
     h: 1.1,
     postSpacing: 3
