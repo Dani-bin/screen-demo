@@ -1,7 +1,7 @@
 /*
  * 低多边形树木
  * ----------------------------------------------------------
- * 树冠 = 二十面体（细分 1 次）压扁拉高，树干 = 六棱柱。
+ * 树冠 = 二十面体（细分 1 次）竖向拉长 1.15 倍，树干 = 六棱柱。
  * 公园内按面积随机撒点，河岸两侧沿中心线成排种植。
  * 全部走 InstancedMesh：几千棵树只占两次 draw call。
  * 随机数用固定种子，每次刷新树的位置与颜色一致。
@@ -17,6 +17,9 @@ import {
   Vector3
 } from "three"
 import { mulberry32, pointInPolygon, polygonBounds } from "./utils.js"
+
+// 树冠随机朝向的旋转轴（竖直向上）
+const Y_AXIS = new Vector3(0, 1, 0)
 
 /**
  * 障碍物网格索引：把多边形按包围盒登记到均匀网格里，
@@ -145,14 +148,21 @@ export function createTrees(data, materials, theme) {
   const yellow = new Color(t.yellow)
   const m = new Matrix4()
   const q = new Quaternion()
+  const identity = new Quaternion() // 树干是六棱柱，不旋转
   const s = new Vector3()
   const p = new Vector3()
 
   points.forEach(([x, z], i) => {
     const size = t.crownMin + rand() * t.crownVar
     const height = t.trunkMin + rand() * t.trunkVar
+    // 每棵树绕竖轴随机转一个角度，避免平面着色的棱面整齐重复；
+    // 固定在第三次取随机数，保证随机序列顺序确定
+    q.setFromAxisAngle(Y_AXIS, rand() * Math.PI * 2)
+    // 树冠竖向半轴 = 1.15·size，中心放在 height + 0.95·size，
+    // 冠底 = height + 0.95·size − 1.15·size = height − 0.2·size，
+    // 离地 2.6～6.6 m，树干能露出来
     m.compose(
-      p.set(x, height + size * 0.7, z),
+      p.set(x, height + size * 0.95, z),
       q,
       s.set(size, size * 1.15, size)
     )
@@ -163,11 +173,12 @@ export function createTrees(data, materials, theme) {
         ? yellow
         : greens[Math.floor(rand() * greens.length)]
     )
-    m.compose(p.set(x, height / 2, z), q, s.set(1, height, 1))
+    m.compose(p.set(x, height / 2, z), identity, s.set(1, height, 1))
     trunk.setMatrixAt(i, m)
   })
   crown.castShadow = true
-  trunk.castShadow = true
+  // 树干大多藏在树冠的阴影里，不投影可让阴影通道少处理约 13 万个三角形
+  trunk.castShadow = false
 
   const group = new Group()
   group.add(crown, trunk)
@@ -177,6 +188,9 @@ export function createTrees(data, materials, theme) {
     dispose() {
       crownGeo.dispose()
       trunkGeo.dispose()
+      // 释放 instanceMatrix / instanceColor 对应的 GPU 缓冲
+      crown.dispose()
+      trunk.dispose()
     }
   }
 }
