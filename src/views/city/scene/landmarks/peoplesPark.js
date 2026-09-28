@@ -100,6 +100,7 @@ const CAP = { cornice: 0.65, roofH: 2.2, spire: 3.15 }
 const RAIL_ANGLE = 50 * DEG // 铁轨浮雕的倾角（绕墙面法线）
 const PLAZA_R = 24 // 圆形铺装小广场半径（不放大）
 const PLAZA_Y = 1.15 // 广场顶面高度（外圈镶边 1.0，内圈 1.15）
+const STRIP_H = 0.15 // 广场放射状分隔条高出内圈铺面的高度（碑台环路会跨过它，见 RING）
 
 /* ---------------- 鹤鸣茶社尺寸（不放大） ---------------- */
 
@@ -114,19 +115,20 @@ const GALLERIES = [
 ]
 const PAILOU = { x: -8, z: 9.5 } // 牌坊：站在地坪西沿，朝西（局部 -X）
 const CHAIR = "#C9A46A" // 竹椅色
+const SLAB_H = 0.18 // 院中石板路高出茶社地坪的厚度（模型与步行路径共用）
 
 /* ---------------- 步行路径（人群用，见 crowd.js） ---------------- */
 
 // 碑台环路：圆形广场内圈（顶 PLAZA_Y）上一圈。碑台放大后四向台阶脚（含斜垂带）
 // 离碑心约 20.0 m，内圈浅石外沿在 PLAZA_R − 1.2 = 22.8 m：环路取中线 21.8、
 // 可走宽 1.2（小人身体半径约 0.2 × 身高，4 m 身高时约 0.86 m，贴不到台阶也踩不出内圈）。
-// 环路会跨过四条斜向的放射状分隔条（高出铺面 0.15 m 的装饰条），视作铺面纹样
+// 环路会跨过四条斜向的放射状分隔条（高出铺面 STRIP_H 的装饰条），视作铺面纹样
 const RING = { r: 21.8, width: 1.2, segments: 32 }
 // 园路：从广场东南侧（碑身局部 +X 台阶正对的方向，两棵大树之间的空当）出发，
 // 穿过公园草坪（绿地顶面 0.2）到茶社牌坊外台阶脚。
 // 中间折点为世界坐标里相对碑心的偏移（米），按通用树（树干 2 m 内不走、
 // 头顶不钻进低垂的树冠）、湖面与保留楼逐点核对过；拐角都在 40° 以内
-const GARDEN_Y = 0.2 // 公园绿地顶面（terrain.js）
+const GARDEN_Y = 0.2 // 公园绿地顶面（terrain.js 的绿地平面，园路走在草坪上）
 const GARDEN_PATH = [
   [31.5, 17.5],
   [60.8, 38],
@@ -138,10 +140,11 @@ const GARDEN_PATH = [
 const GARDEN_START_R = PLAZA_R + 1.8
 const GARDEN_END_X = TEA_BASE.x0 - 2.6
 // 茶社院内石板路：从牌坊内侧（牌坊下额枋离地 3.7 m，比小人矮，不从牌坊下穿过）
-// 到东廊台基前，顶面 = 地坪 + 石板 0.18。中线比石板路中线（PAILOU.z）偏北 0.5 m，
-// 让开院中大树低垂的树冠；可走宽 0.5（两侧竹椅离中线约 1.1 m）
-const COURT = { x0: -6.7, x1: 18.2, z: PAILOU.z - 0.5, y: TEA_BASE.h + 0.18 }
-const COURT_W = 0.5
+// 到东廊台基前，顶面 = 地坪 + 石板厚 SLAB_H。中线比石板路中线（PAILOU.z）偏北 0.55 m，
+// 让开院中大树低垂的树冠（南侧头部净距 ≥ 0.52）；可走宽 0.4：北侧竹椅离可走带
+// 边缘约 0.7 m，大于腿外缘半径 0.63（4 m 身高）
+const COURT = { x0: -6.7, x1: 18.2, z: PAILOU.z - 0.55, y: TEA_BASE.h + SLAB_H }
+const COURT_W = 0.4
 
 /* ---------------- 通用小工具 ---------------- */
 
@@ -546,7 +549,7 @@ function buildPlaza(b, f) {
     if (k % 2 === 0) continue
     const m = local(f, 0, 0, 0, (k * Math.PI) / 4)
     b.add(
-      box(1.2, PLAZA_Y + 0.15, r1 - r0),
+      box(1.2, PLAZA_Y + STRIP_H, r1 - r0),
       "#B6AEA2",
       local(m, 0, 0, (r0 + r1) / 2)
     )
@@ -694,8 +697,8 @@ function buildTeahouse(b, f) {
       b.add(box(0.9, 0.5, 0.9), CHAIR, local(fy, x, 0, z))
     }
   }
-  // 石板路（高出地坪 0.18，颜色略浅）：从牌坊一直通到东廊
-  b.add(box(27, 0.18, 2.4), L.stonePave, local(fy, 5.5, 0, PAILOU.z))
+  // 石板路（高出地坪 SLAB_H，颜色略浅）：从牌坊一直通到东廊
+  b.add(box(27, SLAB_H, 2.4), L.stonePave, local(fy, 5.5, 0, PAILOU.z))
   // 院中三把红伞
   for (const [x, z] of [
     [-3, 4.5],
