@@ -23,7 +23,13 @@ export default defineConfig(({ mode }) => {
       vue(),
       basicSsl(),
       AutoImport({
-        imports: ["vue", "vue-router"]
+        imports: ["vue", "vue-router"],
+        // 生成 ESLint 全局变量声明文件，避免自动导入的 API（ref、computed 等）被报 no-undef
+        eslintrc: {
+          enabled: true,
+          filepath: "./.eslintrc-auto-import.json",
+          globalsPropValue: true
+        }
       }),
       Components({
         dirs: ["src/components"],
