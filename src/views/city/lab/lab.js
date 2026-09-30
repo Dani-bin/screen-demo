@@ -17,7 +17,8 @@
  *   shadow    city：阴影与相机 near = 20 完全照搬城市场景（景点模式默认，所见即线上效果，
  *             near = 20 时近景距离须 ≥ 300 m，验收截图按此取 dist）。景点模式下等同线上
  *             「巡览停靠该站」时的阴影：按站点收紧到景点周围 ±1000 m（shadow.js 的 applyStopShadow）；
- *             kit 指定 shadow=city 时没有站点，用整城阴影（applyCityShadow）；
+ *             kit 指定 shadow=city 时没有站点，用整城阴影（applyCityShadow），范围按线上同一批投影物
+ *             实算（见 cityShadowBox），texel 与深度区间与线上总览一致；
  *             tight：阴影收紧到注视点周围、相机 near = 1（kit 默认，适合近看构件造型）
  * 地面、道路、河流、光照颜色与强度与城市场景一致（阴影开启）。
  * 只渲染一帧，完成后设 window.__labReady = true（静态截图用，省 CPU）；
@@ -41,11 +42,16 @@ import { createMaterials } from "../scene/materials.js"
 import { createTerrain } from "../scene/terrain.js"
 import { createRivers, createRoads } from "../scene/roads.js"
 import { createBuildings } from "../scene/buildings.js"
-import { markerBaseHeight } from "../scene/markers.js"
+import { createMarkers, markerBaseHeight } from "../scene/markers.js"
+import { layoutTrees } from "../scene/trees.js"
 import { polygonCenter } from "../scene/utils.js"
 import { SPOTS } from "../data/cityData.js"
 import { buildingsInZones } from "../scene/landmarks/kit/footprint.js"
-import { applyShadowFlags, buildLandmark } from "../scene/landmarks/index.js"
+import {
+  applyShadowFlags,
+  buildLandmark,
+  createLandmarks
+} from "../scene/landmarks/index.js"
 import {
   STOP_SHADOW_RADIUS,
   applyCityShadow,
@@ -167,6 +173,48 @@ function contextExcluded(data, center, zones) {
   return hidden
 }
 
+/**
+ * 整城阴影范围：与 CityScene 同一批投影物——全部楼栋、全部景点模型、按景点占用网格撒的
+ * 通用树（树冠尺寸与线上完全一致）、落点球——再加上预览对象自身（kit 样例）。
+ * 预览页不画这些景点、树与落点球，只借来求范围，算完即释放。
+ * @param {object} data 城市几何数据
+ * @param {object} project 投影
+ * @param {object} materials createMaterials 的结果（落点球材质）
+ * @param {THREE.Object3D[]} extra 预览对象自身的 Mesh
+ */
+function cityShadowBox(data, project, materials, extra) {
+  const spots = SPOTS.map((s) => {
+    const [x, z] = project.toLocal(s.lon, s.lat)
+    return { ...s, x, z }
+  })
+  const landmarks = createLandmarks({
+    geometry: data,
+    spots,
+    theme: THEME,
+    project
+  })
+  // 落点球底座与 CityScene 相同：景点给了 markerHeight 就用，否则按仍在画的楼估算
+  const excluded = landmarks.excluded
+  const markers = createMarkers(
+    spots,
+    materials,
+    THEME,
+    data.buildings.filter((b, i) => !excluded.has(i)),
+    landmarks.markerHeights
+  )
+  const box = computeCityShadow(
+    {
+      buildings: data.buildings,
+      trees: layoutTrees(data, THEME, landmarks.occupancy),
+      objects: [landmarks.group, markers.group, ...extra]
+    },
+    THEME.light
+  )
+  landmarks.dispose()
+  markers.dispose()
+  return box
+}
+
 function createRenderer(canvas) {
   const renderer = new WebGLRenderer({ canvas, antialias: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, THEME.maxPixelRatio))
@@ -182,10 +230,10 @@ function createRenderer(canvas) {
 /**
  * 光照颜色、强度、方向与 CityScene 相同。阴影两种模式：
  *   city  —— 与 CityScene 共用 shadow.js：有景点中心 center 时按站点收紧（±STOP_SHADOW_RADIUS，
- *            同线上巡览停靠该站），否则整城一张阴影贴图；
+ *            同线上巡览停靠该站），否则整城一张阴影贴图（cityBox 为 cityShadowBox 的结果）；
  *   tight —— 太阳沿同一方向对准注视点，正交范围收紧到周围 radius 米，近景阴影更实。
  */
-function addLights(scene, target, radius, mode, center, data) {
+function addLights(scene, target, radius, mode, center, cityBox) {
   const Lt = THEME.light
   scene.add(new HemisphereLight(Lt.hemiSky, Lt.hemiGround, Lt.hemiIntensity))
   const sun = new DirectionalLight(Lt.sun, Lt.sunIntensity)
@@ -195,7 +243,7 @@ function addLights(scene, target, radius, mode, center, data) {
     // 与 CityScene 完全一致：停靠站点时 _fitShadow 以景点落点（地面）为中心收紧
     if (center) {
       applyStopShadow(sun, Lt, [center[0], 0, center[1]], STOP_SHADOW_RADIUS)
-    } else applyCityShadow(sun, Lt, computeCityShadow(data, THEME))
+    } else applyCityShadow(sun, Lt, cityBox)
   } else {
     const dir = new Vector3(...Lt.sunPosition).normalize()
     const t = new Vector3(target[0], 0, target[2])
@@ -273,13 +321,18 @@ async function main() {
     applyShadowFlags(m)
     scene.add(m)
   }
+  // 只有「city 模式且没有站点」（kit 指定 shadow=city）用整城阴影，才需要实算整城范围
+  const cityBox =
+    shadowMode === "city" && !subject.center
+      ? cityShadowBox(data, project, materials, subject.meshes)
+      : null
   addLights(
     scene,
     subject.target,
     subject.shadowRadius,
     shadowMode,
     subject.center,
-    data
+    cityBox
   )
   const [tx, ty, tz] = subject.target
   placeCamera(camera, { x: tx, y: ty, z: tz, defaultDist: subject.defaultDist })

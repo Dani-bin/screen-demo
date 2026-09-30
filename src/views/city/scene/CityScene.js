@@ -140,10 +140,7 @@ export class CityScene {
     this.sun = sun
     sun.castShadow = true
     sun.shadow.mapSize.set(L.shadowMapSize, L.shadowMapSize)
-    // 初始为整城阴影：正交范围、朝向与偏移按城市数据实算一次（shadow.js 的 computeCityShadow），
-    // 停靠站点时由 _fitShadow 收紧，回总览 / 离站时 _resetShadow 恢复
-    this.cityShadow = computeCityShadow(this.geometry, t)
-    applyCityShadow(sun, L, this.cityShadow)
+    // 整城阴影范围要等全部投影物建完才能算，在 _buildCity 末尾设置
     this.shadowFitted = false
     this.scene.add(sun)
     // 平行光朝向 target；target 需在场景中才会更新 matrixWorld，否则阴影方向不对
@@ -207,6 +204,19 @@ export class CityScene {
     )
     this.root.add(this.markers.group)
 
+    // 初始为整城阴影：全部投影物建完后实算一次正交范围、朝向与偏移（shadow.js 的 computeCityShadow）——
+    // 楼栋轮廓、通用树的真实树冠、景点模型与落点球的 Mesh，含影子落到地面的深度；
+    // 停靠站点时由 _fitShadow 收紧，回总览 / 离站时 _resetShadow 恢复
+    this.cityShadow = computeCityShadow(
+      {
+        buildings: d.buildings,
+        trees: this.trees.layout,
+        objects: [this.landmarks.group, this.markers.group]
+      },
+      this.theme.light
+    )
+    applyCityShadow(this.sun, this.theme.light, this.cityShadow)
+
     this.highlight = null
     this.bubble = null
 
@@ -239,7 +249,10 @@ export class CityScene {
     })
     // 注视点可移动范围 = 拉数范围 meta.bbox（[南, 西, 北, 东] 纬经度）换成局部坐标：
     // 道路 / 河流按 bbox 外扩 300 m 裁剪（meta.clip），楼栋落在 bbox 附近，
-    // 注视点不出 bbox，镜头就不会移到数据边缘外的空地上
+    // 注视点不出 bbox，镜头就不会移到数据边缘外的空地上。
+    // 南扩前 theme.camera.bounds 写死为 x [-2600, 3100]、z [-3100, 2300]；按 bbox 换算后
+    // 现为约 x [-2461, 3093]、z [-3161, 3692]：南界随南扩外移，北界外扩约 61 m，
+    // 西界收紧约 139 m（东界收紧约 7 m），西侧边缘不能再像以前那样拉到 bbox 以外
     const [south, west, north, east] = this.geometry.meta.bbox
     const [x0, z1] = this.project.toLocal(west, south)
     const [x1, z0] = this.project.toLocal(east, north)
