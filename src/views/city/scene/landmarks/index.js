@@ -14,6 +14,8 @@
  * 占用网格：城市通用树（trees.js）只避让 OSM 楼与水面，不认识景点模型，
  * 会从亭心、碑台、茶社屋顶里长出来。createLandmarks 把全部景点 Mesh 的
  * 三角形投影到地面，生成 4 m 网格的占用集合 occupancy，供撒树时跳过。
+ * 各景点步行路径（walkways）两侧的走廊也记为占用：通用树离路径足够远，
+ * 树冠碰不到行人，人流校验不再依赖通用树恰好落在哪里（见 buildOccupancy）。
  */
 import { Group, Matrix4, Vector3 } from "three"
 import { buildingsInZones } from "./kit/footprint.js"
@@ -101,7 +103,24 @@ const OCC_MIN_Y = 1.2
 // 膨胀 3 格保证树心离模型实体至少 12 m，最大的树冠也碰不到模型；
 // 只膨胀 2 格（8 m）时，鹤鸣茶社牌坊外 12.5 m 仍留有一棵树，大树冠会擦到模型
 const OCC_GROW = 3
+// 步行路径走廊在「路宽一半 + 通用树最大树冠半径」之外再留的余量（米）：
+// 覆盖小人身体半径（校验按身体外扩 0.8 m）与树冠多面体的取整误差
+const WALK_CLEAR = 1
+// 格子中心到格内最远点的距离（半对角线）：按格子中心判断距离时加上它，
+// 保证走廊半径以内的任何一点所在的格子都被标记（宁多勿少）
+const OCC_HALF_DIAG = (OCC_CELL * Math.SQRT2) / 2
 const IDENTITY = new Matrix4()
+
+/** 点 (x, z) 到线段 a-b 的距离 */
+function segmentDistance(x, z, [ax, az], [bx, bz]) {
+  const dx = bx - ax
+  const dz = bz - az
+  const l2 = dx * dx + dz * dz
+  const t = l2
+    ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2))
+    : 0
+  return Math.hypot(x - ax - t * dx, z - az - t * dz)
+}
 
 /**
  * 由景点 Mesh 与替换区生成占用网格。
@@ -109,11 +128,14 @@ const IDENTITY = new Matrix4()
  *   它的 XZ 包围盒覆盖到的格子记为实体格，全部实体格再统一向外膨胀 OCC_GROW 格；
  *   用包围盒而非精确光栅化：斜长三角形会多占几格，对「树别压模型」而言宁多勿少。
  * - zones：格子中心落在替换区多边形内的格子全部占用（不再膨胀，替换区本身已含余量）。
+ * - corridors：步行路径走廊，离路径中线 radius 以内的点所在的格子全部占用
+ *   （按格子中心距离 < radius + 半对角线判断；闭合路径含末点回到首点的一段）。
  * @param {THREE.Object3D[]} roots 景点模块返回的顶层对象（可含子节点）
  * @param {Array} zones 世界坐标多边形数组
+ * @param {Array<{ points: number[][], closed: boolean, radius: number }>} [corridors]
  * @returns {{ cell: number, size: number, has: (x: number, z: number) => boolean }}
  */
-export function buildOccupancy(roots, zones) {
+export function buildOccupancy(roots, zones, corridors = []) {
   // 格子键用小整数 (ix + OFF) · 2^13 + (iz + OFF)（加偏移保证非负）：
   // 比字符串键快一个数量级，且结果 < 2^26，始终是 V8 的小整数（不装箱）。
   // OFF = 4096 格 = ±16 km，城市数据范围约 ±3.5 km，绰绰有余
@@ -197,6 +219,27 @@ export function buildOccupancy(roots, zones) {
       }
     }
   }
+  for (const { points, closed, radius } of corridors) {
+    if (!points || points.length < 2) continue
+    const reach = radius + OCC_HALF_DIAG
+    const n = closed ? points.length : points.length - 1
+    for (let i = 0; i < n; i++) {
+      const a = points[i]
+      const b = points[(i + 1) % points.length]
+      // 只扫线段包围盒外扩 reach 覆盖到的格子
+      const ix0 = Math.floor((Math.min(a[0], b[0]) - reach) / OCC_CELL)
+      const ix1 = Math.floor((Math.max(a[0], b[0]) + reach) / OCC_CELL)
+      const iz0 = Math.floor((Math.min(a[1], b[1]) - reach) / OCC_CELL)
+      const iz1 = Math.floor((Math.max(a[1], b[1]) + reach) / OCC_CELL)
+      for (let ix = ix0; ix <= ix1; ix++) {
+        for (let iz = iz0; iz <= iz1; iz++) {
+          const cx = (ix + 0.5) * OCC_CELL
+          const cz = (iz + 0.5) * OCC_CELL
+          if (segmentDistance(cx, cz, a, b) < reach) cells.add(key(ix, iz))
+        }
+      }
+    }
+  }
   return {
     cell: OCC_CELL,
     size: cells.size,
@@ -231,7 +274,7 @@ export function buildLandmark(name, ctx) {
  *   markerHeights: number[],    各景点落点球底座高度，0 表示由 markers.js 自行估算
  *   walkwaysBySpot: Array[],    各景点步行路径（无则为空数组），到站时生成人群
  *   pickables: Map<Mesh, number>, Mesh → 景点索引，供射线拾取
- *   occupancy: { has(x, z) },   景点模型与替换区的占用网格，撒通用树时跳过（见 buildOccupancy）
+ *   occupancy: { has(x, z) },   景点模型、替换区与步行路径走廊的占用网格，撒通用树时跳过（见 buildOccupancy）
  *   update: (t: number) => void, t 为累计秒数
  *   dispose: () => void
  * }}
@@ -273,8 +316,17 @@ export function createLandmarks({ geometry, spots, theme, project }) {
   })
 
   const excluded = buildingsInZones(buildings, zones)
+  // 步行路径走廊：半径 = 路宽一半 + 通用树最大树冠半径 + 余量。
+  // 树冠是二十面体按 size 缩放（水平半径 = size ≤ crownMin + crownVar），
+  // 树心落在走廊外时，任何一棵通用树的树冠都碰不到路上的行人
+  const crownMax = theme.tree.crownMin + theme.tree.crownVar
+  const corridors = walkwaysBySpot.flat().map((w) => ({
+    points: w.points,
+    closed: Boolean(w.closed),
+    radius: (w.width > 0 ? w.width / 2 : 0) + crownMax + WALK_CLEAR
+  }))
   // 景点 Mesh 此时都在 group 里，统一生成占用网格（含动画件的初始位置）
-  const occupancy = buildOccupancy(group.children, zones)
+  const occupancy = buildOccupancy(group.children, zones, corridors)
 
   return {
     group,
