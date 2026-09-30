@@ -1,7 +1,7 @@
 /*
  * 低多边形树木
  * ----------------------------------------------------------
- * 树冠 = 二十面体（细分 1 次）竖向拉长 1.15 倍，树干 = 六棱柱。
+ * 树冠 = 二十面体（细分 1 次）竖向拉长 1.15 倍，树干 = 六棱柱（外形尺寸见 treeShape）。
  * 公园内按面积随机撒点，河岸两侧沿中心线成排种植。
  * 全部走 InstancedMesh：几千棵树只占两次 draw call。
  * 随机数用固定种子，每次刷新树的位置与颜色一致；且按元素几何 / 树位置派生，
@@ -27,6 +27,43 @@ import {
 
 // 树冠随机朝向的旋转轴（竖直向上）
 const Y_AXIS = new Vector3(0, 1, 0)
+
+// 树冠外形（均为树冠尺寸 size 的倍数）：单位二十面体水平缩放 size、竖向缩放 1.15·size，
+// 中心放在树干顶之上 0.95·size 处，冠底 = 树干高 − 0.2·size，树干能露出来
+const CROWN_STRETCH = 1.15
+const CROWN_LIFT = 0.95
+
+/**
+ * 单棵通用树的外形尺寸（米）。树的造型、整城阴影范围（shadow.js）、
+ * 步行路径走廊（landmarks/index.js）都从这里取，改造型时三处自动一致。
+ * @param {number} size 树冠水平半径（layoutTrees 的 size）
+ * @param {number} height 树干高（layoutTrees 的 height）
+ * @returns {{ radius: number, halfHeight: number, centerY: number,
+ *   bottom: number, top: number, boundRadius: number }}
+ *   radius 树冠水平半径；halfHeight 竖向半轴；centerY 树冠中心高度；
+ *   bottom / top 冠底 / 树顶高度；boundRadius 以树冠中心为球心、包住整个树冠的球半径
+ *   （二十面体顶点都在单位球面上，缩放后落在半轴 size、1.15·size 的椭球面上）
+ */
+export function treeShape(size, height) {
+  const halfHeight = size * CROWN_STRETCH
+  const centerY = height + size * CROWN_LIFT
+  return {
+    radius: size,
+    halfHeight,
+    centerY,
+    bottom: centerY - halfHeight,
+    top: centerY + halfHeight,
+    boundRadius: Math.max(size, halfHeight)
+  }
+}
+
+/**
+ * 通用树外形的上限：theme.tree 里最大的树冠配最高的树干（radius、top 都取到最大）。
+ * @param {object} t theme.tree
+ */
+export function treeShapeMax(t) {
+  return treeShape(t.crownMin + t.crownVar, t.trunkMin + t.trunkVar)
+}
 
 /**
  * 障碍物网格索引：把多边形按包围盒登记到均匀网格里，
@@ -161,9 +198,9 @@ export function scatterTrees(data, theme, blocked = null) {
  * @param {object} theme
  * @param {{ has: (x: number, z: number) => boolean }} [blocked] 见 scatterTrees
  * @returns {Array<{ x: number, z: number, size: number, height: number,
- *   yaw: number, yellow: boolean, green: number }>}
+ *   yaw: number, isYellow: boolean, greenIndex: number }>}
  *   size 为树冠水平半径（米），height 为树干高（米），yaw 为绕竖轴转角（弧度），
- *   yellow 为黄树，否则 green 为 theme.tree.greens 的下标
+ *   isYellow 为黄树，否则 greenIndex 为 theme.tree.greens 的下标；外形尺寸由 treeShape 换算
  */
 export function layoutTrees(data, theme, blocked = null) {
   const t = theme.tree
@@ -175,9 +212,9 @@ export function layoutTrees(data, theme, blocked = null) {
     const size = t.crownMin + rand() * t.crownVar
     const height = t.trunkMin + rand() * t.trunkVar
     const yaw = rand() * Math.PI * 2
-    const yellow = rand() < t.yellowRatio
-    const green = Math.floor(rand() * t.greens.length)
-    return { x, z, size, height, yaw, yellow, green }
+    const isYellow = rand() < t.yellowRatio
+    const greenIndex = Math.floor(rand() * t.greens.length)
+    return { x, z, size, height, yaw, isYellow, greenIndex }
   })
 }
 
@@ -186,7 +223,8 @@ export function layoutTrees(data, theme, blocked = null) {
  * @param {object} materials createMaterials 的结果（foliage / trunk）
  * @param {object} theme
  * @param {{ has: (x: number, z: number) => boolean }} [blocked] 景点占用网格，见 scatterTrees
- * @returns {{ group: Group, count: number, dispose: Function }}
+ * @returns {{ group: Group, count: number, layout: Array, dispose: Function }}
+ *   layout 为 layoutTrees 的结果（每棵树的位置与尺寸），供整城阴影按真实树冠求范围
  */
 export function createTrees(data, materials, theme, blocked = null) {
   const t = theme.tree
@@ -205,19 +243,18 @@ export function createTrees(data, materials, theme, blocked = null) {
   const s = new Vector3()
   const p = new Vector3()
 
-  trees.forEach(({ x, z, size, height, yaw, yellow: isYellow, green }, i) => {
+  trees.forEach(({ x, z, size, height, yaw, isYellow, greenIndex }, i) => {
     // 每棵树绕竖轴随机转一个角度，避免平面着色的棱面整齐重复
     q.setFromAxisAngle(Y_AXIS, yaw)
-    // 树冠竖向半轴 = 1.15·size，中心放在 height + 0.95·size，
-    // 冠底 = height + 0.95·size − 1.15·size = height − 0.2·size，
-    // 离地 2.6～6.6 m，树干能露出来
+    // 树冠按 treeShape 摆放：冠底 = height − 0.2·size，离地 2.6～6.6 m，树干能露出来
+    const c = treeShape(size, height)
     m.compose(
-      p.set(x, height + size * 0.95, z),
+      p.set(x, c.centerY, z),
       q,
-      s.set(size, size * 1.15, size)
+      s.set(c.radius, c.halfHeight, c.radius)
     )
     crown.setMatrixAt(i, m)
-    crown.setColorAt(i, isYellow ? yellow : greens[green])
+    crown.setColorAt(i, isYellow ? yellow : greens[greenIndex])
     m.compose(p.set(x, height / 2, z), identity, s.set(1, height, 1))
     trunk.setMatrixAt(i, m)
   })
@@ -230,6 +267,7 @@ export function createTrees(data, materials, theme, blocked = null) {
   return {
     group,
     count: trees.length,
+    layout: trees,
     dispose() {
       crownGeo.dispose()
       trunkGeo.dispose()

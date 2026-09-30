@@ -67,8 +67,9 @@ export const THEME = {
     sunPosition: [-1400, 2600, 1800],
     shadowMapSize: 4096,
     /*
-     * 整城阴影正交相机的范围与朝向由 shadow.js 的 computeCityShadow 按城市数据实算
-     * （包住全部楼栋与通用树，并绕光轴转到 texel 最小的角度），这里只给外扩余量（米）
+     * 整城阴影正交相机的范围与朝向由 shadow.js 的 computeCityShadow 在城市建好后实算
+     * （包住全部楼栋、通用树真实树冠、景点与落点球及其影子落地深度，并绕光轴转到 texel 最小的角度），
+     * 这里只给平面与深度方向的外扩余量（米）
      */
     shadowMargin: 8,
     /*

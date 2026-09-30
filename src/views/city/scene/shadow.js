@@ -1,16 +1,19 @@
 /*
  * 太阳阴影范围：整城 / 按站点收紧
  * ----------------------------------------------------------
- * 整城一张 4096 阴影贴图覆盖约 6.2 km，每个 texel 约 1.5 m（范围由 computeCityShadow
- * 按城市数据实算），景点的柱子、檐下、栏杆阴影仍会糊掉。巡览停靠某站时，
+ * 整城一张 4096 阴影贴图覆盖全部投影物：正交范围与朝向由 computeCityShadow 按城市
+ * 建好后的真实投影物实算，texel = 正方形边长 / 4096，随数据范围变化（米级），
+ * 景点的柱子、檐下、栏杆阴影仍会糊掉。巡览停靠某站时，
  * 把阴影正交相机收紧到站点周围 ±R 米（R = 1000 时约 0.5 m/texel），
  * 回总览 / 离站时恢复整城范围。
  * 代价：停靠期间离站点 R 以外的楼没有阴影（站点机位视野基本落在 R 以内）。
  *
- * 两个函数只改太阳与阴影相机参数，调用方负责置 renderer.shadowMap.needsUpdate = true。
+ * 两个 apply 函数只改太阳与阴影相机参数，调用方负责置 renderer.shadowMap.needsUpdate = true。
  * CityScene 与 lab 预览页共用，保证预览截图与线上停靠时一致。
  */
-import { Vector3 } from "three"
+import { Box3, Vector3 } from "three"
+import { GROUND_Y } from "./terrain.js"
+import { treeShape } from "./trees.js"
 
 /** 停靠站点时的阴影半径（米） */
 export const STOP_SHADOW_RADIUS = 1000
@@ -25,6 +28,16 @@ const DEFAULT_UP = new Vector3(0, 1, 0)
 const OCTA_DIRS = Array.from({ length: 8 }, (_, k) => [
   Math.cos((k * Math.PI) / 4),
   Math.sin((k * Math.PI) / 4)
+])
+// 半径 r 的圆的外切正八边形，顶点离圆心 r / cos(22.5°)：树冠包围球投到光源平面是圆，
+// 用这 8 个顶点代替整个圆参与凸包，保证圆完整落在凸包内
+const OCTA_CIRCUMSCRIBE = 1 / Math.cos(Math.PI / 8)
+
+// 包围盒的 8 个角点：下标 k 的第 0 / 1 / 2 位分别决定 x / y / z 取 min（0）还是 max（1）
+const BOX_CORNERS = Array.from({ length: 8 }, (_, k) => [
+  k & 1,
+  (k >> 1) & 1,
+  (k >> 2) & 1
 ])
 
 /**
@@ -93,56 +106,118 @@ function convexHull(as, bs) {
 }
 
 /**
- * 由城市数据算整城阴影相机：覆盖全部投影物的最紧正交范围，并绕光轴转到 texel 最小的朝向。
+ * 由城市建好后的投影物算整城阴影相机：覆盖全部投影物与其影子落点的最紧正交范围，
+ * 并绕光轴转到 texel 最小的朝向。须在楼栋、通用树、景点、落点球都建完之后调用。
  *
- * - 投影物：楼栋（轮廓顶点取楼底与楼顶两个高度）+ 公园与河流中心线（通用树所在，
- *   高度取树顶上限）。平行光下投影物与它的影子落在光源视空间的同一 (x, y) 处，
- *   包住投影物即包住全部影子；远处空旷地面只接收不投影，不必覆盖。
+ * - 投影物（凡 castShadow 的都要包住，漏掉的会在范围边缘被截出硬边）：
+ *   · 楼栋：轮廓顶点取楼底（y = 0）与楼顶两个高度；
+ *   · 通用树：每棵树真实树冠的包围球（trees.js 的 treeShape，含位置、尺寸与树干高），
+ *     投到光源平面是圆，用外切八边形参与凸包；
+ *   · 其余对象（景点模型、落点球）：遍历 castShadow 的 Mesh，取各自局部包围盒的 8 个角点
+ *     换到世界坐标——逐个 Mesh 取，不取整个景点组的包围盒：十个景点散在全城，
+ *     整组包围盒的顶角（高 339 m 的熊猫塔决定盒高）会把范围撑大很多。
+ *   平行光下投影物与它的影子落在光源视空间的同一 (x, y) 处，包住投影物即在平面方向包住全部影子；
+ *   远处空旷地面只接收不投影，不必覆盖。
  * - 朝向：默认 up = (0, 1, 0) 时光源视空间的轴与城市街网斜交，包围盒有大片空角。
  *   在垂直光线的平面里对投影点求凸包，按 0.5° 步长扫描旋转角，取 max(宽, 高) 最小者
  *   （贴图是正方形，texel 由长边决定），得到阴影相机的 up 向量。
- * - 深度：near / far 取投影点沿光线方向的实际区间；bias 按 light.shadowBiasMeters
- *   换算（正交深度线性，bias × (far − near) ≈ 沿光线的米数），范围变了偏移量仍一致。
- * 数据范围变化（如南扩）时自动适应，不用手改常量。
- * @param {object} geometry 城市几何数据（buildings / parks / rivers）
- * @param {object} theme THEME（取 light 与 tree）
+ * - 深度：near 取投影物最靠近太阳处；far 取影子落到地面（y = GROUND_Y）处的最大深度——
+ *   点 (x, y, z) 沿光线落到地面要再走 (y − GROUND_Y) / w.y 米（w 为指向太阳的单位向量），
+ *   落点比投影点本身更深。far 只算到投影点的话，城边高楼的影子尖会超出 far，被当成受光截掉。
+ *   bias 按 light.shadowBiasMeters 换算（正交深度线性，bias × (far − near) ≈ 沿光线的米数），
+ *   范围变了偏移量仍一致。
+ * 平面方向与深度方向都再外扩 light.shadowMargin 米，吸收浮点误差与 PCF 取样的邻近 texel。
+ * 数据范围变化（如南扩）、新增城边景点时自动适应，不用手改常量。
+ * @param {object} casters
+ * @param {Array} [casters.buildings] 楼栋 [{ p: [[x, z], ...], h }]（geometry.buildings；
+ *   含被景点替换、不再画的楼也无妨，只会更保守）
+ * @param {Array} [casters.trees] 通用树布局（trees.js 的 layoutTrees，即 createTrees().layout）
+ * @param {THREE.Object3D[]} [casters.objects] 其余投影物的根节点（景点组、落点球组）；
+ *   不要传通用树或合并楼栋的 Mesh（整城一个包围盒，会把范围撑到最大）
+ * @param {object} light THEME.light
  * @returns {{ up: number[], left: number, right: number, top: number,
  *   bottom: number, near: number, far: number, bias: number }}
  */
-export function computeCityShadow(geometry, theme) {
-  const light = theme.light
-  const t = theme.tree
+export function computeCityShadow(
+  { buildings = [], trees = [], objects = [] },
+  light
+) {
   const sunPos = new Vector3(...light.sunPosition)
   const dist = sunPos.length()
   // 与 lookAt 相同的基：w 指向太阳，u = up × w（右），v = w × u（上）
   const w = sunPos.clone().normalize()
   const u = new Vector3().crossVectors(DEFAULT_UP, w).normalize()
   const v = new Vector3().crossVectors(w, u)
+  // 影子落地深度 = 投影点深度 + (y − GROUND_Y) / w.y，对位置是线性函数 const + p·g，
+  // g = ŷ / w.y − w，|g| = √(1 / w.y² − 1)（太阳天顶角的正切）。
+  // 半径 r 的球上各点落地深度的最大值 = 球心落地深度 + r·|g|
+  const landSlope = Math.sqrt(1 / (w.y * w.y) - 1)
   // 投影点在垂直光线平面上的坐标（a 沿 u、b 沿 v），分两个数组存，省去十几万个小数组
   const as = []
   const bs = []
   let dMin = Infinity
   let dMax = -Infinity
-  const add = (x, y, z) => {
-    as.push(x * u.x + y * u.y + z * u.z)
-    bs.push(x * v.x + y * v.y + z * v.z)
+  /**
+   * 登记一个投影物：r = 0 为点，r > 0 为以 (x, y, z) 为心、半径 r 的球
+   */
+  const add = (x, y, z, r = 0) => {
+    const a = x * u.x + y * u.y + z * u.z
+    const b = x * v.x + y * v.y + z * v.z
+    if (r > 0) {
+      const rr = r * OCTA_CIRCUMSCRIBE
+      for (const [dx, dy] of OCTA_DIRS) {
+        as.push(a + dx * rr)
+        bs.push(b + dy * rr)
+      }
+    } else {
+      as.push(a)
+      bs.push(b)
+    }
     const d = dist - (x * w.x + y * w.y + z * w.z) // 到太阳所在平面的距离
-    if (d < dMin) dMin = d
-    if (d > dMax) dMax = d
+    if (d - r < dMin) dMin = d - r
+    // 影子落地处的深度（投影物在地面以下时取其自身深度）
+    const land = d + Math.max(0, (y - GROUND_Y) / w.y + r * landSlope)
+    const deepest = Math.max(d + r, land)
+    if (deepest > dMax) dMax = deepest
   }
-  for (const b of geometry.buildings || []) {
+  for (const b of buildings) {
+    if (!b.p) continue
     for (const [x, z] of b.p) {
       add(x, 0, z)
       add(x, b.h, z)
     }
   }
-  // 通用树树顶上限：树干最高 + 树冠中心 0.95·size + 竖向半轴 1.15·size
-  const treeTop = t.trunkMin + t.trunkVar + 2.1 * (t.crownMin + t.crownVar)
-  for (const line of [...(geometry.parks || []), ...(geometry.rivers || [])]) {
-    for (const [x, z] of line) {
-      add(x, 0, z)
-      add(x, treeTop, z)
-    }
+  for (const { x, z, size, height } of trees) {
+    const c = treeShape(size, height)
+    add(x, c.centerY, z, c.boundRadius)
+  }
+  const box = new Box3()
+  const p = new Vector3()
+  for (const root of objects) {
+    // 模型刚建好、尚未渲染过，先更新世界矩阵（含祖先）
+    root.updateWorldMatrix(true, true)
+    root.traverse((obj) => {
+      if (!obj.castShadow || !obj.geometry) return
+      // 与 Box3.expandByObject 相同：InstancedMesh 等自带 boundingBox（已含全部实例），
+      // 普通 Mesh 用几何体的包围盒；均为对象局部坐标
+      if (obj.boundingBox !== undefined) {
+        if (obj.boundingBox === null) obj.computeBoundingBox()
+        box.copy(obj.boundingBox)
+      } else {
+        if (!obj.geometry.boundingBox) obj.geometry.computeBoundingBox()
+        box.copy(obj.geometry.boundingBox)
+      }
+      if (box.isEmpty()) return
+      // 局部包围盒的 8 个角点换到世界坐标：几何体在角点的凸包内，凸包投影后仍包住它
+      for (const [i, j, k] of BOX_CORNERS) {
+        p.set(
+          i ? box.max.x : box.min.x,
+          j ? box.max.y : box.min.y,
+          k ? box.max.z : box.min.z
+        ).applyMatrix4(obj.matrixWorld)
+        add(p.x, p.y, p.z)
+      }
+    })
   }
   if (!as.length) throw new Error("城市数据为空，无法计算阴影范围")
 
@@ -194,7 +269,7 @@ export function computeCityShadow(geometry, theme) {
  * 整城阴影：太阳在 light.sunPosition、朝向原点，范围、朝向与偏移取 computeCityShadow 的结果。
  * @param {THREE.DirectionalLight} sun
  * @param {object} light THEME.light
- * @param {object} box computeCityShadow(geometry, THEME) 的返回值
+ * @param {object} box computeCityShadow 的返回值
  */
 export function applyCityShadow(sun, light, box) {
   sun.position.set(...light.sunPosition)

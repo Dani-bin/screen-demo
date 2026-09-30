@@ -15,11 +15,13 @@
  * 会从亭心、碑台、茶社屋顶里长出来。createLandmarks 把全部景点 Mesh 的
  * 三角形投影到地面，生成 4 m 网格的占用集合 occupancy，供撒树时跳过。
  * 各景点步行路径（walkways）两侧的走廊也记为占用：通用树离路径足够远，
- * 树冠碰不到行人，人流校验不再依赖通用树恰好落在哪里（见 buildOccupancy）。
+ * 树冠碰不到行人，人流校验不再依赖通用树恰好落在哪里（见 buildOccupancy）；
+ * 路面高过通用树树顶的屋顶路径不设走廊（见 createLandmarks）。
  */
 import { Group, Matrix4, Vector3 } from "three"
 import { buildingsInZones } from "./kit/footprint.js"
 import { pointInPolygon, polygonBounds } from "../utils.js"
+import { treeShapeMax } from "../trees.js"
 import { build as tianfu } from "./tianfu.js"
 import { build as taikooli } from "./taikooli.js"
 import { build as ifs } from "./ifs.js"
@@ -322,15 +324,21 @@ export function createLandmarks({ geometry, spots, theme, project }) {
   })
 
   const excluded = buildingsInZones(buildings, zones)
-  // 步行路径走廊：半径 = 路宽一半 + 通用树最大树冠半径 + 余量。
-  // 树冠是二十面体按 size 缩放（水平半径 = size ≤ crownMin + crownVar），
+  // 步行路径走廊：半径 = 路宽一半 + 通用树最大树冠水平半径 + 余量（树外形见 trees.js 的 treeShape），
   // 树心落在走廊外时，任何一棵通用树的树冠都碰不到路上的行人
-  const crownMax = theme.tree.crownMin + theme.tree.crownVar
-  const corridors = walkwaysBySpot.flat().map((w) => ({
-    points: w.points,
-    closed: Boolean(w.closed),
-    radius: (w.width > 0 ? w.width / 2 : 0) + crownMax + WALK_CLEAR
-  }))
+  const { radius: crownMax, top: treeTopMax } = treeShapeMax(theme.tree)
+  const corridors = walkwaysBySpot
+    .flat()
+    // 路面不低于通用树最高树顶（约 33 m）的架空路径（如 IFS 屋顶花园 39 m）不设走廊：
+    // 地面上的树冠够不着路上的行人，清走廊只会把楼外一圈本来无碍的通用树白白删掉。
+    // 比树顶低的架空路径（合江亭安顺廊桥桥面 8.5 m 等）树冠仍能伸到行人身上，照常避让；
+    // 没给 y 的路径按地面处理（undefined >= 数字 为 false）
+    .filter((w) => !(w.y >= treeTopMax))
+    .map((w) => ({
+      points: w.points,
+      closed: Boolean(w.closed),
+      radius: (w.width > 0 ? w.width / 2 : 0) + crownMax + WALK_CLEAR
+    }))
   // 景点 Mesh 此时都在 group 里，统一生成占用网格（含动画件的初始位置）
   const occupancy = buildOccupancy(group.children, zones, corridors)
 
