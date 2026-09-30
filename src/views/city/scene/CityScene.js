@@ -30,7 +30,7 @@ import { createTerrain } from "./terrain.js"
 import { createRivers, createRoads } from "./roads.js"
 import { createBuildings, createHighlight } from "./buildings.js"
 import { createTrees } from "./trees.js"
-import { createMarkers } from "./markers.js"
+import { LABEL_LEAD, createMarkers } from "./markers.js"
 import { CameraTour } from "./cameraTour.js"
 import { createPicker } from "./picking.js"
 import { polygonCenter } from "./utils.js"
@@ -57,6 +57,8 @@ export class CityScene {
    * @param {Function} options.onStopChange 停靠站变化 (index)
    * @param {Function} options.onPlayingChange 巡览状态变化 (playing)
    * @param {Function} options.onViewChange 视角变化 ({ heading, scaleMeters })
+   * @param {number} [options.labelSafeTop=0] 顶部保留带高度（设计稿 px）：景点标签框顶进入这一带时
+   *   避让（当前站标签先下压、压不下再隐藏，其余隐藏，见 markers.js 的 avoidTop）；0 为不避让
    */
   constructor(options) {
     this.canvas = options.canvas
@@ -67,6 +69,7 @@ export class CityScene {
     this.visible = true
     this.disposed = false
     this.onViewChange = options.onViewChange || (() => {})
+    this.labelSafeTop = options.labelSafeTop || 0
     this.lastView = { heading: NaN, scaleMeters: NaN }
     // 减少动态：巡览跳过飞行动画、景点人群原地站立
     this.reduceMotion = window.matchMedia(
@@ -504,6 +507,23 @@ export class CityScene {
     this._emitView()
     this.renderer.render(this.scene, this.camera)
     this.labelRenderer.render(this.scene, this.camera)
+    this._avoidLabels()
+  }
+
+  /**
+   * 景点标签避让顶部栏（规则见 markers.js 的 avoidTop），须在 labelRenderer.render 之后调用。
+   * 保留带与引线长度是设计稿 px，构建时被 pxtorem 换成 rem、运行时 1rem = 视口宽 / 10，
+   * 这里与比例尺同样按视口宽 / 1920 换算成屏幕 px
+   */
+  _avoidLabels() {
+    if (!this.labelSafeTop) return
+    const k = this.viewportWidth / 1920
+    this.markers.avoidTop(
+      this.camera,
+      this.height,
+      this.labelSafeTop * k,
+      LABEL_LEAD * k
+    )
   }
 
   /**

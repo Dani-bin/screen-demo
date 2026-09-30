@@ -87,6 +87,12 @@
   /** 人工接管后恢复巡览的空闲秒数，供操作提示显示 */
   const idleSeconds = THEME.tour.idle
 
+  /**
+   * 景点标签避让的顶部保留带（设计稿 px）：CityHead 顶栏高 74px（标题、时钟、天气都在其中），
+   * 再留 6px 余量。标签框顶压进这一带时由场景避让（当前站先下压、压不下再隐藏，其余隐藏）
+   */
+  const LABEL_SAFE_TOP = 80
+
   const pageRef = ref(null)
   const canvasRef = ref(null)
   const labelRef = ref(null)
@@ -204,6 +210,7 @@
         geometry,
         spots: data.spots,
         startStop,
+        labelSafeTop: LABEL_SAFE_TOP,
         onStopChange: (index) => {
           current.value = index
         },
@@ -367,10 +374,14 @@
     .city-label {
       /*
        * 标签底边锚在落点球顶上（markers.js 的 center 为底边中点），
-       * 再用固定像素上抬 40px，竖线也固定 40px 正好连回锚点：
-       * 远近镜头下引线长度一致，不随距离缩放
+       * 再用固定像素上抬 --lead（40px，与 markers.js 的 LABEL_LEAD 一致），竖线也是 --lead 长，
+       * 正好连回锚点：远近镜头下引线长度一致，不随距离缩放。
+       * 当前站标签压到顶栏时，场景在元素上内联改写 --lead（屏幕 px）缩短引线、把标签往下压。
+       * 默认值必须写成普通声明而不是 var() 的回退值：pxtorem 不转换 var() 里的 px
        */
-      margin-top: -40px;
+      --lead: 40px;
+
+      margin-top: calc(-1 * var(--lead));
       padding: 7px 14px;
       border-radius: 8px;
       background: #fff;
@@ -379,6 +390,7 @@
       font-size: 14px;
       font-weight: 600;
       color: var(--city-ink);
+      transition: opacity 0.3s;
 
       &::after {
         content: "";
@@ -386,9 +398,14 @@
         left: 50%;
         top: 100%;
         width: 2px;
-        height: 40px;
+        height: var(--lead);
         background: var(--city-ink);
         opacity: 0.55;
+      }
+
+      /* 标签压到顶栏时淡出隐藏（当前站先缩短引线下压，压不下才隐藏，见 markers.js 的 avoidTop） */
+      &.is-clipped {
+        opacity: 0;
       }
 
       small {
