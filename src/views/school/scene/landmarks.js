@@ -66,32 +66,145 @@ export function createClockTower(materials) {
   pin.position.y = shaftH + 14.8
   group.add(pin)
 
-  // 四面钟盘：塔身四个方向各一面，带一根指针示意
-  const half = base / 2 + 0.15
+  /* 四面钟盘：塔身四个方向各一面。
+     每面按偏航角摆正，让盘面正对各自朝向的室外。 */
+  const half = base / 2 + 0.12
   const faces = [
-    [0, half],
-    [half, 0],
-    [0, -half],
-    [-half, 0]
+    [0, half, 0],
+    [half, 0, Math.PI / 2],
+    [0, -half, Math.PI],
+    [-half, 0, -Math.PI / 2]
   ]
-  faces.forEach(([fx, fz]) => {
-    const dial = new Mesh(
-      new CylinderGeometry(1.75, 1.75, 0.22, 24),
-      materials.clockFace
-    )
-    dial.rotation.x = Math.PI / 2
-    if (fx !== 0) dial.rotation.z = Math.PI / 2
-    dial.position.set(fx, 22.5, fz)
-    group.add(dial)
-
-    const hand = new Mesh(new BoxGeometry(0.16, 1.25, 0.1), materials.roof)
-    hand.position.set(fx * 1.03, 23.05, fz * 1.03)
-    group.add(hand)
+  const dials = faces.map(([fx, fz, yaw]) => {
+    const dial = createClockDial(materials)
+    dial.group.position.set(fx, 22.5, fz)
+    dial.group.rotation.y = yaw
+    group.add(dial.group)
+    return dial
   })
+
+  // 建好即对一次时，首帧就是正确时间；此后由场景主循环每秒校准
+  updateClockTime(dials)
 
   group.position.set(x, 0, z)
   group.userData.stop = 2
+  group.userData.clockDials = dials
   return group
+}
+
+/** 方形表盘的边长（米），与塔身 7.6m 的面宽配比取自参考照片 */
+const DIAL_SIZE = 3.6
+
+/**
+ * 表针轮廓：细针杆 + 靠近尖端的矛形膨大 + 尖头，针尖朝 +Y、盘心在原点。
+ * 尾端往盘心后多伸一小截当配重，看起来才像真表针。
+ * @param {number} length 盘心到针尖的长度
+ * @param {number} width 针杆宽
+ * @param {number} barb 矛形最宽处的宽度
+ */
+function handShape(length, width, barb) {
+  const tail = length * 0.16
+  const s = new Shape()
+  s.moveTo(-width / 2, -tail)
+  s.lineTo(width / 2, -tail)
+  s.lineTo(width / 2, length * 0.58)
+  s.lineTo(barb / 2, length * 0.72)
+  s.lineTo(width * 0.35, length * 0.83)
+  s.lineTo(0, length)
+  s.lineTo(-width * 0.35, length * 0.83)
+  s.lineTo(-barb / 2, length * 0.72)
+  s.lineTo(-width / 2, length * 0.58)
+  s.closePath()
+  return s
+}
+
+/**
+ * 造一面钟盘：方形石框盘体 + 表盘贴图 + 时针分针，正面朝局部 +Z。
+ *
+ * 盘体直接用 BoxGeometry，只有 +Z 面（材质槽 4）贴表盘图，其余五面走白石材质，
+ * 省掉一块额外的面片。两根指针各自挂在一个位于盘心的空 Group 上，转指针只改
+ * Group 绕 z 轴的旋转角，不必重建几何体。
+ *
+ * @returns {{ group: Group, hour: Group, minute: Group }}
+ */
+function createClockDial(materials) {
+  const group = new Group()
+
+  const plate = new Mesh(new BoxGeometry(DIAL_SIZE, DIAL_SIZE, 0.22), [
+    materials.trim,
+    materials.trim,
+    materials.trim,
+    materials.trim,
+    materials.clockFace,
+    materials.trim
+  ])
+  plate.castShadow = true
+  group.add(plate)
+
+  /**
+   * 造一根指针并挂到盘心。
+   * @param {number} length 盘心到针尖的长度
+   * @param {number} width 针杆宽
+   * @param {number} barb 矛形最宽处的宽度
+   * @param {number} z 相对盘面的前后位置，分针压在时针之上
+   */
+  const makeHand = (length, width, barb, z) => {
+    const pivot = new Group()
+    pivot.position.z = z
+    const hand = new Mesh(
+      new ExtrudeGeometry(handShape(length, width, barb), {
+        depth: 0.06,
+        bevelEnabled: false
+      }),
+      materials.clockHand
+    )
+    pivot.add(hand)
+    group.add(pivot)
+    return pivot
+  }
+
+  const hour = makeHand(0.66, 0.1, 0.2, 0.13)
+  const minute = makeHand(1.0, 0.075, 0.16, 0.19)
+
+  // 时针中段的球形节，照片上这一颗很显眼
+  const knob = new Mesh(new SphereGeometry(0.11, 14, 10), materials.clockHand)
+  knob.position.set(0, 0.42, 0.03)
+  knob.scale.z = 0.55
+  hour.add(knob)
+
+  // 盘心轴帽，压住两根指针的根部
+  const hub = new Mesh(
+    new CylinderGeometry(0.1, 0.1, 0.12, 14),
+    materials.clockHand
+  )
+  hub.rotation.x = Math.PI / 2
+  hub.position.z = 0.26
+  group.add(hub)
+
+  return { group, hour, minute }
+}
+
+/**
+ * 按给定时间转动四面钟盘的指针。
+ *
+ * 钟面角度从 12 点方向起算、顺时针为正，而绕 +z 轴正向旋转在正面看是逆时针，
+ * 所以取负值。时针叠加分钟的零头、分针叠加秒的零头，指针才是连续走而不是跳格。
+ *
+ * @param {Array<{hour: Group, minute: Group}>} dials createClockTower 里建的四面钟盘
+ * @param {Date} [date] 默认取当前系统时间
+ */
+export function updateClockTime(dials, date = new Date()) {
+  const seconds = date.getSeconds() + date.getMilliseconds() / 1000
+  const minutes = date.getMinutes() + seconds / 60
+  const hours = (date.getHours() % 12) + minutes / 60
+
+  const hourAngle = (hours / 12) * Math.PI * 2
+  const minuteAngle = (minutes / 60) * Math.PI * 2
+
+  dials.forEach((dial) => {
+    dial.hour.rotation.z = -hourAngle
+    dial.minute.rotation.z = -minuteAngle
+  })
 }
 
 /**

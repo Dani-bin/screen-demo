@@ -26,7 +26,8 @@ import {
   createCampusProps,
   createClockTower,
   createGate,
-  createOctagonHall
+  createOctagonHall,
+  updateClockTime
 } from "./landmarks"
 import { createPlayground } from "./playground"
 import { createPlaza } from "./plaza"
@@ -67,6 +68,8 @@ export class SchoolScene {
     this._initEvents()
 
     this.clock = new Clock()
+    // 钟楼校时计时器：每秒取一次系统时间即可，不必每帧都取
+    this.clockTimer = 0
     this._loop = this._loop.bind(this)
     this.frameId = requestAnimationFrame(this._loop)
   }
@@ -158,7 +161,12 @@ export class SchoolScene {
     this.root.add(plaza.group)
 
     this.root.add(createBuildings(m))
-    this.root.add(createClockTower(m))
+
+    const clockTower = createClockTower(m)
+    // 四面钟盘的指针，主循环按真实时间驱动
+    this.clockDials = clockTower.userData.clockDials
+    this.root.add(clockTower)
+
     this.root.add(createOctagonHall(m))
     this.root.add(createGate(m))
     this.root.add(createWalls(m))
@@ -240,6 +248,13 @@ export class SchoolScene {
     this.jets.forEach((jet, i) => {
       jet.scale.y = 1 + Math.sin(t * 3 + i) * 0.14
     })
+
+    // 钟楼指针跟随真实时间，每秒校一次
+    this.clockTimer += dt
+    if (this.clockTimer >= 1) {
+      this.clockTimer = 0
+      updateClockTime(this.clockDials)
+    }
 
     this.tour.update(dt)
     this.renderer.render(this.scene, this.camera)

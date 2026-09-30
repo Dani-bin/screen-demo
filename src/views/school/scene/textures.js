@@ -422,6 +422,171 @@ function buildSignCanvas() {
   return c
 }
 
+/* 表盘配色，取自参考照片 */
+const CLOCK_DARK = "#33383C" // 铁框与石缝
+const CLOCK_STONE = "#F1EDE5" // 白石
+const CLOCK_RED = "#CB5033" // 数字环的砖红
+
+/**
+ * 钟楼表盘（英式塔钟样式，依据参考照片还原）：
+ * 方形白石框 + 四角哥特石雕花饰 + 一圈分钟方石 + 砖红数字环，
+ * 环上只写 XII / III / VI / IX 四个白色罗马数字，其余八个时位用白色长条块，
+ * 中心留一块白石圆盘。
+ *
+ * 只画静态盘面，时针分针是真实的三维物体，由场景主循环按当前时间转动。
+ */
+function buildClockFaceCanvas() {
+  const S = 512
+  const c = createCanvas(S, S)
+  const g = c.getContext("2d")
+  const R = S / 2
+
+  /* 各圈半径（像素），由外向内 */
+  const RING_EDGE = R - 22 // 方石圈外侧细线
+  const MINUTE_OUT = R - 34 // 分钟方石外沿
+  const MINUTE_IN = R - 70 // 分钟方石内沿
+  const RED_OUT = R - 82 // 红环外沿
+  const RED_IN = R - 148 // 红环内沿（= 中心白盘半径）
+  const MARK_MID = (RED_OUT + RED_IN) / 2 // 时标与数字所在半径
+
+  /** 极坐标转画布坐标：角度从 12 点方向起算、顺时针为正 */
+  const at = (angle, radius) => [
+    R + Math.sin(angle) * radius,
+    R - Math.cos(angle) * radius
+  ]
+
+  /** 画一个整圆线 */
+  const ring = (radius, width) => {
+    g.strokeStyle = CLOCK_DARK
+    g.lineWidth = width
+    g.beginPath()
+    g.arc(R, R, radius, 0, Math.PI * 2)
+    g.stroke()
+  }
+
+  // 白石底板
+  g.fillStyle = CLOCK_STONE
+  g.fillRect(0, 0, S, S)
+
+  /* 四角哥特石雕花饰：三片圆叶围一个小圆心。
+     先画花饰、后画表盘各圈，圆环自然把花饰内侧压住，与照片一致。 */
+  const trefoil = (cx, cy, r) => {
+    g.lineWidth = 3
+    g.strokeStyle = CLOCK_DARK
+    g.fillStyle = CLOCK_STONE
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2 - Math.PI / 2
+      g.beginPath()
+      g.arc(
+        cx + Math.cos(a) * r * 0.6,
+        cy + Math.sin(a) * r * 0.6,
+        r * 0.55,
+        0,
+        Math.PI * 2
+      )
+      g.fill()
+      g.stroke()
+    }
+    g.beginPath()
+    g.arc(cx, cy, r * 0.28, 0, Math.PI * 2)
+    g.fill()
+    g.stroke()
+  }
+  const corner = S * 0.16
+  ;[
+    [corner, corner],
+    [S - corner, corner],
+    [corner, S - corner],
+    [S - corner, S - corner]
+  ].forEach(([cx, cy]) => trefoil(cx, cy, S * 0.115))
+
+  // 深色方形铁框
+  g.strokeStyle = CLOCK_DARK
+  g.lineWidth = 16
+  g.strokeRect(8, 8, S - 16, S - 16)
+
+  /* 分钟方石圈：白石底上打 60 条径向石缝，配合内外两道圆线就成了一圈方石 */
+  g.strokeStyle = CLOCK_DARK
+  g.lineWidth = 2.5
+  for (let i = 0; i < 60; i++) {
+    const a = (i / 60) * Math.PI * 2
+    g.beginPath()
+    g.moveTo(...at(a, MINUTE_IN))
+    g.lineTo(...at(a, MINUTE_OUT))
+    g.stroke()
+  }
+  ring(RING_EDGE, 2.5)
+  ring(MINUTE_OUT, 3)
+  ring(MINUTE_IN, 3)
+
+  // 砖红数字环：先铺满红圆，再用白石圆盘挖出中心
+  g.fillStyle = CLOCK_RED
+  g.beginPath()
+  g.arc(R, R, RED_OUT, 0, Math.PI * 2)
+  g.fill()
+  g.fillStyle = CLOCK_STONE
+  g.beginPath()
+  g.arc(R, R, RED_IN, 0, Math.PI * 2)
+  g.fill()
+  ring(RED_OUT, 3)
+  ring(RED_IN, 3)
+
+  /* 十二个时位：正点四个写白色罗马数字，其余八个用白色长条时标。
+     数字与时标都是径向摆放（字底朝盘心），所以 6 点位的 VI 是倒着的 ——
+     这正是英式塔钟的排法。 */
+  const numerals = { 3: "III", 6: "VI", 9: "IX", 12: "XII" }
+  g.font = `700 ${Math.round(R * 0.21)}px "Times New Roman", Georgia, serif`
+  g.textAlign = "center"
+  g.textBaseline = "middle"
+  for (let h = 1; h <= 12; h++) {
+    const a = (h / 12) * Math.PI * 2
+    g.save()
+    g.translate(...at(a, MARK_MID))
+    g.rotate(a)
+    g.fillStyle = CLOCK_STONE
+    if (numerals[h]) {
+      g.fillText(numerals[h], 0, 0)
+    } else {
+      const w = R * 0.055
+      const len = R * 0.2
+      g.fillRect(-w / 2, -len / 2, w, len)
+    }
+    g.restore()
+  }
+
+  return c
+}
+
+/**
+ * 水池池底马赛克：蓝色小方砖 + 浅色砖缝。
+ * 水体是半透明的，透出来的蓝正是这张池底贴图 ——
+ * 比直接把水染成蓝色更有层次，也更贴近实景水池的做法。
+ */
+function buildPoolTileCanvas() {
+  const S = 128
+  const c = createCanvas(S, S)
+  const g = c.getContext("2d")
+
+  // 砖缝底色
+  g.fillStyle = "#C3DCE2"
+  g.fillRect(0, 0, S, S)
+
+  // 8×8 块马赛克，每块在一组蓝调里随机取色，模拟窑变的深浅不匀
+  const tones = ["#2F82B6", "#3893C6", "#2A6EA1", "#4BA7D0", "#215F8B"]
+  const N = 8
+  const step = S / N
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      g.fillStyle = tones[Math.floor(Math.random() * tones.length)]
+      g.fillRect(x * step + 1, y * step + 1, step - 2, step - 2)
+      // 每块左上角压一道高光，让砖面有厚度
+      g.fillStyle = "rgba(255,255,255,.10)"
+      g.fillRect(x * step + 1, y * step + 1, step - 2, 2)
+    }
+  }
+  return c
+}
+
 /* canvas 只画一次，供所有材质共享 */
 const facadeCanvas = buildFacadeCanvas()
 const arcadeCanvas = buildArcadeCanvas()
@@ -453,4 +618,12 @@ export function createTurfTexture(repeatX, repeatY) {
 
 export function createSignTexture() {
   return toTexture(buildSignCanvas(), 1, 1)
+}
+
+export function createPoolTileTexture(repeat) {
+  return toTexture(buildPoolTileCanvas(), repeat, repeat)
+}
+
+export function createClockFaceTexture() {
+  return toTexture(buildClockFaceCanvas(), 1, 1)
 }

@@ -56,7 +56,9 @@ export default defineConfig(({ mode }) => {
     server: {
       host: true,
       port: 8892,
-      https: true,
+      // 走 http：自签名证书会被部分内嵌浏览器直接拒绝。
+      // 注意从局域网 IP 访问时不再是安全上下文，麦克风等能力会不可用
+      https: false,
       open: false,
       proxy: {
         "/dev-api": {

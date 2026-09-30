@@ -8,7 +8,7 @@
         "dev"
       ],
       "port": 8892,
-      "url": "https://localhost:8892"
+      "url": "http://localhost:8892"
     }
   ]
 }

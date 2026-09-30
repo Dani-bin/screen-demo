@@ -10,10 +10,12 @@
 import { DoubleSide, LineBasicMaterial, MeshStandardMaterial } from "three"
 import {
   createArcadeTexture,
+  createClockFaceTexture,
   createCorridorTexture,
   createFacadeTexture,
   createGrassTexture,
   createPavingTexture,
+  createPoolTileTexture,
   createSignTexture,
   createTurfTexture
 } from "./textures"
@@ -71,18 +73,53 @@ export function createMaterials() {
     }),
     track: new MeshStandardMaterial({ color: "#BE5238", roughness: 0.96 }),
     court: new MeshStandardMaterial({ color: "#3F6B96", roughness: 0.9 }),
-    water: new MeshStandardMaterial({
-      color: "#3E6E70",
-      roughness: 0.16,
-      metalness: 0.32,
-      transparent: true,
-      opacity: 0.9
+    // 池底马赛克。水面是半透明的，池水呈现的蓝主要来自这一层，
+    // 因此池底单独建一片，不能只把水染成蓝色
+    // 重复次数固定为 1，实际砖块大小由各水池自己按米数缩放 UV 决定，
+    // 否则方池被拉长、圆池被压扁，同一张贴图会出现两种砖形
+    poolTile: new MeshStandardMaterial({
+      map: createPoolTileTexture(1),
+      roughness: 0.55
     }),
-    waterJet: new MeshStandardMaterial({
-      color: "#E8F4F6",
+    // 水面：清透的浅青，靠透出池底马赛克成色
+    water: new MeshStandardMaterial({
+      color: "#78C6DC",
+      roughness: 0.06,
+      metalness: 0.4,
       transparent: true,
-      opacity: 0.42,
-      roughness: 0.1
+      opacity: 0.68
+    }),
+    // 盘内的水只是薄薄一层，不能沿用池水那种厚重的蓝，
+    // 否则每个盘子里都像扣了一块蓝色塑料板
+    bowlWater: new MeshStandardMaterial({
+      color: "#D6EFF6",
+      roughness: 0.04,
+      metalness: 0.55,
+      transparent: true,
+      opacity: 0.55
+    }),
+    // 喷泉石雕：暖米黄洞石。盘状构件用 Lathe 车出，
+    // 内外壁同属一张曲面，必须 DoubleSide 否则盘内会漏成黑色
+    fountainStone: new MeshStandardMaterial({
+      color: "#E8DCC2",
+      roughness: 0.78,
+      side: DoubleSide
+    }),
+    // 落水水幕：白亮且很薄。透明度压得低，水柱才像水而不像白棍
+    waterJet: new MeshStandardMaterial({
+      color: "#F4FBFD",
+      transparent: true,
+      opacity: 0.34,
+      roughness: 0.08,
+      metalness: 0.2,
+      depthWrite: false
+    }),
+    // 落水入池处的白色水花
+    foam: new MeshStandardMaterial({
+      color: "#FFFFFF",
+      transparent: true,
+      opacity: 0.55,
+      roughness: 0.35
     }),
     line: new LineBasicMaterial({ color: "#F2F2EE" }),
     trunk: new MeshStandardMaterial({ color: "#6B5340", roughness: 0.95 }),
@@ -105,7 +142,17 @@ export function createMaterials() {
       roughness: 0.98,
       flatShading: true
     }),
-    clockFace: new MeshStandardMaterial({ color: "#FBF8F2", roughness: 0.5 }),
+    // 钟楼表盘：刻度与 1~12 数字已画进贴图
+    clockFace: new MeshStandardMaterial({
+      map: createClockFaceTexture(),
+      roughness: 0.5
+    }),
+    // 时针分针：比屋顶色更深一点，在米白盘面上对比更清楚
+    clockHand: new MeshStandardMaterial({
+      color: "#23282F",
+      roughness: 0.45,
+      metalness: 0.35
+    }),
     // 铁艺门扇与栅栏
     iron: new MeshStandardMaterial({
       color: "#22262B",
