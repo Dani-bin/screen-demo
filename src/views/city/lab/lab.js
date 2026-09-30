@@ -71,8 +71,8 @@ const SPOT_KEYS = {
   kuanzhai: "宽窄巷子",
   peoplesPark: "人民公园",
   wenshu: "文殊院",
-  hejiang: "合江亭",
-  wangjiang: "望江楼·九眼桥",
+  hejiang: "合江亭·安顺廊桥",
+  wangjiang: "望江楼",
   pandaTower: "天府熊猫塔",
   wuhou: "武侯祠·锦里"
 }
