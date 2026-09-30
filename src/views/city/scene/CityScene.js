@@ -39,7 +39,8 @@ import { createCrowd } from "./crowd.js"
 import {
   STOP_SHADOW_RADIUS,
   applyCityShadow,
-  applyStopShadow
+  applyStopShadow,
+  computeCityShadow
 } from "./shadow.js"
 
 const DEG = Math.PI / 180
@@ -139,9 +140,10 @@ export class CityScene {
     this.sun = sun
     sun.castShadow = true
     sun.shadow.mapSize.set(L.shadowMapSize, L.shadowMapSize)
-    // 初始为整城阴影：太阳位置、正交范围、偏移见 shadow.js 与 theme.light；
+    // 初始为整城阴影：正交范围、朝向与偏移按城市数据实算一次（shadow.js 的 computeCityShadow），
     // 停靠站点时由 _fitShadow 收紧，回总览 / 离站时 _resetShadow 恢复
-    applyCityShadow(sun, L)
+    this.cityShadow = computeCityShadow(this.geometry, t)
+    applyCityShadow(sun, L, this.cityShadow)
     this.shadowFitted = false
     this.scene.add(sun)
     // 平行光朝向 target；target 需在场景中才会更新 matrixWorld，否则阴影方向不对
@@ -235,12 +237,18 @@ export class CityScene {
         t: [tx, lift, tz]
       }
     })
+    // 注视点可移动范围 = 拉数范围 meta.bbox（[南, 西, 北, 东] 纬经度）换成局部坐标：
+    // 道路 / 河流按 bbox 外扩 300 m 裁剪（meta.clip），楼栋落在 bbox 附近，
+    // 注视点不出 bbox，镜头就不会移到数据边缘外的空地上
+    const [south, west, north, east] = this.geometry.meta.bbox
+    const [x0, z1] = this.project.toLocal(west, south)
+    const [x1, z0] = this.project.toLocal(east, north)
     this.tour = new CameraTour({
       camera: this.camera,
       domElement: this.canvas,
       stops,
       overview: this.theme.camera.overview,
-      limits: this.theme.camera,
+      limits: { ...this.theme.camera, bounds: { x: [x0, x1], z: [z0, z1] } },
       timing: this.theme.tour,
       onStopChange: (index) => {
         this.markers.setActive(index)
@@ -427,10 +435,10 @@ export class CityScene {
     this.renderer.shadowMap.needsUpdate = true
   }
 
-  /** 恢复整城阴影（theme.light 的范围、偏移与太阳位置）；已是整城时不做事，避免无谓重绘 */
+  /** 恢复整城阴影（computeCityShadow 的范围与偏移、theme.light 的太阳位置）；已是整城时不做事，避免无谓重绘 */
   _resetShadow() {
     if (!this.shadowFitted) return
-    applyCityShadow(this.sun, this.theme.light)
+    applyCityShadow(this.sun, this.theme.light, this.cityShadow)
     this.shadowFitted = false
     this.renderer.shadowMap.needsUpdate = true
   }

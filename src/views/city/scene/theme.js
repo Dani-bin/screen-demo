@@ -67,24 +67,17 @@ export const THEME = {
     sunPosition: [-1400, 2600, 1800],
     shadowMapSize: 4096,
     /*
-     * 阴影正交相机范围（光源坐标系，米）：刚好包住城区数据范围，
-     * 收紧后 4096 贴图每个 texel 覆盖的地面更小，阴影边缘更实；
-     * near / far 也收紧到城区实际深度区间，提升深度精度
+     * 整城阴影正交相机的范围与朝向由 shadow.js 的 computeCityShadow 按城市数据实算
+     * （包住全部楼栋与通用树，并绕光轴转到 texel 最小的角度），这里只给外扩余量（米）
      */
-    shadowBox: {
-      left: -3900,
-      right: 3900,
-      top: 3360,
-      bottom: -2590,
-      near: 1170,
-      far: 6400
-    },
+    shadowMargin: 8,
     /*
-     * 正交阴影相机深度线性，bias × (far − near) ≈ 沿光线方向的米数：
-     * -0.0001 × 5230 ≈ 0.52 m，足以消除阴影痤疮，又不会让矮楼阴影与墙根脱开（漂浮感）。
+     * 正交阴影相机深度线性，bias × (far − near) ≈ 沿光线方向的米数；
+     * 这里直接给米数，由 computeCityShadow 按实际深度区间换算成 bias：
+     * 0.52 m 足以消除阴影痤疮，又不会让矮楼阴影与墙根脱开（漂浮感）。
      * normalBias 沿法线偏移（米），处理掠射角的条纹
      */
-    shadowBias: -0.0001,
+    shadowBiasMeters: 0.52,
     shadowNormalBias: 1
   },
 
@@ -175,10 +168,9 @@ export const THEME = {
     pitchMin: 20, // 俯仰角限制（度，0 为平视）
     pitchMax: 80,
     radiusMin: 300,
-    radiusMax: 6000,
-    // 注视点可移动范围：依据 chengdu.json 的 meta.clip（x -2761～3393，z -3461～2665），
-    // 四周各内缩约 150～360 米，避免镜头移到数据边缘外
-    bounds: { x: [-2600, 3100], z: [-3100, 2300] }
+    radiusMax: 6000
+    // 注视点可移动范围不在这里配置：CityScene 按 chengdu.json 的 meta.bbox（拉数范围，
+    // 比 meta.clip 四周各内缩 300 m）换算成局部坐标，数据范围变了自动跟随
   },
   tour: { fly: 2, hold: 8, idle: 15, drift: 0.004 }, // 秒；drift 为停靠时环绕速度（弧度/秒）
 
