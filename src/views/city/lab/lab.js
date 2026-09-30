@@ -2,7 +2,8 @@
  * 单景点预览页（开发用，不进生产构建）
  * ----------------------------------------------------------
  * 打开 /city-lab.html?landmark=kit&yaw=210&pitch=30&dist=160（可加 &tx=&tz=）
- *   landmark  kit（构件样例）或景点英文键 tianfu | taikooli | ifs | kuanzhai | peoplesPark | wenshu | hejiang
+ *   landmark  kit（构件样例）或景点英文键 tianfu | taikooli | ifs | kuanzhai | peoplesPark | wenshu | hejiang |
+ *             wangjiang | pandaTower | wuhou
  *   yaw       相机方位角（度，相对正北顺时针；相机位于注视点的这个方向上）
  *   pitch     俯仰角（度，0 为平视）
  *   dist      相机到注视点距离（米）
@@ -64,7 +65,10 @@ const SPOT_KEYS = {
   kuanzhai: "宽窄巷子",
   peoplesPark: "人民公园",
   wenshu: "文殊院",
-  hejiang: "合江亭"
+  hejiang: "合江亭",
+  wangjiang: "望江楼·九眼桥",
+  pandaTower: "天府熊猫塔",
+  wuhou: "武侯祠·锦里"
 }
 // 单景点模式下只画景点周围这么远的通用楼：略大于线上停靠时的阴影收紧半径
 // （STOP_SHADOW_RADIUS = 1000），收紧范围内的投影物与线上一致
