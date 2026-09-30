@@ -70,11 +70,21 @@ export function createPlayground(materials) {
     )
   )
 
-  // 四条白色分道线
-  const laneOffsets = [14.6, 16.2, 17.8, 19.4]
-  laneOffsets.forEach((halfW) => {
-    group.add(lineLoop(stadiumPoints(halfW, halfW + 24, 0.09), materials.line))
-  })
+  // 白色分道线：必须落在跑道环（内圈 ~ 外圈）之内，
+  // 4 条跑道 → 内外沿 + 3 条分隔线共 5 条。
+  // 直道长度沿用跑道环的 halfL - halfW，保证与跑道环同心、弧段重合，
+  // 否则分道线会画到内场的草皮 / 球场上。
+  const laneCount = 4
+  const laneWidth = (trackOuterHalfW - trackInnerHalfW) / laneCount
+  const straight = trackInnerHalfL - trackInnerHalfW
+  for (let i = 0; i <= laneCount; i++) {
+    // 最内 / 最外两条略向跑道内收 0.15m，避免与跑道边缘重合被裁掉
+    const inset = i === 0 ? 0.15 : i === laneCount ? -0.15 : 0
+    const halfW = trackInnerHalfW + laneWidth * i + inset
+    group.add(
+      lineLoop(stadiumPoints(halfW, halfW + straight, Y_LINE), materials.line)
+    )
+  }
 
   // 足球场划线：边线、中线、中圈、两侧禁区
   const { z: pz, width: pw, depth: pd } = pitch
