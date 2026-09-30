@@ -1,4 +1,8 @@
-<!-- 底部导览条：显示巡览站点，点击直接飞往该景点 -->
+<!--
+  底部导览条：显示巡览站点，点击直接飞往该景点。
+  10 个站点在 1920 设计稿下单行约 1020px 宽（居中约 x 450～1470），左侧操作提示止于 x 约 248、
+  右侧指北针与比例尺始于 x 约 1792，互不重叠；两侧面板下沿在 y 约 610 以上，与导览条不在同一高度
+-->
 <template>
   <nav class="tour-bar" aria-label="景点导览">
     <button
@@ -31,6 +35,11 @@
     transform: translateX(-50%);
     z-index: 5;
     display: flex;
+    /*
+     * left: 50% 的绝对定位元素按「容器宽 − left」（960px）收缩，10 个按钮放不下时文字会折成两行；
+     * 按内容撑开宽度、按钮文字不换行，保持单行（按钮高约 37px）
+     */
+    width: max-content;
     gap: 6px;
     padding: 8px;
     border-radius: 40px;
@@ -46,6 +55,7 @@
     background: transparent;
     font-family: inherit;
     font-size: 13px;
+    white-space: nowrap;
     color: var(--city-ink-soft);
     cursor: pointer;
     transition:
