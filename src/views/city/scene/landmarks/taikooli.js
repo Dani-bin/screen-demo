@@ -38,7 +38,8 @@ import {
   mulberry32,
   pointInPolygon,
   polygonBounds,
-  polygonCenter
+  polygonCenter,
+  shapeSeed
 } from "../utils.js"
 
 const DEG = Math.PI / 180
@@ -288,9 +289,14 @@ const PAVE_COLOR = "#D6CCBA"
 
 /* ---------------- 小工具 ---------------- */
 
-/** 每栋楼按索引取一个固定种子的随机数，模型每次加载都一样 */
-function randFor(index) {
-  return mulberry32(index * 7919 + 17)
+/**
+ * 每栋楼一个固定种子的随机数，模型每次加载都一样。
+ * 种子取自楼的原始轮廓（utils.shapeSeed），不用楼栋下标：
+ * 城市数据扩范围时新楼会插进列表中间，按下标播种会让整片店铺的檐高、配色全部改变
+ * @param {Array<[number, number]>} points 楼的 OSM 原始轮廓
+ */
+function randFor(points) {
+  return mulberry32(shapeSeed(17, points))
 }
 
 /**
@@ -966,7 +972,7 @@ export function build(ctx) {
   /* ---- 5. 店铺与附属房 ---- */
   let appleTop = 0
   for (const { i, pts, kind } of jobs) {
-    const rand = randFor(i)
+    const rand = randFor(buildings[i].p)
     if (kind === "annex") {
       const eaveH = ANNEX.eaveMin + rand() * (ANNEX.eaveMax - ANNEX.eaveMin)
       addShop(
