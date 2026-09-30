@@ -4,17 +4,18 @@
  * 府河与南河在此交汇为锦江。本景点包含三部分：
  *   1. 合江亭：两座六角重檐攒尖亭连体（共用中间两根柱，共 10 柱），
  *      金黄琉璃瓦、红柱，坐在 3.5 m 高的花岗岩台基上，汉白玉栏杆、两道台阶；
- *   2. 安顺廊桥（按用户提供的黄昏正侧面、夜景斜侧照片细化）：全长 81、桥体宽 14，
- *      浅灰白石桥体，三孔大石拱、拱间桥墩各开一个圆形泄洪孔，拱腹与孔壁为暖琥珀色
- *      （照片里拱洞内的橙色灯光，插画化为固有色）；桥面中段高、两端各低一级（斜坡相接）；
- *      圆孔下桥墩前后各立一只石雕镇水兽（共 4 只）。桥上木廊一律橙金琉璃瓦、金色屋脊，
- *      红柱红额枋（金线）之间是米白花格窗：中部主楼两层、重檐歇山顶（最宽最高），
- *      二层外一圈白石栏杆；两端楼阁坐在下层桥面上，底层腰檐围出平台，台上一座方亭、
- *      陡峭的四角攒尖顶加宝顶；其间两段单层长廊，比楼阁低一截；
+ *   2. 安顺廊桥（按用户提供的黄昏正侧面、夜景斜侧照片细化，比例按照片 1 量取）：
+ *      全长 81、桥体宽 14，浅灰白石桥体，三孔大石拱、拱间桥墩各开一个圆形泄洪孔，
+ *      拱腹与孔壁为暖琥珀色（照片里拱洞内的橙色灯光，插画化为固有色）；桥面中段高、
+ *      圆孔外侧起两端各低一级（斜坡相接）；圆孔下桥墩前后各立一只石雕镇水兽（共 4 只）。
+ *      桥上木廊一律橙金琉璃瓦、金色屋脊，红柱红额枋（金线）之间是米白花格窗，
+ *      侧看是「大殿配两翼」：中部主楼占满上层桥面，底层腰檐上一圈白石平座栏杆，
+ *      二层正殿重檐歇山顶（最宽最高）、两侧二层翼楼；两端楼阁坐在下层桥面上，
+ *      单层楼的腰檐围出屋顶平台，台上一座方亭、陡峭的四角攒尖顶加宝顶，另有几把遮阳伞；
  *   3. 锦江上一艘游船（红船身、黄顶棚），沿河中心线来回缓慢漂移（单独 Mesh、不投影）。
  * 另在亭子与桥头的陆地上补几棵低多边形树。
  * 返回 walkways（步行路径，人群系统到站时生成行人）：亭子一侧的南河北岸步道、
- * 廊桥两段长廊外的桥面边道、合江亭台基上绕双亭的一圈环路。游船在河面上动，路径一律不下水。
+ * 廊桥上下两层桥面的边道、合江亭台基上绕双亭的一圈环路。游船在河面上动，路径一律不下水。
  *
  * 定位：OSM 数据里合江亭没有名称、安顺廊桥不在建筑数据中（桥不是 building），
  * 先按名称查楼，查不到时按设计坐标与朝向放置（见 PAVILION / BRIDGE 常量）。
@@ -44,7 +45,7 @@ import {
   minAreaRect,
   rectPolygon
 } from "./kit/footprint.js"
-import { box, sphere, sweepBar } from "./kit/shapes.js"
+import { box, cylinder, sphere, sweepBar } from "./kit/shapes.js"
 import {
   finial,
   hipRidges,
@@ -84,7 +85,10 @@ const RIVER = [
   [104.08159, 30.64484],
   [104.08469, 30.64388]
 ]
-// 游船：漂移中心离交汇点的距离、振幅、周期（秒）
+// 游船：漂移中心离交汇点的距离、振幅、周期（秒）。
+// 振幅不能调大到穿桥：漂到最下游时船心离廊桥轴线约 30 m，再加约 13 m 船头就碰到镇水兽石台。
+// OSM 河中线比此处水面中心偏约 13 m（船过桥位时在桥坐标系 x ≈ 13～15，正对北侧圆孔桥墩），
+// 所以也不能简单让船从桥下穿过
 const BOAT = { from: 95, amp: 60, period: 60, length: 14 }
 const RIVER_Y = 0.35 // 河面高度（roads.js 的河流水面）
 
@@ -100,42 +104,63 @@ const PAV_SHIFT = [-2, -14]
 
 /* ---------------- 安顺廊桥尺寸 ---------------- */
 
-// 桥面分两级（照片：中段桥面高，两端楼阁所在的桥面低一级，栏杆斜着跌落）：
-// 中段上层桥面 DECK_H，|x| ≥ STEP[1] 的两端为下层桥面 DECK_LOW，STEP 区间内斜坡相接。
-// 下层桥面与改版前的桥面同高，引坡不变；中段抬高是为了放下更大的石拱——
-// 照片里石桥体与桥上木廊差不多一样高，原来 8.5 m 的桥体被 15 m 高的木廊压成一条薄边
+// 比例按照片 1（黄昏正侧面）量取，以石桥体全长 81 m 为比例尺（照片约 17.9 px/m）。
+// 桥面分两级：中段上层桥面 DECK_H 只到圆孔外侧（|x| ≤ STEP[0]），两端楼阁所在的下层桥面
+// DECK_LOW 从 |x| = STEP[1] 起，中间一段斜坡、栏杆斜着跌落（照片里约 ±18～24 m）。
+// 下层桥面与改版前的桥面同高，引坡不变；上层抬高是为了放下照片里那样大的中孔
+// （照片中石桥体与桥上木廊差不多一样高）
 const DECK_H = 10.4
 const DECK_LOW = 8.5
-const STEP = [29.2, 31.2]
+const STEP = [18.5, 22.5]
 const BRIDGE_LEN = 81
 const BRIDGE_D = 14 // 桥体宽
-// 三孔石拱：x 为拱心沿桥位置，R 为半径，c 为圆心高度（在地面以下，拱为略扁的弧券）。
-// 按照片比例：中孔跨 23.1、矢高 8.8，边孔跨 18.5、矢高 7.0，桥墩只剩约 4 m，
-// 边孔外侧起拱点 ±34（此处河面宽约 ±38，桥头实体段仍立在水里、贴着驳岸）
+// 三孔石拱（弧券）：x 为拱心沿桥位置，R 为半径，c 为圆心高度（在地面以下）。
+// 照片中孔跨约 29 m、边孔约 21 m，边孔外脚几乎到桥头；此处水面实测在桥坐标系
+// x ∈ [−39.5, +39.75]，桥头两端各留约 6.5 m 实心段贴着驳岸，其余按照片比例分配：
+// 中孔跨 25.6、矢高 9.0，边孔跨 17.6、矢高 6.5（跨度比 1.45），桥墩 3.6 m，边孔外脚在 ±34
 const ARCHES = [
-  { x: -24.8, R: 9.6, c: -2.6 },
-  { x: 0, R: 12, c: -3.2 },
-  { x: 24.8, R: 9.6, c: -2.6 }
+  { x: -25.2, R: 9.207, c: -2.707 },
+  { x: 0, R: 13.602, c: -4.602 },
+  { x: 25.2, R: 9.207, c: -2.707 }
 ]
-// 拱间桥墩上的圆形泄洪孔：在两券之间的三角墙里，券石外缘与拱券石外缘相距约 0.15 m
+// 圆形泄洪孔：在桥墩正上方的两券之间，孔券石外缘离两侧拱券石外缘约 0.15～0.2 m
+// （照片里几乎相切）；孔顶券石 8.75 m，在上层桥面（圆孔外侧才开始跌落）之下
 const HOLES = [
-  { x: -13.57, y: 5.2, r: 2.5 },
-  { x: 13.57, y: 5.2, r: 2.5 }
+  { x: -14.6, y: 5.5, r: 2.7 },
+  { x: 14.6, y: 5.5, r: 2.7 }
 ]
 const ARCH_RING = 0.75 // 拱券石宽（半径方向）
 const RAMP = { len: 16, w: 11, footH: 0.8 } // 桥头引坡（从下层桥面起坡）
 const COPING = 0.5 // 桥面压面石厚度：石桥体只挤出到桥面 − COPING，桥面顶面归压面石
 
+// 桥上木廊，侧看是「大殿配两翼」（尺寸均为桥坐标系米数，x 沿桥、z 横桥）：
+//   HALL  中部主楼底层，占满上层桥面：柱网 34 × 7.8，腰檐出檐 1.5（檐口 ±18.5，约 37 m）；
+//   MAIN  二层正殿 22 × 7，歇山顶（檐口 ±13、翼角伸到约 ±14.5，照片约 ±15）；
+//   WING  正殿两侧的二层翼楼（x 从 x0 到 x1），四坡顶比正殿檐口略高、比正脊低得多；
+//   END   两端楼阁：下层桥面上的单层楼（|x| 从 x0 到 x1），腰檐围出屋顶平台；
+//   KIOSK 端楼平台上的方亭（中心 ±x、边长 a），陡峭的四角攒尖顶加宝顶（照片中心约 ±28）
+// 端楼内端 x0 = 20.4 伸进斜坡段（柱脚埋在斜坡石面里，不悬空），其腰檐檐口 ±19.0，
+// 与主楼腰檐檐口（±18.5，高出约 2 m）在平面上几乎相接，照片里也是这样
+const HALL = { w: 34, d: 7.8, h: 4.8, pent: 1.5 }
+const MAIN = { w: 22, d: 7, h: 3.6 }
+const WING = { x0: 11.4, x1: 16.6, d: 7, h: 3.0 }
+const END = { x0: 20.4, x1: 40.2, d: 7.8, h: 4.7, pent: 1.4 }
+const KIOSK = { x: 28.3, a: 5.6, h: 3.0 }
+
 // 廊桥配色（照片：浅灰白石桥体、拱洞内暖橙灯光、橙金琉璃瓦、红柱米白花格窗、白石栏杆）。
 // 红柱、金色屋脊、白石栏杆沿用 THEME.landmark 的 column / glaze / marble，下面是新增色
 const BR = {
-  stone: "#D8D4CA", // 桥体与引坡的浅灰白石（比合江亭台基的花岗岩浅一档）
-  glow: "#F6AA50", // 拱腹、圆孔内壁：暖琥珀色，插画化的「亮灯」效果（普通漫反射材质）
+  stone: "#D8D4CA", // 桥体、引坡、端楼平台的浅灰白石（比合江亭台基的花岗岩浅一档）
+  // 拱腹、圆孔内壁：偏亮、饱和度不高的暖琥珀（普通漫反射材质）。拱洞内只受天光，
+  // 实际显示约为固有色六成亮度，固有色取得亮，阴影里才像灯光而不是锈色；
+  // 斜看对比过 #FFC878（阴影里发芥末黄）与 #FFC48C（发灰土黄），此色最像暖光
+  glow: "#FFBA70",
   tile: "#E2A03E", // 橙金琉璃瓦：照片黄昏偏橙铜、夜里金黄，取两者之间
   ridge: L.glaze, // 屋脊、翼角、宝顶：比瓦面更亮的金黄
   screen: "#F2EAD7", // 米白花格窗底色
   mullion: L.lattice, // 花格窗棂、裙板：深红
-  beast: "#9A9486" // 石雕镇水兽、券顶兽面：比桥体深的旧石色
+  beast: "#9A9486", // 石雕镇水兽：比桥体深的旧石色（券顶石用 L.granite）
+  umbrella: "#D8CCEA" // 端楼平台茶座的淡紫遮阳伞（照片 1）
 }
 
 /* ---------------- 步行路径（人群用，见 crowd.js） ---------------- */
@@ -145,15 +170,22 @@ const BR = {
 // 尖角处净宽只剩约 1 m，故可走宽度取 0.5 m（世界米）：身体高度上离栏杆顶 ≥ 0.86 m
 // （身体半径，4 m 身高）；路面 = 台基顶（TERRACE.h × PAV_SCALE）
 const TERRACE_WALK = { x: 9.3, z: 5.78, r: 1.2, width: 0.5, density: 3.5 }
-// 廊桥桥面：木廊芯体是实心的，只能走柱列与桥面石栏之间的边道（上层桥面）。
-// 两段单层长廊柱线 z = ±3.5、檐口只伸到 z = ±4.65（檐下沿离桥面约 4.26 m，
-// 比小人头顶 4.35 m 低，故檐口须离边道内沿 ≥ 头部半径 0.48 m）；中部主楼端柱在 x = ±9，
-// 其腰檐伸到 x = ±10.5，但在边道上方离桥面 ≥ 4.99 m，小人从檐下走过。
-// 故边道取桥坐标系 |x| ∈ [10.2, 27]、z = ±5.6，四段各自走到端点折返；
-// x1 = 27 离斜坡段（STEP）还有 2 m。可走宽 0.8。Node 按三角形求交沿路径每 0.5 m
-// 核对过：腿 / 身体 / 头三个高度带的最小水平净距 0.67 / 1.13 / 0.55 m
-// （需 0.58 / 0.8 / 0.48），头顶净高 ≥ 4.99 m。路面 = 上层压面石顶 DECK_H
-const DECK_WALK = { x0: 10.2, x1: 27, z: 5.6, width: 0.8, density: 4 }
+// 廊桥边道：木廊芯体是实心的，只能走柱列（z = ±3.9）与桥面石栏（z = ±6.8）之间的边道，
+// z = ±5.6、可走宽 0.8，六段各自走到端点折返：
+//   上层桥面东西两侧各一段贯通主楼，x ∈ ±x1（x1 由 STEP[0] 推算，离斜坡起点 0.6 m）。
+//   主楼腰檐伸到边道上方，但檐下沿离桥面约 4.6 m，高过最高个体头顶 4.35 m，小人从檐下走过；
+//   两端下层桥面沿端楼各一段，x ∈ low（内端离斜坡终点 0.8 m，外端离桥头短横栏 ≥ 腿部半径），
+//   端楼底层高 4.7 m，腰檐下沿离桥面约 4.5 m，同样从檐下走过。
+// Node 按三角形求交沿每条路径每 0.5 m、中线与两侧边缘采样核对过（阈值按最高个体
+// 身高 4 × 1.08）：脚下即压面石顶，头顶 4.35 m 内无遮挡，腿 / 身体 / 头三个高度带的
+// 最小水平净距 ≥ 0.626 / 0.864 / 0.518 m。路面 = 各层压面石顶 DECK_H / DECK_LOW
+const DECK_WALK = {
+  z: 5.6,
+  width: 0.8,
+  density: 4,
+  x1: STEP[0] - 0.6,
+  low: [STEP[1] + 0.8, 39.4]
+}
 // 河岸步道：亭子西北、南河北岸的空地（城市地面平面 GROUND_Y = −0.5），离水边约 4 m，
 // 从上游一路走到台基西侧；fp 局部坐标（未放大），按水面、河道带、邻楼与通用树核对过
 const RIVERSIDE = {
@@ -485,15 +517,37 @@ function addBeast(b, m, s) {
   )
 }
 
+/** 遮阳伞（照片 1 端楼屋顶平台上的茶座）：细伞杆 + 八角伞面，底在父坐标系 y = 0 */
+function addUmbrella(b, m) {
+  b.add(box(0.12, 2.3, 0.12), L.marble, m)
+  b.add(
+    cylinder(1.3, 0, 0.6, { segments: 8 }),
+    BR.umbrella,
+    local(m, 0, 1.85, 0)
+  )
+}
+
 /* ---------------- 安顺廊桥：木廊 ---------------- */
 
 /**
- * 屋面上色：瓦面橙金；同一几何体下移 drop 再画一层红色，从檐下仰视看到的是红色椽望
- * （照片 2 的檐下）。drop 小于封檐板厚度，檐口处红层藏在金色封檐板后面，只露一道细红边
+ * 屋面：先画檐下红层（椽望），再画橙金瓦面。
+ * 红层是瓦面前 rows 行（每行 tMax / 6，与瓦面同一套采样点）整体下移 drop 的同一张折面，
+ * 处处在瓦面正下方；只覆盖出檐一圈，从檐下仰视看到红色（照片 2），也省三角形。
+ * 远景（总览约 7.7 km）深度缓冲精度约 0.18 m，分不开两层：合批网格按加入顺序光栅化，
+ * 深度测试为 LessEqual，深度相同时后画的瓦面胜出，俯看始终是瓦色。
+ * 红层封檐板只留 0.02 m（比瓦面封檐板 ≥ 0.08 m 薄），檐口处被瓦面封檐板盖住。
+ * @param {Function} roof (opts) => BufferGeometry：按 opts（含 tMax、segT、thick）生成屋面
+ * @param {object} o 瓦面参数（tMax 缺省 1，瓦面按 kit 默认 segT = 6 细分）
  */
-function addTiles(b, g, m, drop = 0.06) {
-  b.add(g, BR.tile, m)
-  b.add(g, L.column, local(m, 0, -drop, 0))
+function addTiles(b, roof, o, m, rows, drop = 0.06) {
+  const tMax = o.tMax ?? 1
+  const segT = 6
+  b.add(
+    roof({ ...o, tMax: (tMax * rows) / segT, segT: rows, thick: 0.02 }),
+    L.column,
+    local(m, 0, -drop, 0)
+  )
+  b.add(roof({ ...o, tMax, segT }), BR.tile, m)
 }
 
 /** 柱顶一圈额枋（矩形 w × d 的柱线上），底在 y；t 为枋厚 */
@@ -584,7 +638,8 @@ function cornerHooks(b, m, ex, ez, rx, yTip, len) {
  * 腰檐：柱网 w × d 的柱顶（高 y）一圈截断的四坡檐（橙金瓦、金脊），柱线外 0.35 m 处
  * 檐面正好等于 y。正脊比例按 innerHalfW 取，让檐的内缘刚好缩进上层芯体（或平台）里被盖住。
  * @param {object} o { pent 出檐, pentH = 1.5, tMax = 0.5, curl = 0.3, innerHalfW }
- * @returns {{ hx: number, hz: number, yIn: number }} 内缘半长、半深与内缘中段高度
+ * @returns {{ hx: number, hz: number, yIn: number, yCorner: number }}
+ *   内缘半长、半深，内缘中段与四角的高度
  */
 function addPent(b, parent, w, d, y, o) {
   const { pent, pentH = 1.5, tMax = 0.5, curl = 0.3, innerHalfW } = o
@@ -598,12 +653,14 @@ function addPent(b, parent, w, d, y, o) {
   const po = { overhang: pent, curl, ridge, tMax, ridges: false }
   const y0 = y - eaveDrop(d / 2, pent, pentH, 1.5, 0.35)
   const m = local(parent, 0, y0, 0)
-  addTiles(b, hipRoof(w, d, pentH, po), m)
+  addTiles(b, (q) => hipRoof(w, d, pentH, q), po, m, 3)
   b.add(hipRidges(w, d, pentH, po), BR.ridge, m)
   return {
     hx: ex * (1 - tMax) + ((ridge * w) / 2) * tMax,
     hz: ez * (1 - tMax),
-    yIn: y0 + roofHeight(0, tMax, pentH, 0)
+    yIn: y0 + roofHeight(0, tMax, pentH, curl),
+    // 内缘四角被起翘抬高（s = ±1），平台顶面要高过它，边缘才不会露出锯齿
+    yCorner: y0 + roofHeight(1, tMax, pentH, curl)
   }
 }
 
@@ -636,7 +693,7 @@ function whiteRail(b, parent, hx, hz, y, h = 0.9) {
 function addXieshan(b, m, w, d, o, coreTop) {
   const { h, overhang, curl, ridge, tb = 0.5 } = o
   const ro = { overhang, curl, ridge, tMax: tb, ridges: false }
-  addTiles(b, hipRoof(w, d, h, ro), m)
+  addTiles(b, (q) => hipRoof(w, d, h, q), ro, m, 3)
   b.add(hipRidges(w, d, h, ro), BR.ridge, m)
   const ex = w / 2 + overhang
   const ez = d / 2 + overhang
@@ -768,8 +825,8 @@ function addXieshan(b, m, w, d, o, coreTop) {
 }
 
 /**
- * 安顺廊桥：石桥体（三拱两孔、两级桥面）+ 拱券石 + 券顶兽面 + 镇水兽 + 桥面压面石与石栏
- * + 两端引坡 + 桥上木廊（中部主楼、两段长廊、两端楼阁）。
+ * 安顺廊桥：石桥体（三拱两孔、两级桥面）+ 拱券石 + 券顶石 + 镇水兽 + 桥面压面石与石栏
+ * + 两端引坡 + 桥上木廊（中部主楼：底层 + 二层正殿与两翼；两端楼阁：单层楼 + 屋顶平台方亭）。
  * @param {Matrix4} f 桥坐标系：局部 X 沿桥长（指向北端），原点在桥心地面
  * @returns {number} 木廊最高点 y（桥坐标系）
  */
@@ -801,11 +858,11 @@ function buildBridge(b, f) {
       b.add(holeRing(o.x, o.y, o.r - 0.08, o.r + 0.55, 0.3), L.marble, fz)
     }
   }
-  // 镇水兽：两个圆孔下的桥墩前后各一座石台（下层方台立在水里 + 上层须弥座），
+  // 镇水兽：两个圆孔下的桥墩前后各一座石台（下层方台立在水里、背面贴着桥墙 + 上层须弥座），
   // 台上一只伏兽、兽头朝桥心（照片 2），按插画式略放大到身长约 3.1 m
   for (const o of HOLES) {
     for (const sz of [-1, 1]) {
-      const pm = local(f, o.x, 0, sz * (D / 2 + 1.35))
+      const pm = local(f, o.x, 0, sz * (D / 2 + 1.25))
       b.add(box(3.4, 3.3, 2.5), L.granite, local(pm, 0, -0.4, 0))
       b.add(box(3.0, 0.5, 1.9), L.granite, local(pm, 0, 2.9, 0))
       addBeast(b, local(pm, 0, 3.4, 0, o.x > 0 ? Math.PI : 0), 1.2)
@@ -903,82 +960,105 @@ function buildBridge(b, f) {
     }
   }
 
-  // ---- 桥上木廊 ----
+  // ---- 桥上木廊（照片 1：大殿配两翼，两端各一座带屋顶平台与方亭的端楼） ----
   const deck = local(f, 0, DECK_H, 0)
-  // 中部主楼（上层桥面、两层）：底层 18 × 9，腰檐上一圈白石平座栏杆；
-  // 二层四面各内收 0.6 m，上覆重檐的上檐——歇山顶，全桥最宽最高
-  const G = { w: 18, d: 9, h: 4.8 }
-  const U = { w: 16.8, d: 7.8, h: 3.8 }
-  addStorey(b, deck, { ...G, spacing: 3 })
-  addPent(b, deck, G.w, G.d, G.h, {
-    pent: 1.5,
+  // 中部主楼底层：占满上层桥面；腰檐一圈、檐上一圈白石平座栏杆。
+  // 腰檐内缘按翼楼芯体外端收，内缘开口由二层正殿、翼楼与其间的补缝芯体盖住
+  const wingW = WING.x1 - WING.x0
+  const wingX = (WING.x0 + WING.x1) / 2
+  addStorey(b, deck, { w: HALL.w, d: HALL.d, h: HALL.h, spacing: 3.2 })
+  addPent(b, deck, HALL.w, HALL.d, HALL.h, {
+    pent: HALL.pent,
     pentH: 1.6,
     curl: 0.35,
-    innerHalfW: (U.w - 1.2) / 2 - 0.15
+    innerHalfW: WING.x1 - 0.6 - 0.15
   })
-  whiteRail(b, deck, G.w / 2 + 0.05, G.d / 2 + 0.05, G.h)
-  addStorey(b, deck, { ...U, y: G.h, spacing: 2.8, pitch: 1.4 })
-  const xs = { h: 5, overhang: 2, curl: 0.5, ridge: 0.62 }
-  const uTop = G.h + U.h
-  const yr = uTop - eaveDrop(U.d / 2, xs.overhang, xs.h, 1.5, 0.5)
-  let top = yr + addXieshan(b, local(deck, 0, yr, 0), U.w, U.d, xs, uTop - yr)
-
-  // 两段单层长廊（上层桥面，x 从主楼端柱 9 到斜坡起点 STEP[0]）：四坡顶，比楼阁低一截
-  const gw = STEP[0] - G.w / 2
-  const gx = (STEP[0] + G.w / 2) / 2
-  const gRoof = { overhang: 1.15, curl: 0.35, ridge: 0.9, ridges: false }
-  const gH = 4.5
-  const gRoofH = 2.4
+  whiteRail(b, deck, HALL.w / 2 + 0.05, HALL.d / 2 + 0.05, HALL.h)
+  // 二层正殿 + 歇山顶（重檐的上檐），全桥最宽最高
+  addStorey(b, deck, { ...MAIN, y: HALL.h, spacing: 2.8, pitch: 1.4 })
+  const xs = { h: 4.4, overhang: 2, curl: 0.5, ridge: 0.62 }
+  const uTop = HALL.h + MAIN.h
+  const yr = uTop - eaveDrop(MAIN.d / 2, xs.overhang, xs.h, 1.5, 0.5)
+  let top =
+    yr + addXieshan(b, local(deck, 0, yr, 0), MAIN.w, MAIN.d, xs, uTop - yr)
+  // 两侧二层翼楼：四坡顶脊高约 9.5 m（照片约 9.2），内端插到正殿翼角下，与正殿端坡相交成天沟
+  const wRoof = { overhang: 1.2, curl: 0.35, ridge: 0.7, ridges: false }
+  const wRoofH = 1.8
   for (const sx of [-1, 1]) {
-    const gc = local(deck, sx * gx, 0, 0)
-    addStorey(b, gc, { w: gw, d: 7, h: gH, spacing: 3.4 })
-    // 主楼芯体（|x| ≤ 8.4）与长廊芯体（|x| ≥ 9.6）之间的缝用一段芯体补上
-    b.add(box(1.4, gH, 5.8), BR.screen, local(deck, sx * (G.w / 2), 0, 0))
-    const m = local(
-      gc,
-      0,
-      gH - eaveDrop(3.5, gRoof.overhang, gRoofH, 1.5, 0.5),
-      0
+    const wc = local(deck, sx * wingX, 0, 0)
+    addStorey(b, wc, {
+      w: wingW,
+      d: WING.d,
+      h: WING.h,
+      y: HALL.h,
+      spacing: 2.6,
+      pitch: 1.3
+    })
+    // 正殿芯体（|x| ≤ MAIN.w/2 − 0.6）与翼楼芯体（|x| ≥ WING.x0 + 0.6）之间的缝用一段芯体补上
+    const g0 = MAIN.w / 2 - 0.7
+    const g1 = WING.x0 + 0.7
+    b.add(
+      box(g1 - g0, WING.h, WING.d - 1.2),
+      BR.screen,
+      local(deck, (sx * (g0 + g1)) / 2, HALL.h, 0)
     )
-    addTiles(b, hipRoof(gw, 7, gRoofH, gRoof), m)
-    b.add(hipRidges(gw, 7, gRoofH, gRoof), BR.ridge, m)
+    const wy =
+      HALL.h + WING.h - eaveDrop(WING.d / 2, wRoof.overhang, wRoofH, 1.5, 0.5)
+    const m = local(wc, 0, wy, 0)
+    addTiles(b, (q) => hipRoof(wingW, WING.d, wRoofH, q), wRoof, m, 2)
+    b.add(hipRidges(wingW, WING.d, wRoofH, wRoof), BR.ridge, m)
   }
 
-  // 两端楼阁（下层桥面，x 从斜坡终点 STEP[1] 起 9 × 9）：底层腰檐围出一圈平台、白石栏杆，
-  // 台上一座 5.2 m 见方的小亭，陡峭的四角攒尖顶、翼角高翘、顶立宝顶
-  const E = { w: 9, d: 9, h: 4.6 }
-  const ex = STEP[1] + E.w / 2
-  const T = { a: 5.2, h: 3.2 } // 台上方亭：边长、柱高
-  const pyr = { overhang: 1.4, curl: 0.5, ridges: false }
-  const pyrH = 4.4
-  const pr = (T.a / 2) * Math.SQRT2 // 方亭柱网外接圆半径
+  // 两端楼阁（下层桥面）：单层楼 + 腰檐围出的屋顶平台（白石栏杆）+ 平台上的方亭、
+  // 陡峭的四角攒尖顶、翼角高翘、顶立宝顶；平台外半段摆三把遮阳伞（照片 1 的茶座）
+  const ew = END.x1 - END.x0
+  const exc = (END.x0 + END.x1) / 2
+  const pyr = { overhang: 1.5, curl: 0.5, ridges: false }
+  const pyrH = 4.2
+  const pr = (KIOSK.a / 2) * Math.SQRT2 // 方亭柱网外接圆半径
   for (const sx of [-1, 1]) {
-    const e = local(f, sx * ex, DECK_LOW, 0)
-    addStorey(b, e, { ...E, spacing: 3 })
-    const pi = addPent(b, e, E.w, E.d, E.h, {
-      pent: 1.4,
-      tMax: 0.4,
-      innerHalfW: 0
+    const e = local(f, sx * exc, DECK_LOW, 0)
+    addStorey(b, e, { w: ew, d: END.d, h: END.h, spacing: 3.3 })
+    // 腰檐截到 tMax = 0.3，平台（内缘开口）尽量大；正脊比例取 0.8 左右，端坡窄一些
+    const pi = addPent(b, e, ew, END.d, END.h, {
+      pent: END.pent,
+      tMax: 0.3,
+      innerHalfW: ew / 2 + 0.4
     })
-    // 平台：盖住腰檐内缘围出的开口，顶面比内缘高 0.08
-    const yT = pi.yIn + 0.08
+    // 平台：盖住腰檐内缘围出的开口，顶面高过内缘四角（起翘最高处）0.05 m
+    const yT = pi.yCorner + 0.05
     b.add(
-      box(2 * pi.hx + 0.3, yT - E.h, 2 * pi.hz + 0.3),
+      box(2 * pi.hx + 0.3, yT - END.h, 2 * pi.hz + 0.3),
       BR.stone,
-      local(e, 0, E.h, 0)
+      local(e, 0, END.h, 0)
     )
     whiteRail(b, e, pi.hx - 0.1, pi.hz - 0.1, yT)
-    addStorey(b, e, { w: T.a, d: T.a, h: T.h, y: yT, spacing: 2.6, pitch: 1.3 })
+    const k = local(e, sx * (KIOSK.x - exc), 0, 0)
+    addStorey(b, k, {
+      w: KIOSK.a,
+      d: KIOSK.a,
+      h: KIOSK.h,
+      y: yT,
+      spacing: 2.8,
+      pitch: 1.4
+    })
     // 攒尖顶：边心处出檐 = 外接圆出檐 × cos45°
     const edgeO = pyr.overhang * Math.SQRT1_2
-    const yp = yT + T.h - eaveDrop(T.a / 2, edgeO, pyrH, 1.5, 0.35)
-    const pm = local(e, 0, yp, 0)
-    addTiles(b, pyramidRoof(4, pr, pyrH, pyr), pm)
+    const yp = yT + KIOSK.h - eaveDrop(KIOSK.a / 2, edgeO, pyrH, 1.5, 0.35)
+    const pm = local(k, 0, yp, 0)
+    addTiles(b, (q) => pyramidRoof(4, pr, pyrH, q), pyr, pm, 3)
     b.add(pyramidRidges(4, pr, pyrH, pyr), BR.ridge, pm)
     const ce = (pr + pyr.overhang) * Math.SQRT1_2
     cornerHooks(b, pm, ce, ce, 0, pyr.curl * pyrH, 1.1)
     b.add(finial(1.4), BR.ridge, local(pm, 0, pyrH - 0.15, 0))
     top = Math.max(top, DECK_LOW - DECK_H + yp + pyrH + 1.25)
+    for (const [ux, uz] of [
+      [4.6, -1.5],
+      [4.6, 1.5],
+      [7.6, 0]
+    ]) {
+      addUmbrella(b, local(e, sx * ux, yT, uz))
+    }
   }
   return DECK_H + top
 }
@@ -1124,14 +1204,21 @@ export function build(ctx) {
       closed: false,
       density: RIVERSIDE.density
     },
-    // 廊桥边道：南北两段长廊 × 东西两侧
+    // 廊桥边道：上层桥面东西两侧各一段（贯通主楼）+ 两端下层桥面沿端楼各一段
+    ...[-1, 1].map((sz) => ({
+      points: [
+        xz(fb, -DECK_WALK.x1, sz * DECK_WALK.z),
+        xz(fb, DECK_WALK.x1, sz * DECK_WALK.z)
+      ],
+      y: DECK_H,
+      width: DECK_WALK.width,
+      closed: false,
+      density: DECK_WALK.density
+    })),
     ...[-1, 1].flatMap((sx) =>
       [-1, 1].map((sz) => ({
-        points: [
-          xz(fb, sx * DECK_WALK.x0, sz * DECK_WALK.z),
-          xz(fb, sx * DECK_WALK.x1, sz * DECK_WALK.z)
-        ],
-        y: DECK_H,
+        points: DECK_WALK.low.map((x) => xz(fb, sx * x, sz * DECK_WALK.z)),
+        y: DECK_LOW,
         width: DECK_WALK.width,
         closed: false,
         density: DECK_WALK.density
