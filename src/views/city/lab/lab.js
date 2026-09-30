@@ -48,7 +48,8 @@ import { applyShadowFlags, buildLandmark } from "../scene/landmarks/index.js"
 import {
   STOP_SHADOW_RADIUS,
   applyCityShadow,
-  applyStopShadow
+  applyStopShadow,
+  computeCityShadow
 } from "../scene/shadow.js"
 import { buildKit } from "./kitShowcase.js"
 import { createCrowd } from "../scene/crowd.js"
@@ -180,7 +181,7 @@ function createRenderer(canvas) {
  *            同线上巡览停靠该站），否则整城一张阴影贴图；
  *   tight —— 太阳沿同一方向对准注视点，正交范围收紧到周围 radius 米，近景阴影更实。
  */
-function addLights(scene, target, radius, mode, center) {
+function addLights(scene, target, radius, mode, center, data) {
   const Lt = THEME.light
   scene.add(new HemisphereLight(Lt.hemiSky, Lt.hemiGround, Lt.hemiIntensity))
   const sun = new DirectionalLight(Lt.sun, Lt.sunIntensity)
@@ -190,7 +191,7 @@ function addLights(scene, target, radius, mode, center) {
     // 与 CityScene 完全一致：停靠站点时 _fitShadow 以景点落点（地面）为中心收紧
     if (center) {
       applyStopShadow(sun, Lt, [center[0], 0, center[1]], STOP_SHADOW_RADIUS)
-    } else applyCityShadow(sun, Lt)
+    } else applyCityShadow(sun, Lt, computeCityShadow(data, THEME))
   } else {
     const dir = new Vector3(...Lt.sunPosition).normalize()
     const t = new Vector3(target[0], 0, target[2])
@@ -273,7 +274,8 @@ async function main() {
     subject.target,
     subject.shadowRadius,
     shadowMode,
-    subject.center
+    subject.center,
+    data
   )
   const [tx, ty, tz] = subject.target
   placeCamera(camera, { x: tx, y: ty, z: tz, defaultDist: subject.defaultDist })

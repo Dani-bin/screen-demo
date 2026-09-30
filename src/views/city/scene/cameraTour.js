@@ -29,7 +29,8 @@ export class CameraTour {
    * @param {HTMLElement} options.domElement 接收鼠标事件的元素
    * @param {Array<{p:number[], t:number[]}>} options.stops 各站机位：p 相机位置、t 注视点
    * @param {{p:number[], t:number[]}} options.overview 总览机位
-   * @param {object} options.limits theme.camera（pitchMin/Max、radiusMin/Max、bounds）
+   * @param {object} options.limits theme.camera（pitchMin/Max、radiusMin/Max）加 bounds：
+   *   注视点范围 { x: [min, max], z: [min, max] }，由 CityScene 按数据范围算出
    * @param {object} options.timing theme.tour（fly / hold / idle / drift，秒）
    * @param {Function} options.onStopChange 停靠点变化回调，参数为索引
    * @param {Function} options.onPlayingChange 巡览播放状态变化回调

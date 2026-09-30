@@ -15,6 +15,8 @@ import {
 } from "three"
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js"
 
+// 地面平面边长（米，以原点为中心）：远大于城市数据范围（约 6.2 × 7.5 km，见 meta.clip），
+// 数据扩范围时无需跟着改
 const GROUND_SIZE = 30000
 
 /**
