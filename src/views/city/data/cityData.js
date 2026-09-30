@@ -11,7 +11,7 @@
 /** 城市基本信息 */
 export const CITY_INFO = {
   name: "锦绣天府·安逸四川",
-  en: "CHENGDU · URBAN 3D OVERVIEW",
+  en: "SPLENDID TIANFU · LEISURELY SICHUAN",
   tag: "CITY 3D · 真实街区还原",
   weather: "多云 24℃ · 东南风 2 级"
 }
