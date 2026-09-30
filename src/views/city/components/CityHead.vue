@@ -72,6 +72,7 @@
     top: 0;
     left: 0;
     right: 0;
+    /* 高度改动时同步 index.vue 的 LABEL_SAFE_TOP（景点标签避让的顶部保留带 = 顶栏高 + 6px） */
     height: 74px;
     z-index: 5;
     display: flex;

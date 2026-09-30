@@ -11,6 +11,12 @@
 import { Spherical, Vector3 } from "three"
 
 const DEG = Math.PI / 180
+// 大角度转向放慢：方位差超过 SLOW_TURN_FROM 时，飞行时长按「方位差 / SLOW_TURN_FROM」放大，
+// 最多 × SLOW_TURN_MAX。easeInOutCubic 中点斜率为 3，峰值角速度 = 3 × 方位差 / 时长：
+// timing.fly 固定 2 s 时，首次加载总览 → 第 0 站的 118° 转向峰值约 177°/s，大屏上显得甩；
+// 放大 1.31 倍（约 2.6 s）后约 135°/s。方位差不超过 90° 的飞行时长不变
+const SLOW_TURN_FROM = 90 * DEG
+const SLOW_TURN_MAX = 1.6
 
 /** easeInOutCubic：起步与收尾都平缓，避免大屏上镜头生硬 */
 function easeInOutCubic(k) {
@@ -71,6 +77,7 @@ export class CameraTour {
     this.flyFrom = { target: new Vector3(), s: new Spherical() }
     this.flyTo = { target: new Vector3(), s: new Spherical() }
     this.flyDTheta = 0 // 方位角走最短弧的增量，范围 [-π, π]
+    this.flyDuration = this.timing.fly // 本次飞行时长（秒），大角度转向时放大（见 _flyTo）
 
     // 初始机位：总览
     this._jumpTo(this.overview)
@@ -226,6 +233,13 @@ export class CameraTour {
     // 方位差归一化到 [-π, π]，保证走最短弧
     const d = this.flyTo.s.theta - this.flyFrom.s.theta
     this.flyDTheta = Math.atan2(Math.sin(d), Math.cos(d))
+    // 大角度转向按方位差拉长飞行时间（见 SLOW_TURN_FROM），普通飞行仍为 timing.fly
+    const turn = Math.abs(this.flyDTheta)
+    this.flyDuration =
+      this.timing.fly *
+      (turn > SLOW_TURN_FROM
+        ? Math.min(SLOW_TURN_MAX, turn / SLOW_TURN_FROM)
+        : 1)
     this.flyProgress = 0
     this.flying = true
   }
@@ -270,7 +284,7 @@ export class CameraTour {
   /** 每帧推进，dt 单位为秒 */
   update(dt) {
     if (this.flying) {
-      this.flyProgress += dt / this.timing.fly
+      this.flyProgress += dt / this.flyDuration
       const k = Math.min(1, this.flyProgress)
       const e = easeInOutCubic(k)
       const from = this.flyFrom

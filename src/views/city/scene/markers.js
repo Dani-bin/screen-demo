@@ -19,7 +19,7 @@ import { distToSegment } from "./landmarks/kit/footprint.js"
 export const LABEL_LEAD = 40
 // 当前站标签避让顶部栏时，引线最短压到默认长度的这个比例（再短就贴着球、看不出是引线）
 const MIN_LEAD_RATIO = 0.3
-// 标签隐藏后，要离开保留带这么多（屏幕 px）才重新显示：
+// 标签隐藏后，要离开保留带这么多（设计稿 px，与保留带同样按视口缩放）才重新显示：
 // 停靠时镜头缓慢环绕，标签在边界上来回时不会闪烁
 const CLIP_HYSTERESIS = 4
 
@@ -134,9 +134,9 @@ export function createMarkers(
 
   /*
    * 标签避让顶部栏的状态（见 avoidTop）：
-   * heights 为标签框高度缓存（屏幕 px，0 表示待测量；当前站切换、缩放比例变化时清零重测，
-   * 免得每帧读 offsetHeight 触发排版），clipped 为标签是否已隐藏，
-   * leads 为当前站标签的引线长度（屏幕 px，0 表示用 CSS 默认值）
+   * heights 为标签框高度缓存（屏幕 px，0 表示待测量；当前站切换时重测新旧两个当前站标签、
+   * 缩放比例变化时全部重测，免得每帧读布局触发排版），clipped 为标签是否已隐藏，
+   * leads 为当前站标签已写入的引线长度（屏幕 px，保留 1 位小数；0 表示用 CSS 默认值）
    */
   const heights = labels.map(() => 0)
   const clipped = labels.map(() => false)
@@ -150,10 +150,12 @@ export function createMarkers(
     bases,
     /** 当前站标签加高亮描边 */
     setActive(index) {
+      const prev = activeIndex
       activeIndex = index
       labels.forEach((el, i) => el.classList.toggle("is-active", i === index))
-      // 当前站标签字号与内边距更大，高度变了，重测
-      heights.fill(0)
+      // 当前站标签字号与内边距更大：只有新旧两个当前站标签的高度变了，只重测这两个
+      if (prev >= 0 && prev < heights.length) heights[prev] = 0
+      if (index >= 0 && index < heights.length) heights[index] = 0
     },
     /**
      * 标签避让顶部栏，每帧在 CSS2DRenderer.render 之后调用（此时标签的世界矩阵已更新）。
@@ -163,7 +165,7 @@ export function createMarkers(
      *   压到最短仍压着顶栏（定位针本身已贴近画面顶部，多为人工拖拽）就同样隐藏。
      *   站点机位本身应让标签落在保留带以下，这里只兜底（如熊猫塔定位针在 339 m 塔尖上方）；
      * - 其余标签：远处站点的标签只是参照，直接淡出隐藏（class is-clipped）。
-     * 隐藏的标签离开保留带 CLIP_HYSTERESIS px 后再显示。
+     * 隐藏的标签离开保留带 CLIP_HYSTERESIS（设计稿 px，按视口缩放）后再显示。
      * 不针对具体站点，任何站、任何视角（含人工拖拽）都按同一规则处理。
      * @param {THREE.Camera} camera 渲染相机
      * @param {number} height 渲染区高度（屏幕 px）
@@ -176,32 +178,47 @@ export function createMarkers(
         heights.fill(0)
         lastLead = lead
       }
-      labelObjects.forEach((obj, i) => {
-        const el = labels[i]
-        // CSS2DRenderer 对相机背后 / 视锥外的标签设 display: none，不参与避让
+      // 设计稿 px → 屏幕 px 的比例（lead 即 LABEL_LEAD 按视口缩放后的值）
+      const k = lead / LABEL_LEAD
+      const hysteresis = CLIP_HYSTERESIS * k
+      const minLead = lead * MIN_LEAD_RATIO
+      const minLeadR = Math.round(minLead * 10) / 10
+      // 先读后写：这一帧要测量的高度全部读完，再统一改 class / 内联样式，
+      // 避免读写交错让浏览器反复重排（高度缓存清零的那一帧会连读多个标签）。
+      // CSS2DRenderer 对相机背后 / 视锥外的标签设 display: none，不参与避让
+      const shown = []
+      labels.forEach((el, i) => {
         if (el.style.display === "none") return
-        if (!heights[i]) heights[i] = el.offsetHeight
-        v.setFromMatrixPosition(obj.matrixWorld).project(camera)
+        if (!heights[i]) heights[i] = el.getBoundingClientRect().height
+        shown.push(i)
+      })
+      for (const i of shown) {
+        const el = labels[i]
+        v.setFromMatrixPosition(labelObjects[i].matrixWorld).project(camera)
         const anchorY = (-v.y * 0.5 + 0.5) * height
         // 按默认引线算出的框顶离保留带下沿的距离，< 0 表示压进了顶栏
         const room = anchorY - lead - heights[i] - safeTop
         // 当前站可以靠缩短引线腾出的高度；缩完仍压进保留带的深度 over > 0 时隐藏
-        const minLead = lead * MIN_LEAD_RATIO
         const active = i === activeIndex
         const over = -room - (active ? lead - minLead : 0)
         const nextLead = active && room < 0 ? Math.max(minLead, lead + room) : 0
-        const nextClipped = clipped[i] ? over > -CLIP_HYSTERESIS : over > 0
+        const nextClipped = clipped[i] ? over > -hysteresis : over > 0
         if (nextClipped !== clipped[i]) {
           clipped[i] = nextClipped
           el.classList.toggle("is-clipped", nextClipped)
         }
-        // 引线长度变化不足 0.5 px 不写样式，避免每帧改内联样式
-        if (Math.abs(nextLead - leads[i]) >= 0.5 || (!nextLead && leads[i])) {
-          leads[i] = nextLead
-          if (nextLead) el.style.setProperty("--lead", `${nextLead}px`)
+        // 引线写入保留 1 位小数；变化不足 0.5 px 不写，避免每帧改内联样式。
+        // 但缩到最短、或恢复默认时即使变化很小也写入，保证停下来时的最终值准确
+        const r = Math.round(nextLead * 10) / 10
+        if (
+          r !== leads[i] &&
+          (Math.abs(r - leads[i]) >= 0.5 || r === minLeadR || r === 0)
+        ) {
+          leads[i] = r
+          if (r) el.style.setProperty("--lead", `${r}px`)
           else el.style.removeProperty("--lead")
         }
-      })
+      }
     },
     dispose() {
       mainGeo.dispose()
