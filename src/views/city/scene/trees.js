@@ -4,7 +4,8 @@
  * 树冠 = 二十面体（细分 1 次）竖向拉长 1.15 倍，树干 = 六棱柱。
  * 公园内按面积随机撒点，河岸两侧沿中心线成排种植。
  * 全部走 InstancedMesh：几千棵树只占两次 draw call。
- * 随机数用固定种子，每次刷新树的位置与颜色一致。
+ * 随机数用固定种子，每次刷新树的位置与颜色一致；且按元素几何 / 树位置派生，
+ * 与数据列表顺序无关（见 scatterTrees、layoutTrees）。
  */
 import {
   Color,
@@ -16,7 +17,13 @@ import {
   Quaternion,
   Vector3
 } from "three"
-import { mulberry32, pointInPolygon, polygonBounds } from "./utils.js"
+import {
+  hashInts,
+  mulberry32,
+  pointInPolygon,
+  polygonBounds,
+  shapeSeed
+} from "./utils.js"
 
 // 树冠随机朝向的旋转轴（竖直向上）
 const Y_AXIS = new Vector3(0, 1, 0)
@@ -67,15 +74,22 @@ export function createObstacleIndex(polygons, cellSize = 100) {
   }
 }
 
+// 各用途的子种子标签：与全局 seed 混合后再哈希，保证「公园撒点」与「单棵树外观」
+// 两类随机流互不相关（同一个坐标不会在两处取到同一串随机数）
+const SALT_PARK = 0x5041524b // "PARK"
+const SALT_TREE = 0x54524545 // "TREE"
+
 /**
  * 生成树的落点 [[x, z], ...]
+ * 与数据顺序无关：每个公园多边形用自己的随机流（种子 = 全局 seed 与该多边形顶点的
+ * 稳定哈希，见 utils.shapeSeed），河岸树按固定步长沿中心线排布、本身不用随机数。
+ * 因此数据里插入 / 删除 / 重排元素时，只有变动元素自身的树会变，其余树位置不动。
  * @param {object} data 几何数据（parks / rivers，可选 buildings / water 用于避让）
  * @param {object} theme
- * @param {Function} rand 返回 [0,1) 的随机函数
  * @param {{ has: (x: number, z: number) => boolean }} [blocked] 额外的占用网格
- *   （景点模型，见 landmarks/index.js 的 buildOccupancy），落在其中的候选点跳过
+ *   （景点模型与步行路径走廊，见 landmarks/index.js 的 buildOccupancy），落在其中的候选点跳过
  */
-export function scatterTrees(data, theme, rand, blocked = null) {
+export function scatterTrees(data, theme, blocked = null) {
   const t = theme.tree
   const points = []
   // 河岸树按固定距离离中心线排布，河面宽窄不一，部分会落进水面或临河楼体；
@@ -90,6 +104,8 @@ export function scatterTrees(data, theme, rand, blocked = null) {
 
   for (const poly of data.parks) {
     if (!poly || poly.length < 3) continue
+    // 每个公园一条独立随机流：种子只取决于它自己的几何
+    const rand = mulberry32(shapeSeed(t.seed ^ SALT_PARK, poly))
     const { minX, maxX, minZ, maxZ } = polygonBounds(poly)
     const area = (maxX - minX) * (maxZ - minZ)
     const count = Math.min(
@@ -137,6 +153,35 @@ export function scatterTrees(data, theme, rand, blocked = null) {
 }
 
 /**
+ * 树的完整布局：落点 + 每棵树的尺寸、朝向、颜色。
+ * 单棵树的外观用由「该树位置（取整到分米）与 seed」派生的随机流，
+ * 与它在列表里的次序无关（旧实现全城共用一条随机流，前面多一棵树后面全部变样）。
+ * 人流校验脚本也直接调用本函数取树冠尺寸，保证与线上一致。
+ * @param {object} data 几何数据
+ * @param {object} theme
+ * @param {{ has: (x: number, z: number) => boolean }} [blocked] 见 scatterTrees
+ * @returns {Array<{ x: number, z: number, size: number, height: number,
+ *   yaw: number, yellow: boolean, green: number }>}
+ *   size 为树冠水平半径（米），height 为树干高（米），yaw 为绕竖轴转角（弧度），
+ *   yellow 为黄树，否则 green 为 theme.tree.greens 的下标
+ */
+export function layoutTrees(data, theme, blocked = null) {
+  const t = theme.tree
+  return scatterTrees(data, theme, blocked).map(([x, z]) => {
+    const rand = mulberry32(
+      hashInts(t.seed ^ SALT_TREE, Math.round(x * 10), Math.round(z * 10))
+    )
+    // 取数顺序固定：尺寸、树干高、朝向、是否黄树、绿色下标
+    const size = t.crownMin + rand() * t.crownVar
+    const height = t.trunkMin + rand() * t.trunkVar
+    const yaw = rand() * Math.PI * 2
+    const yellow = rand() < t.yellowRatio
+    const green = Math.floor(rand() * t.greens.length)
+    return { x, z, size, height, yaw, yellow, green }
+  })
+}
+
+/**
  * @param {object} data 几何数据
  * @param {object} materials createMaterials 的结果（foliage / trunk）
  * @param {object} theme
@@ -145,13 +190,12 @@ export function scatterTrees(data, theme, rand, blocked = null) {
  */
 export function createTrees(data, materials, theme, blocked = null) {
   const t = theme.tree
-  const rand = mulberry32(t.seed)
-  const points = scatterTrees(data, theme, rand, blocked)
+  const trees = layoutTrees(data, theme, blocked)
 
   const crownGeo = new IcosahedronGeometry(1, 1)
   const trunkGeo = new CylinderGeometry(0.9, 1.2, 1, 6)
-  const crown = new InstancedMesh(crownGeo, materials.foliage, points.length)
-  const trunk = new InstancedMesh(trunkGeo, materials.trunk, points.length)
+  const crown = new InstancedMesh(crownGeo, materials.foliage, trees.length)
+  const trunk = new InstancedMesh(trunkGeo, materials.trunk, trees.length)
 
   const greens = t.greens.map((c) => new Color(c))
   const yellow = new Color(t.yellow)
@@ -161,12 +205,9 @@ export function createTrees(data, materials, theme, blocked = null) {
   const s = new Vector3()
   const p = new Vector3()
 
-  points.forEach(([x, z], i) => {
-    const size = t.crownMin + rand() * t.crownVar
-    const height = t.trunkMin + rand() * t.trunkVar
-    // 每棵树绕竖轴随机转一个角度，避免平面着色的棱面整齐重复；
-    // 固定在第三次取随机数，保证随机序列顺序确定
-    q.setFromAxisAngle(Y_AXIS, rand() * Math.PI * 2)
+  trees.forEach(({ x, z, size, height, yaw, yellow: isYellow, green }, i) => {
+    // 每棵树绕竖轴随机转一个角度，避免平面着色的棱面整齐重复
+    q.setFromAxisAngle(Y_AXIS, yaw)
     // 树冠竖向半轴 = 1.15·size，中心放在 height + 0.95·size，
     // 冠底 = height + 0.95·size − 1.15·size = height − 0.2·size，
     // 离地 2.6～6.6 m，树干能露出来
@@ -176,12 +217,7 @@ export function createTrees(data, materials, theme, blocked = null) {
       s.set(size, size * 1.15, size)
     )
     crown.setMatrixAt(i, m)
-    crown.setColorAt(
-      i,
-      rand() < t.yellowRatio
-        ? yellow
-        : greens[Math.floor(rand() * greens.length)]
-    )
+    crown.setColorAt(i, isYellow ? yellow : greens[green])
     m.compose(p.set(x, height / 2, z), identity, s.set(1, height, 1))
     trunk.setMatrixAt(i, m)
   })
@@ -193,7 +229,7 @@ export function createTrees(data, materials, theme, blocked = null) {
   group.add(crown, trunk)
   return {
     group,
-    count: points.length,
+    count: trees.length,
     dispose() {
       crownGeo.dispose()
       trunkGeo.dispose()
