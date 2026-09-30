@@ -10,7 +10,7 @@
 
 /** 城市基本信息 */
 export const CITY_INFO = {
-  name: "成都市城市三维总览",
+  name: "锦绣天府·安逸四川",
   en: "CHENGDU · URBAN 3D OVERVIEW",
   tag: "CITY 3D · 真实街区还原",
   weather: "多云 24℃ · 东南风 2 级"
