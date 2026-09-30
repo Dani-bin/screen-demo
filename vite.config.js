@@ -17,11 +17,14 @@ import postCssPxToRem from "postcss-pxtorem"
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
   const { VITE_APP_ENV } = env
+  // 本地预览开关：DEV_HTTP=1 时不启用自签名 https（Claude 内置浏览器等预览工具不接受
+  // 自签名证书），端口取预览工具分配的 PORT。都不设时与原来一致：https://localhost:8892
+  const devHttp = process.env.DEV_HTTP === "1"
   return {
     base: VITE_APP_ENV === "production" ? "/bi/" : "/",
     plugins: [
       vue(),
-      basicSsl(),
+      ...(devHttp ? [] : [basicSsl()]),
       AutoImport({
         imports: ["vue", "vue-router"],
         // 生成 ESLint 全局变量声明文件，避免自动导入的 API（ref、computed 等）被报 no-undef
@@ -61,8 +64,8 @@ export default defineConfig(({ mode }) => {
     // vite 相关配置
     server: {
       host: true,
-      port: 8892,
-      https: true,
+      port: Number(process.env.PORT) || 8892,
+      https: !devHttp,
       open: false,
       proxy: {
         "/dev-api": {

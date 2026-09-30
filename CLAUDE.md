@@ -10,7 +10,8 @@ A Vue 3 + Vite **large-screen data-visualization dashboard** (大屏 / BI) for a
 
 This project uses **yarn** (see `yarn.lock`).
 
-- `yarn dev` — start Vite dev server on port **8080** (host exposed)
+- `yarn dev` — start Vite dev server at **https://localhost:8892** (self-signed cert via `@vitejs/plugin-basic-ssl`, host exposed)
+  - `DEV_HTTP=1` serves plain http instead and `PORT` overrides the port; `.claude/launch.json` uses both so the Claude in-app preview (which rejects self-signed certs) gets its own http server on an auto-assigned port
 - `yarn build` — production build (output base path is `/bi/`)
 - `yarn preview` — preview the production build
 - `yarn lint:eslint` — ESLint with `--fix` over `{src,mock}/**/*.{vue,ts,tsx}`, max 0 warnings

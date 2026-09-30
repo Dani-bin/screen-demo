@@ -3,12 +3,10 @@
   "configurations": [
     {
       "name": "bi-demo",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": [
-        "dev"
-      ],
-      "port": 8892,
-      "url": "https://localhost:8892"
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["DEV_HTTP=1", "yarn", "dev"],
+      "port": 8893,
+      "autoPort": true
     }
   ]
 }
