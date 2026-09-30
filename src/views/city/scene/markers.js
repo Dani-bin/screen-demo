@@ -5,11 +5,23 @@
  * 不再压住精细模型的亭顶、熊猫、塔尖（尺寸说明见 theme.js 的 marker 段）。
  * 标签用 CSS2DObject 挂在三维坐标上，由 CSS2DRenderer 换算成屏幕位置，
  * 样式在页面 index.vue 的非 scoped 样式里定义（.city-label）。
+ * 标签压到顶部标题栏时按 avoidTop 的规则避让（当前站先下压，压不下与其余标签一样隐藏）。
  */
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js"
-import { CylinderGeometry, Group, Mesh, SphereGeometry } from "three"
+import { CylinderGeometry, Group, Mesh, SphereGeometry, Vector3 } from "three"
 import { pointInPolygon, polygonBounds } from "./utils.js"
 import { distToSegment } from "./landmarks/kit/footprint.js"
+
+/**
+ * 标签引线默认长度（设计稿 px）：必须与 index.vue 里 .city-label 的 --lead（40px）一致。
+ * 标签底边锚在球顶，再由 CSS 上抬这么多，引线（::after）正好连回锚点
+ */
+export const LABEL_LEAD = 40
+// 当前站标签避让顶部栏时，引线最短压到默认长度的这个比例（再短就贴着球、看不出是引线）
+const MIN_LEAD_RATIO = 0.3
+// 标签隐藏后，要离开保留带这么多（屏幕 px）才重新显示：
+// 停靠时镜头缓慢环绕，标签在边界上来回时不会闪烁
+const CLIP_HYSTERESIS = 4
 
 /**
  * 落点球的底座高度（米）。
@@ -51,8 +63,8 @@ export function markerBaseHeight(x, z, radius, buildings) {
  * @param {Array} buildings 楼栋数组，用于把落点球抬到所压楼体的楼顶（见 markerBaseHeight）
  * @param {number[]} [baseHeights] 外部给定的底座高度（景点精细模型的 markerHeight）；
  *   baseHeights[i] > 0 时直接使用，否则按 buildings 估算
- * @returns {{ group: Group, bases: number[], setActive: Function, dispose: Function }}
- *   bases 为各景点落点球的底座高度（米），便于测试与调试。
+ * @returns {{ group: Group, bases: number[], setActive: Function, avoidTop: Function, dispose: Function }}
+ *   bases 为各景点落点球的底座高度（米），便于测试与调试；avoidTop 为标签避让顶部栏（每帧调用）。
  *   dispose 只释放几何体与标签 DOM，不会把 group 移出场景；
  *   调用方需自行 group.removeFromParent()（或 scene.remove(group)）。
  */
@@ -65,6 +77,7 @@ export function createMarkers(
 ) {
   const group = new Group()
   const labels = []
+  const labelObjects = []
   const bases = []
   const mk = theme.marker
   // 所有落点球只有两种尺寸：首个景点（主景点）用大球，其余共用小球
@@ -116,14 +129,79 @@ export function createMarkers(
     label.position.set(spot.x, cy + r + mk.labelLift, spot.z)
     group.add(label)
     labels.push(el)
+    labelObjects.push(label)
   })
+
+  /*
+   * 标签避让顶部栏的状态（见 avoidTop）：
+   * heights 为标签框高度缓存（屏幕 px，0 表示待测量；当前站切换、缩放比例变化时清零重测，
+   * 免得每帧读 offsetHeight 触发排版），clipped 为标签是否已隐藏，
+   * leads 为当前站标签的引线长度（屏幕 px，0 表示用 CSS 默认值）
+   */
+  const heights = labels.map(() => 0)
+  const clipped = labels.map(() => false)
+  const leads = labels.map(() => 0)
+  let activeIndex = -1
+  let lastLead = 0
+  const v = new Vector3()
 
   return {
     group,
     bases,
     /** 当前站标签加高亮描边 */
     setActive(index) {
+      activeIndex = index
       labels.forEach((el, i) => el.classList.toggle("is-active", i === index))
+      // 当前站标签字号与内边距更大，高度变了，重测
+      heights.fill(0)
+    },
+    /**
+     * 标签避让顶部栏，每帧在 CSS2DRenderer.render 之后调用（此时标签的世界矩阵已更新）。
+     * 标签框按锚点的屏幕位置算：框底 = 锚点 y − 引线长，框顶 = 框底 − 框高。
+     * 框顶进入顶部保留带（y < safeTop，标题、时钟与天气所在的顶栏）时：
+     * - 当前站标签：先缩短引线把标签往下压，最短压到 MIN_LEAD_RATIO × lead；
+     *   压到最短仍压着顶栏（定位针本身已贴近画面顶部，多为人工拖拽）就同样隐藏。
+     *   站点机位本身应让标签落在保留带以下，这里只兜底（如熊猫塔定位针在 339 m 塔尖上方）；
+     * - 其余标签：远处站点的标签只是参照，直接淡出隐藏（class is-clipped）。
+     * 隐藏的标签离开保留带 CLIP_HYSTERESIS px 后再显示。
+     * 不针对具体站点，任何站、任何视角（含人工拖拽）都按同一规则处理。
+     * @param {THREE.Camera} camera 渲染相机
+     * @param {number} height 渲染区高度（屏幕 px）
+     * @param {number} safeTop 顶部保留带下沿（屏幕 px）
+     * @param {number} lead 默认引线长度（屏幕 px，即 LABEL_LEAD 按视口缩放后的值）
+     */
+    avoidTop(camera, height, safeTop, lead) {
+      // 视口缩放变了（rem 跟着变），标签高度全部重测
+      if (lead !== lastLead) {
+        heights.fill(0)
+        lastLead = lead
+      }
+      labelObjects.forEach((obj, i) => {
+        const el = labels[i]
+        // CSS2DRenderer 对相机背后 / 视锥外的标签设 display: none，不参与避让
+        if (el.style.display === "none") return
+        if (!heights[i]) heights[i] = el.offsetHeight
+        v.setFromMatrixPosition(obj.matrixWorld).project(camera)
+        const anchorY = (-v.y * 0.5 + 0.5) * height
+        // 按默认引线算出的框顶离保留带下沿的距离，< 0 表示压进了顶栏
+        const room = anchorY - lead - heights[i] - safeTop
+        // 当前站可以靠缩短引线腾出的高度；缩完仍压进保留带的深度 over > 0 时隐藏
+        const minLead = lead * MIN_LEAD_RATIO
+        const active = i === activeIndex
+        const over = -room - (active ? lead - minLead : 0)
+        const nextLead = active && room < 0 ? Math.max(minLead, lead + room) : 0
+        const nextClipped = clipped[i] ? over > -CLIP_HYSTERESIS : over > 0
+        if (nextClipped !== clipped[i]) {
+          clipped[i] = nextClipped
+          el.classList.toggle("is-clipped", nextClipped)
+        }
+        // 引线长度变化不足 0.5 px 不写样式，避免每帧改内联样式
+        if (Math.abs(nextLead - leads[i]) >= 0.5 || (!nextLead && leads[i])) {
+          leads[i] = nextLead
+          if (nextLead) el.style.setProperty("--lead", `${nextLead}px`)
+          else el.style.removeProperty("--lead")
+        }
+      })
     },
     dispose() {
       mainGeo.dispose()
