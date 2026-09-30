@@ -34,7 +34,12 @@
  */
 import { Mesh } from "three"
 import { THEME } from "../theme.js"
-import { mulberry32, pointInPolygon, polygonBounds } from "../utils.js"
+import {
+  mulberry32,
+  pointInPolygon,
+  polygonBounds,
+  shapeSeed
+} from "../utils.js"
 import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
 import {
   centroid,
@@ -565,8 +570,9 @@ export function build(ctx) {
       c
     })
 
-    // 每栋楼一个独立的随机序列（按楼栋索引播种），与遍历顺序无关
-    const rand = mulberry32(SEED ^ Math.imul(i + 1, 0x9e3779b1))
+    // 每栋楼一个独立的随机序列（按楼的原始轮廓播种，见 utils.shapeSeed），
+    // 与遍历顺序、楼栋在数据列表里的下标都无关：数据扩范围插入新楼时这里不变
+    const rand = mulberry32(shapeSeed(SEED, buildings[i].p))
     const eave = HOUSE.eaveMin + (HOUSE.eaveMax - HOUSE.eaveMin) * rand()
     const wallColor = rand() < 0.5 ? L.brick : L.plaster
     const roofColor = shadeHex(ROOF.base, 1 + (rand() * 2 - 1) * ROOF.jitter)
