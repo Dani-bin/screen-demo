@@ -215,8 +215,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--city", default="成都")
     # 默认范围：南界原为 30.636，望江楼公园·崇丽阁（九眼桥以南）在其外约 350 m，
-    # 为收录该景点南扩到 30.624（约 1.3 km），其余三边不变
-    ap.add_argument("--bbox", default="30.624,104.040,30.686,104.098", help="south,west,north,east")
+    # 为收录该景点南扩到 30.624（约 1.3 km）；西界原为 104.040，杜甫草堂在其外约 1.3 km，
+    # 为收录该景点并给镜头留约 1.2 km 余量西扩到 104.012；北、东两边不变
+    ap.add_argument("--bbox", default="30.624,104.012,30.686,104.098", help="south,west,north,east")
     ap.add_argument("--origin", default="104.0657,30.6574", help="lon,lat，作为局部坐标原点")
     ap.add_argument("--out", default="public/city/chengdu.json")
     ap.add_argument("--cache-dir", default="scripts/osm-cache")
