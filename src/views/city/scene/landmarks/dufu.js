@@ -54,6 +54,7 @@ import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
 import {
   buildingsInZones,
   centroid,
+  distToSegment,
   findBuilding,
   minAreaRect,
   polygonArea,
@@ -97,6 +98,10 @@ const PAVE_Y = 1.0
 // 次级园路比主甬道低 LOW，逐条再错开 LOW_STEP：交叉处不共面，步行路径高度容差 0.06 m 以内
 const LOW = 0.03
 const LOW_STEP = 0.0075
+// 小院铺装（工部祠前院、影壁小院）：夹在主甬道与第一档园路之间，与任何园路都不同高
+const COURT_Y = PAVE_Y - LOW + LOW_STEP
+// 大雅堂前后院铺装
+const TEMPLE_COURT_Y = PAVE_Y - LOW - 2 * LOW_STEP
 // 城市地面（terrain.js 的 GROUND_Y）：底面挤出从这里起，边缘不悬空
 const GROUND_Y = -0.5
 // 园内溪、池水面（比草地低 0.4 m，石砌驳岸露出）
@@ -255,110 +260,144 @@ const LAKES_LL = [
 // 草堂寺南门前广场（2 → 3 边中段），见 buildWalls
 const WALL_RUN = { from: 11, to: 8 }
 
-// 园内石板园路（OSM footway，仅铺装，不设人流；中轴区的园路见下方中轴坐标 PATHS_UV）
-const FOOTWAYS_LL = [
+// 园内石板园路（OSM footway，仅铺装，不设人流；中轴区的园路见下方中轴坐标 PATHS_UV）。
+// 铺装时在建筑、竹篱院外截断（见 buildFootways）；id 供园墙开口按名引用
+const FOOTWAYS = [
   // 东园环路 way 486562584：花径南口外 → 草堂寺前 → 万佛楼西 → 东园 → 正觉湖南 → 盆景园北
-  [
-    [104.025399, 30.661663],
-    [104.025707, 30.661569],
-    [104.026039, 30.6615],
-    [104.026129, 30.661481],
-    [104.026382, 30.661498],
-    [104.026788, 30.661525],
-    [104.027126, 30.661546],
-    [104.027476, 30.661599],
-    [104.027562, 30.661848],
-    [104.027649, 30.661925],
-    [104.027831, 30.662264],
-    [104.027956, 30.662675],
-    [104.028029, 30.662914],
-    [104.027938, 30.66321],
-    [104.027466, 30.663307],
-    [104.026951, 30.66333],
-    [104.02684, 30.663342],
-    [104.026672, 30.66336],
-    [104.026425, 30.663373],
-    [104.025875, 30.663404],
-    [104.025824, 30.663407],
-    [104.0258, 30.663408],
-    [104.02569, 30.663387]
-  ],
+  {
+    id: "eastLoop",
+    ll: [
+      [104.025399, 30.661663],
+      [104.025707, 30.661569],
+      [104.026039, 30.6615],
+      [104.026129, 30.661481],
+      [104.026382, 30.661498],
+      [104.026788, 30.661525],
+      [104.027126, 30.661546],
+      [104.027476, 30.661599],
+      [104.027562, 30.661848],
+      [104.027649, 30.661925],
+      [104.027831, 30.662264],
+      [104.027956, 30.662675],
+      [104.028029, 30.662914],
+      [104.027938, 30.66321],
+      [104.027466, 30.663307],
+      [104.026951, 30.66333],
+      [104.02684, 30.663342],
+      [104.026672, 30.66336],
+      [104.026425, 30.663373],
+      [104.025875, 30.663404],
+      [104.025824, 30.663407],
+      [104.0258, 30.663408],
+      [104.02569, 30.663387]
+    ]
+  },
   // way 486574439：大雅堂西侧南北园路
-  [
-    [104.026135, 30.662099],
-    [104.026129, 30.661481]
-  ],
+  {
+    id: "daya",
+    ll: [
+      [104.026135, 30.662099],
+      [104.026129, 30.661481]
+    ]
+  },
   // way 486575154
-  [
-    [104.026039, 30.6615],
-    [104.026016, 30.661193]
-  ],
+  {
+    id: "nanmenW",
+    ll: [
+      [104.026039, 30.6615],
+      [104.026016, 30.661193]
+    ]
+  },
   // way 358370405 南段：正门前场 → 浣花深处北 → 花径南口外
-  [
-    [104.024102, 30.66198],
-    [104.024691, 30.661765],
-    [104.025251, 30.661617],
-    [104.025399, 30.661663]
-  ],
+  {
+    id: "southW",
+    ll: [
+      [104.024102, 30.66198],
+      [104.024691, 30.661765],
+      [104.025251, 30.661617],
+      [104.025399, 30.661663]
+    ]
+  },
   // way 358370405 北段：盆景园 → 唐代遗址西
-  [
-    [104.025757, 30.662795],
-    [104.025775, 30.662982],
-    [104.025786, 30.663094],
-    [104.025778, 30.663232],
-    [104.025678, 30.663283],
-    [104.0257, 30.663321],
-    [104.02569, 30.663387],
-    [104.025756, 30.663563],
-    [104.025786, 30.663753],
-    [104.025792, 30.663919]
-  ],
+  {
+    id: "penjingN",
+    ll: [
+      [104.025757, 30.662795],
+      [104.025775, 30.662982],
+      [104.025786, 30.663094],
+      [104.025778, 30.663232],
+      [104.025678, 30.663283],
+      [104.0257, 30.663321],
+      [104.02569, 30.663387],
+      [104.025756, 30.663563],
+      [104.025786, 30.663753],
+      [104.025792, 30.663919]
+    ]
+  },
   // way 1374953409：唐代遗址西 → 北门内
-  [
-    [104.025786, 30.663753],
-    [104.025485, 30.664072],
-    [104.025159, 30.66415],
-    [104.025024, 30.664182]
-  ],
+  {
+    id: "northWest",
+    ll: [
+      [104.025786, 30.663753],
+      [104.025485, 30.664072],
+      [104.025159, 30.66415],
+      [104.025024, 30.664182]
+    ]
+  },
   // way 1374953414～16：北门园路（青华路 → 北门 → 园内）
-  [
-    [104.025012, 30.664867],
-    [104.025024, 30.664391],
-    [104.025024, 30.664182]
-  ],
+  {
+    id: "northGate",
+    ll: [
+      [104.025012, 30.664867],
+      [104.025024, 30.664391],
+      [104.025024, 30.664182]
+    ]
+  },
   // way 486562830：正觉湖北岸
-  [
-    [104.025792, 30.663919],
-    [104.0261, 30.663902],
-    [104.026113, 30.664003],
-    [104.026196, 30.664008],
-    [104.026312, 30.66395],
-    [104.0265, 30.664022],
-    [104.026717, 30.663966],
-    [104.026813, 30.663906],
-    [104.026894, 30.663814],
-    [104.02684, 30.663342]
-  ],
+  {
+    id: "zhengjue",
+    ll: [
+      [104.025792, 30.663919],
+      [104.0261, 30.663902],
+      [104.026113, 30.664003],
+      [104.026196, 30.664008],
+      [104.026312, 30.66395],
+      [104.0265, 30.664022],
+      [104.026717, 30.663966],
+      [104.026813, 30.663906],
+      [104.026894, 30.663814],
+      [104.02684, 30.663342]
+    ]
+  },
   // way 1029995604：东门园路
-  [
-    [104.02852, 30.662899],
-    [104.028366, 30.662824],
-    [104.028252, 30.662769],
-    [104.027956, 30.662675]
-  ],
+  {
+    id: "eastGate",
+    ll: [
+      [104.02852, 30.662899],
+      [104.028366, 30.662824],
+      [104.028252, 30.662769],
+      [104.027956, 30.662675]
+    ]
+  },
   // way 619395931 + 1374953410：北门内 → 草堂研究会 → 茅屋景区北
-  [
-    [104.025024, 30.664182],
-    [104.024856, 30.663598],
-    [104.024944, 30.663573],
-    [104.02512, 30.663504],
-    [104.02569, 30.663387]
-  ],
+  {
+    id: "northInner",
+    ll: [
+      [104.025024, 30.664182],
+      [104.024856, 30.663598],
+      [104.024944, 30.663573],
+      [104.02512, 30.663504],
+      [104.02569, 30.663387]
+    ]
+  },
   // way 486564696
-  [
-    [104.025139, 30.664082],
-    [104.024944, 30.663573]
-  ]
+  {
+    id: "northSpur",
+    ll: [
+      [104.025139, 30.664082],
+      [104.024944, 30.663573]
+    ]
+  }
 ]
 
 /* ---------------- 中轴与两侧建筑（中轴坐标 [u0, u1, v0, v1]，米） ---------------- */
@@ -428,8 +467,10 @@ const BACK_STREAM = {
   pts: [
     [24.5, -36.3],
     [23.5, -22],
-    [23.5, 7.8],
-    [35, 8.2],
+    [23.5, 5.5],
+    [23.9, 8.0],
+    [25.6, 9.1],
+    [35, 9.0],
     [40.5, 8.8],
     [44, 10.5],
     [48, 14],
@@ -438,7 +479,7 @@ const BACK_STREAM = {
     [68, 18],
     [74, 15],
     [79.5, 9],
-    [82.3, 3.6]
+    [81.4, 4.6]
   ],
   w: 3.4
 }
@@ -447,10 +488,11 @@ const POND = { u: 93.5, v: 1.5, su: 11.5, sv: 5 }
 
 /* ---------------- 园路（中轴坐标；铺装 + 过溪自动架桥） ---------------- */
 
-// w 路宽；low 比 PAVE_Y 低多少（0 为主甬道）
+// id 供步行路径、种植按名引用；w 路宽；low 比 PAVE_Y 低几档（0 为主甬道，见 pathY）；walk 可走带宽
 const PATHS_UV = [
   // 中轴南段：正门明间 → 石桥 → 大廨前
   {
+    id: "axisS",
     pts: [
       [-80.6, -3.5],
       [-72.5, -3.5],
@@ -463,6 +505,7 @@ const PATHS_UV = [
   },
   // 梅林甬道：大廨后 → 诗史堂前
   {
+    id: "meilin",
     pts: [
       [-28.3, 0.3],
       [-4.2, 0.1]
@@ -473,6 +516,7 @@ const PATHS_UV = [
   },
   // 中轴北段：诗史堂后 → 堂后溪小桥 → 柴门明间 → 工部祠前
   {
+    id: "axisN",
     pts: [
       [4.2, 1.15],
       [46.3, 1.15]
@@ -483,6 +527,7 @@ const PATHS_UV = [
   },
   // 诗史堂后 → 花径西口
   {
+    id: "toHuajing",
     pts: [
       [7.5, 1.8],
       [10, 5],
@@ -495,6 +540,7 @@ const PATHS_UV = [
   },
   // 诗史堂后 → 水槛
   {
+    id: "toShuikan",
     pts: [
       [9.5, -0.5],
       [9.1, -27.8]
@@ -504,6 +550,7 @@ const PATHS_UV = [
   },
   // 水槛 → 恰受航轩东
   {
+    id: "shuikanE",
     pts: [
       [20.6, -30.8],
       [40.3, -30.2]
@@ -513,6 +560,7 @@ const PATHS_UV = [
   },
   // 柴门东 → 恰受航轩东 → 梅园
   {
+    id: "meiTail",
     pts: [
       [40.2, 1.2],
       [42.5, -10.9],
@@ -525,6 +573,7 @@ const PATHS_UV = [
   },
   // 柴门东 → 水竹居西 → 碑亭北 → 茅屋前 → 茅屋前池东（与步行路径 W11 同线）
   {
+    id: "toMaowu",
     pts: [
       [32.7, 1.5],
       [32.7, 30.8],
@@ -546,6 +595,7 @@ const PATHS_UV = [
   },
   // 茅屋前池一圈
   {
+    id: "pondLoop",
     pts: [
       [72.4, 12.5],
       [80.5, -8],
@@ -558,6 +608,7 @@ const PATHS_UV = [
   },
   // 茅屋前池 → 碑亭北
   {
+    id: "pondNorth",
     pts: [
       [72.4, 12.5],
       [75.1, 24.7],
@@ -569,6 +620,7 @@ const PATHS_UV = [
   },
   // 茅屋北 → 花径北侧（与步行路径 W12 同线）
   {
+    id: "toHuajingN",
     pts: [
       [78, 34.8],
       [79.4, 46.3],
@@ -580,6 +632,7 @@ const PATHS_UV = [
     walk: 2
   },
   {
+    id: "maowuE",
     pts: [
       [79.4, 46.3],
       [96, 45.6]
@@ -589,6 +642,7 @@ const PATHS_UV = [
   },
   // 梅园环路（绕梅花湖、一览亭，闭合；与步行路径 W13 同线）
   {
+    id: "meiLoop",
     pts: [
       [64.4, -34.6],
       [59.4, -52.6],
@@ -609,6 +663,13 @@ const PATHS_UV = [
     closed: true
   }
 ]
+
+/** 按 id 取 PATHS_UV 的一条园路 */
+function pathById(id) {
+  const p = PATHS_UV.find((q) => q.id === id)
+  if (!p) throw new Error(`杜甫草堂：没有 id 为 ${id} 的园路`)
+  return p
+}
 
 /* ---------------- 花径（世界坐标） ---------------- */
 
@@ -687,6 +748,7 @@ const F_WATER = 4 // 湖、溪、池
 const F_TREE = 8 // 已种树 / 竹
 const F_WALK = 16 // 步行路径可走带（外扩）：树冠、竹丛不进
 const F_PARK = 32 // 园界以内
+const F_NOTREE = 64 // 不种杂树（花径东西段南侧：让镜头看得见两道红墙）
 
 /* ---------------- 几何小工具 ---------------- */
 
@@ -1213,7 +1275,8 @@ function addXiHall(b, f, o) {
         : [[-cx, cx]]
     for (const [x0, x1] of spans) {
       const xm = (x0 + x1) / 2
-      b.add(box(x1 - x0, colH, wd), wall, local(f, xm, plat, wz))
+      // 墙顶比额枋顶低 3 cm：两者都藏在屋面下，错开后不共面
+      b.add(box(x1 - x0, colH - 0.03, wd), wall, local(f, xm, plat, wz))
       // 正面格扇：墙高的 72%
       b.add(
         box((x1 - x0) * 0.92, colH * 0.72, 0.1),
@@ -1448,7 +1511,8 @@ function addThatchHouse(b, f, o) {
   const fz = wz + wd / 2 + 0.04
   const nPost = Math.max(2, Math.round(ww / 2.6))
   for (const x of spread(ww / 2 - 0.1, nPost)) {
-    b.add(box(0.16, wallH, 0.08), C.darkWood, local(f, x, plinth, fz))
+    // 木框立柱比墙顶低 2 cm：与墙顶不共面
+    b.add(box(0.16, wallH - 0.02, 0.08), C.darkWood, local(f, x, plinth, fz))
   }
   b.add(box(ww, 0.14, 0.08), C.darkWood, local(f, 0, plinth + wallH * 0.55, fz))
   // 木格窗两扇
@@ -1973,19 +2037,64 @@ function buildGround(site) {
   }
   // 正门前场（照壁与正门之间，西南接草堂路人行道）
   courtRect([-95.2, -80.6, -24, 14], PAVE_Y)
-  // 工部祠前院
-  courtRect([38.6, 46.2, -9.4, 5.9], PAVE_Y - LOW)
+  // 工部祠前院：高度 COURT_Y 与各档园路都不同，和穿院而过的园路不共面
+  courtRect([38.6, 46.2, -9.4, 5.9], COURT_Y)
 
   /* ---- 中轴区园路 ---- */
   for (const p of PATHS_UV) {
     addPath(site, U(p.pts), p.w, pathY(p), { walk: p.walk, closed: p.closed })
   }
-  /* ---- 东区、北区园路（OSM） ---- */
-  FOOTWAYS_LL.forEach((list, k) => {
-    const y = PAVE_Y - LOW - 2 * LOW_STEP - (k % 3) * LOW_STEP
-    addPath(site, site.ll(list), 2.8, y)
-  })
+  // 东区、北区的 OSM 园路要等建筑登记进栅格后再铺（见 buildFootways）；
   // 过溪的桥在全部园路铺完后统一架（见 buildBridges）
+}
+
+/**
+ * 折线按栅格截断：沿线每 step 米取点，圆盘（半径 r）碰到 mask 标记的点不要，
+ * 剩下的连续段保留原折点、在断点处补端点。返回若干段折线。
+ */
+function clipByGrid(pts, grid, mask, r, step = 0.5) {
+  const pieces = []
+  let cur = null
+  let last = null
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i]
+    const c = pts[i + 1]
+    const n = Math.max(
+      1,
+      Math.ceil(Math.hypot(c[0] - a[0], c[1] - a[1]) / step)
+    )
+    for (let k = i === 0 ? 0 : 1; k <= n; k++) {
+      const q = [a[0] + ((c[0] - a[0]) * k) / n, a[1] + ((c[1] - a[1]) * k) / n]
+      if (grid.freeDisk(q[0], q[1], r, mask)) {
+        if (!cur) {
+          cur = [q]
+          pieces.push(cur)
+        } else if (k === n) cur.push(q) // 原折点
+        last = q
+      } else if (cur) {
+        if (cur[cur.length - 1] !== last) cur.push(last)
+        cur = null
+      }
+    }
+  }
+  return pieces.filter((pc) => pc.length >= 2 && polyLength(pc) >= 3)
+}
+
+/** 东区、北区 OSM 园路：在建筑、竹篱院外截断后铺装（北门、东门园路也在门房外断开） */
+function buildFootways(site) {
+  FOOTWAYS.forEach((fw, k) => {
+    const y = PAVE_Y - LOW - 2 * LOW_STEP - (k % 3) * LOW_STEP
+    for (const piece of clipByGrid(site.ll(fw.ll), site.grid, F_SOLID, 1.3)) {
+      addPath(site, piece, 2.8, y)
+    }
+  })
+}
+
+/** 按 id 取 FOOTWAYS 的一条园路（经纬度） */
+function footwayById(id) {
+  const f = FOOTWAYS.find((q) => q.id === id)
+  if (!f) throw new Error(`杜甫草堂：没有 id 为 ${id} 的 OSM 园路`)
+  return f.ll
 }
 
 /** PATHS_UV 一条园路的路面高度 */
@@ -2033,9 +2142,11 @@ function addBeiting(b, f) {
     local(f, 0, -0.35, ap + 0.3)
   )
   b.add(box(3.4, y0 / 3 + 0.35, 0.6), C.redStone, local(f, 0, -0.35, ap + 0.9))
-  // 六根红褐柱（柱圈外接半径 1.8K）与五面美人靠
+  // 茅草檐口草层下沿（柱头收进檐口以内，从檐下仰视不露柱头）
+  const yr = 5.15
+  // 六根红褐柱（柱圈外接半径 1.8K）与五面美人靠；柱顶只高出檐口下沿 0.35 m，藏在吊顶之上
   const rc = 1.8 * K
-  const colH = 2.7 * K
+  const colH = yr + 0.35 - y0
   for (let k = 0; k < 6; k++) {
     const [x, z] = polygonVertex(6, rc, k)
     b.add(
@@ -2063,12 +2174,13 @@ function addBeiting(b, f) {
     b.add(
       box(side, 0.4, 0.28),
       C.pavilionRed,
-      edgeFrame(f, 6, rc, k, y0 + colH - 0.9)
+      edgeFrame(f, 6, rc, k, y0 + colH - 0.45)
     )
   }
   // 碑：石座 + 黑碑身 + 拱形碑首 + 碑面四个白字块
   b.add(box(2.2, 0.45, 1.0), L.granite, local(f, 0, y0, 0))
-  const sh = 2.1 * K
+  // 碑身高 2.3 m（碑首拱顶约在柱高的 90%，低于亭内吊顶）
+  const sh = 2.3
   b.add(box(1.62, sh, 0.45), C.stele, local(f, 0, y0 + 0.45, 0))
   const arch = cylinder(0.81, 0.81, 0.45, { segments: 8, caps: true })
   arch.rotateX(Math.PI / 2)
@@ -2076,18 +2188,19 @@ function addBeiting(b, f) {
   b.add(arch, C.stele, local(f, 0, y0 + 0.45 + sh, 0))
   for (let k = 0; k < 4; k++) {
     b.add(
-      box(0.5, 0.5, 0.05),
+      box(0.42, 0.42, 0.05),
       L.plaster,
-      local(f, 0, y0 + 1.1 + k * 0.72, 0.24)
+      local(f, 0, y0 + 0.75 + k * 0.5, 0.24)
     )
   }
   // 茅草顶（真实：檐口 2.9、檐口外径 5.4、锥顶 6.0、草束尖 7.0；×1.8 后檐径 9.7、锥顶 10.8、尖顶 12.6）
   const n = 12
   const Re = 4.85
-  const yr = 5.15 // 檐口草层下沿
   const yt = yr + 0.5 // 檐口草层上沿
   b.add(ringBand(n, Re, yr, Re, yt), C.thatchLight, f)
   b.add(ringBand(n, Re - 0.55, yr + 0.02, Re, yr), C.thatchDark, f) // 檐口草层底面
+  // 亭内浅锥形吊顶：封住锥顶内腔，柱头与额枋收在它上面
+  b.add(ringBand(n, Re - 0.55, yr + 0.02, 0, yr + 0.4), C.thatchDark, f)
   b.add(ringBand(n, Re, yt, 3.3, 7.75), C.thatchLight, f)
   b.add(ringBand(n, 3.3, 7.75, 1.65, 9.55), C.thatch, f)
   b.add(ringBand(n, 1.65, 9.55, 0.42, 10.75), C.thatch, f)
@@ -2136,12 +2249,12 @@ function addGallerySeg(b, f, len, toUV, others, lift = 0) {
         C.darkWood,
         local(f, xm, floor, z)
       )
-      // 每两跨一盏竹编灯笼（挂在柱线上，底边离地坪约 3.7 m）
+      // 每两跨一盏竹编灯笼：顶面贴着柱线上的额枋底（不悬空），底边离地坪约 4.1 m
       if (i % 2 === 1) {
         b.add(
           cylinder(0.2, 0.2, 0.5, { segments: 5, caps: true }),
           "#E8B860",
-          local(f, xm, floor + 3.9, z)
+          local(f, xm, GALLERY.floor + eave - 0.35 - 0.5, z)
         )
       }
     }
@@ -2756,7 +2869,7 @@ function buildHuajing(site) {
       xzOf(Y, 6.5, -SCREEN.along - 1.4),
       xzOf(Y, -7, -SCREEN.along - 1.4)
     ]
-    gb.add(extrudePolygon(court, [], LAWN_Y - 0.03, PAVE_Y - LOW), C.court)
+    gb.add(extrudePolygon(court, [], LAWN_Y - 0.03, COURT_Y), C.court)
     grid.fillPoly(court, F_PAVE)
     // 影壁：+Z 朝北（夹道一侧），y = 0 为铺装面
     const f = local(Y, 0.4, PAVE_Y, -SCREEN.along)
@@ -2796,8 +2909,12 @@ function buildHuajing(site) {
         steps: "none"
       })
     }
-    // 院内石板
-    b.add(box(hr.w - 10, 0.06, hr.d - 7.5), C.court, local(f, 0, 0, 2.2))
+    // 院内石板：从草地以下长起，顶面比铺装面低 2.5 cm（院内无其他铺装）
+    b.add(
+      box(hr.w - 10, 0.975 - LAWN_Y + 0.03, hr.d - 7.5),
+      C.court,
+      local(f, 0, LAWN_Y - 0.03 - PAVE_Y, 2.2)
+    )
     site.solid(rectPolygon(hr.cx, hr.cz, hr.w, hr.d, hr.bearing), 0.3)
   }
   // 草堂南邻：贴花径北墙的茅草小屋（×1.3）
@@ -2895,10 +3012,10 @@ function addScreen(b, f) {
   const m = local(f, 0, h + 0.15, 0)
   b.add(gableRoof(w + 0.2, t, 0.7, go), L.roof, m)
   b.add(gableRidge(w + 0.2, t, 0.7, go), L.roofRidge, m)
-  // 竹栏花池
-  b.add(box(w * 0.8, 0.5, 1.2), L.granite, local(f, 0, 0, t / 2 + 0.9))
+  // 竹栏花池（石座、竹栏从铺装以下长起，不悬空）
+  addBase(b, f, w * 0.8, 1.2, 0.5, L.granite, 0, t / 2 + 0.9)
   b.add(box(w * 0.78, 0.55, 1.1), "#4F8A42", local(f, 0, 0.5, t / 2 + 0.9))
-  b.add(box(w * 0.8, 0.9, 0.08), C.fence, local(f, 0, 0.3, t / 2 + 1.5))
+  addBase(b, f, w * 0.8, 0.08, 1.2, C.fence, 0, t / 2 + 1.5)
 }
 
 /* ---------------- 楼阁 / 砖塔（万佛楼、一览亭） ---------------- */
@@ -3038,7 +3155,7 @@ function buildMeiyuan(site) {
     const { rect } = site.locate("一览亭")
     const [lx, lz] = [rect.cx, rect.cz]
     // 台阶朝向环路：环路离塔最近的一点
-    const loop = site.U(PATHS_UV[PATHS_UV.length - 1].pts)
+    const loop = site.U(pathById("meiLoop").pts)
     let best = null
     let bd = Infinity
     for (const p of loop) {
@@ -3117,6 +3234,23 @@ function buildMeiyuan(site) {
       }
       grid.stamp(a, c, 1.2, F_PAVE)
     }
+    // 北端上岸后接到梅园环路（经水榭西侧）；路面比环路低一档，交接处不共面
+    const loop = site.U(pathById("meiLoop").pts)
+    const tail = [-3954, -722.2]
+    let best = loop[0]
+    for (const q of loop) {
+      if (
+        Math.hypot(q[0] - tail[0], q[1] - tail[1]) <
+        Math.hypot(best[0] - tail[0], best[1] - tail[1])
+      )
+        best = q
+    }
+    addPath(
+      site,
+      [tail, [-3956.6, -728.5], best],
+      2.4,
+      PAVE_Y - LOW - 3 * LOW_STEP
+    )
   }
 }
 
@@ -3282,10 +3416,7 @@ function buildTemple(site) {
         xzOf(f, x1, z1),
         xzOf(f, x0, z1)
       ]
-      gb.add(
-        extrudePolygon(poly, [], LAWN_Y - 0.03, PAVE_Y - LOW - 2 * LOW_STEP),
-        C.court
-      )
+      gb.add(extrudePolygon(poly, [], LAWN_Y - 0.03, TEMPLE_COURT_Y), C.court)
       grid.fillPoly(poly, F_PAVE)
     }
     const dx = S("草堂寺大雄宝殿")
@@ -3478,7 +3609,7 @@ function buildOthers(site) {
     addBlockHouse(b, rect, {
       eave: PAVE_Y + 5 * K_ROOF,
       ridgeH: 4 * K_ROOF,
-      overhang: 1.6,
+      overhang: 0.9,
       wall: C.shedWall
     })
     site.solid(rectPolygon(rect.cx, rect.cz, rect.w, rect.d, rect.bearing), 0.5)
@@ -3574,8 +3705,8 @@ function buildWalls(site) {
       }
     }
   }
-  cutAt(site.ll(FOOTWAYS_LL[6]), 4) // 北门园路
-  cutAt(site.ll(FOOTWAYS_LL[8]), 4) // 东门园路
+  cutAt(site.ll(footwayById("northGate")), 4) // 北门园路
+  cutAt(site.ll(footwayById("eastGate")), 4) // 东门园路
   if (site.templeAxis) cutAt(site.templeAxis, 23) // 南门前广场
   // 按弧长切段
   const cum = [0]
@@ -3585,18 +3716,62 @@ function buildWalls(site) {
         Math.hypot(loop[i + 1][0] - loop[i][0], loop[i + 1][1] - loop[i][1])
     )
   }
-  const ranges = gaps
-    .map((g) => {
-      const s = cum[g.seg] + g.t * (cum[g.seg + 1] - cum[g.seg])
-      return [s - g.half, s + g.half]
+  const total = cum[cum.length - 1]
+  const raw = gaps.map((g) => {
+    const s = cum[g.seg] + g.t * (cum[g.seg + 1] - cum[g.seg])
+    return [s - g.half, s + g.half]
+  })
+  // 园界压到楼处也断开：园外保留楼（唐代遗址北侧跨园界的 #3962 等）与贴着园界的园内楼
+  // （唐代遗址北墙即园墙）。沿墙每 0.5 m 取点，落在楼轮廓内或离轮廓 0.9 m 以内的段不建墙
+  {
+    const pb = polygonBounds(park)
+    const kept = []
+    site.buildings.forEach((bd) => {
+      if (!bd.p || bd.p.length < 3) return
+      // 厕所不建，不算
+      const [cx, cz] = centroid(bd.p)
+      if (TOILETS.some(([x, z]) => Math.hypot(x - cx, z - cz) < 4)) return
+      const bb = polygonBounds(bd.p)
+      if (bb.maxX < pb.minX - 5 || bb.minX > pb.maxX + 5) return
+      if (bb.maxZ < pb.minZ - 5 || bb.minZ > pb.maxZ + 5) return
+      kept.push({ p: bd.p, bb })
     })
-    .sort((p, q) => p[0] - q[0])
+    const nearKept = ([x, z]) =>
+      kept.some(({ p, bb }) => {
+        if (x < bb.minX - 1 || x > bb.maxX + 1) return false
+        if (z < bb.minZ - 1 || z > bb.maxZ + 1) return false
+        if (pointInPolygon(x, z, p)) return true
+        for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+          if (distToSegment(x, z, p[j], p[i]) < 0.9) return true
+        }
+        return false
+      })
+    let from = null
+    for (let t = 0; t <= total; t += 0.5) {
+      const hit = nearKept(slicePolyline(loop, t, t + 0.01)[0])
+      if (hit && from === null) from = t
+      if (!hit && from !== null) {
+        raw.push([from - 0.5, t])
+        from = null
+      }
+    }
+    if (from !== null) raw.push([from - 0.5, total])
+  }
+  // 缺口按起点排序、重叠的合并，再逐段建墙
+  raw.sort((p, q) => p[0] - q[0])
+  const ranges = []
+  for (const r of raw) {
+    const last = ranges[ranges.length - 1]
+    if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1])
+    else ranges.push([...r])
+  }
+  // 缺口之间短于 10 m 的零碎墙段不建（两楼之间夹出的短墙头）
   let s0 = 0
   for (const [a, c] of ranges) {
-    run(slicePolyline(loop, s0, a))
-    s0 = c
+    if (a - s0 >= 10) run(slicePolyline(loop, s0, a))
+    s0 = Math.max(s0, c)
   }
-  run(slicePolyline(loop, s0, cum[cum.length - 1]))
+  if (total - s0 >= 10) run(slicePolyline(loop, s0, total))
   // 正门两侧：西侧园墙从门殿西端砖垛接到园界西缘，东侧一小段翼墙
   const g = LAYOUT.gate
   const cu = (g[0] + g[1]) / 2
@@ -3615,6 +3790,14 @@ function plantAll(site, walkways) {
   }
   const block = F_SOLID | F_PAVE | F_WATER | F_TREE | F_WALK
   const cam = [Math.sin(CAM_BEARING * DEG), -Math.cos(CAM_BEARING * DEG)]
+  // 花径东西段南侧（朝站点镜头一侧）墙外 8 m 内不种杂树：两道红墙不被树冠挡住
+  {
+    const cl = site.huajing
+    const [a, c] = HUAJING_XZ
+    const ew = slicePolyline(cl, 0, Math.hypot(c[0] - a[0], c[1] - a[1]) - 2)
+    const off = HUAJING.clear / 2 + HUAJING.t
+    grid.stampLine(offsetMiter(ew, off + 4), 4, F_NOTREE)
+  }
 
   /* ---- 花径两侧高竹 ---- */
   {
@@ -3691,12 +3874,12 @@ function plantAll(site, walkways) {
     const rand = mulberry32(SEED + 31)
     for (const v of [-6.2, 6.2]) {
       const [x, z] = W(-8.6, v)
-      addLayeredPine(b, x, PAVE_Y, z, 7.5, 2.8, C.pine[0], rand() * 6.28)
+      addLayeredPine(b, x, LAWN_Y, z, 7.5, 2.8, C.pine[0], rand() * 6.28)
       grid.disk(x, z, 2.8, F_TREE)
     }
     for (const v of [-4.4, 5.6]) {
       const [x, z] = W(44.4, v)
-      addLayeredPine(b, x, PAVE_Y, z, 3.4, 1.4, C.pine[1], rand() * 6.28)
+      addLayeredPine(b, x, COURT_Y, z, 3.4, 1.4, C.pine[1], rand() * 6.28)
       grid.disk(x, z, 1.5, F_TREE)
     }
     // 梅林院：甬道两侧各数排梅树（粉花）
@@ -3721,7 +3904,7 @@ function plantAll(site, walkways) {
     grid.fillPoly(site.rectW([-28, -5, -13.4, 13.4]), F_TREE)
     // 两株古银杏（30 m 以上，秋色）
     for (const [x, z] of site.ginkgo ?? []) {
-      addTreeLite(b, x, PAVE_Y, z, {
+      addTreeLite(b, x, TEMPLE_COURT_Y, z, {
         r: 5.5,
         sy: 1.7,
         trunkH: 11,
@@ -3734,7 +3917,7 @@ function plantAll(site, walkways) {
 
   /* ---- 梅园：梅花湖一带梅树 ---- */
   {
-    const loop = U(PATHS_UV[PATHS_UV.length - 1].pts)
+    const loop = U(pathById("meiLoop").pts)
     const bb = polygonBounds(loop)
     for (let x = bb.minX; x <= bb.maxX; x += 5) {
       for (let z = bb.minZ; z <= bb.maxZ; z += 5) {
@@ -3780,7 +3963,7 @@ function plantAll(site, walkways) {
         const r = nanmu
           ? 2.6 + rand() * 0.8
           : 3.4 + rand() * (south ? 2.2 : 1.6)
-        if (!grid.freeDisk(px, pz, r + 0.6, block)) continue
+        if (!grid.freeDisk(px, pz, r + 0.6, block | F_NOTREE)) continue
         if (!grid.freeDisk(px, pz, r * 0.5, block)) continue
         if (nanmu) {
           addSpireTree(b, px, LAWN_Y, pz, {
@@ -3821,8 +4004,8 @@ function buildWalkways(site) {
   const ws = []
   const add = (points, y, width, density, closed = false) =>
     ws.push({ points, y, width, closed, density })
-  const P = PATHS_UV
-  const lowOf = (k) => pathY(P[k])
+  const P = (id) => pathById(id).pts
+  const lowOf = (id) => pathY(pathById(id))
   // 1 中轴南段：草堂路 → 前场 → 正门明间 → 石桥 → 大廨前踏步前
   add(
     U([
@@ -3836,11 +4019,12 @@ function buildWalkways(site) {
     2.2,
     1.6
   )
+  // 开放路径两端离踏步、墙 ≥ 1.4 m：端点沿路径方向外探 1 m 仍不碰障碍（crowd 校验方法）
   // 2 梅林甬道：大廨后踏步外 → 诗史堂前踏步前
   add(
     U([
-      [-26.6, 0.3],
-      [-6.2, 0.1]
+      [-26.0, 0.3],
+      [-6.9, 0.1]
     ]),
     PAVE_Y,
     2.2,
@@ -3849,8 +4033,8 @@ function buildWalkways(site) {
   // 3 中轴北段：诗史堂后 → 小桥 → 柴门明间 → 工部祠前踏步前
   add(
     U([
-      [6.2, 1.15],
-      [44.0, 1.15]
+      [6.8, 1.15],
+      [43.4, 1.15]
     ]),
     PAVE_Y,
     2.2,
@@ -3860,7 +4044,7 @@ function buildWalkways(site) {
   const gy = PAVE_Y + GALLERY.floor
   add(
     U([
-      [-32.5, -9.8],
+      [-32.5, -10.4],
       [-32.5, -15.4],
       [-0.9, -15.4],
       [-0.9, -10.8]
@@ -3871,7 +4055,7 @@ function buildWalkways(site) {
   )
   add(
     U([
-      [-31.1, 10.4],
+      [-31.1, 11.0],
       [-31.1, 16.5],
       [-1.5, 16.5],
       [-1.5, 10.8]
@@ -3881,7 +4065,12 @@ function buildWalkways(site) {
     1.3
   )
   // 6 诗史堂后 → 花径西口
-  add(trimPolyline(U(P[3].pts.slice(1)), 0.4, 2.6), lowOf(3), 2.0, 1.2)
+  add(
+    trimPolyline(U(P("toHuajing").slice(1)), 0.4, 2.6),
+    lowOf("toHuajing"),
+    2.0,
+    1.2
+  )
   // 7 花径（最密）：两墙内侧净距 3.5，身体离墙 ≥ 0.86
   add(
     trimPolyline(site.huajing, 0.8, 1.2),
@@ -3904,18 +4093,18 @@ function buildWalkways(site) {
   // 11 柴门东 → 水竹居西 → 碑亭北 → 茅屋前 → 茅屋前池东
   add(
     trimPolyline(
-      U(P[7].pts.map((p, i) => (i === 0 ? [32.7, 2.3] : p))),
+      U(P("toMaowu").map((p, i) => (i === 0 ? [32.7, 2.3] : p))),
       0,
       0.8
     ),
-    lowOf(7),
+    lowOf("toMaowu"),
     2.0,
     1.3
   )
   // 12 茅屋北 → 花径北侧
-  add(trimPolyline(U(P[10].pts), 0, 0.6), lowOf(10), 2.0, 1.0)
+  add(trimPolyline(U(P("toHuajingN")), 0, 0.6), lowOf("toHuajingN"), 2.0, 1.0)
   // 13 梅园环路（闭合）
-  add(U(P[12].pts), lowOf(12), 2.0, 1.0, true)
+  add(U(P("meiLoop")), lowOf("meiLoop"), 2.0, 1.0, true)
   // 14 万佛楼环（闭合，r 15，台基外）
   add(site.wanfo.ring, site.wanfo.ringY, 2.0, 1.0, true)
   return ws
@@ -3949,6 +4138,7 @@ export function build(ctx) {
   buildTemple(site)
   buildWanfo(site)
   buildOthers(site)
+  buildFootways(site)
   buildWalls(site)
   buildBridges(site)
   const walkways = buildWalkways(site)
@@ -3958,15 +4148,16 @@ export function build(ctx) {
   const g = site.b.bake()
   if (g) {
     const mesh = new Mesh(g, landmarkMaterial())
-    // 调试信息（Node 校验脚本读取）
-    mesh.userData.layout = {
-      solids: site.solids,
-      water: site.debug.water,
-      walls: site.debug.walls,
-      bridges: site.bridges,
-      paths: site.paths.map((p) => p.pts),
-      generic: site.genericCount
-    }
+    // 调试信息只在显式开关 ctx.debug 时附加（Node 校验脚本用），生产构建不带
+    if (ctx.debug)
+      mesh.userData.layout = {
+        solids: site.solids,
+        water: site.debug.water,
+        walls: site.debug.walls,
+        bridges: site.bridges,
+        paths: site.paths.map((p) => p.pts),
+        generic: site.genericCount
+      }
     meshes.push(mesh)
   }
   const gg = site.gb.bake()
