@@ -27,11 +27,18 @@
  */
 import { FrontSide, Mesh } from "three"
 import { THEME } from "../theme.js"
-import { hashInts, mulberry32, pointInPolygon, shapeSeed } from "../utils.js"
+import {
+  hashInts,
+  mulberry32,
+  pointInPolygon,
+  polygonBounds,
+  shapeSeed
+} from "../utils.js"
 import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
 import {
   buildingsInZones,
   centroid,
+  clipHalfPlane,
   findBuilding,
   minAreaRect,
   polygonArea
@@ -74,7 +81,7 @@ const AXIS_BEARING = 3.5
 // 草地 / 锦里底面顶面、石板铺装顶面（米）
 const LAWN_Y = 0.85
 const PAVE_Y = 1.0
-// 次一级铺装（门前广场、支巷、戏台小广场）比主铺装低 LOW：两者搭接处不共面闪烁，
+// 次一级铺装（支巷、戏台小广场）比主铺装低 LOW：两者搭接处不共面闪烁，
 // 步行路径的高度校验容差 0.06 m 以内
 const LOW = 0.03
 // 城市地面高度（terrain.js 的 GROUND_Y）：底面挤出从这里起，边缘不悬空
@@ -335,27 +342,28 @@ const HUILING = {
 
 // 东院墙：文臣廊背后 → 厢房东北角外斜折 → 沿武侯祠东边界到东北角（九品街西侧）
 const EAST_WALL = [
-  [-115.5, 30],
+  [-115.9, 30],
   [41, 30],
   [50, 23.1],
   [88, 23.1],
   [177.4, 15.4]
 ]
-// 南院墙：东南角 → 大门东侧；大门西侧 → 一进院西南角 → 沿范围南边界到西南角（与界墙相接）
+// 南院墙：东南角 → 大门东侧；大门西侧 → 一进院西南角 → 沿范围南边界到西南角（与界墙相接）。
+// 墙线取 u = −115.9：一进院西南角的附属房（OSM 2620 一带）南墙在 u ≈ −115.4，墙身北皮让开它
 const SOUTH_WALL_E = [
-  [-115.5, 30],
-  [-115.5, 7.2]
+  [-115.9, 30],
+  [-115.9, 7.2]
 ]
 const SOUTH_WALL_W = [
-  [-115.5, -7.2],
-  [-115.5, -31],
+  [-115.9, -7.2],
+  [-115.9, -31],
   [-125.3, -31],
   [-146.6, -146.1]
 ]
-// 一进院、二进院西侧的内院墙（止于西厢房前）
+// 一进院、二进院西侧的内院墙：止于碧草园（way 653532220，东缘 u ≈ 7.4 跨过墙线）之前
 const INNER_WEST_WALL = [
-  [-115.5, -31],
-  [16.5, -31]
+  [-115.9, -31],
+  [6.9, -31]
 ]
 // 院墙：墙身高（离地面）、厚；墙帽宽
 const WALL = { h: PAVE_Y + 4, t: 0.7, cap: 1.1 }
@@ -373,10 +381,14 @@ const CORRIDOR = {
   glazeW: 0.5, // 绿琉璃筒瓦
   glazeH: 0.25,
   endV: -97.8, // 南端：进入陵前小院前截止（小院东缘 v = -98.5）
-  bambooOff: 3.7, // 竹林带中线离路径中线
+  bambooOff: 4.7, // 竹林带中线离路径中线：离墙外皮约 2.4 m，竹冠不再盖住墙身
   bambooStep: 2.1, // 竹丛间距
   bambooH: [8.5, 10.5], // 竹丛高
-  bambooR: 1.6 // 竹丛冠幅半径
+  bambooR: 1.3, // 竹丛冠幅半径
+  // 靠站点镜头一侧（镜头在注视点方位约 195°，见 cityData 该站 cam）的竹丛压低，
+  // 两道红墙都从竹梢上露出来
+  camBearing: 195,
+  bambooNearH: [7, 8]
 }
 
 /* ---------------- 锦里 ---------------- */
@@ -388,7 +400,7 @@ const JINLI = {
   eave1: 4, // 单层檐口（离街面）
   eave2: 7, // 两层檐口
   ridgeH: 2.5, // 屋脊高出檐口
-  overhang: 0.8, // 主街出檐
+  overhang: 0.45, // 主街出檐（小出檐：4 m 身高的小人在 5 m 宽的街上多一点可走宽度）
   laneOverhang: 0.5, // 支巷出檐
   depth: [8, 12], // 进深
   front: [6, 12], // 沿街面宽（一栋 1～2 开间）
@@ -407,6 +419,12 @@ const JL_STREET_T0 = 7.5
 // 古戏台与小广场（中轴坐标）：台面宽沿 u、朝东（+v）对着主街
 const STAGE = { u: 19.5, v: 35, w: 10, d: 8, plazaU: [11.5, 27.5] }
 
+// 中轴红砂石甬道的南端（伸进大门前广场，行人从广场一路走进大门）
+const AXIS_U0 = -120
+// 占用栅格在替换区外包框之外再留的边（米）
+const GRID_MARGIN = 40
+// 保留楼外扩（米）：1 m 净距 + 民居最大出檐 0.5 m + 栅格采样内缩 0.35 m 与半格误差
+const KEPT_PAD = 2.1
 // 门洞 / 过厅明间 / 门楼门洞的净高（离铺装面）：高于小人头顶净空 4.35 m
 const PASS_H = 4.5
 
@@ -513,12 +531,6 @@ function normals(pts) {
   })
 }
 
-/** 折线整体侧移 d（沿逐点法向） */
-function offsetLine(pts, d) {
-  const ns = normals(pts)
-  return pts.map(([x, z], i) => [x + ns[i][0] * d, z + ns[i][1] * d])
-}
-
 /** [x, z] 折线 → sweepBar 用的 [x, y, z] */
 const lift = (pts, y) => pts.map(([x, z]) => [x, y, z])
 
@@ -589,7 +601,10 @@ function cone(sides, r, h) {
   return fromTriangles(pos)
 }
 
-/** 水平圆环面（只有顶面），圆心 (0, y, 0)，半径 r0～r1，seg 段 */
+/**
+ * 水平圆环面（只有顶面），圆心 (0, y, 0)，半径 r0～r1，seg 段。
+ * pandaTower.js 有同类的 annulus（参数不同）；两处都用到，可考虑上移 kit/shapes.js。
+ */
 function annulus(r0, r1, y, seg) {
   const pos = []
   for (let k = 0; k < seg; k++) {
@@ -702,7 +717,8 @@ function addBlockHouse(b, rect, o) {
   const { eave, ridgeH, overhang, wall } = o
   // 屋脊沿局部 X（长边）：frame 的局部 +X 指向 bearing + 90°，故传 bearing − 90
   const f = frame(rect.cx, 0, rect.cz, rect.bearing - 90)
-  b.add(box(rect.w, eave, rect.d), wall, f)
+  // 墙从城市地面起（西区大门等处的房子压在草地边缘外）
+  b.add(box(rect.w, eave - GROUND_Y, rect.d), wall, local(f, 0, GROUND_Y, 0))
   const go = { overhang, segS: 1, segT: 2, gables: false, ridges: false }
   const m = local(
     f,
@@ -718,6 +734,7 @@ function addBlockHouse(b, rect, o) {
 /**
  * 简化灯笼（20 个三角形）：压扁的红色低细分球，(x, y, z) 为球心（父坐标系），
  * 最低点在 y − 0.85r。kit 的 addLantern 约 180 个三角形，锦里要挂近百个，预算吃不消。
+ * 与 kuanzhai.js 的同名函数相同（颜色取本景点的灯笼红）；两处都用到，可考虑上移 kit。
  */
 function addLanternLite(b, parent, x, y, z, r) {
   b.add(
@@ -795,7 +812,12 @@ function addGatehouse(b, f, o) {
   // 前后两排柱：明间两柱 + 两端角柱
   for (const x of [-w / 2 + 0.35, -mid / 2, mid / 2, w / 2 - 0.35]) {
     for (const z of [cz, -cz]) {
-      b.add(cylinder(0.32, 0.29, eave, { segments: 6 }), col, local(f, x, 0, z))
+      // 柱脚埋进铺装 / 台基 0.2 m：明间柱正落在台基边与铺装边缘上，底下不露缝
+      b.add(
+        cylinder(0.32, 0.29, eave + 0.2, { segments: 6 }),
+        col,
+        local(f, x, -0.2, z)
+      )
     }
   }
   // 次间：门扇所在的一道墙（进深中部）+ 前面一对黑色门扇
@@ -872,15 +894,15 @@ function addGallery(b, f, o) {
   b.add(box(len, plat + 0.2, dep), L.granite, local(f, 0, -0.2, 0))
   // 后墙、两端山墙（从台基下起，顶藏进屋面下）
   b.add(
-    box(len, H.eave + 0.2, 0.5),
+    box(len, H.eave + 0.4, 0.5),
     C.hallWall,
-    local(f, 0, 0, -dep / 2 + 0.25)
+    local(f, 0, -0.2, -dep / 2 + 0.25)
   )
   for (const sx of [-1, 1]) {
     b.add(
-      box(0.5, H.eave, dep - 0.5),
+      box(0.5, H.eave + 0.2, dep - 0.5),
       C.hallWall,
-      local(f, sx * (len / 2 - 0.25), 0, 0.25)
+      local(f, sx * (len / 2 - 0.25), -0.2, 0.25)
     )
   }
   // 前檐柱列 + 额枋
@@ -1019,7 +1041,11 @@ function addHardGable(b, f, o) {
   )
   // 青砖山墙（外皮即台基两端）
   for (const sx of [-1, 1]) {
-    b.add(box(0.7, H.eave, d), L.brick, local(f, sx * (w / 2 - 0.35), 0, 0))
+    b.add(
+      box(0.7, H.eave + 0.2, d),
+      L.brick,
+      local(f, sx * (w / 2 - 0.35), -0.2, 0)
+    )
   }
   // 前檐柱（五开间六柱）+ 额枋
   const cz = d / 2 - 0.5
@@ -1060,7 +1086,7 @@ function addHardGable(b, f, o) {
 
 /**
  * 屋脊灰塑人物：沿正脊一排小色块（诸葛亮殿「名垂宇宙」正脊的成排灰塑）。
- * m 为屋顶坐标系原点所在的父坐标，(y, len) 为正脊顶面高度与可用长度。
+ * f 为殿堂坐标系（正脊沿局部 X），(y, len) 为正脊顶面高度与可用长度，n 为色块数。
  */
 function addRidgeFigures(b, f, y, len, n) {
   const colors = [C.figure, "#C9B27A", C.figure, "#8B9AA6"]
@@ -1200,6 +1226,21 @@ function createGrid(x0, z0, x1, z1, cell = 0.5) {
   return grid
 }
 
+/**
+ * 多边形（世界坐标）是否碰到栅格里的 mask 标记：顶点，再加轮廓内部 1 m 网格上的点
+ * （只查顶点时，大块轮廓会把已排好的民居整栋罩在里面）。
+ */
+function overlapsGrid(grid, poly, mask) {
+  if (poly.some(([x, z]) => grid.get(x, z) & mask)) return true
+  const bb = polygonBounds(poly)
+  for (let x = bb.minX + 0.5; x < bb.maxX; x += 1) {
+    for (let z = bb.minZ + 0.5; z < bb.maxZ; z += 1) {
+      if (pointInPolygon(x, z, poly) && grid.get(x, z) & mask) return true
+    }
+  }
+  return false
+}
+
 /* ---------------- 锦里构件 ---------------- */
 
 /**
@@ -1239,7 +1280,8 @@ function streetVAt(pts, axis, u) {
 function addShop(b, f, o) {
   const { len, dep, two, wall, roof, overhang, banner } = o
   const eave = two ? JINLI.eave2 : JINLI.eave1
-  b.add(box(len, PAVE_Y + eave, dep), wall, f)
+  // 墙从城市地面起：锦里东侧、水岸北侧的铺面落在锦里底面以外，下面是 GROUND_Y
+  b.add(box(len, PAVE_Y + eave - GROUND_Y, dep), wall, local(f, 0, GROUND_Y, 0))
   const go = { overhang, segS: 1, segT: 2, gables: false, ridges: false }
   const ry = PAVE_Y + eave - eaveDrop(dep / 2, overhang, JINLI.ridgeH, 1.3, 0)
   const m = local(f, 0, ry, 0)
@@ -1249,7 +1291,12 @@ function addShop(b, f, o) {
   // 临街铺面：深木色门板（木构墙的房子用浅一号的木色）
   const panel = wall === L.timber ? C.timberLight : L.timber
   const fz = dep / 2 + 0.05
-  b.add(box(len * 0.82, 3.0, 0.1), panel, local(f, 0, PAVE_Y, fz))
+  // 门板前皮正落在街面边缘：从城市地面起，下半截藏在街面、底面里
+  b.add(
+    box(len * 0.82, 3.0 + PAVE_Y - GROUND_Y, 0.1),
+    panel,
+    local(f, 0, GROUND_Y, fz)
+  )
   if (two) {
     // 腰檐：底边离街面 3.8 m、挑出 overhang（与屋檐同样的净空约束）
     b.add(
@@ -1481,7 +1528,8 @@ function addJinliGate(b, f) {
 function addStage(b, f, w, d) {
   const ph = 1.8
   b.add(box(w, ph + 0.2, d), C.stageWood, local(f, 0, -0.2, 0))
-  b.add(box(w + 0.2, 0.25, d + 0.2), L.lattice, local(f, 0, ph - 0.25, 0))
+  // 台口压沿：比台面低 0.23 m，不与台面共面闪烁
+  b.add(box(w + 0.2, 0.25, d + 0.2), L.lattice, local(f, 0, ph - 0.48, 0))
   // 后台彩绘屏 + 两侧短墙
   b.add(box(w - 1.0, 4.4, 0.4), L.lattice, local(f, 0, ph, -d / 2 + 0.8))
   b.add(
@@ -1623,9 +1671,9 @@ function buildWalkways(o) {
     2.4,
     1.2
   )
-  // 红墙夹道（最密）：两墙内侧净距 3.5，身体离墙 ≥ 0.86
-  // 弯道内侧墙线（逐点法向平均侧移）会略向路径中线收拢，再多留 0.1 m
-  add(corridor, PAVE_Y, CORRIDOR.clear - 2 * (BODY_CLEAR + 0.13), 3.2)
+  // 红墙夹道（最密）：两墙内侧净距 3.5（墙线按斜接侧移，弯道处净距不变），身体离墙 ≥ 0.86；
+  // 分带校验按 0.05 m 步长横向探测、0.04 m 内的竖直面算碰到，净距要求之外再留 0.1 m
+  add(corridor, PAVE_Y, CORRIDOR.clear - 2 * (BODY_CLEAR + 0.1), 3.2)
   // 惠陵神道：照壁北 → 惠陵大门明间 → 寝殿前踏步前
   add(
     A([
@@ -1705,16 +1753,16 @@ function trimEnds(pts, a, e) {
 /* ---------------- 主构建 ---------------- */
 
 /**
- * @param {{ project, buildings, theme, spot }} ctx
- * @returns {{ meshes: Mesh[], zones: Array, markerHeight: number, walkways: Array }}
+ * 场地公共状态：两个合批器、中轴坐标系、范围多边形与替换区、占用栅格，以及铺装 / 构件登记小工具。
+ * 各分项构建函数（地面、中轴殿堂、惠陵、院墙、红墙夹道、附属房、竹林、锦里、种树）都从这里取。
  */
-export function build(ctx) {
+function createSite(ctx) {
   const { project, buildings, spot } = ctx
   const ll = (list) => list.map(([lon, lat]) => project.toLocal(lon, lat))
   const b = new ColorBuilder() // 主体
   const gb = new ColorBuilder() // 地面批（单面材质）
 
-  /* ---- 1. 中轴坐标系：原点取刘备殿 OSM 轮廓中心，方位取其长边方位 − 90° ---- */
+  /* ---- 中轴坐标系：原点取刘备殿 OSM 轮廓中心，方位取其长边方位 − 90° ---- */
   const li = findBuilding(buildings, "刘备殿", {
     near: [spot.x, spot.z],
     maxDist: 60
@@ -1742,7 +1790,7 @@ export function build(ctx) {
     W(r[1], r[2])
   ]
 
-  /* ---- 2. 范围多边形与替换区 ---- */
+  /* ---- 范围多边形与替换区 ---- */
   const wh = ll(WH_LL)
   const eastWallW = EAST_WALL.map(([u, v]) => W(u, v))
   // 院墙以内（草地）：武侯祠范围的东边界换成院墙折线
@@ -1762,39 +1810,96 @@ export function build(ctx) {
   ]
   const replaced = buildingsInZones(buildings, zones)
 
-  /* ---- 3. 占用栅格 ---- */
-  const grid = createGrid(-2140, 735, -1675, 1205)
+  /* ---- 占用栅格 ---- */
+  // 范围：三个替换区的外包框再外扩 GRID_MARGIN（锦里东侧铺面会伸出锦里范围十来米）
+  const zb = polygonBounds(zones.flat())
+  const bounds = {
+    minX: zb.minX - GRID_MARGIN,
+    maxX: zb.maxX + GRID_MARGIN,
+    minZ: zb.minZ - GRID_MARGIN,
+    maxZ: zb.maxZ + GRID_MARGIN
+  }
+  const grid = createGrid(bounds.minX, bounds.minZ, bounds.maxX, bounds.maxZ)
   grid.fillPoly(compound, F_COMPOUND)
+  // 西区水池：草地在这里开了洞，不种树
+  grid.fillPoly(ll(POND_LL), F_NOTREE, 1)
   grid.fillPoly(jinliBase, F_JINLI)
-  // 保留的楼（景区外）：外扩 1 m 不许民居、树靠近
-  const kept = []
+  // 保留的楼（景区外，包围盒与栅格相交的）：外扩 KEPT_PAD，民居的出檐、树冠都碰不到
   buildings.forEach((bd, i) => {
     if (replaced.has(i) || !bd.p || bd.p.length < 3) return
-    const [cx, cz] = centroid(bd.p)
-    if (cx < -2160 || cx > -1640 || cz < 700 || cz > 1240) return
-    kept.push(bd.p)
-    grid.fillPoly(bd.p, F_SOLID, 1)
+    const pb = polygonBounds(bd.p)
+    if (pb.maxX < bounds.minX || pb.minX > bounds.maxX) return
+    if (pb.maxZ < bounds.minZ || pb.minZ > bounds.maxZ) return
+    grid.fillPoly(bd.p, F_SOLID, KEPT_PAD)
   })
 
-  /* ---- 4. 地面：草地、锦里底面、广场、院落铺装、甬道 ---- */
-  // 草地（院墙以内，西区水池处开洞）与锦里底面：从城市地面挤出，边缘不悬空
-  gb.add(extrudePolygon(compound, [ll(POND_LL)], GROUND_Y, LAWN_Y), C.lawn)
-  gb.add(extrudePolygon(jinliBase, [], GROUND_Y, LAWN_Y), C.jlBase)
-  // 广场顶面比甬道低 3 cm：甬道伸进广场的一段压在上面，不共面闪烁
-  gb.add(extrudePolygon(plaza, [], GROUND_Y, PAVE_Y - LOW), C.pave)
-  grid.fillPoly(plaza, F_PAVE)
   // 中轴坐标矩形铺装：盒子顶面 PAVE_Y、底面 LAWN_Y
   const paveRect = (r, color = C.pave) => {
     const { cu, cv, lu, lv } = rectInfo(r)
     gb.add(box(lv, PAVE_Y - LAWN_Y, lu), color, at(cu, cv, LAWN_Y))
     grid.fillPoly(rectW(r), F_PAVE)
   }
-  // 中轴红砂石甬道：大门到三义庙前殿（v ±2.5）；各殿台基压在上面
+  // 已建成构件的中轴矩形（附属房选楼时跳过压在它们下面的 OSM 楼）
+  const solids = []
+  const solid = (r, pad = 0.3) => {
+    solids.push(r)
+    grid.fillPoly(rectW(r), F_SOLID, pad)
+  }
+  return {
+    project,
+    buildings,
+    ll,
+    b,
+    gb,
+    axis,
+    W,
+    at,
+    rectW,
+    wh,
+    compound,
+    jinliBase,
+    plaza,
+    zones,
+    replaced,
+    bounds,
+    grid,
+    solids,
+    solid,
+    paveRect
+  }
+}
+
+/** 地面：草地、锦里底面、门前广场、中轴甬道与各院落铺装 */
+function buildGround(site) {
+  const { ll, gb, axis, W, compound, jinliBase, plaza, grid, paveRect } = site
+  // 草地（院墙以内，西区水池处开洞）与锦里底面：从城市地面挤出，边缘不悬空
+  gb.add(extrudePolygon(compound, [ll(POND_LL)], GROUND_Y, LAWN_Y), C.lawn)
+  gb.add(extrudePolygon(jinliBase, [], GROUND_Y, LAWN_Y), C.jlBase)
+  // 中轴红砂石甬道：大门前广场里（u = AXIS_U0）起到三义庙前殿（v ±AX）；各殿台基压在上面
   const AX = 2.5
-  paveRect([-120, 104.5, -AX, AX], C.axis)
+  paveRect([AXIS_U0, 104.5, -AX, AX], C.axis)
+  // 门前广场：让出甬道伸进广场的那一段（|v| ≤ AX、u ≥ AXIS_U0），与甬道同高、平面不重叠。
+  // 中轴坐标里用半平面裁出三块：甬道西侧、东侧、甬道南端以南
+  const pa = plaza.map(([x, z]) => axis.toAxis(x, z))
+  const mid = clipHalfPlane(
+    clipHalfPlane(pa, [0, -AX], [0, 1]),
+    [0, AX],
+    [0, -1]
+  )
+  const pieces = [
+    clipHalfPlane(pa, [0, -AX], [0, -1]),
+    clipHalfPlane(pa, [0, AX], [0, 1]),
+    clipHalfPlane(mid, [AXIS_U0, 0], [-1, 0])
+  ]
+  for (const p of pieces) {
+    if (p.length < 3) continue
+    const w = p.map(([u, v]) => W(u, v))
+    gb.add(extrudePolygon(w, [], GROUND_Y, PAVE_Y), C.pave)
+  }
+  grid.fillPoly(plaza, F_PAVE)
   // 一进院、二进院、刘备殿后院、诸葛亮殿院、三义庙前小广场（甬道两侧）
   const courts = [
-    [-115.1, -57.8, -30.6, 29.6],
+    [-115.5, -57.8, -30.6, 29.6],
     [-49, -12.2, -19.2, 19.2],
     [9.4, 17.6, -16.7, 27.9],
     [25.1, 47.3, -20.4, 18.2],
@@ -1804,13 +1909,14 @@ export function build(ctx) {
     paveRect([u0, u1, v0, -AX])
     paveRect([u0, u1, AX, v1])
   }
+}
 
-  /* ---- 5. 中轴殿堂 ---- */
-  const solids = [] // 已建成构件的中轴矩形（附属房选楼时跳过压在它们下面的 OSM 楼）
-  const solid = (r, pad = 0.3) => {
-    solids.push(r)
-    grid.fillPoly(rectW(r), F_SOLID, pad)
-  }
+/**
+ * 中轴殿堂：大门、二门与配房、碑亭、廊庑、刘备殿（含花台与御路）、过厅、厢房、钟鼓楼、诸葛亮殿、三义庙。
+ * @returns {number} 落点高度（刘备殿脊中宝顶顶端）
+ */
+function buildAxisHalls(site) {
+  const { b, at, solid } = site
   const Hh = HEIGHTS
 
   // 大门「汉昭烈庙」
@@ -1984,21 +2090,22 @@ export function build(ctx) {
     for (const x of [-lv / 2 + 0.4, -mid / 2, mid / 2, lv / 2 - 0.4]) {
       for (const z of [cz, -cz]) {
         b.add(
-          cylinder(0.28, 0.25, H.eave, { segments: 6 }),
+          cylinder(0.28, 0.25, H.eave + 0.2, { segments: 6 }),
           C.gateColumn,
-          local(f, x, 0, z)
+          local(f, x, -0.2, z)
         )
       }
     }
     for (const z of [cz, -cz]) {
       b.add(box(lv, 0.55, 0.4), L.lattice, local(f, 0, H.eave - 0.55, z))
     }
-    // 暗底金字匾「武侯祠」：挂在前檐额枋前，底边高 4.5 m，行人从下面穿过
-    b.add(box(3.6, 1.0, 0.12), L.gold, local(f, 0, H.eave - 0.72, cz + 0.28))
+    // 暗底金字匾「武侯祠」：挂在前檐额枋前，底边高 PASS_H（行人从下面穿过）、
+    // 顶边 5.15 m，低于卷棚前坡在匾位处的屋面（约 5.26 m），不会穿出屋面像一道正脊
+    b.add(box(3.6, 0.65, 0.12), L.gold, local(f, 0, PASS_H, cz + 0.28))
     b.add(
-      box(3.2, 0.75, 0.12),
+      box(3.2, 0.45, 0.12),
       C.plaqueDark,
-      local(f, 0, H.eave - 0.6, cz + 0.36)
+      local(f, 0, PASS_H + 0.1, cz + 0.36)
     )
     const rw = lv - 0.8
     const rd = lu - 1.2
@@ -2092,13 +2199,20 @@ export function build(ctx) {
     addHardGable(b, at(cu, cv), { w: lv, d: lu })
     solid(r)
   }
+  return markerHeight
+}
 
-  /* ---- 6. 惠陵 ---- */
+/**
+ * 惠陵：封土、石条护边、石板环道、青灰砖圆墙，陵前阙坊、寝殿、神道、惠陵大门、照壁。
+ * @returns {[number, number]} 封土圆心（世界坐标）
+ */
+function buildHuiling(site) {
+  const { project, b, gb, axis, W, at, grid, solid, paveRect } = site
   const hl = project.toLocal(HUILING_LL[0], HUILING_LL[1])
   const [hlU, hlV] = axis.toAxis(hl[0], hl[1])
   {
     const Hl = HUILING
-    const hf = frame(hl[0], 0, hl[1], bearing)
+    const hf = frame(hl[0], 0, hl[1], axis.bearing)
     // 封土：旋转体，底在石条护边顶，顶部平缓；表面按 16 × 5 网格
     const seg = 16
     const rings = 6
@@ -2234,11 +2348,16 @@ export function build(ctx) {
       solid([Hl.zhaobi - 0.6, Hl.zhaobi + 0.6, HL_V - 6, HL_V + 6])
     }
   }
+  return hl
+}
 
-  /* ---- 7. 院墙 ---- */
+/** 朱红院墙：东、南院墙，一进院西侧内院墙，文物区与西区之间的界墙 */
+function buildWalls(site) {
+  const { ll, b, axis, W, grid } = site
   const wallRun = (pts, h = WALL.h) => {
     if (pts.length < 2 || polyLength(pts) < 0.5) return
-    b.add(sweepBar(lift(pts, 0), WALL.t, h), C.vermilion)
+    // 墙身从城市地面起：西南角等处墙线压在草地边缘外
+    b.add(sweepBar(lift(pts, GROUND_Y), WALL.t, h - GROUND_Y), C.vermilion)
     b.add(sweepBar(lift(pts, h), WALL.cap, 0.22), L.roof)
     b.add(sweepBar(lift(pts, h + 0.22), 0.35, 0.18), L.roofRidge)
     grid.stampLine(pts, WALL.t / 2 + 0.3, F_SOLID)
@@ -2276,8 +2395,14 @@ export function build(ctx) {
     wallRun(toW(south))
     wallRun(toW(north))
   }
+}
 
-  /* ---- 8. 红墙夹道 + 竹林 ---- */
+/**
+ * 红墙夹道：沿 OSM 游线平滑的路径铺石板，两侧各一道朱红弧墙（深灰墙帽压绿琉璃筒瓦）。
+ * @returns {Array<[number, number]>} 夹道中线（世界坐标）
+ */
+function buildCorridor(site) {
+  const { ll, b, gb, axis, grid } = site
   const corridorPath = (() => {
     const raw = ll(CORRIDOR_LL)
     const smooth = resample(chaikin(raw, 3), 3)
@@ -2300,9 +2425,10 @@ export function build(ctx) {
     )
     grid.stampLine(corridorPath, K.clear / 2 + K.t + 0.1, F_PAVE)
     for (const s of [-1, 1]) {
-      const line = offsetLine(corridorPath, s * off)
+      const line = offsetMiter(corridorPath, s * off)
       const top = PAVE_Y + K.h
-      b.add(sweepBar(lift(line, LAWN_Y), K.t, top - LAWN_Y), C.corridor)
+      // 墙身也按斜接铺（厚度在弯道处不变），墙内皮离路径中线处处 clear / 2
+      b.add(ribbon(line, K.t, LAWN_Y, top), C.corridor)
       b.add(sweepBar(lift(line, top), K.capW, K.capH), C.capGrey)
       b.add(
         sweepBar(lift(line, top + K.capH), K.glazeW, K.glazeH),
@@ -2311,8 +2437,15 @@ export function build(ctx) {
       grid.stampLine(line, K.t / 2 + 0.3, F_SOLID)
     }
   }
+  return corridorPath
+}
 
-  /* ---- 9. 园内其余 OSM 楼：灰瓦坡顶附属房 ---- */
+/**
+ * 园内其余 OSM 楼改成灰瓦坡顶附属房；门前广场上的细长块改成石砌花台。
+ * @returns {number[]} 锦里范围内的 OSM 楼（民居排完后再补空地）
+ */
+function buildParkHouses(site) {
+  const { buildings, b, axis, zones, plaza, replaced, grid, solids } = site
   // 压在专门建模构件下面的楼（大门、殿堂、廊庑……）跳过；锦里范围内的楼由锦里程序化重排
   const jinliPolyOSM = zones[1]
   const inSolid = (x, z) => {
@@ -2366,39 +2499,45 @@ export function build(ctx) {
     }
     grid.fillPoly(bd.p, F_SOLID, 0.6)
   }
+  return lateOSM
+}
 
-  /* ---- 10. 竹林（夹道两侧）---- */
-  {
-    const K = CORRIDOR
-    const rand = mulberry32(SEED + 11)
-    for (const s of [-1, 1]) {
-      const line = resample(
-        offsetLine(corridorPath, s * K.bambooOff),
-        K.bambooStep
-      )
-      line.forEach(([x, z], k) => {
-        const jx = (rand() - 0.5) * 0.8
-        const jz = (rand() - 0.5) * 0.8
-        const r = K.bambooR * (0.8 + rand() * 0.4)
-        const h = K.bambooH[0] + (K.bambooH[1] - K.bambooH[0]) * rand()
-        // 竹丛根部不压建筑、墙；冠幅允许伸到墙帽上空（竹比墙高一倍）
-        if (!grid.freeDisk(x + jx, z + jz, 0.5, F_SOLID)) return
-        addBamboo(
-          b,
-          x + jx,
-          LAWN_Y,
-          z + jz,
-          h,
-          r,
-          C.bamboo[k % 3],
-          rand() * 6.28
-        )
-        grid.disk(x + jx, z + jz, r, F_TREE)
-      })
-    }
+/** 红墙夹道两侧的竹林带 */
+function plantBamboo(site, corridorPath) {
+  const { b, grid } = site
+  const K = CORRIDOR
+  const rand = mulberry32(SEED + 11)
+  // 指向站点镜头的水平方向（方位 camBearing）
+  const cb = K.camBearing * DEG
+  const cam = [Math.sin(cb), -Math.cos(cb)]
+  for (const s of [-1, 1]) {
+    const line = resample(
+      offsetMiter(corridorPath, s * K.bambooOff),
+      K.bambooStep
+    )
+    const ns = normals(line)
+    line.forEach(([x, z], k) => {
+      const jx = (rand() - 0.5) * 0.8
+      const jz = (rand() - 0.5) * 0.8
+      const r = K.bambooR * (0.8 + rand() * 0.4)
+      // 竹丛在夹道哪一侧：外法向朝镜头的一侧压低
+      const near = s * (ns[k][0] * cam[0] + ns[k][1] * cam[1]) > 0
+      const [h0, h1] = near ? K.bambooNearH : K.bambooH
+      const h = h0 + (h1 - h0) * rand()
+      // 竹丛根部不压建筑、墙
+      if (!grid.freeDisk(x + jx, z + jz, 0.5, F_SOLID)) return
+      addBamboo(b, x + jx, LAWN_Y, z + jz, h, r, C.bamboo[k % 3], rand() * 6.28)
+      grid.disk(x + jx, z + jz, r, F_TREE)
+    })
   }
+}
 
-  /* ---- 11. 锦里 ---- */
+/**
+ * 锦里：街面铺装、南入口门楼与入口小广场、古戏台与小广场大树、沿街民居、北段补房、灯笼串。
+ * @returns {{ main, jiupin, shuian, jSide, houses }} 街道中线、九品街排房的一侧、民居记录
+ */
+function buildJinli(site, lateOSM) {
+  const { buildings, ll, b, gb, axis, W, at, rectW, grid } = site
   const main = ll(MAIN_LL)
   const jiupin = ll(JIUPIN_LL)
   const shuian = ll(SHUIAN_LL)
@@ -2518,9 +2657,7 @@ export function build(ctx) {
   // 锦里北段剩下的 OSM 楼：整栋不碰民居、街道的，按轮廓补成灰瓦坡顶房
   for (const i of lateOSM) {
     const bd = buildings[i]
-    const hit = (x, z) => grid.get(x, z) & (F_SOLID | F_PAVE)
-    const [cx, cz] = centroid(bd.p)
-    if (hit(cx, cz) || bd.p.some(([x, z]) => hit(x, z))) continue
+    if (overlapsGrid(grid, bd.p, F_SOLID | F_PAVE)) continue
     const rand = mulberry32(shapeSeed(SEED + 3, bd.p))
     const res = addPitchedHouse(b, bd.p, {
       eaveH: PAVE_Y + (rand() < 0.5 ? JINLI.eave1 : JINLI.eave2),
@@ -2553,8 +2690,12 @@ export function build(ctx) {
     null,
     PAVE_Y - LOW
   )
+  return { main, jiupin, shuian, jSide, houses }
+}
 
-  /* ---- 12. 树：院内柏树、封土小树 ---- */
+/** 种树：院落古柏、院内柏树林、锦里零星阔叶树、封土小树 */
+function plantTrees(site, hl) {
+  const { b, axis, W, compound, jinliBase, grid } = site
   // 院落里的古柏（中轴坐标）：一进院沿东西两侧、二进院四角、诸葛亮殿院两侧
   {
     const rand = mulberry32(SEED + 17)
@@ -2581,10 +2722,11 @@ export function build(ctx) {
   }
   {
     const rand = mulberry32(SEED + 21)
-    // 候选：院墙以内抖动网格（文物区 7 m、西区 9 m）
+    // 候选：院墙以内（外包框）抖动网格，按保留概率抽稀（文物区约 7 m 一棵、西区约 9 m）
+    const cb = polygonBounds(compound)
     const cands = []
-    for (let x = -2130; x <= -1765; x += 3.5) {
-      for (let z = 800; z <= 1180; z += 3.5) {
+    for (let x = cb.minX; x <= cb.maxX; x += 3.5) {
+      for (let z = cb.minZ; z <= cb.maxZ; z += 3.5) {
         const jx = x + (rand() - 0.5) * 3
         const jz = z + (rand() - 0.5) * 3
         const [, v] = axis.toAxis(jx, jz)
@@ -2607,8 +2749,9 @@ export function build(ctx) {
     }
     // 锦里院落里零星的阔叶树（民居背后、北段空地）：离房屋、街面多留 1.2 m，树冠不压屋檐
     const jrand = mulberry32(SEED + 41)
-    for (let x = -1870; x <= -1690; x += 6) {
-      for (let z = 750; z <= 1150; z += 6) {
+    const jb = polygonBounds(jinliBase)
+    for (let x = jb.minX; x <= jb.maxX; x += 6) {
+      for (let z = jb.minZ; z <= jb.maxZ; z += 6) {
         const jx = x + (jrand() - 0.5) * 5
         const jz = z + (jrand() - 0.5) * 5
         const r = 2.4 + jrand() * 1.1
@@ -2654,10 +2797,27 @@ export function build(ctx) {
       })
     }
   }
+}
 
-  /* ---- 13. 步行路径 ---- */
+/**
+ * @param {{ project, buildings, theme, spot }} ctx
+ * @returns {{ meshes: Mesh[], zones: Array, markerHeight: number, walkways: Array }}
+ */
+export function build(ctx) {
+  const site = createSite(ctx)
+  buildGround(site)
+  const markerHeight = buildAxisHalls(site)
+  const hl = buildHuiling(site)
+  buildWalls(site)
+  const corridorPath = buildCorridor(site)
+  const lateOSM = buildParkHouses(site)
+  plantBamboo(site, corridorPath)
+  const { main, jiupin, shuian, jSide, houses } = buildJinli(site, lateOSM)
+  plantTrees(site, hl)
+
+  /* ---- 步行路径 ---- */
   const walkways = buildWalkways({
-    axis,
+    axis: site.axis,
     main,
     jiupin,
     shuian,
@@ -2668,18 +2828,18 @@ export function build(ctx) {
 
   /* ---- 出网格 ---- */
   const meshes = []
-  const g = b.bake()
+  const g = site.b.bake()
   if (g) {
     const mesh = new Mesh(g, landmarkMaterial())
     // 调试信息（Node 校验脚本读取）：锦里民居布置
     mesh.userData.layout = { houses }
     meshes.push(mesh)
   }
-  const gg = gb.bake()
+  const gg = site.gb.bake()
   if (gg) {
     const mat = landmarkMaterial()
     mat.side = FrontSide
     meshes.push(new Mesh(gg, mat))
   }
-  return { meshes, zones, markerHeight, walkways }
+  return { meshes, zones: site.zones, markerHeight, walkways }
 }
