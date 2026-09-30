@@ -27,6 +27,9 @@ import { build as kuanzhai } from "./kuanzhai.js"
 import { build as peoplesPark } from "./peoplesPark.js"
 import { build as wenshu } from "./wenshu.js"
 import { build as hejiang } from "./hejiang.js"
+import { build as wangjiang } from "./wangjiang.js"
+import { build as pandaTower } from "./pandaTower.js"
+import { build as wuhou } from "./wuhou.js"
 
 /** 景点名 → 构建函数；键与 cityData.js 的 SPOTS[i].name 完全一致 */
 export const LANDMARK_MODULES = {
@@ -36,7 +39,10 @@ export const LANDMARK_MODULES = {
   宽窄巷子: kuanzhai,
   人民公园: peoplesPark,
   文殊院: wenshu,
-  合江亭: hejiang
+  合江亭: hejiang,
+  "望江楼·九眼桥": wangjiang,
+  天府熊猫塔: pandaTower,
+  "武侯祠·锦里": wuhou
 }
 
 /** 空结果：模块不存在或构建失败时使用 */
