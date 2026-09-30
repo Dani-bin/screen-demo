@@ -103,11 +103,16 @@ const BANK_STONE = "#8E9296" // 石砌驳岸
 const BAMBOO = ["#6FAE4C", "#86C05A", "#3F7F3A", "#5E9E44"] // 竹叶：亮绿、嫩绿、深绿、中绿
 
 /* ---------------- 定位常量（经纬度，离线由 OSM 算出） ---------------- */
+// 以下常量都由 public/city/chengdu.json（scripts/fetch-osm-city.py 生成）离线算出，
+// 局部坐标经 projection.js 的 toLonLat 换成经纬度（6 位小数，约 0.1 m）。
+// 重新拉数据后若公园、河道、园内楼轮廓有变，需按各条注释里的方法重算后再核对步行路径与竹林。
 
-// 文物区放大组：以 (2425, 2735) 为中心 ×1.6，再平移 shift（世界米，X 东 Z 南）
+// 文物区放大组：以设计文档给的 (2425, 2735) 为中心 ×1.6，再平移 shift（世界米，X 东 Z 南）；
+// shift 按「放大后崇丽阁台基、濯锦楼不入水」在 Node 里对 water 多边形与河道带试算取定
 const GROUP = { lon: 104.091023, lat: 30.632658, scale: 1.6, shift: [-16, 5] }
 
-// 文物区四栋有名的楼（按名称查 OSM；lon/lat 为查不到时的设计坐标，bearing 为长轴方位）
+// 文物区四栋有名的楼（按名称查 chengdu.json buildings；lon/lat 为其最小外接矩形中心，
+// 查不到时退回这里的坐标与尺寸，bearing 为长轴方位）
 const CHONGLI = {
   name: "崇丽阁",
   lon: 104.091172,
@@ -134,7 +139,9 @@ const HUANJIAN = { name: "浣笺亭", lon: 104.090736, lat: 30.632629 }
 // 薛涛井（OSM 无，按导游图估计），背后红墙沿方位 86°（与浣笺亭同向）
 const WELL = { lon: 104.090627, lat: 30.632784, bearing: 86 }
 
-// 园内其余 OSM 楼（顶点平均点）：前两栋随放大组换算中心（不放大），其余原位重建
+// 园内其余 OSM 楼（chengdu.json buildings 里落在公园轮廓内的无名楼，此处为各自的顶点平均点，
+// 构建时按 ≤ 6 m 就近匹配）：前两栋随放大组换算中心（不放大），其余原位重建。
+// 重算：buildingsInZones(buildings, [PARK]) 取园内楼，去掉四栋有名的，求 polygonCenter
 const HOUSES = [
   { lon: 104.090511, lat: 30.633045, follow: true, wall: "timber" }, // 薛涛纪念馆（推测）
   { lon: 104.090249, lat: 30.632753, follow: true, wall: "plaster" }, // 枕流（推测）
@@ -145,7 +152,8 @@ const HOUSES = [
   { lon: 104.088608, lat: 30.630112, wall: "timber" }
 ]
 
-// 望江楼公园轮廓（OSM way 116486191）：替换区、竹林范围
+// 望江楼公园轮廓：chengdu.json parks 里包含崇丽阁的那个多边形（OSM way 116486191，28 点，原样照抄）；
+// 用作替换区与竹林范围。重算：取 parks 中 pointInPolygon(崇丽阁中心) 为真的多边形
 const PARK = [
   [104.089731, 30.634645],
   [104.088751, 30.632547],
@@ -176,7 +184,10 @@ const PARK = [
   [104.090277, 30.634735],
   [104.090145, 30.634713]
 ]
-// 驳岸线：公园临江一侧的实际水边（水面多边形与 48 m 河道带的并集边界），自西南桥头沿南岸、东岸到北端
+// 驳岸线：公园临江一侧的实际水边，自西南桥头沿南岸、东岸到北端（公园在前进方向左侧，buildBank 依赖此顺序）。
+// 重算：沿 PARK 第 7～27 点（临江的边）每约 3 m 取点，沿指向园内的法向每 0.25 m 内移，
+// 直到既不在 chengdu.json 的 water 多边形里、离 rivers 中心线也 ≥ 24.3 m（河道带宽 theme.riverWidth = 48），
+// 再以 0.6 m 容差 Douglas-Peucker 抽稀。南岸的河道带伸进公园轮廓最多约 8 m，故不能直接用公园轮廓
 const BANK = [
   [104.087445, 30.629366],
   [104.088522, 30.629342],
@@ -199,7 +210,7 @@ const BANK = [
   [104.090409, 30.634364],
   [104.090277, 30.634732]
 ]
-// 园中湖（抽稀的 OSM 水面轮廓），竹林避开
+// 园中湖：chengdu.json water 里落在公园内的那个多边形（26 点）隔点抽稀为 13 点；竹林避开（另留 3 m）
 const LAKE = [
   [104.088752, 30.630824],
   [104.088596, 30.630489],
@@ -216,9 +227,10 @@ const LAKE = [
   [104.089167, 30.630901]
 ]
 
-// 新九眼桥：OSM way 1322100682 中心与长轴方位（南北向跨江）
+// 新九眼桥：OSM way 1322100682（man_made=bridge，不在 chengdu.json 的 buildings 里）四角点的中心与长轴方位，
+// 取自调研报告 2.3 节（南北向跨江）
 const BRIDGE = { lon: 104.087285, lat: 30.62908, bearing: 178.5 }
-// 游船漂移线：崇丽阁东侧锦江中心线上两点
+// 游船漂移线：崇丽阁东侧锦江中心线（chengdu.json rivers 中锦江那条）上两点
 const RIVER = [
   [104.091623, 30.632902],
   [104.091792, 30.63216]
@@ -274,6 +286,7 @@ const COPING = 0.3 // 桥面压面石厚
 
 const BANK_TOP = 2.0 // 驳岸顶（高出水面约 1.7 m）
 const BANK_T = 1.0 // 驳岸墙厚
+const BANK_OUT = 0.4 // 墙外立面在驳岸线外（水侧）的距离，见 buildBank
 const BANK_RAIL = 0.95 // 岸边白石栏杆高
 const BAMBOO_SEED = 0x57a15a
 const BAMBOO_GRID = 9 // 竹林撒点网格（米）
@@ -360,7 +373,10 @@ const DECK_WALK = { x: 11, z: 8, width: 1.4, density: 3 }
 /* ---------------- 通用小工具 ---------------- */
 
 const lerp = (a, b, t) => a + (b - a) * t
-/** 与 roofs.js 相同的「向两端加密」参数映射，使封檐带与屋面翘角曲线一致 */
+/**
+ * 与 roofs.js 的 biasS（未导出）相同的「向两端加密」参数映射，复制于此，使封檐带与屋面翘角曲线一致；
+ * roofs.js 若修改该映射需同步这里
+ */
 const biasS = (u) => Math.sign(u) * (1 - Math.pow(1 - Math.abs(u), 1.6))
 /** 四边形 → 两个三角形（写进 out） */
 const quad = (out, a, b, c, d) => out.push(...a, ...b, ...c, ...a, ...c, ...d)
@@ -435,15 +451,19 @@ function eaveTrim(b, m, sides, R, h, curl) {
   }
 }
 
-/** 一层柱：四方层每边 cols 间（柱位含角柱），八角层只在顶点 */
-function levelColumns(b, f, sides, rc, cols, y0, y1, radius) {
+/**
+ * 一层柱：四方层每边 cols 间（柱位含角柱），八角层只在顶点。
+ * topAt(s) 给出柱顶高度：s ∈ [-1, 1] 为柱位在所在边上的屋面参数（角柱 s = ±1，
+ * 屋面在戗脊处有起翘，角柱要比边中的柱高，才顶得住翘起的屋角）
+ */
+function levelColumns(b, f, sides, rc, cols, y0, topAt, radius) {
   for (let k = 0; k < sides; k++) {
     const v0 = polygonVertex(sides, rc, k)
     const v1 = polygonVertex(sides, rc, k + 1)
     for (let j = 0; j < cols; j++) {
       const u = j / cols
       b.add(
-        cylinder(radius, radius * 0.9, y1 - y0),
+        cylinder(radius, radius * 0.9, topAt(2 * u - 1) - y0),
         DARK_COLUMN,
         local(f, lerp(v0[0], v1[0], u), y0, lerp(v0[1], v1[1], u))
       )
@@ -490,18 +510,12 @@ function buildChongli(b, f) {
     const ovR = lv.ov / Math.cos(Math.PI / n) // 攒尖的出檐按外接半径方向给
     const R = rc + ovR
     const curl = lv.lift / lv.h
-    // 柱顶埋进柱线处的屋面以下
-    const colTop = lv.eave + roofHeight(0, ovR / R, lv.h, 0) - 0.05
-    levelColumns(
-      b,
-      f,
-      n,
-      rc,
-      lv.cols ?? 1,
-      yBase,
-      colTop,
-      i === 0 ? 0.32 : 0.26
-    )
+    // 柱线在屋面上的 t（攒尖沿径向插值：柱线外接半径 rc = R·(1 − t)）；
+    // 柱顶埋进柱线处的屋面以下 5 cm，屋面高度按柱位的 s 取（含翼角起翘 curl·h·s⁴·(1 − t)²）
+    const tc = ovR / R
+    const topAt = (s) => lv.eave + roofHeight(s, tc, lv.h, curl) - 0.05
+    const colTop = topAt(0)
+    levelColumns(b, f, n, rc, lv.cols ?? 1, yBase, topAt, i === 0 ? 0.32 : 0.26)
     const wr = CHONGLI_WALLS[i]
     b.add(prism(n, wr, wr, colTop - yBase), DARK_LATTICE, local(f, 0, yBase, 0))
     const ro = {
@@ -652,7 +666,7 @@ function buildYinshi(b, f, w, d, rand) {
     [w / 2 - 1, d / 2 - 1.6, 2.8, 3.4],
     [-w / 2 + 1.6, d / 2 - 1.1, 3.8, 2.4],
     [0, -d / 2 + 0.6, 4.2, 1.6],
-    [1.5, d / 2 - 0.5, 3.4, 1.4]
+    [4.2, d / 2 - 0.5, 3.4, 1.4] // 西侧中段：让开登台石阶（x ∈ ±1.2）
   ]
   blocks.forEach(([x, z, bw, bd], i) => {
     const hh = rockH + 0.2 + rand() * 0.9
@@ -725,19 +739,22 @@ function buildWell(b, f) {
   const R = 5
   const ph = 0.45
   b.add(cylinder(R, R, ph, { segments: 24, caps: true }), WELL_STONE, f)
-  // 栏杆：16 根望柱（第 k 根在方位角 (k + 0.5) / 16 × 360° 处），背面正对红墙（-Z）的一格
-  // （望柱 7 → 8 之间）不设栏板，作为入口
+  // 栏杆：16 根望柱（第 k 根在方位角 (k + 0.5) / 16 × 360° 处，180° 为 -Z 即红墙一侧）。
+  // 照片 wj_2191：栏杆是朝红墙敞开的 U 形，这里望柱 5 → 10 之间（约 124°～236°，开口 112°）
+  // 不设栏板，开口里的望柱 6～9 也不立
   const n = 16
   const posts = []
   for (let k = 0; k < n; k++) {
     const a = ((k + 0.5) / n) * Math.PI * 2
     posts.push([Math.sin(a) * (R - 0.3), Math.cos(a) * (R - 0.3)])
   }
-  const skip = new Set([7])
+  const open0 = 5
+  const open1 = 10
   for (let k = 0; k < n; k++) {
     const [x, z] = posts[k]
+    if (k > open0 && k < open1) continue
     b.add(box(0.3, 1.05, 0.3), SANDSTONE, local(f, x, ph, z))
-    if (skip.has(k)) continue
+    if (k === open0) continue
     const [x1, z1] = posts[(k + 1) % n]
     const len = Math.hypot(x1 - x, z1 - z)
     const yaw = Math.atan2(-(z1 - z), x1 - x)
@@ -850,12 +867,14 @@ function buildBridge(b, f) {
 
   // 拱腹（深色半圆筒，贴在拱洞内侧）与两个立面上的拱券石
   for (const a of arches) {
-    // 圆筒轴沿 Y，θ ∈ [π/2, 3π/2]（x = r·sinθ, z = r·cosθ）绕 X 转 90° 后正是轴沿 Z 的上半圆
+    // 圆筒轴沿 Y，θ ∈ [π/2, 3π/2]（x = r·sinθ, z = r·cosθ）绕 X 转 90° 后正是轴沿 Z 的上半圆。
+    // 拱洞弧线由 ExtrudeGeometry 按 curveSegments × 2 = 10 段取点（圆弧曲线加倍），
+    // 圆筒也取 10 段、顶点角度与之对齐，并内缩 0.08 m，整圈都在拱洞面以内，不会交替露出条纹
     const barrel = new CylinderGeometry(
-      a.r - 0.03,
-      a.r - 0.03,
+      a.r - 0.08,
+      a.r - 0.08,
       depth,
-      8,
+      10,
       1,
       true,
       Math.PI / 2,
@@ -875,6 +894,15 @@ function buildBridge(b, f) {
   // 桥下水色薄板（只在河面范围内：桥心以北 31.5 m 到以南 27.5 m）；
   // 高过最高的道路面（0.9 m，且道路材质带多边形偏移），拱洞里看不到桥下穿过的白色道路带
   b.add(box(59, 0.05, depth - 0.2), THEME.water, local(f, -2, 0.95, 0))
+  // 两端孔下是岸（桥心以北 31.5 m、以南 27.5 m 之外）：同样高度铺地面色薄板，盖住道路带
+  const land = (u0, u1) =>
+    b.add(
+      box(u1 - u0, 0.05, depth - 0.2),
+      THEME.ground,
+      local(f, (u0 + u1) / 2, 0.95, 0)
+    )
+  land(-half, -31.5)
+  land(27.5, half)
 
   // 压面石：沿桥面轮廓的宽条，顶面即桥面
   const line = us.map((u) => [u, deckY(u, half) - COPING, 0])
@@ -937,10 +965,15 @@ function archRing(x, r0, r1, depth) {
 /* ---------------- 驳岸 ---------------- */
 
 /**
- * 石砌驳岸：沿驳岸线（水边）一道厚 BANK_T 的石墙（外立面正在水边，顶高 BANK_TOP）+ 压顶石，
- * 墙顶一道白石栏杆（扶手 + 腰栏 + 每约 9 m 一根望柱）。inside(x, z) 判断哪一侧是公园。
+ * 石砌驳岸：沿驳岸线（水边）一道厚 BANK_T 的石墙（外立面在水边，顶高 BANK_TOP）+ 压顶石，
+ * 墙顶一道白石栏杆（扶手 + 腰栏 + 每约 9 m 一根望柱）。
+ * line 按「西南桥头 → 南岸 → 东岸 → 北端」排列，公园始终在前进方向左侧（从上往下看、北在上），
+ * 所以指向公园的法向直接取 (tz, −tx)。不能用「法向外 3 m 的点是否在公园轮廓里」判断：
+ * OSM 公园轮廓在南岸伸进河道带 3 m 以上，两侧都会判成在园内，墙会建到水里。
+ * 驳岸线取的是离水边最近的干点（离真实水边 0.25～0.5 m），墙外立面再向水侧让出 BANK_OUT，
+ * 正好落在真实水边上（水下部分被水面挡住）。
  */
-function buildBank(b, line, inside) {
+function buildBank(b, line) {
   for (let i = 0; i < line.length - 1; i++) {
     const [x0, z0] = line[i]
     const [x1, z1] = line[i + 1]
@@ -948,18 +981,15 @@ function buildBank(b, line, inside) {
     if (len < 0.5) continue
     const tx = (x1 - x0) / len
     const tz = (z1 - z0) / len
-    // 指向公园一侧的法向
-    let nx = -tz
-    let nz = tx
+    // 指向公园一侧的法向：前进方向左侧
+    const nx = tz
+    const nz = -tx
     const mx = (x0 + x1) / 2
     const mz = (z0 + z1) / 2
-    if (!inside(mx + nx * 3, mz + nz * 3)) {
-      nx = -nx
-      nz = -nz
-    }
     const yaw = Math.atan2(-tz, tx)
+    // o 为离驳岸线向公园一侧的距离（负值在水侧）
     const m = (o) => local(null, mx + nx * o, 0, mz + nz * o, yaw)
-    const wallM = m(BANK_T / 2)
+    const wallM = m(BANK_T / 2 - BANK_OUT)
     b.add(
       box(len + 0.3, BANK_TOP + 0.6, BANK_T),
       BANK_STONE,
@@ -970,7 +1000,7 @@ function buildBank(b, line, inside) {
       L.granite,
       local(wallM, 0, BANK_TOP, 0)
     )
-    const railM = m(0.35)
+    const railM = m(0.35 - BANK_OUT)
     const yTop = BANK_TOP + 0.15
     b.add(
       box(len, 0.12, 0.16),
@@ -1154,7 +1184,6 @@ export function build(ctx) {
   const park = ll(PARK)
   const bank = ll(BANK)
   const lake = ll(LAKE)
-  const inPark = (x, z) => pointInPolygon(x, z, park)
 
   // 放大组坐标系 G：以组中心等比放大 S 倍后平移 shift；toWorld 为同一变换的平面版
   const [gx, gz] = ctx.project.toLocal(GROUP.lon, GROUP.lat)
@@ -1199,7 +1228,8 @@ export function build(ctx) {
   buildWell(b, fw)
 
   // 园内其余楼：灰瓦坡顶矮房；随组的两栋平移到换算后的中心
-  const houseZones = []
+  // 竹林避让框：各栋矮房外接矩形外扩 3 m（只用于竹林撒点避让，不是替换区）
+  const bambooAvoid = []
   for (const h of HOUSES) {
     const bd = nearestBuilding(ctx, h.lon, h.lat)
     if (!bd) continue
@@ -1216,7 +1246,7 @@ export function build(ctx) {
       wallColor: h.wall === "timber" ? L.timber : L.plaster
     })
     const r = minAreaRect(pts)
-    houseZones.push(rectPolygon(r.cx, r.cz, r.w + 6, r.d + 6, r.bearing))
+    bambooAvoid.push(rectPolygon(r.cx, r.cz, r.w + 6, r.d + 6, r.bearing))
   }
 
   // 九孔桥：局部 X 沿桥长（指向南端）
@@ -1225,7 +1255,7 @@ export function build(ctx) {
   buildBridge(b, fb)
 
   // 驳岸
-  buildBank(b, bank, inPark)
+  buildBank(b, bank)
 
   /* ---- 步行路径（世界坐标） ---- */
   const wp = new Vector3()
@@ -1292,7 +1322,7 @@ export function build(ctx) {
     worldRect(zj, 5),
     worldRect(ys, 5),
     ...hjRects.map((r) => worldRect(r, 5)),
-    ...houseZones
+    ...bambooAvoid
   ]
   const obstacles = [
     (x, z) => Math.hypot(x - cwx, z - cwz) < 30, // 崇丽阁台基与前庭
@@ -1305,7 +1335,8 @@ export function build(ctx) {
   const g = b.bake()
   if (g) meshes.push(new Mesh(g, landmarkMaterial()))
 
-  // 游船：崇丽阁前江湾，沿江中心线正弦往复（单独 Mesh、不投影）
+  // 游船：崇丽阁前江湾，沿江中心线正弦往复（单独 Mesh、不投影）；
+  // 漂移与掉头写法同 hejiang.js 的游船（周期、振幅不同）
   const [r0x, r0z] = ctx.project.toLocal(...RIVER[0])
   const [r1x, r1z] = ctx.project.toLocal(...RIVER[1])
   const len = Math.hypot(r1x - r0x, r1z - r0z)
