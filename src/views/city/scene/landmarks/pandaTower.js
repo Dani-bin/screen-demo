@@ -20,9 +20,9 @@
  * 返回 walkways：猛追湾滨河步道（塔西北、府河东南岸）、基台顶环形平台、
  * 南侧广场上绕熊猫一圈与沿基台南侧的一段步道。
  *
- * 方位：OSM 四个斜撑脚（way 1346091170 / 1346091172 / 1346091182 / 1346091184）实测在
- * 342°、74°、164°、254°，基台（way 459158599）四边中点同此。设计文档写的「17° / 107°」
- * 把逆时针 17° 当成了顺时针方位角，这里按 OSM 实测取 343° 等四个方位。
+ * 方位：OSM 四个斜撑脚（way 1346091170 / 1346091172 / 1346091182 / 1346091184）与
+ * 基台（way 459158599）四边中点实测都在 343°、73°、163°、253°（误差约 1°，OSM roof:direction 一致）。
+ * 设计文档初稿写的「17° / 107°」把逆时针 17° 当成了顺时针方位角，这里按 OSM 实测取这四个方位。
  * 局部坐标系 F 的 −Z 指向 343°（北斜撑），于是 +X → 73°（东）、+Z → 163°（南）、−X → 253°（西），
  * 四根斜撑与四条腿正好落在 ±X、±Z 四个轴上；下文注释里的 (u, v) 即 F 的局部 (x, z)。
  *
@@ -32,6 +32,7 @@
  */
 import {
   BackSide,
+  CylinderGeometry,
   IcosahedronGeometry,
   Matrix4,
   Mesh,
@@ -114,9 +115,10 @@ const CORE = { apothem: 6, y1: 241 }
 const LEG = { y1: 196, rIn: 5.5, rOut0: 10.5, rOut1: 8, w0: 6, w1: 5 }
 // 四根斜撑：地面脚点离塔心 footR（轴线），沿直线升到 midY 高、离塔心 midR 处，
 // 再沿同一直线延伸到 endY 埋进腿与芯筒（两者在约 55 m 处连成一体）；
-// t 为水平截面的径向厚度（板厚 4 m、倾角约 32° 换算），w0 → w1 为切向宽
+// t 为水平截面的径向厚度（板厚 4 m、倾角约 30° 换算），w0 → w1 为切向宽。
+// footR 取 39.7：外表面 footR + t/2 ≈ 42 m，与 OSM 斜撑脚外缘（离塔心约 42 m）对齐
 const BRACE = {
-  footR: 42,
+  footR: 39.7,
   midY: 50.5,
   midR: 10.5,
   endY: 57,
@@ -158,14 +160,19 @@ const POD1 = {
 }
 
 // 上塔楼：下部深色内筒 + 三道白色开敞平台（资料「下两层是没有外墙的微波天线平台」），
-// 暗红倒锥台 cone（上宽下窄），最宽处白色室外观光平台 deck（挑出约 1.5 m），
-// 其上浅灰锥形顶盖 lid、白色短筒 drum（高度按照片比例，总高约 46 m 与资料一致）
+// 暗红倒锥台 cone（上宽下窄，分三段略向外鼓，像碗），最宽处白色室外观光平台 deck（挑出约 1.5 m），
+// 其上浅灰锥形顶盖 lid、白色短筒 drum（高度按照片比例，总高约 46 m 与资料一致）。
+// 标高说明：资料里的「218 m 室外观光层」以进塔平台（基台顶 +10.2 m）为零点，绝对高度约 228 m；
+// 这里按照片比例把观光平台放在塔楼最宽处 234 m（与四臂尖端同高）
 const POD2 = {
   drum: [198, 214, 9.5],
   rings: [200.5, 205, 209.5],
   ringR: 12.2,
   ringH: 1.2,
   cone: [214, 234, 11.5, 18],
+  // 倒锥台外鼓量（米）：半径 = 线性值 + bulge · sin(π·t)，t 为段内高度比例
+  bulge: 0.6,
+  coneSegs: 3,
   lines: [218.5, 223.5, 228.5],
   deck: [234, 0.9, 19.6],
   rail: [234.9, 1.1, 19.4],
@@ -201,12 +208,13 @@ const WARN = { y0: 319, band: 4 }
 
 // 广场铺装顶面（与其他景点一致，铺装不低于 1.0 m，免得与路面错层）
 const PLAZA_Y = 1.0
-// 广场轮廓（局部 [u, v]）：北接南面护坡脚，西离 339 裙楼东缘约 2 m，
+// 广场轮廓（局部 [u, v]）：北缘、西北缘伸到护坡底下 2 m（坡脚在 39.5，37.5 处护坡面高 1.9 m，
+// 盖住铺装边，不留小沟），西离 339 裙楼东缘约 2 m，
 // 东南离猛追湾街（城市主干道，路缘半宽 12 m）约 2.5 m 以上
 const PLAZA = [
-  [-12, 39.5],
-  [39.5, 39.5],
-  [39.5, 20],
+  [-12, 37.5],
+  [37.5, 37.5],
+  [37.5, 20],
   [54, 22],
   [58, 34],
   [52, 48],
@@ -253,12 +261,13 @@ const RIVER_WALK = {
   width: 4,
   density: 2.2
 }
-// 基台顶环形平台：水池外沿（24.6）与女儿墙（31.25）之间；头顶是悬盘底（21.65 m）
-const RING_WALK = { r: 27.5, n: 28, width: 2.5, density: 3 }
+// 基台顶环形平台：水池外沿（24.6）与斜撑内表面之间（斜撑在人头高度 14.55 m 处离塔心约 28.7 m）；
+// 头顶是悬盘底（21.65 m）
+const RING_WALK = { r: 26.6, n: 28, width: 1.8, density: 3 }
 // 广场：绕熊猫一圈（底座半径 5.6）
 const PANDA_WALK = { r: 10.5, n: 20, width: 2, density: 3 }
-// 广场：沿基台南面护坡脚的一段（让开南斜撑脚与东南台阶）
-const PLAZA_WALK = { v: 47.5, u0: -9, u1: 22, width: 3, density: 3 }
+// 广场：沿基台南面护坡脚的一段（北让南斜撑脚，东端止于绕熊猫环之前，两条路不重叠）
+const PLAZA_WALK = { v: 45, u0: -10, u1: 7, width: 3, density: 3 }
 
 /* ---------------- 配色 ---------------- */
 
@@ -370,10 +379,23 @@ function blade(y0, zi0, zo0, w0, y1, zi1, zo1, w1) {
   ])
 }
 
-/** 水平圆环面（朝上，材质双面，朝下的底面也可用它），y = 0 */
-function annulus(rIn, rOut, segments = 32) {
+/**
+ * 水平圆环面，y = 0。down 为假时法线朝上（顶面），为真时朝下（底面）。
+ * 主体阴影只画背光面，悬在空中的底面必须朝下，否则挡不住阳光（见 orient 的说明）
+ */
+function annulus(rIn, rOut, segments = 32, down = false) {
   const g = new RingGeometry(rIn, rOut, segments, 1)
-  g.rotateX(-Math.PI / 2)
+  g.rotateX(down ? Math.PI / 2 : -Math.PI / 2)
+  return g
+}
+
+/**
+ * 上下都封口的圆柱 / 圆台（悬空的环板、平台用），底在 y = 0。
+ * kit 的 cylinder(caps) 只封顶：悬空构件缺了朝下的底面，阴影贴图里就没有它（会漏光）
+ */
+function closedCylinder(rBottom, rTop, h, segments = 32) {
+  const g = new CylinderGeometry(rTop, rBottom, h, segments, 1, false)
+  g.translate(0, h / 2, 0)
   return g
 }
 
@@ -454,14 +476,6 @@ function skirtGeometry(line, top, bottom, run) {
 function toWorld(parent, u, v) {
   const e = parent.elements
   return [e[12] + e[0] * u + e[8] * v, e[14] + e[2] * u + e[10] * v]
-}
-
-/** 圆形闭合路径（局部圆心 (u, v)、半径 r、n 个点）→ 世界坐标 */
-function circleWorld(parent, u, v, r, n) {
-  return Array.from({ length: n }, (_, k) => {
-    const a = (k / n) * Math.PI * 2
-    return toWorld(parent, u + Math.cos(a) * r, v + Math.sin(a) * r)
-  })
 }
 
 /* ---------------- 基台 ---------------- */
@@ -633,7 +647,8 @@ function addLowerPod(b, F) {
   const p = POD1
   const rAt = (y) => p.r0 + ((p.r1 - p.r0) * (y - p.y0)) / (p.y1 - p.y0)
   const seg = { segments: 32 }
-  b.add(annulus(p.soffitR, p.r0), C.soffit, local(F, 0, p.y0, 0))
+  // 底面朝下：从塔下仰视可见，也在阴影贴图里挡住下面的环形水池与台顶
+  b.add(annulus(p.soffitR, p.r0, 32, true), C.soffit, local(F, 0, p.y0, 0))
   const y1 = p.band
   const y2 = p.band + p.bandH
   b.add(
@@ -648,7 +663,7 @@ function addLowerPod(b, F) {
   )
   b.add(cylinder(rAt(y2), p.r1, p.y1 - y2, seg), C.pod1High, local(F, 0, y2, 0))
   b.add(
-    cylinder(p.r1 + 0.4, p.r1 + 0.4, 0.6, { segments: 32, caps: true }),
+    closedCylinder(p.r1 + 0.4, p.r1 + 0.4, 0.6),
     C.white,
     local(F, 0, p.y1, 0)
   )
@@ -660,17 +675,14 @@ function addLowerPod(b, F) {
     local(F, 0, p.roofY, 0)
   )
   for (const [y, h, r] of [p.plate1, p.plate2]) {
-    b.add(
-      cylinder(r, r, h, { segments: 32, caps: true }),
-      C.white,
-      local(F, 0, y, 0)
-    )
+    b.add(closedCylinder(r, r, h), C.white, local(F, 0, y, 0))
   }
 }
 
 /**
- * 上塔楼（第二只「盖碗」）：深色内筒 + 三道白色开敞平台 + 暗红倒锥台（三道楼层线）
- * + 最宽处白色观光平台、栏杆与四角玻璃挑台 + 浅灰锥形顶盖（一道红带）+ 白色短筒
+ * 上塔楼（第二只「盖碗」）：深色内筒 + 三道白色开敞平台 + 暗红倒锥台（分段略外鼓成碗形，三道楼层线）
+ * + 最宽处白色观光平台、栏杆与四角玻璃挑台 + 浅灰锥形顶盖（一道红带）+ 白色短筒。
+ * 悬空的平台、环板一律上下封口（closedCylinder），阴影贴图里才有朝下的背光面
  */
 function addUpperPod(b, F) {
   const p = POD2
@@ -679,15 +691,19 @@ function addUpperPod(b, F) {
   const [d0, d1, dr] = p.drum
   b.add(cylinder(dr, dr, d1 - d0, seg), C.drum, local(F, 0, d0, 0))
   for (const y of p.rings) {
-    b.add(
-      cylinder(p.ringR, p.ringR, p.ringH, capped),
-      C.white,
-      local(F, 0, y, 0)
-    )
+    b.add(closedCylinder(p.ringR, p.ringR, p.ringH), C.white, local(F, 0, y, 0))
   }
   const [c0, c1, cr0, cr1] = p.cone
-  const rAt = (y) => cr0 + ((cr1 - cr0) * (y - c0)) / (c1 - c0)
-  b.add(cylinder(cr0, cr1, c1 - c0, seg), C.pod2, local(F, 0, c0, 0))
+  // 碗形轮廓：线性收分上叠加 bulge · sin(π·t) 的外鼓，两端仍是 cr0 / cr1
+  const rAt = (y) => {
+    const t = (y - c0) / (c1 - c0)
+    return cr0 + (cr1 - cr0) * t + p.bulge * Math.sin(Math.PI * t)
+  }
+  for (let i = 0; i < p.coneSegs; i++) {
+    const ya = c0 + ((c1 - c0) * i) / p.coneSegs
+    const yb = c0 + ((c1 - c0) * (i + 1)) / p.coneSegs
+    b.add(cylinder(rAt(ya), rAt(yb), yb - ya, seg), C.pod2, local(F, 0, ya, 0))
+  }
   for (const y of p.lines) {
     b.add(
       cylinder(rAt(y) + 0.12, rAt(y + 0.45) + 0.12, 0.45, seg),
@@ -696,14 +712,14 @@ function addUpperPod(b, F) {
     )
   }
   const [dy, dh, drr] = p.deck
-  b.add(cylinder(drr, drr, dh, capped), C.white, local(F, 0, dy, 0))
+  b.add(closedCylinder(drr, drr, dh), C.white, local(F, 0, dy, 0))
   const [ry, rh, rr] = p.rail
   b.add(cylinder(rr, rr, rh, seg), C.rail, local(F, 0, ry, 0))
   // 四角玻璃挑台（资料：218 m 室外观光层四角各一个透明玻璃挑台），朝四个对角方向
   for (let k = 0; k < 4; k++) {
     const a = Math.PI / 4 + (k * Math.PI) / 2
     b.add(
-      box(3.2, 2.6, 2.4),
+      box(3.2, 2.6, 2.4, { bottom: true }),
       C.balcony,
       local(F, Math.sin(a) * 20.3, dy + dh, Math.cos(a) * 20.3, a)
     )
@@ -717,7 +733,7 @@ function addUpperPod(b, F) {
     local(F, 0, p.lidBand, 0)
   )
   for (const [y, h, r] of [p.topRing, p.topCap]) {
-    b.add(cylinder(r, r, h, capped), C.white, local(F, 0, y, 0))
+    b.add(closedCylinder(r, r, h), C.white, local(F, 0, y, 0))
   }
   const [t0, t1, tr] = p.top
   b.add(cylinder(tr, tr, t1 - t0, capped), C.white, local(F, 0, t0, 0))
@@ -739,7 +755,11 @@ function addTop(b, F) {
     }
   }
   const d = TOP_DECK
-  b.add(box(d.side, d.h, d.side), C.podRoof, local(F, 0, d.y, 0))
+  b.add(
+    box(d.side, d.h, d.side, { bottom: true }),
+    C.podRoof,
+    local(F, 0, d.y, 0)
+  )
 
   // 桅杆：每段在警示色分界处再切开，按所在色带着色（方截面，外接半径 = 边长 / √2）
   const bandColor = (y) =>
@@ -934,8 +954,9 @@ export function build(ctx) {
   const g = b.bake()
   if (g) {
     const mat = landmarkMaterial()
-    // 主体由封闭体块组成（绕向已统一朝外）：阴影贴图只画背光面，
-    // 避免 339 m 高的白色塔身、斜撑在向阳面上出现自阴影条纹（做法同 IFS）
+    // 阴影贴图只画背光面，避免 339 m 高的白色塔身、斜撑在向阳面上出现自阴影条纹（做法同 IFS）。
+    // 前提：挡光的构件都要有背光面——自建体块绕向已统一朝外（orient），悬空的底面朝下、
+    // 平台与环板上下封口（annulus down / closedCylinder）；贴地的单层面（护坡、水面、铺装顶）不挡光，无妨
     mat.shadowSide = BackSide
     meshes.push(new Mesh(g, mat))
   }
@@ -960,14 +981,18 @@ export function build(ctx) {
       density: RIVER_WALK.density
     },
     {
-      points: circleWorld(F, 0, 0, RING_WALK.r, RING_WALK.n),
+      points: circlePolygon(...toWorld(F, 0, 0), RING_WALK.r, RING_WALK.n),
       y: BASE_H,
       width: RING_WALK.width,
       closed: true,
       density: RING_WALK.density
     },
     {
-      points: circleWorld(F, PANDA.u, PANDA.v, PANDA_WALK.r, PANDA_WALK.n),
+      points: circlePolygon(
+        ...toWorld(F, PANDA.u, PANDA.v),
+        PANDA_WALK.r,
+        PANDA_WALK.n
+      ),
       y: PLAZA_Y,
       width: PANDA_WALK.width,
       closed: true,
