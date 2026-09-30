@@ -41,8 +41,8 @@ export const LANDMARK_MODULES = {
   宽窄巷子: kuanzhai,
   人民公园: peoplesPark,
   文殊院: wenshu,
-  合江亭: hejiang,
-  "望江楼·九眼桥": wangjiang,
+  "合江亭·安顺廊桥": hejiang,
+  望江楼: wangjiang,
   天府熊猫塔: pandaTower,
   "武侯祠·锦里": wuhou
 }
