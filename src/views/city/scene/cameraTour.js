@@ -13,8 +13,9 @@ import { Spherical, Vector3 } from "three"
 const DEG = Math.PI / 180
 // 大角度转向放慢：方位差超过 SLOW_TURN_FROM 时，飞行时长按「方位差 / SLOW_TURN_FROM」放大，
 // 最多 × SLOW_TURN_MAX。easeInOutCubic 中点斜率为 3，峰值角速度 = 3 × 方位差 / 时长：
-// timing.fly 固定 2 s 时，首次加载总览 → 第 0 站的 118° 转向峰值约 177°/s，大屏上显得甩；
-// 放大 1.31 倍（约 2.6 s）后约 135°/s。方位差不超过 90° 的飞行时长不变
+// timing.fly 固定 2 s 时，10 站版总览 → 第 0 站的 118° 转向峰值约 177°/s，大屏上显得甩；
+// 放大 1.31 倍（约 2.6 s）后约 135°/s。11 站版总览（theme.js）→ 第 0 站约 102°，约 2.26 s。
+// 方位差不超过 90° 的飞行时长不变
 const SLOW_TURN_FROM = 90 * DEG
 const SLOW_TURN_MAX = 1.6
 
