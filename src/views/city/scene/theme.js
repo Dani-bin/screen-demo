@@ -198,8 +198,8 @@ export const THEME = {
     // 超过总览距离后近 / 远裁剪面随距离放大（CityScene._updateClip），深度精度与总览时相同；
     // 整城阴影由 shadow.js 按城市范围实算，与相机距离无关
     radiusMax: 16000
-    // 注视点可移动范围不在这里配置：CityScene 按 chengdu.json 的 meta.bbox（拉数范围，
-    // 比 meta.clip 四周各内缩 300 m）换算成局部坐标，数据范围变了自动跟随
+    // 注视点可移动范围不在这里配置：CityScene 按 chengdu.json 的 meta.bbox 与 meta.enclaves
+    // （拉数范围，比各自的 clip 四周各内缩 300 m）换算成局部坐标矩形，数据范围变了自动跟随
   },
   tour: { fly: 2, hold: 8, idle: 15, drift: 0.004 }, // 秒；drift 为停靠时环绕速度（弧度/秒）
 

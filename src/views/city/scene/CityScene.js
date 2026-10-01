@@ -258,21 +258,23 @@ export class CityScene {
         t: [tx, lift, tz]
       }
     })
-    // 注视点可移动范围 = 拉数范围 meta.bbox（[南, 西, 北, 东] 纬经度）换成局部坐标：
-    // 道路 / 河流按 bbox 外扩 300 m 裁剪（meta.clip），楼栋落在 bbox 附近，
-    // 注视点不出 bbox，镜头就不会移到数据边缘外的空地上。
-    // 南扩前 theme.camera.bounds 写死为 x [-2600, 3100]、z [-3100, 2300]；按 bbox 换算后
-    // 现为约 x [-2461, 3093]、z [-3161, 3692]：南界随南扩外移，北界外扩约 61 m，
-    // 西界收紧约 139 m（东界收紧约 7 m），西侧边缘不能再像以前那样拉到 bbox 以外
-    const [south, west, north, east] = this.geometry.meta.bbox
-    const [x0, z1] = this.project.toLocal(west, south)
-    const [x1, z0] = this.project.toLocal(east, north)
+    // 注视点可移动范围 = 各块拉数范围换成局部坐标的矩形：主城区 meta.bbox 与各飞地 meta.enclaves[].bbox
+    // （[南, 西, 北, 东] 纬经度）。道路 / 河流按 bbox 外扩 300 m 裁剪（clip），楼栋落在 bbox 附近，
+    // 注视点不出这些矩形，镜头就不会停在数据边缘外的空地上；
+    // 人工操作时夹到离注视点最近的一块，飞行途中不夹取（见 CameraTour.apply）
+    const meta = this.geometry.meta
+    const bounds = [meta, ...(meta.enclaves || [])].map(({ bbox }) => {
+      const [south, west, north, east] = bbox
+      const [x0, z1] = this.project.toLocal(west, south)
+      const [x1, z0] = this.project.toLocal(east, north)
+      return { x: [x0, x1], z: [z0, z1] }
+    })
     this.tour = new CameraTour({
       camera: this.camera,
       domElement: this.canvas,
       stops,
       overview: this.theme.camera.overview,
-      limits: { ...this.theme.camera, bounds: { x: [x0, x1], z: [z0, z1] } },
+      limits: { ...this.theme.camera, bounds },
       timing: this.theme.tour,
       onStopChange: (index) => {
         this.markers.setActive(index)
