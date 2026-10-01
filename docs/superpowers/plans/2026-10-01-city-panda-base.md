@@ -1219,6 +1219,39 @@ export function computeCityShadow(
     )
 ```
 
+- [ ] **Step 2b: 飞地内不退回整城阴影**
+
+整城阴影只覆盖主城区；停靠熊猫基地站时若照旧「视野超出收紧范围就恢复整城阴影」，飞地会整片失去阴影（站点机位平移 333 m + 距离 1000 m，只余 167 m，滚轮拉远两格就会触发）。`_buildCity` 里在算整城阴影前把主城区判定存成方法（与 Step 2 的 within 共用）：
+
+```js
+    const [cx0, cz0, cx1, cz1] = d.meta.clip
+    // 主城区判定（meta.clip）：整城阴影只计入主城区，_loop 也按它决定停站阴影如何退出
+    this._inMain = (x, z) => x >= cx0 && x <= cx1 && z >= cz0 && z <= cz1
+```
+（Step 2 的 `within` 改为直接传 `this._inMain`。）`_loop` 里停站阴影的判断改为：
+
+```js
+    // 停靠时人工拉远、或滚轮缩放把注视点带离站点，视野超出收紧范围：
+    // 主城区——恢复整城阴影（整城阴影覆盖整个主城区）；
+    // 飞地——整城阴影不含飞地，恢复它飞地就没有影子了，改为把收紧范围移到当前注视点（重绘一次），
+    //   注视点离收紧中心超过半径一半才移，避免逐帧重绘。
+    // 视野粗估为「注视点离收紧中心的水平距离 + 相机距离」；恢复后不会因拉近而重新收紧，只在下一次飞抵站点时收紧；
+    // 因此各站机位距离加注视点平移（cam.look）必须小于 1.5 倍半径，否则一飞抵就会被这里立即恢复
+    if (this.shadowFitted) {
+      const t = this.tour.target
+      const [cx, , cz] = this.shadowCenter
+      const off = Math.hypot(t.x - cx, t.z - cz)
+      if (this._inMain(t.x, t.z)) {
+        if (off + this.tour.getDistance() > STOP_SHADOW_RADIUS * 1.5) {
+          this._resetShadow()
+        }
+      } else if (off > STOP_SHADOW_RADIUS * 0.5) {
+        this._fitShadow([t.x, 0, t.z], STOP_SHADOW_RADIUS)
+      }
+    }
+```
+设计文档 §2.3 补一句：停靠飞地站时拉远或移动视角不恢复整城阴影，收紧范围随注视点移动（离中心超过 500 m 时重绘）。
+
 - [ ] **Step 3: 数值核对**
 
 ```bash
@@ -1238,8 +1271,9 @@ Expected：「全部」约为「主城区」的 1.8～2 倍；「主城区」与
 - [ ] **Step 4: Lint、预览、提交**
 
 Lint 同 Task 4 Step 8。预览（主控）：`#/city` 总览与第 0 站阴影与改动前一致（楼影清晰度不变），控制台无报错。
+（飞地停站阴影的行为在 Task 6 有了熊猫基地站之后由主控验收。）
 ```bash
-git add src/views/city/scene/shadow.js src/views/city/scene/CityScene.js
+git add src/views/city/scene/shadow.js src/views/city/scene/CityScene.js docs/superpowers/specs/2026-10-01-city-panda-base-design.md
 git commit -m "feat(city): 整城阴影只按主城区计算" -m "computeCityShadow 新增 within 过滤；飞地只在停靠该站时有阴影。" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
