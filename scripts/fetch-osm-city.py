@@ -16,10 +16,15 @@
 
 只拉飞地、主城区沿用已有文件（本地没有 Overpass 缓存时，避免主城区随 OSM 更新而变化）：
     python3 scripts/fetch-osm-city.py --keep-main public/city/chengdu.json
+    重复运行：本脚本产出的文件带 meta.mainCounts，对它再跑 --keep-main 会保留其中的主城区、
+    丢弃旧飞地并重新拉取飞地（可反复刷新飞地，不会重复追加）；若旧文件含飞地却没有 mainCounts，
+    无法分出主城区，会报错退出，请改用不含飞地的旧文件（如 git show <提交>:public/city/chengdu.json）。
 
 输出结构（坐标为以 origin 为原点的米制局部坐标，X 向东、Z 向南）：
     meta      城市名、原点经纬度、主城区范围 bbox 与 clip 裁剪矩形 [xmin, zmin, xmax, zmax]、
-              飞地列表 enclaves [{ name, bbox, clip }]
+              飞地列表 enclaves [{ name, bbox, clip }]、
+              主城区各类要素个数 mainCounts { buildings, roads, water, parks, rivers }
+              （下面五个数组的前 mainCounts[k] 项是主城区，其后是飞地追加的元素）
     buildings [{ p: [[x, z], ...], h: 楼高(米), n: 楼名或 null }]
     roads     [{ p: [[x, z], ...], c: "a"|"b"|"c"|"d" }]   a 主干 b 次干 c 支路 d 街巷
     water     [[[x, z], ...]]   水面多边形
@@ -238,7 +243,11 @@ def main():
         "--enclave", action="append", metavar="名称:南,西,北,东",
         help="飞地（主城区以外单独拉数的小块区域），可重复；不给时用 DEFAULT_ENCLAVES",
     )
-    ap.add_argument("--keep-main", metavar="旧JSON", help="主城区沿用该文件的数据（不重拉），只拉飞地并追加")
+    ap.add_argument(
+        "--keep-main", metavar="旧JSON",
+        help="主城区沿用该文件的数据（不重拉），只拉飞地并追加；"
+        "文件由本脚本产出时（带 meta.mainCounts）只取其中的主城区部分，旧飞地丢弃重拉，可重复运行",
+    )
     ap.add_argument("--origin", default="104.0657,30.6574", help="lon,lat，作为局部坐标原点")
     ap.add_argument("--out", default="public/city/chengdu.json")
     ap.add_argument("--cache-dir", default="scripts/osm-cache")
@@ -337,9 +346,28 @@ def main():
             old = json.load(f)
         if old["meta"]["origin"] != [lon0, lat0]:
             raise SystemExit(f"--keep-main 文件原点 {old['meta']['origin']} 与 --origin 不一致")
-        main_part = {k: old[k] for k in LAYERS}
-        main_bbox, main_clip = old["meta"]["bbox"], old["meta"]["clip"]
-        print(f"主城区沿用 {args.keep_main}：建筑 {len(old['buildings'])}，道路 {len(old['roads'])}")
+        old_meta = old["meta"]
+        if "mainCounts" in old_meta:
+            # 本脚本产出的文件：各数组前 mainCounts[k] 项是主城区，其后是旧飞地。
+            # 只取主城区部分，旧飞地丢弃后重拉，这样重复运行不会把飞地追加两遍
+            counts = old_meta["mainCounts"]
+            if any(counts[k] > len(old[k]) for k in LAYERS):
+                raise SystemExit("--keep-main 文件的 meta.mainCounts 超出数组长度，文件已损坏")
+            main_part = {k: old[k][: counts[k]] for k in LAYERS}
+        elif old_meta.get("enclaves"):
+            # 含飞地却没有 mainCounts（旧版脚本产出），分不出主城区，不能硬当主城区用
+            raise SystemExit(
+                "--keep-main 文件已含飞地但缺少 meta.mainCounts，无法分出主城区；"
+                "请改用不含飞地的旧文件（如 git show <提交>:public/city/chengdu.json）"
+            )
+        else:
+            main_part = {k: old[k] for k in LAYERS}  # 不含飞地的旧文件：整份都是主城区
+        main_bbox, main_clip = old_meta["bbox"], old_meta["clip"]
+        print(
+            f"主城区沿用 {args.keep_main}：建筑 {len(main_part['buildings'])}，"
+            f"道路 {len(main_part['roads'])}，水面 {len(main_part['water'])}，"
+            f"绿地 {len(main_part['parks'])}，河流 {len(main_part['rivers'])}"
+        )
     else:
         south, west, north, east = [float(v) for v in args.bbox.split(",")]
         print("拉取主城区…")
@@ -347,6 +375,8 @@ def main():
         main_bbox, main_clip = [south, west, north, east], main_part["clip"]
 
     layers = {k: list(main_part[k]) for k in LAYERS}
+    # 主城区各类要素个数（飞地追加之前）：写进 meta.mainCounts，之后重跑 --keep-main 靠它分出主城区
+    main_counts = {k: len(layers[k]) for k in LAYERS}
     # 水面 / 绿地多边形不裁剪：大面（如河流关系）可能被主城区与飞地的查询都返回，按几何去重
     # （同一 OSM 面两次投影、取整的结果逐点相同）
     seen = {k: {json.dumps(p) for p in layers[k]} for k in ("water", "parks")}
@@ -375,8 +405,8 @@ def main():
         enclaves.append({"name": name, "bbox": [es, ew, en, ee], "clip": part["clip"]})
 
     if args.keep_main:
-        # 自检：主城区部分与旧文件逐项一致（飞地只追加在后面）
-        if not all(layers[k][: len(old[k])] == old[k] for k in LAYERS):
+        # 自检：输出前 main_counts[k] 项与沿用的主城区部分逐项一致（飞地只追加在后面）
+        if not all(layers[k][: main_counts[k]] == main_part[k] for k in LAYERS):
             raise SystemExit("自检失败：主城区数据与旧文件不一致")
         print("自检：主城区数据与旧文件逐项一致")
 
@@ -384,6 +414,7 @@ def main():
         "meta": {
             "city": args.city, "origin": [lon0, lat0],
             "bbox": main_bbox, "clip": main_clip, "enclaves": enclaves,
+            "mainCounts": main_counts,
         },
         **layers,
     }
