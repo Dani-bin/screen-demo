@@ -1,12 +1,14 @@
 /*
- * 太阳阴影范围：整城 / 按站点收紧
+ * 太阳阴影范围：按数据区域的静态阴影 / 按站点收紧
  * ----------------------------------------------------------
- * 整城一张 4096 阴影贴图覆盖全部投影物：正交范围与朝向由 computeCityShadow 按城市
- * 建好后的真实投影物实算，texel = 正方形边长 / 4096，随数据范围变化（米级），
- * 景点的柱子、檐下、栏杆阴影仍会糊掉。巡览停靠某站时，
- * 把阴影正交相机收紧到站点周围 ±R 米（R = 1000 时约 0.5 m/texel），
- * 回总览 / 离站时恢复整城范围。
- * 代价：停靠期间离站点 R 以外的楼没有阴影（站点机位视野基本落在 R 以内）。
+ * 阴影只有一张 4096 贴图，但每块数据区域（主城区、各飞地）各有一份静态范围：
+ * 正交范围与朝向由 computeCityShadow 按该区域（within 过滤）建好后的真实投影物实算，
+ * texel = 正方形边长 / 4096，随区域大小变化（米级，主城区约 8 km → 约 2 m），
+ * 景点的柱子、檐下、栏杆阴影仍会糊掉；区域相距数公里，合成一份会把范围撑大约一倍。
+ * 巡览停靠某站时，把阴影正交相机收紧到站点周围 ±R 米（R = 1000 时约 0.5 m/texel），
+ * 回总览 / 离站 / 拉远时恢复注视点所在区域的静态范围。
+ * 代价：停靠期间离站点 R 以外的楼没有阴影（站点机位视野基本落在 R 以内）；
+ * 平时同一画面里只有注视点所在区域有阴影。
  *
  * 两个 apply 函数只改太阳与阴影相机参数，调用方负责置 renderer.shadowMap.needsUpdate = true。
  * CityScene 与 lab 预览页共用，保证预览截图与线上停靠时一致。
@@ -106,8 +108,9 @@ function convexHull(as, bs) {
 }
 
 /**
- * 由城市建好后的投影物算整城阴影相机：覆盖全部投影物与其影子落点的最紧正交范围，
- * 并绕光轴转到 texel 最小的朝向。须在楼栋、通用树、景点、落点球都建完之后调用。
+ * 由城市建好后的投影物算静态阴影相机：覆盖这些投影物（传 within 时只算落在该区域内的）
+ * 与其影子落点的最紧正交范围，并绕光轴转到 texel 最小的朝向。
+ * 须在楼栋、通用树、景点、落点球都建完之后调用。
  *
  * - 投影物（凡 castShadow 的都要包住，漏掉的会在范围边缘被截出硬边）：
  *   · 楼栋：轮廓顶点取楼底（y = 0）与楼顶两个高度；
@@ -277,7 +280,7 @@ export function computeCityShadow(
 }
 
 /**
- * 整城阴影：太阳在 light.sunPosition、朝向原点，范围、朝向与偏移取 computeCityShadow 的结果。
+ * 区域静态阴影：太阳在 light.sunPosition、朝向原点，范围、朝向与偏移取 computeCityShadow 的结果。
  * @param {THREE.DirectionalLight} sun
  * @param {object} light THEME.light
  * @param {object} box computeCityShadow 的返回值
@@ -319,7 +322,7 @@ export function applyStopShadow(
   const c = new Vector3(...center)
   sun.position.copy(c).addScaledVector(dir, SUN_DISTANCE)
   sun.target.position.copy(c)
-  // 整城阴影会旋转阴影相机（computeCityShadow 的 up）；站点范围是正方形、以站点为中心，
+  // 区域静态阴影会旋转阴影相机（computeCityShadow 的 up）；站点范围是正方形、以站点为中心，
   // 恢复默认 up，保持停靠画面与改动前一致
   sun.shadow.camera.up.copy(DEFAULT_UP)
   Object.assign(sun.shadow.camera, {

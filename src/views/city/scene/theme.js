@@ -67,8 +67,8 @@ export const THEME = {
     sunPosition: [-1400, 2600, 1800],
     shadowMapSize: 4096,
     /*
-     * 整城阴影正交相机的范围与朝向由 shadow.js 的 computeCityShadow 在城市建好后实算
-     * （包住全部楼栋、通用树真实树冠、景点与落点球及其影子落地深度，并绕光轴转到 texel 最小的角度），
+     * 各数据区域静态阴影的正交范围与朝向由 shadow.js 的 computeCityShadow 在城市建好后按区域实算
+     * （包住该区域的楼栋、通用树真实树冠、景点与落点球及其影子落地深度，并绕光轴转到 texel 最小的角度），
      * 这里只给平面与深度方向的外扩余量（米）
      */
     shadowMargin: 8,
@@ -196,7 +196,7 @@ export const THEME = {
     radiusMin: 300,
     // 人工缩放的最远距离：约为总览距离（8200 m）的 2 倍，拉到最远时整城约占画面一半，能看到城区外围。
     // 超过总览距离后近 / 远裁剪面随距离放大（CityScene._updateClip），深度精度与总览时相同；
-    // 整城阴影由 shadow.js 按城市范围实算，与相机距离无关
+    // 区域静态阴影由 shadow.js 按区域范围实算，与相机距离无关
     radiusMax: 16000
     // 注视点可移动范围不在这里配置：CityScene 按 chengdu.json 的 meta.bbox 与 meta.enclaves
     // （拉数范围，比各自的 clip 四周各内缩 300 m）换算成局部坐标矩形，数据范围变了自动跟随
