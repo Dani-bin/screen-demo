@@ -22,6 +22,8 @@ export function build(ctx) {
   // earTop：南大门熊猫头左耳顶的世界高度（门前铺装 PAVE_Y + 真实 10.48 m × 1.25 插画放大 ≈ 14.1），
   // 作定位针底座（同其他景点：markerHeight 取模型顶的世界 y）
   const { earTop } = buildGate(site)
+  // 到站机位要按定位针底座抬高（site.cameraPos），熊猫朝向、视线保护都用它
+  site.markerHeight = earTop
   buildHalls(site)
   buildLake(site)
   buildEnclosures(site)
