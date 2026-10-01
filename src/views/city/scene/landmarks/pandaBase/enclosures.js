@@ -34,6 +34,7 @@ import {
 import { buildNurseries } from "./nurseries.js"
 import { C, F_SOLID, LAWN_Y, YARD_Y } from "./site.js"
 import {
+  INNER_CURB,
   MOAT,
   addBambooClump,
   addClimbPanda,
@@ -81,7 +82,7 @@ const VILLAS = [
     // 文档：地块 (7165, −8860) 127 × 55 @142°，活动场 100 × 36 @142°，兽舍西北端 (7138, −8895)。
     // 环路 loop 在 (7178, −8863)～(7191, −8848) 拐了个角，正好横在文档矩形的长轴上；科普路 science
     // 又贴着西侧。改成拐角西南侧的 L 形：北段是两路之间的楔形地（兽舍在楔形尖、离两路 ≥ 5.9 m），
-    // 南段是环路以南、科普路以北的条带。约 3,700 ㎡（文档 3,600 ㎡）。凹角（拐角下）倒圆半径 4 m
+    // 南段是环路以南、科普路以北的条带。倒圆后约 4,150 ㎡（文档 3,600 ㎡）。凹角（拐角下）倒圆半径 4 m
     yard: fillet(
       [
         [7149, -8910],
@@ -189,8 +190,10 @@ const VILLAS = [
 
 /*
  * 1 号别墅（way 613349748，圆形兽舍，拟合圆心 (6751.0, −9099.5)、r 15.4）：
- * 兽舍为环形屋面（文档推定中心圆院 r 6），墙顶 6.3（×1.25）；活动场为环形场，内弧 r 17（贴着兽舍外一圈草地，
- * 不做墙），外弧 r 31 + 3·cos(方位 − 135°)（东南半最宽 34、西北半 28，即文档「东南半开阔」）。
+ * 兽舍为环形屋面（文档推定中心圆院 r 6），墙顶 6.3（×1.25）；活动场为环形场，内弧取 OSM 轮廓离圆心的
+ * 最远距离 + 1 m（现数据 17.6 + 1 ≈ 18.6，文档的 r 17 会被兽舍东北角顶进场里），贴着兽舍外一圈草地、
+ * 做一道矮挡土墙（INNER_CURB）；外弧 r 31 + 3·cos(方位 − 135°)（东南半最宽 34、西北半 28，
+ * 即文档「东南半开阔」）。
  * 参观道 no1 自东北伸到兽舍东门（方位 55°～75°、r 18～29），环形场在 30°～98° 之间断开让路，
  * 两端各一道径向端墙。栖架即文档第 10 行（东南，趴架熊猫）
  */
@@ -206,7 +209,7 @@ const VILLA1 = {
   court: 6,
   top: 6.3,
   yard: {
-    rIn: 17,
+    rInPad: 1, // 内弧 = 兽舍轮廓离圆心的最远距离 + rInPad
     rOut: (b) => 31 + 3 * Math.cos((b - 135) * DEG),
     b0: 98,
     span: 292,
@@ -216,7 +219,7 @@ const VILLA1 = {
   perch: { at: [6768, -9083], ladder: 35, climb: true }, // #10
   // 其余构件 [方位, 离圆心距离]
   pool: [205, 24],
-  soil: [170, 22.5],
+  soil: [170, 24.5],
   logs: [245, 23],
   bamboo: [310, 25],
   trees: [
@@ -392,9 +395,8 @@ function addYardProps(site, spec, pos, bufs) {
   const items = []
   if (spec.perch) {
     const [x, z] = pos(spec.perch)
-    const r = addPerch(b, x, YARD_Y, z, { ladder: spec.perch.ladder })
-    if (spec.perch.climb) addClimbPanda(b, r.anchor)
-    site.solid(r.foot)
+    const r = addPerch(site, x, YARD_Y, z, { ladder: spec.perch.ladder })
+    if (spec.perch.climb) addClimbPanda(site, r.anchor)
     items.push({ name: "栖架", poly: r.foot })
     items.push({ name: "爬梯落脚点", poly: disk(...r.ladderFoot, 0.6) })
   }
@@ -434,7 +436,7 @@ function addYardProps(site, spec, pos, bufs) {
   })
   if (spec.panda) {
     const [x, z] = spec.panda.at
-    addSitPanda(b, x, YARD_Y, z, spec.panda.h)
+    addSitPanda(site, x, YARD_Y, z, spec.panda.h)
     // 坐姿熊猫占地：身体半径约 0.3 h，脚向脸前伸出约 0.45 h
     items.push({ name: "熊猫", poly: disk(x, z, 0.4 * spec.panda.h) })
   }
@@ -479,20 +481,30 @@ function buildVilla1(site, bufs) {
     spread: 70
   })
   const y = v.yard
-  const hole = ringSector(v.c, y.rIn, y.rOut, y.b0, y.span, y.n, y.nIn)
+  const rIn =
+    Math.max(...outer.map(([x, z]) => Math.hypot(x - v.c[0], z - v.c[1]))) +
+    y.rInPad
+  const hole = ringSector(v.c, rIn, y.rOut, y.b0, y.span, y.n, y.nIn)
   site.addYard(hole)
   addMoat(
     b,
     (d) => arcPts(v.c, (bb) => y.rOut(bb) + d, y.b0, y.span, y.n),
     false
   )
+  // 内弧矮挡土墙：内弧的「外」朝兽舍（半径变小）
+  addMoat(
+    b,
+    (d) => arcPts(v.c, rIn - d, y.b0, y.span, y.nIn),
+    false,
+    INNER_CURB
+  )
   for (const bb of [y.b0, y.b0 + y.span]) {
-    radialWall(b, v.c, bb, y.rIn - 0.25, y.rOut(bb) + 0.3)
+    radialWall(b, v.c, bb, rIn - 0.25, y.rOut(bb) + 0.3)
   }
   site.solid(
     ringSector(
       v.c,
-      y.rIn,
+      rIn,
       (bb) => y.rOut(bb) + MOAT.hedgeOut,
       y.b0,
       y.span,

@@ -8,6 +8,9 @@
  * 树干竹筒护套）。
  * 约定：坐标为世界坐标 [x, z]，高度为世界 y；构件进主体批 b（双面材质，三角形绕向不影响显示），
  * 贴地的薄片（水池、裸土、原木排）进地面批 gb（单面材质，三角形一律朝上）。
+ * 朝向：熊猫的脸、趴架熊猫的头、栖架的正面都朝到站机位的相机，方位按各自位置用
+ * site.bearingToCamera 算（透视下各处约 119°～137°，不是统一的 125°）；熊猫头部登记进
+ * site.viewTargets，供后续种树种竹避开视线（site.blocksView）。
  */
 import {
   IcosahedronGeometry,
@@ -31,9 +34,6 @@ import { BAMBOO, C, LAWN_Y, YARD_Y } from "./site.js"
 
 const DEG = Math.PI / 180
 const Y_UP = new Vector3(0, 1, 0)
-
-/** 到站机位的方位角：熊猫脸、趴架熊猫的头、栖架的正面都朝这里（设计文档 4.12） */
-export const CAMERA_BEARING = 125
 
 /* ---------------- 轮廓 ---------------- */
 
@@ -140,6 +140,17 @@ export const MOAT = {
 }
 // 隔墙、端墙（box）厚度
 const WALL_T = 0.5
+/**
+ * addMoat 的选项：活动场内弧（贴着兽舍 / 环楼外一圈草地、没有游客的一侧）的矮挡土墙。
+ * 墙厚 0.3，自场地顶到草地顶以上 0.1 m（盖住草地洞 0.55 m 的土坎），每段 4 个三角形
+ */
+export const INNER_CURB = {
+  hedge: false,
+  rail: false,
+  top: LAWN_Y + 0.1,
+  wallIn: MOAT.wallIn,
+  wallOut: 0.26
+}
 
 /** 折线 R 上 y0 → y1 的竖直面带（每段 2 个三角形），写进 pos */
 function wallStrip(pos, R, y0, y1, closed) {
@@ -259,7 +270,7 @@ export function addLog(b, a, c, r, color = C.perch) {
 /* ---------------- 原木栖架（4.9，×2.5） ---------------- */
 
 /*
- * 双层栖架：在 frame(x, y0, z, CAMERA_BEARING) 里摆，局部 −Z 朝机位、+Z 为背面。
+ * 双层栖架：在 frame(x, y0, z, 朝机位方位) 里摆，局部 −Z 朝机位、+Z 为背面。
  *   上层台 high：宽 4.5（局部 X）× 深 3.5（局部 Z）、台顶 3.6，四角原木立柱；
  *   下层台 low：6.0 × 4.5、台顶 2.0，接在上层台前方（朝机位一侧），前沿两根立柱、后沿搭在上层台前柱上；
  *   台面 = 一块 0.15 厚的板（box，不做底面）+ 横铺的原木（前沿各一根，下层台再加一根）；
@@ -279,16 +290,19 @@ export const PERCH = {
 }
 
 /**
- * 原木栖架。(x, z) 为上层台中心，y0 为场地顶。
+ * 原木栖架（进 site.b，台面占地登记 site.solid）。(x, z) 为上层台中心，y0 为场地顶；
+ * 正面朝 site.bearingToCamera(x, z)。
  * @param {object} [o] { single = false, ladder = 35（爬梯自台沿伸出的世界方位） }
  * @returns {{ anchor: Matrix4, foot: Array<[number, number]>, ladderFoot: [number, number] }}
- *   anchor：趴架熊猫的 frame（上层台背面台沿中点、台顶、朝向机位）；foot：台面占地四边形（登记实体用）；
+ *   anchor：趴架熊猫的 frame（上层台背面台沿中点、台顶、朝向机位）；foot：台面占地四边形；
  *   ladderFoot：爬梯落脚点（布置自检用）
  */
-export function addPerch(b, x, y0, z, o = {}) {
+export function addPerch(site, x, y0, z, o = {}) {
   const { single = false, ladder = 35 } = o
+  const b = site.b
   const P = PERCH
-  const F = frame(x, y0, z, CAMERA_BEARING)
+  const facing = site.bearingToCamera(x, z)
+  const F = frame(x, y0, z, facing)
   const W = (u, y, v) => {
     const p = new Vector3(u, y, v).applyMatrix4(F)
     return [p.x, p.y, p.z]
@@ -331,8 +345,11 @@ export function addPerch(b, x, y0, z, o = {}) {
   }
   // 爬梯：自上层台中心沿 ladder 方位到台沿（矩形台沿上的交点）内 0.2 m，再水平伸出 ladderRun 落地
   const d = [Math.sin(ladder * DEG), -Math.cos(ladder * DEG)]
-  const ex = hi.w / 2 / Math.max(1e-6, Math.abs(localX(ladder)))
-  const ez = hi.d / 2 / Math.max(1e-6, Math.abs(localZ(ladder)))
+  // 爬梯方向在栖架 frame 里的分量：局部 X 指向「朝向 + 90°」，局部 −Z 指向朝向
+  const lx = Math.cos((ladder - facing - 90) * DEG)
+  const lz = Math.cos((ladder - facing) * DEG)
+  const ex = hi.w / 2 / Math.max(1e-6, Math.abs(lx))
+  const ez = hi.d / 2 / Math.max(1e-6, Math.abs(lz))
   const edge = Math.min(ex, ez) - 0.2
   const top = [x + d[0] * edge, y0 + hi.top - 0.1, z + d[1] * edge]
   const foot = [
@@ -354,17 +371,9 @@ export function addPerch(b, x, y0, z, o = {}) {
     const p = W(u, 0, v)
     return [p[0], p[2]]
   })
+  site.solid(fp)
   const anchor = local(F, 0, hi.top, hi.d / 2)
   return { anchor, foot: fp, ladderFoot: [foot[0], foot[2]] }
-}
-
-// 世界方位 bearing 在栖架 frame（方位 CAMERA_BEARING）里的单位方向：局部 X 指向 CAMERA_BEARING + 90°，
-// 局部 −Z 指向 CAMERA_BEARING
-function localX(bearing) {
-  return Math.cos((bearing - CAMERA_BEARING - 90) * DEG)
-}
-function localZ(bearing) {
-  return Math.cos((bearing - CAMERA_BEARING) * DEG)
 }
 
 /*
@@ -383,24 +392,48 @@ export function addForkPerch(b, x, y0, z, bearing) {
   return rectPolygon(x, z, 3.4, 2.4, bearing + 90)
 }
 
-/** 趴架熊猫：kit climb 姿态，高 6 m，frame 为 addPerch 返回的 anchor（flat、细分 0，并入主体批） */
-export function addClimbPanda(b, anchor) {
-  addPanda(b, anchor, { height: 6, pose: "climb", flat: true, detail: 0 })
+/*
+ * 受保护视线的起点（熊猫头部）：坐姿取坐面以上 0.85 h（头心约 0.77 h、耳尖约 1.0 h）；
+ * 趴姿按 kit/figures.js 的 pandaParts 换算，头心在台沿以上约 0.275 h、朝头的方向（frame 局部 −Z）0.02 h
+ */
+const SIT_HEAD = 0.85
+const CLIMB_HEAD = { y: 0.275, z: -0.02 }
+const CLIMB_H = 6 // 趴架熊猫高（台顶 3.6 ≥ 0.56 × 6）
+
+/**
+ * 趴架熊猫：kit climb 姿态，高 6 m，frame 为 addPerch 返回的 anchor（flat、细分 0，并入主体批）；
+ * 头部登记进 site.viewTargets
+ */
+export function addClimbPanda(site, anchor) {
+  addPanda(site.b, anchor, {
+    height: CLIMB_H,
+    pose: "climb",
+    flat: true,
+    detail: 0
+  })
+  const head = new Vector3(
+    0,
+    CLIMB_HEAD.y * CLIMB_H,
+    CLIMB_HEAD.z * CLIMB_H
+  ).applyMatrix4(anchor)
+  site.viewTargets.push({ x: head.x, y: head.y, z: head.z })
 }
 
 /**
- * 坐姿熊猫：脸朝机位方位 ±20°（按位置播种的确定性随机），frame 局部 +Z 为脸，故方位取「面朝 + 180」。
+ * 坐姿熊猫：脸朝该处望向机位的方位（site.bearingToCamera）±20°（按位置播种的确定性随机），
+ * frame 局部 +Z 为脸，故 frame 方位取「面朝 + 180」；头部登记进 site.viewTargets。
  * @param {number} h 总高：成年 6.5、幼崽 3.8（真实坐高约 1 m 的插画放大）
  */
-export function addSitPanda(b, x, y, z, h) {
+export function addSitPanda(site, x, y, z, h) {
   const rand = mulberry32(hashInts(61, Math.round(x * 10), Math.round(z * 10)))
-  const facing = CAMERA_BEARING + (rand() * 2 - 1) * 20
-  addPanda(b, frame(x, y, z, facing + 180), {
+  const facing = site.bearingToCamera(x, z) + (rand() * 2 - 1) * 20
+  addPanda(site.b, frame(x, y, z, facing + 180), {
     height: h,
     pose: "sit",
     flat: true,
     detail: 0
   })
+  site.viewTargets.push({ x, y: y + SIT_HEAD * h, z })
 }
 
 /* ---------------- 水池、斑块、套竹筒树、矮竹 ---------------- */

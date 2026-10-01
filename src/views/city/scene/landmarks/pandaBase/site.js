@@ -438,6 +438,16 @@ export const WEST_POOLS = [
   ]
 ]
 
+/* ---------------- 熊猫视线保护 ---------------- */
+
+/*
+ * 视线：熊猫头部指向到站机位相机的线段，自头部前方 start 米起、到离头部 reach 米为止。
+ *   start 1 m：活动场里紧挨熊猫的套竹筒树、栖架台面不算挡（它们本来就在熊猫身边）；
+ *   reach 150 m：机位俯视约 18°～35°，150 m 处视线已比头部高出 46 m 以上，再远的树冠够不着
+ */
+const VIEW = { start: 1, reach: 150 }
+const DEG = Math.PI / 180
+
 /* ---------------- 场地对象 ---------------- */
 
 /**
@@ -488,6 +498,7 @@ export function createSite(ctx) {
   // 林下草地要挖的洞：湖、池在这里先登记，活动场由 addYard 追加
   const lawnHoles = [lakes.swan, lakes.ne, ...WEST_POOLS]
   const gb = new ColorBuilder() // 地面批（单面）：草地、广场、园路、活动场地面
+  let camera = null // 到站机位相机位置，cameraPos() 首次调用时算出
   return {
     ctx,
     ll,
@@ -506,6 +517,9 @@ export function createSite(ctx) {
     // 彼此不相交；洞里的内容（草坪、水面）由登记方自己画
     plazaHoles: [],
     paths: [], // 已铺园路 { id, pts, w, y, closed }，walkways 按 id 取高度
+    // 已登记的实体轮廓（site.solid 写入）：建筑、兽舍、栖架、栈台，也有整块「活动场 + 院墙绿篱」
+    // 外扩到绿篱外沿的大轮廓（enclosures.js / nurseries.js）。facingBlocked 拿它判断共墙时，
+    // 贴着活动场的墙面也会被当作「贴着邻楼」，不贴窗带
     solids,
     /** 登记实体（建筑、墙、兽舍）：占用栅格打 F_SOLID，并沿边外扩 pad 米（≥ 0.71 m，见上方格宽说明） */
     solid(poly, pad = 0.8) {
@@ -583,6 +597,77 @@ export function createSite(ctx) {
       grid.fillPoly(poly, F_YARD)
       gb.add(extrudePolygon(poly, [], GROUND_Y, YARD_Y), C.yardGrass)
     },
-    bambooBufs: BAMBOO.map(() => []) // 竹梢顶点按颜色分组（vegetation 写入，最后合成）
+    // 竹梢顶点按颜色分组（vegetation 写入，最后合成）。活动场里的矮竹（「熊猫食堂」）不走这里：
+    // yards.js 自己合成后直接加进了 site.b，vegetation 合成本缓冲时不要再加一遍
+    bambooBufs: BAMBOO.map(() => []),
+    /**
+     * 南大门定位针底座高度（buildGate 返回的左耳顶世界高度 earTop），index.js 在 buildGate 之后写入。
+     * 到站机位要用：CityScene 把注视点与相机一起抬高 markerHeight × 0.5
+     */
+    markerHeight: undefined,
+    /**
+     * 到站机位的相机位置 [x, y, z]（世界坐标），算法同 CityScene._initTour：
+     * 注视点 = 落点 (spot.x, spot.z) + cam.look，相机 = 注视点 + cam.offset，两者都抬高 markerHeight × 0.5。
+     * 首次调用时算出并缓存；须在 markerHeight 写入之后调用，否则抛错（构建顺序不对）
+     */
+    cameraPos() {
+      if (camera) return camera
+      if (!(this.markerHeight > 0)) {
+        throw new Error(
+          "熊猫基地：cameraPos 须在 buildGate 写入 markerHeight 之后调用"
+        )
+      }
+      const { spot } = ctx
+      const [lx, lz] = spot.cam.look || [0, 0]
+      const off = spot.cam.offset
+      const lift = this.markerHeight * 0.5
+      camera = [spot.x + lx + off[0], lift + off[1], spot.z + lz + off[2]]
+      return camera
+    },
+    /**
+     * 点 (x, z) 望向到站机位相机的水平方位角（度，自北顺时针）。透视下各处不同：
+     * 核心区各熊猫约 119°～137°（不是统一的机位方位 125°）。熊猫的脸、栖架的正面都朝这里
+     */
+    bearingToCamera(x, z) {
+      const [cx, , cz] = this.cameraPos()
+      return (Math.atan2(cx - x, z - cz) / DEG + 360) % 360
+    },
+    // 受保护的熊猫视线起点（头部，世界坐标 { x, y, z }），由 yards.js 摆熊猫时登记
+    viewTargets: [],
+    /**
+     * 熊猫视线保护（Task 12 种树种竹时对每个树冠、竹丛调用）：球（球心 (cx, cy, cz)、半径 radius）
+     * 是否压到某只熊猫望向到站机位的视线。视线 = viewTargets 各点指向 cameraPos() 的线段，
+     * 只取头部前方 VIEW.start（1 m）到 VIEW.reach（150 m）一段（取舍见 VIEW 注释）；
+     * 球心到线段的距离 < radius 即算挡住。
+     * 调用约定：树冠取冠心、半径约 1.15 r；竹丛取半高处为球心、半径约「丛半径 + 半高」。
+     * @returns {boolean}
+     */
+    blocksView(cx, cy, cz, radius) {
+      const [px, py, pz] = this.cameraPos()
+      for (const t of this.viewTargets) {
+        let dx = px - t.x
+        let dy = py - t.y
+        let dz = pz - t.z
+        const len = Math.hypot(dx, dy, dz)
+        dx /= len
+        dy /= len
+        dz /= len
+        // 球心在视线上的投影位置（离头部的距离），夹到 [start, reach]
+        const s = Math.max(
+          VIEW.start,
+          Math.min(
+            VIEW.reach,
+            (cx - t.x) * dx + (cy - t.y) * dy + (cz - t.z) * dz
+          )
+        )
+        const d = Math.hypot(
+          cx - (t.x + dx * s),
+          cy - (t.y + dy * s),
+          cz - (t.z + dz * s)
+        )
+        if (d < radius) return true
+      }
+      return false
+    }
   }
 }

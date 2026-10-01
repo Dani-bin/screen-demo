@@ -15,13 +15,14 @@ import { GROUND_Y } from "../../terrain.js"
 import { frame, local } from "../kit/builder.js"
 import { addTree } from "../kit/figures.js"
 import {
+  bearingDiff,
   circlePolygon,
   clipHalfPlane,
   distToSegment,
   insetPolygon,
   rectPolygon
 } from "../kit/footprint.js"
-import { box, extrudePolygon, fromTriangles, ribbon } from "../kit/shapes.js"
+import { box, extrudePolygon, fromTriangles } from "../kit/shapes.js"
 import {
   PLATE_OFF,
   facadeBands,
@@ -52,7 +53,9 @@ import {
   arcPts,
   polar,
   radialWall,
-  ringSector
+  INNER_CURB,
+  ringSector,
+  wallBox
 } from "./yards.js"
 
 const L = THEME.landmark
@@ -82,10 +85,12 @@ const SUN = {
 /*
  * 放射状扇形院：6 个，各宽 45°，自 15° 顺时针排到 285°（中心方位 37.5°…262.5°），半径 rIn～rOut；
  * 合成一个 C 形活动场（一个草地洞），扇与扇之间、两端各一道径向隔墙；外弧做院墙 + 木栏 + 绿篱
- * （参观环一侧），内弧贴着环楼外的一圈草地，不做墙。外弧 18 段（每段 15°）、内弧同。
+ * （参观环一侧），内弧贴着环楼外的一圈草地，做一道矮挡土墙（yards.js 的 INNER_CURB，
+ * 挡住草地洞 0.55 m 的土坎）。外弧 18 段（每段 15°）、内弧同。
  * 外弧最外的绿篱外沿 rOut + 1.46 = 35.46，离参观环中线 ≥ 4.3 m（参观环在扇形院方位上离圆心 ≥ 39.8 m）
  */
 const SUN_YARD = { rIn: 25, rOut: 34, b0: 15, span: 270, n: 18, parts: 6 }
+
 /*
  * 门厅：文档给的平顶盒子 x 7178～7190、z −9160～−9139.5（南沿比文档的 −9137 收进 2.5 m，
  * 离 285° 的扇形院端墙 ≥ 2 m），再按参观环各段向内退 clear 米裁掉压到参观环的西北角
@@ -103,15 +108,11 @@ const KIOSKS = [
 ]
 const KIOSK = { w: 3, top: LAWN_Y + 3.5, roof: 1.1, eaves: 0.35 }
 /*
- * 正北入口小路 306455477：自参观环 (7199.2, −9170) 起，按 OSM 走向延长到环楼外墙（OSM 止于墙外 4 m）
+ * 正北入口：入口小路 306455477 已作为园路 sunEntry 铺在 ground.js 的 ROADS 里（止于外墙外 1.5 m，
+ * 留出人流校验的外探距离）。这里在它正对的那面外墙（外法向 352.5°）开一扇深色门，
+ * 门前补一块与小路同高同色的铺装，把路面接到墙根
  */
-const SUN_ENTRY = {
-  pts: [
-    [7199.2, -9170.0],
-    [7203.3, -9153.6]
-  ],
-  w: 2.4
-}
+const SUN_DOOR = { facing: 352.5, w: 2.4, h: 2.8, apron: { w: 3, out: 1.2 } }
 /*
  * 栖架 2 座（只有上层台：扇形院径向只有 9 m，双层栖架放不下），ladder 为爬梯伸出的方位（顺着院的切向，
  * 爬梯落脚点留在院内）；院 2 的栖架上趴着第 2 只熊猫。
@@ -153,6 +154,7 @@ function addSunRing(site) {
     color: s.courtTree.color,
     detail: 1
   })
+  return outer
 }
 
 /** 放射状扇形院：一个 C 形草地洞 + 外弧院墙 / 木栏 / 绿篱 + 7 道径向墙（两端 + 5 道隔墙） */
@@ -162,6 +164,8 @@ function addSunYards(site) {
   const c = SUN.c
   site.addYard(ringSector(c, y.rIn, y.rOut, y.b0, y.span, y.n, y.n))
   addMoat(b, (d) => arcPts(c, y.rOut + d, y.b0, y.span, y.n), false)
+  // 内弧矮挡土墙：内弧的「外」朝环楼（半径变小）
+  addMoat(b, (d) => arcPts(c, y.rIn - d, y.b0, y.span, y.n), false, INNER_CURB)
   const step = y.span / y.parts
   for (let k = 0; k <= y.parts; k++) {
     // 径向墙自内弧以内 0.25 m（埋进环楼外的草地坡）到外弧墙里
@@ -247,28 +251,47 @@ function addKiosks(site) {
   }
 }
 
-/** 正北入口小路：次级步道高度、路面带进地面批，打 F_PAVE */
-function addSunEntry(site) {
-  const e = SUN_ENTRY
-  site.gb.add(ribbon(e.pts, e.w, PATH_Y - 0.15, PATH_Y), C.path)
-  site.grid.stampLine(e.pts, Math.max(0.71, e.w / 2), F_PAVE)
+/** 正北入口：外墙上一扇深色门 + 门前一块铺装（接到园路 sunEntry 的路面端头，打 F_PAVE） */
+function addSunDoor(site, outer) {
+  const d = SUN_DOOR
+  const f = facades(outer).reduce((p, q) =>
+    bearingDiff(q.facing, d.facing) < bearingDiff(p.facing, d.facing) ? q : p
+  )
+  site.b.add(
+    new PlaneGeometry(d.w, d.h),
+    C.windowBand,
+    local(f.m, f.len / 2, LAWN_Y + d.h / 2, PLATE_OFF)
+  )
+  // 门前铺装：墙面中点起向外 apron.out 米、宽 apron.w，与路面端头重叠
+  const mx = (f.a[0] + f.b[0]) / 2
+  const mz = (f.a[1] + f.b[1]) / 2
+  const o = d.apron.out
+  const apron = rectPolygon(
+    mx + (f.n[0] * o) / 2,
+    mz + (f.n[1] * o) / 2,
+    o,
+    d.apron.w,
+    f.facing
+  )
+  site.gb.add(flatFace(apron, [], PATH_Y), C.path)
+  site.grid.fillPoly(apron, F_PAVE)
 }
 
 function buildSunNursery(site) {
-  addSunRing(site)
+  const outer = addSunRing(site)
+  addSunDoor(site, outer)
   addSunFoyer(site)
   addSunYards(site)
   addKiosks(site)
-  addSunEntry(site)
   for (const p of SUN_PERCHES) {
-    const r = addPerch(site.b, p.at[0], YARD_Y, p.at[1], {
+    const r = addPerch(site, p.at[0], YARD_Y, p.at[1], {
       single: true,
       ladder: p.ladder
     })
-    if (p.panda) addClimbPanda(site.b, r.anchor)
+    if (p.panda) addClimbPanda(site, r.anchor)
   }
   for (const p of SUN_PANDAS) {
-    addSitPanda(site.b, p.at[0], YARD_Y, p.at[1], p.h)
+    addSitPanda(site, p.at[0], YARD_Y, p.at[1], p.h)
   }
 }
 
@@ -379,9 +402,9 @@ function addMoonYards(site) {
     radialWall(b, c, y.b0 + (k * y.span) / 3, y.rIn - 0.3, y.rOut + 0.3)
   }
   const [px, pz] = polar(c, MOON_PERCH.r, MOON_PERCH.b)
-  addPerch(b, px, YARD_Y, pz)
+  addPerch(site, px, YARD_Y, pz)
   const [qx, qz] = polar(c, MOON_PANDA.r, MOON_PANDA.b)
-  addSitPanda(b, qx, YARD_Y, qz, MOON_PANDA.h)
+  addSitPanda(site, qx, YARD_Y, qz, MOON_PANDA.h)
 }
 
 /** 开口处参观平台（地面批铺装，打 F_PAVE）+ 平台朝院一侧（北沿）的白色低墙 */
@@ -405,14 +428,7 @@ function addMoonPlatform(site) {
     p.at[0] + (u[0] * p.len) / 2 + n[0] * off,
     p.at[1] + (u[1] * p.len) / 2 + n[1] * off
   ]
-  const dx = e1[0] - e0[0]
-  const dz = e1[1] - e0[1]
-  const bearing = Math.atan2(dx, -dz) / DEG
-  site.b.add(
-    box(Math.hypot(dx, dz), PAVE_Y + p.wall.h - GROUND_Y, p.wall.t),
-    C.nurseryWall,
-    frame((e0[0] + e1[0]) / 2, GROUND_Y, (e0[1] + e1[1]) / 2, bearing - 90)
-  )
+  wallBox(site.b, e0, e1, GROUND_Y, PAVE_Y + p.wall.h, p.wall.t, C.nurseryWall)
   site.grid.stampLine([e0, e1], 0.8, F_SOLID)
 }
 
@@ -425,13 +441,8 @@ function addBridge(site) {
   const len = Math.hypot(dx, dz)
   const t = [dx / len, dz / len]
   const n = [-t[1], t[0]]
-  const bearing = Math.atan2(dx, -dz) / DEG
-  const mid = [(g.a[0] + g.b[0]) / 2, (g.a[1] + g.b[1]) / 2]
-  b.add(
-    box(len, g.thick, g.w),
-    C.deck,
-    frame(mid[0], g.top - g.thick, mid[1], bearing - 90)
-  )
+  // 桥面板：沿桥轴的一块 box（宽 w、厚 thick）
+  wallBox(b, g.a, g.b, g.top - g.thick, g.top, g.w, C.deck)
   const at = (s, side) => [
     g.a[0] + t[0] * s + n[0] * side,
     g.a[1] + t[1] * s + n[1] * side
