@@ -19,6 +19,12 @@ const DEG = Math.PI / 180
 // 方位差不超过 90° 的飞行时长不变
 const SLOW_TURN_FROM = 90 * DEG
 const SLOW_TURN_MAX = 1.6
+// 长距离飞行（主城区 ↔ 飞地）：注视点水平位移超过 LONG_FLY_FROM（米）时，
+// 时长按 √(位移 / LONG_FLY_FROM) 放大，与大角度转向系数取较大者，最多 × LONG_FLY_MAX；
+// 并在半程把相机拉高（见 _flyTo 的 flyHop）。主城区内各站相距 ≤ 约 4.7 km，不受影响。
+// 例：杜甫草堂 → 熊猫基地约 13.9 km，× 1.67 约 3.3 s；熊猫基地 → 天府广场约 11.4 km，约 3.0 s
+const LONG_FLY_FROM = 5000
+const LONG_FLY_MAX = 2.5
 
 /** easeInOutCubic：起步与收尾都平缓，避免大屏上镜头生硬 */
 function easeInOutCubic(k) {
@@ -30,6 +36,24 @@ function lerp(a, b, k) {
   return a + (b - a) * k
 }
 
+/**
+ * 把 (x, z) 夹到矩形数组里离它最近的一块（已在某块内时原样返回），结果写回 out。
+ * @param {Array<{x: number[], z: number[]}>} rects
+ */
+function clampToRects(x, z, rects, out) {
+  let best = Infinity
+  for (const r of rects) {
+    const cx = Math.max(r.x[0], Math.min(r.x[1], x))
+    const cz = Math.max(r.z[0], Math.min(r.z[1], z))
+    const d = (cx - x) ** 2 + (cz - z) ** 2
+    if (d < best) {
+      best = d
+      out.x = cx
+      out.z = cz
+    }
+  }
+}
+
 export class CameraTour {
   /**
    * @param {object} options
@@ -38,7 +62,7 @@ export class CameraTour {
    * @param {Array<{p:number[], t:number[]}>} options.stops 各站机位：p 相机位置、t 注视点
    * @param {{p:number[], t:number[]}} options.overview 总览机位
    * @param {object} options.limits theme.camera（pitchMin/Max、radiusMin/Max）加 bounds：
-   *   注视点范围 { x: [min, max], z: [min, max] }，由 CityScene 按数据范围算出
+   *   注视点可移动的矩形数组 [{ x: [min, max], z: [min, max] }, …]（主城区 + 各飞地），由 CityScene 按数据范围算出
    * @param {object} options.timing theme.tour（fly / hold / idle / drift，秒）
    * @param {Function} options.onStopChange 停靠点变化回调，参数为索引
    * @param {Function} options.onPlayingChange 巡览播放状态变化回调
@@ -85,6 +109,7 @@ export class CameraTour {
     this.flyTo = { target: new Vector3(), s: new Spherical() }
     this.flyDTheta = 0 // 方位角走最短弧的增量，范围 [-π, π]
     this.flyDuration = this.timing.fly // 本次飞行时长（秒），大角度转向时放大（见 _flyTo）
+    this.flyHop = 0 // 本次飞行半程的相机距离抬升量（米），只有长距离飞行非 0（见 _flyTo）
 
     // 初始机位：总览
     this._jumpTo(this.overview)
@@ -156,7 +181,11 @@ export class CameraTour {
     this.apply()
   }
 
-  /** 把球坐标写回相机，并做俯仰、距离、注视点范围的夹取 */
+  /**
+   * 把球坐标写回相机，并做俯仰、距离、注视点范围的夹取。
+   * 注视点只在非飞行时夹取（夹到离它最近的那块范围矩形）：飞行（巡览、复位、点导航）的
+   * 起止点都在数据范围内，途中跨越主城区与飞地之间的空白地面时不能被拽回最近的区域
+   */
   apply() {
     const s = this.spherical
     const L = this.limits
@@ -166,14 +195,9 @@ export class CameraTour {
       Math.min((90 - L.pitchMin) * DEG, s.phi)
     )
     s.radius = Math.max(L.radiusMin, Math.min(L.radiusMax, s.radius))
-    this.target.x = Math.max(
-      L.bounds.x[0],
-      Math.min(L.bounds.x[1], this.target.x)
-    )
-    this.target.z = Math.max(
-      L.bounds.z[0],
-      Math.min(L.bounds.z[1], this.target.z)
-    )
+    if (!this.flying) {
+      clampToRects(this.target.x, this.target.z, L.bounds, this.target)
+    }
     this.camera.position
       .copy(this.target)
       .add(new Vector3().setFromSpherical(s))
@@ -273,13 +297,27 @@ export class CameraTour {
     // 方位差归一化到 [-π, π]，保证走最短弧
     const d = this.flyTo.s.theta - this.flyFrom.s.theta
     this.flyDTheta = Math.atan2(Math.sin(d), Math.cos(d))
-    // 大角度转向按方位差拉长飞行时间（见 SLOW_TURN_FROM），普通飞行仍为 timing.fly
+    // 大角度转向按方位差拉长飞行时间（见 SLOW_TURN_FROM）
     const turn = Math.abs(this.flyDTheta)
+    const turnK =
+      turn > SLOW_TURN_FROM ? Math.min(SLOW_TURN_MAX, turn / SLOW_TURN_FROM) : 1
+    // 长距离飞行按注视点水平位移拉长时间，并在半程拉高（见 LONG_FLY_FROM）：
+    // 相机距离在线性插值之外叠加 flyHop · sin(π · 缓动进度)，半程距离至少为位移的一半，
+    // 既看得到飞越的过程，又不会贴地掠过空白地面
+    const travel = Math.hypot(
+      this.flyTo.target.x - this.flyFrom.target.x,
+      this.flyTo.target.z - this.flyFrom.target.z
+    )
+    const long = travel > LONG_FLY_FROM
+    const farK = long ? Math.sqrt(travel / LONG_FLY_FROM) : 1
     this.flyDuration =
-      this.timing.fly *
-      (turn > SLOW_TURN_FROM
-        ? Math.min(SLOW_TURN_MAX, turn / SLOW_TURN_FROM)
-        : 1)
+      this.timing.fly * Math.min(LONG_FLY_MAX, Math.max(turnK, farK))
+    this.flyHop = long
+      ? Math.max(
+          0,
+          travel / 2 - (this.flyFrom.s.radius + this.flyTo.s.radius) / 2
+        )
+      : 0
     this.flyProgress = 0
     this.flying = true
   }
@@ -332,7 +370,9 @@ export class CameraTour {
       this.target.lerpVectors(from.target, to.target, e)
       this.spherical.theta = from.s.theta + this.flyDTheta * e
       this.spherical.phi = lerp(from.s.phi, to.s.phi, e)
-      this.spherical.radius = lerp(from.s.radius, to.s.radius, e)
+      this.spherical.radius =
+        lerp(from.s.radius, to.s.radius, e) +
+        this.flyHop * Math.sin(Math.PI * e)
       this.apply()
       if (k >= 1) {
         this.flying = false
