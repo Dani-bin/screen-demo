@@ -197,10 +197,12 @@ function samplesOf(w) {
     const ux = (bx - ax) / len
     const uz = (bz - az) / len
     const n = Math.ceil(len / STEP)
-    // 中间顶点已被上一段的末样点取过，第一条有效段之后的段从 s = 1 起取
-    for (let s = started ? 1 : 0; s <= n; s++) {
+    for (let s = 0; s <= n; s++) {
       const t = (s / n) * len
       for (let k = -nLat; k <= nLat; k++) {
+        // 中间顶点处，上一段的末样点已取过中线点（k = 0），这里只跳过它；
+        // 横向两侧的点必须按本段法向再取一遍，否则拐角外侧取不到
+        if (started && s === 0 && k === 0) continue
         // 法向 (−uz, ux)：沿中线两侧 ±width/2 均匀取点
         const off = k * latStep
         out.push({
