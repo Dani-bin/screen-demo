@@ -19,9 +19,10 @@ const DEG = Math.PI / 180
 // 方位差不超过 90° 的飞行时长不变
 const SLOW_TURN_FROM = 90 * DEG
 const SLOW_TURN_MAX = 1.6
-// 长距离飞行（主城区 ↔ 飞地）：注视点水平位移超过 LONG_FLY_FROM（米）时，
-// 时长按 √(位移 / LONG_FLY_FROM) 放大，与大角度转向系数取较大者，最多 × LONG_FLY_MAX；
-// 并在半程把相机拉高（见 _flyTo 的 flyHop）。主城区内各站相距 ≤ 约 4.7 km，不受影响。
+// 跨区域飞行（主城区 ↔ 飞地，起点与终点注视点分属不同的范围矩形）：
+// 时长按 √(位移 / LONG_FLY_FROM) 放大（LONG_FLY_FROM 只是归一化的基准距离，不是触发阈值），
+// 与大角度转向系数取较大者，最多 × LONG_FLY_MAX；并在半程把相机拉高（见 _flyTo 的 flyHop）。
+// 主城区内的任何飞行（巡览与导航栏手动点站，哪怕两站相距超过 5 km）都不属于跨区域，时长与路线不变。
 // 例：杜甫草堂 → 熊猫基地约 13.9 km，× 1.67 约 3.3 s；熊猫基地 → 天府广场约 11.4 km，约 3.0 s
 const LONG_FLY_FROM = 5000
 const LONG_FLY_MAX = 2.5
@@ -37,21 +38,52 @@ function lerp(a, b, k) {
 }
 
 /**
- * 把 (x, z) 夹到矩形数组里离它最近的一块（已在某块内时原样返回），结果写回 out。
+ * 找出矩形数组里离 (x, z) 最近的一块（点在某块内时距离为 0，多块都满足时取靠前的）。
+ * 结果写进 out：index 为该块下标，(x, z) 为点夹到该块内的位置，gap 为点到该块的距离（米）。
  * @param {Array<{x: number[], z: number[]}>} rects
+ * @param {{index: number, x: number, z: number, gap: number}} [out] 复用的结果对象
  */
-function clampToRects(x, z, rects, out) {
+function nearestRect(x, z, rects, out = {}) {
+  out.index = -1
+  out.x = x
+  out.z = z
   let best = Infinity
-  for (const r of rects) {
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i]
     const cx = Math.max(r.x[0], Math.min(r.x[1], x))
     const cz = Math.max(r.z[0], Math.min(r.z[1], z))
     const d = (cx - x) ** 2 + (cz - z) ** 2
     if (d < best) {
       best = d
+      out.index = i
       out.x = cx
       out.z = cz
     }
   }
+  out.gap = best === Infinity ? 0 : Math.sqrt(best)
+  return out
+}
+
+// clampToRects 与 _stopFlying 共用的临时结果，避免每帧新建对象
+const NEAR = { index: -1, x: 0, z: 0, gap: 0 }
+
+/**
+ * 把 (x, z) 夹回矩形数组：先找最近的一块 c 与到它的距离 g。
+ * g ≤ slack 时原样保留（允许暂时停在范围外 slack 米以内）；否则沿 c → 点 的方向
+ * 收回到离 c 为 slack 米处（slack 为 0 即硬夹到矩形边缘）。结果写回 out。
+ * @param {Array<{x: number[], z: number[]}>} rects
+ * @param {number} [slack] 允许超出范围的距离（米）
+ */
+function clampToRects(x, z, rects, out, slack = 0) {
+  const n = nearestRect(x, z, rects, NEAR)
+  if (n.gap <= slack) {
+    out.x = x
+    out.z = z
+    return
+  }
+  const k = slack / n.gap
+  out.x = n.x + (x - n.x) * k
+  out.z = n.z + (z - n.z) * k
 }
 
 export class CameraTour {
@@ -109,7 +141,11 @@ export class CameraTour {
     this.flyTo = { target: new Vector3(), s: new Spherical() }
     this.flyDTheta = 0 // 方位角走最短弧的增量，范围 [-π, π]
     this.flyDuration = this.timing.fly // 本次飞行时长（秒），大角度转向时放大（见 _flyTo）
-    this.flyHop = 0 // 本次飞行半程的相机距离抬升量（米），只有长距离飞行非 0（见 _flyTo）
+    this.flyHop = 0 // 本次飞行半程的相机距离抬升量（米），只有跨区域飞行非 0（见 _flyTo）
+    // 注视点允许暂时停在范围外多远（米）：人工打断跨区域飞行时，注视点可能正悬在两块区域之间的
+    // 空白地面，直接硬夹会在一帧内把画面拽回几公里；改为以打断时的距离为初值、随时间衰减
+    // （见 _stopFlying 与 update），镜头平滑滑回数据区。飞行中与新飞行开始时为 0
+    this.slack = 0
 
     // 初始机位：总览
     this._jumpTo(this.overview)
@@ -133,7 +169,7 @@ export class CameraTour {
       this.spherical.phi -= (e.clientY - this.lastY) * 0.005
       this.lastX = e.clientX
       this.lastY = e.clientY
-      this.flying = false
+      this._stopFlying()
       this.apply()
     }
     // 抬起、取消（系统手势 / 触摸被打断）、丢失捕获都结束拖拽，
@@ -182,9 +218,27 @@ export class CameraTour {
   }
 
   /**
+   * 人工操作打断飞行（拖拽、缩放）：结束飞行，并把此刻注视点到最近范围矩形的距离记为 slack。
+   * 跨区域飞行飞越空白地面时被打断，注视点离最近的矩形可能有数公里，
+   * 若按 slack = 0 硬夹，下一帧画面会瞬间跳回；记下距离后，当帧 apply 不会移动注视点，
+   * 之后由 update 逐帧衰减 slack，注视点平滑滑回范围内
+   */
+  _stopFlying() {
+    if (!this.flying) return
+    this.slack = nearestRect(
+      this.target.x,
+      this.target.z,
+      this.limits.bounds,
+      NEAR
+    ).gap
+    this.flying = false
+  }
+
+  /**
    * 把球坐标写回相机，并做俯仰、距离、注视点范围的夹取。
-   * 注视点只在非飞行时夹取（夹到离它最近的那块范围矩形）：飞行（巡览、复位、点导航）的
-   * 起止点都在数据范围内，途中跨越主城区与飞地之间的空白地面时不能被拽回最近的区域
+   * 注视点只在非飞行时夹取（夹到离它最近的那块范围矩形，允许暂时超出 slack 米，见 _stopFlying）：
+   * 飞行（巡览、复位、点导航）的起止点都在数据范围内，
+   * 途中跨越主城区与飞地之间的空白地面时不能被拽回最近的区域
    */
   apply() {
     const s = this.spherical
@@ -196,7 +250,13 @@ export class CameraTour {
     )
     s.radius = Math.max(L.radiusMin, Math.min(L.radiusMax, s.radius))
     if (!this.flying) {
-      clampToRects(this.target.x, this.target.z, L.bounds, this.target)
+      clampToRects(
+        this.target.x,
+        this.target.z,
+        L.bounds,
+        this.target,
+        this.slack
+      )
     }
     this.camera.position
       .copy(this.target)
@@ -240,7 +300,7 @@ export class CameraTour {
       this.target.x = anchor.x + (this.target.x - anchor.x) * k
       this.target.z = anchor.z + (this.target.z - anchor.z) * k
     }
-    this.flying = false
+    this._stopFlying()
     this.pause()
     this.apply()
   }
@@ -279,6 +339,8 @@ export class CameraTour {
    */
   _flyTo(stop) {
     this.holdElapsed = 0
+    // 新飞行（含跳过动画的直接跳转）开始：上一次打断留下的容差作废，飞行结束后按硬夹取
+    this.slack = 0
     if (this.reduceMotion) {
       this._jumpTo(stop)
       this.flying = false
@@ -290,10 +352,17 @@ export class CameraTour {
     this.flyFrom.s.setFromVector3(
       offset.copy(this.camera.position).sub(this.target)
     )
-    this.flyTo.target.set(stop.t[0], stop.t[1], stop.t[2])
-    this.flyTo.s.setFromVector3(
-      offset.set(stop.p[0], stop.p[1], stop.p[2]).sub(this.flyTo.target)
+    // 终点注视点夹进范围矩形（飞行途中不夹取，落点必须在范围内，否则抵达后会被拽走）。
+    // 相机相对注视点的偏移取自原机位（p − t），等价于把 stop.p 与 stop.t 平移同一个夹取量，
+    // 抵达后的构图不变；现有各站与总览都在范围内，夹取量为 0，行为不变
+    offset.set(
+      stop.p[0] - stop.t[0],
+      stop.p[1] - stop.t[1],
+      stop.p[2] - stop.t[2]
     )
+    const toNear = nearestRect(stop.t[0], stop.t[2], this.limits.bounds)
+    this.flyTo.target.set(toNear.x, stop.t[1], toNear.z)
+    this.flyTo.s.setFromVector3(offset)
     // 方位差归一化到 [-π, π]，保证走最短弧
     const d = this.flyTo.s.theta - this.flyFrom.s.theta
     this.flyDTheta = Math.atan2(Math.sin(d), Math.cos(d))
@@ -301,15 +370,21 @@ export class CameraTour {
     const turn = Math.abs(this.flyDTheta)
     const turnK =
       turn > SLOW_TURN_FROM ? Math.min(SLOW_TURN_MAX, turn / SLOW_TURN_FROM) : 1
-    // 长距离飞行按注视点水平位移拉长时间，并在半程拉高（见 LONG_FLY_FROM）：
-    // 相机距离在线性插值之外叠加 flyHop · sin(π · 缓动进度)，半程距离至少为位移的一半，
-    // 既看得到飞越的过程，又不会贴地掠过空白地面
+    // 跨区域飞行（起点与终点注视点最近的范围矩形不是同一块）按注视点水平位移拉长时间，
+    // 并在半程拉高（见 LONG_FLY_FROM）：相机距离在线性插值之外叠加 flyHop · sin(π · 缓动进度)，
+    // 半程距离至少为位移的一半，既看得到飞越的过程，又不会贴地掠过空白地面。
+    // 按区域而不是按距离判定：主城区内有 7 对站相距超过 5 km，它们的飞行（含导航栏手动点站）必须不变
     const travel = Math.hypot(
       this.flyTo.target.x - this.flyFrom.target.x,
       this.flyTo.target.z - this.flyFrom.target.z
     )
-    const long = travel > LONG_FLY_FROM
-    const farK = long ? Math.sqrt(travel / LONG_FLY_FROM) : 1
+    const fromNear = nearestRect(
+      this.flyFrom.target.x,
+      this.flyFrom.target.z,
+      this.limits.bounds
+    )
+    const long = fromNear.index !== toNear.index
+    const farK = long ? Math.max(1, Math.sqrt(travel / LONG_FLY_FROM)) : 1
     this.flyDuration =
       this.timing.fly * Math.min(LONG_FLY_MAX, Math.max(turnK, farK))
     this.flyHop = long
@@ -379,6 +454,14 @@ export class CameraTour {
         if (this.flyingToStop) this._arrive()
       }
       return
+    }
+
+    // 人工打断跨区域飞行后，注视点可能还停在两块区域之间的空白地面（见 _stopFlying）：
+    // 容差按指数衰减（约 0.6 s 衰减 95%）并重新夹取，即使巡览已暂停，画面也会平滑滑回数据区；
+    // 低于 1 m 时直接归零，收尾那一下夹取不到 1 m，看不出来
+    if (this.slack > 0) {
+      this.slack = this.slack < 1 ? 0 : this.slack * Math.exp(-dt * 5)
+      this.apply()
     }
 
     if (this.playing) {
