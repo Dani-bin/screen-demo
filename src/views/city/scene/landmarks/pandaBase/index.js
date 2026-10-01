@@ -15,6 +15,7 @@ import { buildGate } from "./gate.js"
 import { buildHalls } from "./halls.js"
 import { buildLake } from "./lake.js"
 import { buildEnclosures } from "./enclosures.js"
+import { buildWalkways } from "./walkways.js"
 
 export function build(ctx) {
   const site = createSite(ctx)
@@ -27,7 +28,8 @@ export function build(ctx) {
   buildHalls(site)
   buildLake(site)
   buildEnclosures(site)
-  const walkways = []
+  // 步行路径紧随各建筑 / 场地之后：树竹种植（后续分区）要据此避开可走带
+  const walkways = buildWalkways(site)
   // 各分区在这里加构件，并登记草地要挖的洞（site.addYard、site.lawnHoles）与
   // 广场要挖的洞（site.plazaHoles）；后续分区按既定构建顺序往这里加
   // 草地和广场最后挤出：此时所有洞都已登记完整
