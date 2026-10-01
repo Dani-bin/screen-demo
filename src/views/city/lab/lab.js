@@ -44,7 +44,7 @@ import { createRivers, createRoads } from "../scene/roads.js"
 import { createBuildings } from "../scene/buildings.js"
 import { createMarkers, markerBaseHeight } from "../scene/markers.js"
 import { layoutTrees } from "../scene/trees.js"
-import { polygonCenter } from "../scene/utils.js"
+import { nearestRegion, polygonCenter } from "../scene/utils.js"
 import { SPOTS } from "../data/cityData.js"
 import { buildingsInZones } from "../scene/landmarks/kit/footprint.js"
 import {
@@ -175,8 +175,10 @@ function contextExcluded(data, center, zones) {
 }
 
 /**
- * 整城阴影范围：与 CityScene 同一批投影物——全部楼栋、全部景点模型、按景点占用网格撒的
- * 通用树（树冠尺寸与线上完全一致）、落点球——再加上预览对象自身（kit 样例）。
+ * 主城区的整城阴影范围：与 CityScene 主城区那张静态阴影同一批投影物——主城区的楼栋、景点模型、
+ * 按景点占用网格撒的通用树（树冠尺寸与线上完全一致）、落点球——再加上预览对象自身（kit 样例）。
+ * 投影物按离哪块区域最近归类（nearestRegion），只取最近区域为主城区（下标 0）的，
+ * 飞地（熊猫基地）另有一张静态阴影，这里不计入。
  * 预览页不画这些景点、树与落点球，只借来求范围，算完即释放。
  * @param {object} data 城市几何数据
  * @param {object} project 投影
@@ -203,11 +205,17 @@ function cityShadowBox(data, project, materials, extra) {
     data.buildings.filter((b, i) => !excluded.has(i)),
     landmarks.markerHeights
   )
+  // 区域裁剪矩形：下标 0 为主城区，其后是各飞地（与 CityScene 的 regionClips 一致）
+  const clips = [
+    data.meta.clip,
+    ...(data.meta.enclaves || []).map((e) => e.clip)
+  ]
   const box = computeCityShadow(
     {
       buildings: data.buildings,
       trees: layoutTrees(data, THEME, landmarks.occupancy),
-      objects: [landmarks.group, markers.group, ...extra]
+      objects: [landmarks.group, markers.group, ...extra],
+      within: (x, z) => nearestRegion(x, z, clips) === 0
     },
     THEME.light
   )

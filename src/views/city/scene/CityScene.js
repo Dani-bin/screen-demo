@@ -33,7 +33,7 @@ import { createTrees } from "./trees.js"
 import { LABEL_LEAD, createMarkers } from "./markers.js"
 import { CameraTour } from "./cameraTour.js"
 import { createPicker } from "./picking.js"
-import { polygonCenter } from "./utils.js"
+import { nearestRegion, polygonCenter } from "./utils.js"
 import { createLandmarks } from "./landmarks/index.js"
 import { createCrowd } from "./crowd.js"
 import {
@@ -215,24 +215,31 @@ export class CityScene {
     )
     this.root.add(this.markers.group)
 
-    // 初始为整城阴影：全部投影物建完后实算一次正交范围、朝向与偏移（shadow.js 的 computeCityShadow）——
-    // 楼栋轮廓、通用树的真实树冠、景点模型与落点球的 Mesh，含影子落到地面的深度；
-    // 停靠站点时由 _fitShadow 收紧，回总览 / 离站时 _resetShadow 恢复。
-    // 只计入主城区（meta.clip）：飞地离主城区约 5 km，并进来会把阴影框撑大约一倍、主城区阴影糊一倍；
-    // 飞地只在停靠该站时由 _fitShadow 收紧出阴影，人工拉远去看飞地时没有阴影（已知限制）
-    const [cx0, cz0, cx1, cz1] = d.meta.clip
-    // 主城区判定（meta.clip）：整城阴影只计入主城区，_loop 也按它决定停站阴影如何退出
-    this._inMain = (x, z) => x >= cx0 && x <= cx1 && z >= cz0 && z <= cz1
-    this.cityShadow = computeCityShadow(
-      {
-        buildings: d.buildings,
-        trees: this.trees.layout,
-        objects: [this.landmarks.group, this.markers.group],
-        within: this._inMain
-      },
-      this.theme.light
+    // 每块数据区域（主城区 + 各飞地）一张静态阴影：全部投影物建完后，对每块区域各实算一次
+    // 正交范围、朝向与偏移（shadow.js 的 computeCityShadow）——楼栋轮廓、通用树的真实树冠、
+    // 景点模型与落点球的 Mesh，含影子落到地面的深度。
+    // 区域相距数公里，合成一张会把阴影框撑大约一倍、主城区阴影糊一倍，所以各算各的，
+    // 每块只拟合自己的投影物（主城区约 8.0 km，与加飞地前一致；熊猫基地飞地约 4 km）。
+    // 投影物按「离哪块区域的 clip 最近」归类（nearestRegion）：主城区的公园面不按 clip 裁剪，
+    // 树会撒到 clip 外约 170 m，严格按 clip 内筛选会丢掉它们的阴影。
+    // 初始为主城区的静态阴影；停靠站点时由 _fitShadow 收紧，离站 / 回总览 / 拉远时由
+    // _resetShadow 恢复注视点所在区域的静态阴影
+    const meta = d.meta
+    this.regionClips = [meta.clip, ...(meta.enclaves || []).map((e) => e.clip)]
+    this._regionOf = (x, z) => nearestRegion(x, z, this.regionClips)
+    this.regionShadows = this.regionClips.map((_, i) =>
+      computeCityShadow(
+        {
+          buildings: d.buildings,
+          trees: this.trees.layout,
+          objects: [this.landmarks.group, this.markers.group],
+          within: (x, z) => this._regionOf(x, z) === i
+        },
+        this.theme.light
+      )
     )
-    applyCityShadow(this.sun, this.theme.light, this.cityShadow)
+    this.shadowRegion = 0
+    applyCityShadow(this.sun, this.theme.light, this.regionShadows[0])
 
     this.highlight = null
     this.bubble = null
@@ -459,8 +466,8 @@ export class CityScene {
   /**
    * 阴影收紧到 center 周围 ±R 米（见 shadow.js），并重绘一次静态阴影。
    * 代价：停留期间离站点 R 以外的楼没有阴影；站点机位视野基本落在 R 以内，
-   * 人工拉远、或滚轮缩放把注视点带离站点，视野超出收紧范围时由 _loop 处理：
-   * 主城区恢复整城阴影，飞地（整城阴影不含飞地）则把收紧范围移到当前注视点
+   * 人工拉远、或滚轮缩放把注视点带离站点，视野超出收紧范围时由 _loop 调用 _resetShadow，
+   * 恢复注视点所在区域的静态阴影
    */
   _fitShadow(center, R) {
     applyStopShadow(this.sun, this.theme.light, center, R)
@@ -469,10 +476,17 @@ export class CityScene {
     this.renderer.shadowMap.needsUpdate = true
   }
 
-  /** 恢复整城阴影（computeCityShadow 的范围与偏移、theme.light 的太阳位置）；已是整城时不做事，避免无谓重绘 */
+  /**
+   * 恢复注视点（this.tour.target）所在区域的静态阴影（computeCityShadow 的范围与偏移、theme.light 的太阳位置）。
+   * 已是该区域的静态阴影时直接返回，避免无谓重绘，所以 _loop 可以逐帧调用：
+   * 注视点飞行途中换了区域、松弛滑回飞地、跨区滚轮缩放时，借此只切换一次
+   */
   _resetShadow() {
-    if (!this.shadowFitted) return
-    applyCityShadow(this.sun, this.theme.light, this.cityShadow)
+    const t = this.tour.target
+    const region = this._regionOf(t.x, t.z)
+    if (!this.shadowFitted && region === this.shadowRegion) return
+    applyCityShadow(this.sun, this.theme.light, this.regionShadows[region])
+    this.shadowRegion = region
     this.shadowFitted = false
     this.renderer.shadowMap.needsUpdate = true
   }
@@ -529,22 +543,18 @@ export class CityScene {
     this.tour.update(dt)
     this._updateClip()
     // 停靠时人工拉远、或滚轮缩放把注视点带离站点，视野超出收紧范围：
-    // 主城区——恢复整城阴影（整城阴影覆盖整个主城区）；
-    // 飞地——整城阴影不含飞地，恢复它飞地就没有影子了，改为把收紧范围移到当前注视点（重绘一次），
-    //   注视点离收紧中心超过半径一半才移，避免逐帧重绘。
+    // 恢复注视点所在区域的静态阴影（各区域规则相同）。
     // 视野粗估为「注视点离收紧中心的水平距离 + 相机距离」；恢复后不会因拉近而重新收紧，只在下一次飞抵站点时收紧；
-    // 因此各站机位距离加注视点平移（cam.look）必须小于 1.5 倍半径，否则一飞抵就会被这里立即恢复
+    // 因此各站机位距离加注视点平移（cam.look）必须小于 1.5 倍半径，否则一飞抵就会被这里立即恢复。
+    // 未收紧时每帧调用 _resetShadow：注视点所在区域没变就直接返回（几次比较），
+    // 跨区飞行途中、松弛滑回飞地、跨区缩放让注视点换了区域时才切换一次静态阴影
     if (this.shadowFitted) {
       const t = this.tour.target
       const [cx, , cz] = this.shadowCenter
-      const off = Math.hypot(t.x - cx, t.z - cz)
-      if (this._inMain(t.x, t.z)) {
-        if (off + this.tour.getDistance() > STOP_SHADOW_RADIUS * 1.5) {
-          this._resetShadow()
-        }
-      } else if (off > STOP_SHADOW_RADIUS * 0.5) {
-        this._fitShadow([t.x, 0, t.z], STOP_SHADOW_RADIUS)
-      }
+      const reach = Math.hypot(t.x - cx, t.z - cz) + this.tour.getDistance()
+      if (reach > STOP_SHADOW_RADIUS * 1.5) this._resetShadow()
+    } else {
+      this._resetShadow()
     }
     this.elapsed += dt
     this.landmarks.update(this.elapsed)
