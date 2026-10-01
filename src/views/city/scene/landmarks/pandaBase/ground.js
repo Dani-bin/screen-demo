@@ -388,8 +388,8 @@ export function buildPaths(site) {
     C.lawnOpen
   )
   // 水面先打 F_WATER 标记（外扩 1 m）：后续分区与树竹都要避开，草地虽然最后才挤出，
-  // 标记必须在这里打。注意：天鹅湖外环包含湖心岛，所以岛上也带着 F_WATER，
-  // 岛上种植（vegetation）不能用 F_WATER 判断「是不是水」
+  // 标记必须在这里打。天鹅湖外环包含湖心岛，所以岛上也带着 F_WATER：岛上的树与樱花由
+  // lake.js 按坐标常量直接种；树竹分区（vegetation）的避让掩码含 F_WATER，会自动跳过湖心岛
   for (const h of [site.lakes.swan, site.lakes.ne, ...WEST_POOLS]) {
     site.grid.fillPoly(h, F_WATER, 1)
   }
