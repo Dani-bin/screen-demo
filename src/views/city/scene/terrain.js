@@ -16,8 +16,12 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js"
 
 // 地面平面边长（米，以原点为中心）：远大于城市数据范围（约 6.2 × 7.5 km，见 meta.clip），
-// 数据扩范围时无需跟着改
-const GROUND_SIZE = 30000
+// 数据扩范围时无需跟着改。
+// 由 30 km 加大到 120 km：人工缩放拉到最远（theme.camera.radiusMax 16 km）时，
+// 30 km 的平面边缘会在画面上部（顶栏下方）露出一道接缝；
+// 最远、俯仰 20° 时远裁剪面（CityScene._updateClip，约 58 km）以内能看到的地面离原点不到 57 km，
+// 边长 120 km（±60 km）可整片铺满。平面只有 2 个三角形，加大没有额外开销
+const GROUND_SIZE = 120000
 
 /**
  * 地面平面高度（米）。略低于 0，给绿地 0.2、水面 0.3、道路 0.5+ 留出错层；

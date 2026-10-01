@@ -58,7 +58,7 @@ export class CityScene {
    * @param {Function} options.onPlayingChange 巡览状态变化 (playing)
    * @param {Function} options.onViewChange 视角变化 ({ heading, scaleMeters })
    * @param {number} [options.labelSafeTop=0] 顶部保留带高度（设计稿 px）：景点标签框顶进入这一带时
-   *   避让（当前站标签先下压、压不下再隐藏，其余隐藏，见 markers.js 的 avoidTop）；0 为不避让
+   *   避让（当前站标签先下压、压不下再隐藏，其余隐藏，见 markers.js 的 avoidLabels）；0 为不避让顶部栏
    */
   constructor(options) {
     this.canvas = options.canvas
@@ -132,6 +132,14 @@ export class CityScene {
       width / height,
       t.camera.near,
       t.camera.far
+    )
+    // 总览机位到注视点的距离（约 8200 m）：theme.camera 的 near / far 按这个距离取值，
+    // 人工缩放拉到比它更远时，裁剪面以它为基准放大（见 _updateClip）
+    const ov = t.camera.overview
+    this.clipBaseDistance = Math.hypot(
+      ov.p[0] - ov.t[0],
+      ov.p[1] - ov.t[1],
+      ov.p[2] - ov.t[2]
     )
 
     const L = t.light
@@ -443,11 +451,12 @@ export class CityScene {
   /**
    * 阴影收紧到 center 周围 ±R 米（见 shadow.js），并重绘一次静态阴影。
    * 代价：停留期间离站点 R 以外的楼没有阴影；站点机位视野基本落在 R 以内，
-   * 人工拉远超过 1.5R 时由 _loop 自动恢复整城阴影
+   * 人工拉远、或滚轮缩放把注视点带离站点，视野超出收紧范围时由 _loop 自动恢复整城阴影
    */
   _fitShadow(center, R) {
     applyStopShadow(this.sun, this.theme.light, center, R)
     this.shadowFitted = true
+    this.shadowCenter = center
     this.renderer.shadowMap.needsUpdate = true
   }
 
@@ -457,6 +466,24 @@ export class CityScene {
     applyCityShadow(this.sun, this.theme.light, this.cityShadow)
     this.shadowFitted = false
     this.renderer.shadowMap.needsUpdate = true
+  }
+
+  /**
+   * 按相机距离调整裁剪面。透视深度缓冲在距离 d 处的分辨率约为 d² / (near × 2^24)：
+   * 总览距离以内沿用 theme.camera 的 near / far；拉得更远时 near 按距离平方放大，
+   * 注视点处的分辨率保持总览时的约 0.2 m，地面 / 绿地 / 水面 / 道路的错层不会闪烁；
+   * far 按距离同比放大，远处地面不会被提前裁掉。
+   * 拉到最远（theme.camera.radiusMax）时 near 也只有百米级，而俯仰 ≥ 20° 时相机离地至少为距离的 0.34 倍
+   * （数千米），不会裁到楼顶。只在比例明显变化时重算投影矩阵
+   */
+  _updateClip() {
+    const c = this.theme.camera
+    const ratio = Math.max(1, this.tour.getDistance() / this.clipBaseDistance)
+    const near = c.near * ratio * ratio
+    if (Math.abs(near - this.camera.near) < this.camera.near * 0.01) return
+    this.camera.near = near
+    this.camera.far = c.far * ratio
+    this.camera.updateProjectionMatrix()
   }
 
   /** 视角变化时通知页面（指北针与比例尺），变化很小则不通知 */
@@ -491,15 +518,17 @@ export class CityScene {
     // 下限 0 防止时间戳回退得到负值
     const dt = Math.max(0, Math.min(this.timer.getDelta(), 0.25))
     this.tour.update(dt)
-    // 停靠时人工拉远到收紧范围之外：恢复整城阴影，免得视野外圈的楼没有影子。
+    this._updateClip()
+    // 停靠时人工拉远、或滚轮缩放把注视点带离站点，视野超出收紧范围：恢复整城阴影，
+    // 免得视野外圈的楼没有影子。视野粗估为「注视点离收紧中心的水平距离 + 相机距离」。
     // 恢复后不会因拉近而重新收紧，只在下一次飞抵站点时收紧；
-    // 因此各站机位距离（cityData.js 的 cam.offset，目前约 300～1050 m）必须小于该阈值，
-    // 否则一飞抵就会被这里立即恢复
-    if (
-      this.shadowFitted &&
-      this.tour.getDistance() > STOP_SHADOW_RADIUS * 1.5
-    ) {
-      this._resetShadow()
+    // 因此各站机位距离（cityData.js 的 cam.offset，目前约 300～1050 m）加上注视点平移（cam.look，
+    // 目前 ≤ 约 100 m）必须小于该阈值，否则一飞抵就会被这里立即恢复
+    if (this.shadowFitted) {
+      const t = this.tour.target
+      const [cx, , cz] = this.shadowCenter
+      const reach = Math.hypot(t.x - cx, t.z - cz) + this.tour.getDistance()
+      if (reach > STOP_SHADOW_RADIUS * 1.5) this._resetShadow()
     }
     this.elapsed += dt
     this.landmarks.update(this.elapsed)
@@ -511,17 +540,18 @@ export class CityScene {
   }
 
   /**
-   * 景点标签避让顶部栏（规则见 markers.js 的 avoidTop），须在 labelRenderer.render 之后调用。
+   * 景点标签避让顶部栏与互相避让（规则见 markers.js 的 avoidLabels），须在 labelRenderer.render 之后调用。
    * 保留带与引线长度是设计稿 px，构建时被 pxtorem 换成 rem、运行时 1rem = 视口宽 / 10，
-   * 这里与比例尺同样按视口宽 / 1920 换算成屏幕 px
+   * 这里与比例尺同样按视口宽 / 1920 换算成屏幕 px。
+   * 未设顶部保留带（labelSafeTop 为 0）时只做标签之间的避让
    */
   _avoidLabels() {
-    if (!this.labelSafeTop) return
     const k = this.viewportWidth / 1920
-    this.markers.avoidTop(
+    this.markers.avoidLabels(
       this.camera,
+      this.width,
       this.height,
-      this.labelSafeTop * k,
+      this.labelSafeTop ? this.labelSafeTop * k : -Infinity,
       LABEL_LEAD * k
     )
   }
