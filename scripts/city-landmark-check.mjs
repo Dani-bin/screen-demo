@@ -5,15 +5,26 @@
  * 用法（仓库根目录）：
  *   node scripts/city-landmark-check.mjs stats 熊猫基地 杜甫草堂 …
  *     每个景点一行：三角形（各 Mesh 分列）、Mesh 数、定位针底座高度、步行路径条数与总长、几何哈希、构建耗时。
- *     几何哈希对各 Mesh 的世界矩阵与 position / color 字节做 FNV-1a，用来确认重构前后几何一字不差。
+ *     几何哈希对各 Mesh 的世界矩阵与 position / normal / color / index 字节做 FNV-1a，
+ *     用来确认重构前后几何一字不差。
  *   node scripts/city-landmark-check.mjs walk 熊猫基地
- *     步行路径校验（方法同 docs/superpowers/specs/2026-09-29-city-crowd-design.md「校验方法」）：
- *     1 支撑面：可走带内每个样点，路径高度 y + 0.25 以下最高的景点表面须与 y 相差 ≤ 0.06 m；
+ *     步行路径校验（方法同 docs/superpowers/specs/2026-09-29-city-crowd-design.md「校验方法」）。
+ *     路径字段先按 crowd.js 的 preparePath 规整（丢弃非法点；有效点不足 2 个的路径判为坏；
+ *     点数 ≥ 3 才算闭合；y、width 非法时取 0，width 为 0 时只取中线样点）。
+ *     路径本体样点沿中线每 0.5 m 一组，横向从 −width/2 到 +width/2（含两条边缘）等距取点：
+ *     1 支撑面：路径高度 y + 0.25 以下最高的景点表面须与 y 相差 ≤ 0.06 m；
  *     2 头顶净空：样点正上方 y + 0.25 ～ y + 4.35 之间不得有景点表面；
- *     3 分部件净距：腿 / 身体 / 头三个高度带内的景点三角形，离样点的水平距离分别 ≥ 0.63 / 0.86 / 0.52 m；
- *       开放路径端点再沿路径方向外探 1 m 取样，只查是否碰到障碍（不要求净距；
- *       同 dufu.js 设计注释的口径）。
- *     只看景点自己的三角形（城市通用楼、通用树、水面不在其中）。有坏点时退出码为 1。
+ *     3 分部件净距：腿 / 身体 / 头三个高度带内的景点三角形，离样点的水平距离分别 ≥ 0.63 / 0.86 / 0.52 m。
+ *     开放路径两端再各取一条外探线（端点沿路径方向外延 1 m，每 0.05 m 一个点），
+ *     只查是否碰到障碍、不查支撑与净空：任一高度带内有景点三角形落在外探线上或离它 ≤ 0.04 m
+ *     即判坏（竖直墙面的水平投影是线段，所以用 0.04 m 容差，同 wuhou.js 的校验口径；
+ *     不要求完整净距，同 dufu.js 设计注释「端点沿路径方向外探 1 m 仍不碰障碍」）。
+ *     有坏点、无步行路径、无效路径时退出码为 1。
+ *   局限：
+ *     - 支撑面只认该景点自己的三角形（城市通用楼、通用树、地面、道路、水面都不在其中），
+ *       所以走在城市地面 / 道路上的景点（如 IFS 的路边人行道）会报支撑失败，不适用本模式。
+ *     - 三角形索引按 2 m 格登记并外扩 0.86 m，「最近」超过 0.86 m 的数值只是上界。
+ * 退出码：0 通过；1 有坏点 / 无步行路径 / 景点没有注册模块；2 用法错误或未知景点名。
  * 景点构建与线上一致：ctx = { project, buildings, theme, spot }（同 lab.js 的 buildSubject）。
  */
 import { readFileSync } from "node:fs"
@@ -26,12 +37,19 @@ const imp = (p) => import(pathToFileURL(resolve(ROOT, p)).href)
 const { createProjection } = await imp("src/views/city/scene/projection.js")
 const { THEME } = await imp("src/views/city/scene/theme.js")
 const { SPOTS } = await imp("src/views/city/data/cityData.js")
-const { buildLandmark } = await imp("src/views/city/scene/landmarks/index.js")
+const { buildLandmark, LANDMARK_MODULES } = await imp(
+  "src/views/city/scene/landmarks/index.js"
+)
 
 const geo = JSON.parse(
   readFileSync(resolve(ROOT, "public/city/chengdu.json"), "utf8")
 )
 const project = createProjection(geo.meta.origin)
+
+/** 取较大的退出码（多个景点依次校验时，不让后面的 1 盖掉前面的 2） */
+function fail(code) {
+  process.exitCode = Math.max(process.exitCode || 0, code)
+}
 
 /** 按景点名构建（ctx 与 createLandmarks 传给模块的完全一致） */
 function build(name) {
@@ -70,6 +88,27 @@ function fnv(hash, bytes) {
 const bytesOf = (arr) =>
   new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength)
 
+/**
+ * 路径规整，规则同 crowd.js 的 preparePath：丢弃非有限点；有效点不足 2 个返回 null；
+ * 点数 ≥ 3 才算闭合；y 非有限时取 0；width 非有限或 ≤ 0 时取 0（只取中线样点）。
+ * 返回值里的 count 为有效点数，供报告「路径无效」时使用。
+ */
+function normalizeWalkway(w) {
+  const raw = w && Array.isArray(w.points) ? w.points : []
+  const points = raw.filter(
+    (p) => Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1])
+  )
+  if (points.length < 2) return { valid: false, count: points.length }
+  return {
+    valid: true,
+    count: points.length,
+    points,
+    closed: Boolean(w.closed) && points.length >= 3,
+    y: Number.isFinite(w.y) ? w.y : 0,
+    width: Number.isFinite(w.width) && w.width > 0 ? w.width : 0
+  }
+}
+
 /** 折线长度（closed 时含末点回到首点） */
 function pathLength(points, closed) {
   let len = 0
@@ -95,19 +134,25 @@ function stats(name) {
     tris += n
     per.push(String(n))
     hash = fnv(hash, bytesOf(new Float32Array(m.matrixWorld.elements)))
-    for (const key of ["position", "color"]) {
+    for (const key of ["position", "normal", "color"]) {
       const a = g.attributes[key]
-      if (a) hash = fnv(hash, bytesOf(a.array))
+      if (!a) continue
+      // 交错属性的数据在 data.array 里
+      hash = fnv(
+        hash,
+        bytesOf(a.isInterleavedBufferAttribute ? a.data.array : a.array)
+      )
     }
+    if (g.index) hash = fnv(hash, bytesOf(g.index.array))
   }
-  const walk = r.walkways.reduce(
-    (s, w) => s + pathLength(w.points, w.closed),
-    0
-  )
+  const walkLen = r.walkways.reduce((s, raw) => {
+    const w = normalizeWalkway(raw)
+    return w.valid ? s + pathLength(w.points, w.closed) : s
+  }, 0)
   console.log(
     `${name}  三角形 ${tris}（${per.join(" + ")}）  Mesh ${per.length}  ` +
       `底座 ${r.markerHeight.toFixed(1)}  路径 ${r.walkways.length} 条 ` +
-      `${Math.round(walk)} m  哈希 ${hash.toString(16).padStart(8, "0")}  ` +
+      `${Math.round(walkLen)} m  哈希 ${hash.toString(16).padStart(8, "0")}  ` +
       `构建 ${ms.toFixed(0)} ms`
   )
 }
@@ -116,9 +161,12 @@ function stats(name) {
 
 const HEAD = 4.35 // 最高个体头顶（4 m × 1.08）
 const STEP = 0.5 // 沿中线取样间距
-const LAT = 0.25 // 横向取样间距
+const LAT = 0.25 // 横向取样间距上限（实际间距 = 半宽 / ceil(半宽 / LAT)，样点恰好落在 ±width/2 边缘）
 const SUPPORT_TOL = 0.06
 const UNDERFOOT = 0.25 // 路面以上这个高度以内的表面算「脚下」，以上算「头顶」
+const PROBE_LEN = 1 // 开放路径端点外探长度
+const PROBE_STEP = 0.05 // 外探线上的取点间距
+const TOUCH = 0.04 // 外探「碰到障碍」的水平距离容差（竖直面的水平投影是线段）
 const CELL = 2 // 三角形索引格（米）
 const BANDS = [
   { name: "腿", y0: 0.25, y1: 1.56, clear: 0.63 },
@@ -127,12 +175,20 @@ const BANDS = [
 ]
 const MAX_CLEAR = 0.86
 
-/** 一条路径的样点：{ x, z, end }，end 为开放路径端点外探样点（只查净距） */
+/**
+ * 一条（已规整）路径的样点，统一为 { end, pts }：pts 是 [x, z] 数组。
+ *   - 路径本体样点：end = false，pts 只有一个点，要查支撑、头顶净空和完整分带净距；
+ *   - 开放路径端点外探线：end = true，pts 是端点到外延 1 m 的一串点（每 0.05 m 一个），
+ *     只查是否碰到障碍（任一点离某高度带内的三角形 ≤ TOUCH），不查支撑与净空。
+ */
 function samplesOf(w) {
   const pts = w.closed ? [...w.points, w.points[0]] : w.points
   const half = w.width / 2
-  const nLat = Math.floor(half / LAT + 1e-9)
+  // 横向点数取整到刚好覆盖 ±half，间距 half / nLat ≤ LAT；width 为 0 时只取中线
+  const nLat = half > 0 ? Math.ceil(half / LAT - 1e-9) : 0
+  const latStep = nLat ? half / nLat : 0
   const out = []
+  let started = false
   for (let i = 0; i + 1 < pts.length; i++) {
     const [ax, az] = pts[i]
     const [bx, bz] = pts[i + 1]
@@ -141,31 +197,45 @@ function samplesOf(w) {
     const ux = (bx - ax) / len
     const uz = (bz - az) / len
     const n = Math.ceil(len / STEP)
-    for (let s = 0; s <= n; s++) {
+    // 中间顶点已被上一段的末样点取过，第一条有效段之后的段从 s = 1 起取
+    for (let s = started ? 1 : 0; s <= n; s++) {
       const t = (s / n) * len
       for (let k = -nLat; k <= nLat; k++) {
         // 法向 (−uz, ux)：沿中线两侧 ±width/2 均匀取点
+        const off = k * latStep
         out.push({
-          x: ax + ux * t - uz * k * LAT,
-          z: az + uz * t + ux * k * LAT,
-          end: false
+          end: false,
+          pts: [[ax + ux * t - uz * off, az + uz * t + ux * off]]
         })
       }
     }
+    started = true
   }
   if (!w.closed) {
+    // 外探方向：从端点向内找到第一个不重合的点，方向取「内点 → 端点」
     const ends = [
-      [pts[0], pts[1]],
-      [pts[pts.length - 1], pts[pts.length - 2]]
+      [0, 1, 1],
+      [pts.length - 1, pts.length - 2, -1]
     ]
-    for (const [p, q] of ends) {
+    for (const [pi, first, dir] of ends) {
+      const p = pts[pi]
+      let q = null
+      for (let j = first; j >= 0 && j < pts.length; j += dir) {
+        if (Math.hypot(p[0] - pts[j][0], p[1] - pts[j][1]) >= 1e-6) {
+          q = pts[j]
+          break
+        }
+      }
+      if (!q) continue
       const len = Math.hypot(p[0] - q[0], p[1] - q[1])
-      if (len < 1e-6) continue
-      out.push({
-        x: p[0] + (p[0] - q[0]) / len,
-        z: p[1] + (p[1] - q[1]) / len,
-        end: true
-      })
+      const dx = (p[0] - q[0]) / len
+      const dz = (p[1] - q[1]) / len
+      const probe = []
+      const m = Math.round(PROBE_LEN / PROBE_STEP)
+      for (let s = 0; s <= m; s++) {
+        probe.push([p[0] + dx * s * PROBE_STEP, p[1] + dz * s * PROBE_STEP])
+      }
+      out.push({ end: true, pts: probe })
     }
   }
   return out
@@ -302,27 +372,43 @@ function polyDist(poly, x, z) {
 
 function walk(name) {
   const r = build(name)
+  if (!r.walkways.length) {
+    console.log(`${name}  没有步行路径`)
+    fail(1)
+    return
+  }
   const T = worldTriangles(r)
   let total = 0
   console.log(`${name}  步行路径 ${r.walkways.length} 条`)
-  r.walkways.forEach((w, idx) => {
+  r.walkways.forEach((raw, idx) => {
+    const w = normalizeWalkway(raw)
+    if (!w.valid) {
+      total++
+      console.log(`  #${idx + 1}  无效路径（有效点 ${w.count} 个，不足 2 个）`)
+      return
+    }
     const samples = samplesOf(w)
+    // 样点格集合：本体样点一个点，外探线上每个点都要登记
     const cells = new Map()
     for (const s of samples) {
-      const k = cellKey(cellOf(s.x), cellOf(s.z))
-      if (!cells.has(k)) cells.set(k, [])
+      for (const [x, z] of s.pts) {
+        const k = cellKey(cellOf(x), cellOf(z))
+        if (!cells.has(k)) cells.set(k, [])
+      }
     }
     indexTriangles(T, cells)
     const bad = { support: 0, head: 0 }
-    const near = BANDS.map(() => Infinity)
+    const near = BANDS.map(() => Infinity) // 路径本体样点的最近距离
+    let probeNear = Infinity // 外探线到任一高度带三角形的最近距离
     const bandBad = BANDS.map(() => 0)
     for (const s of samples) {
-      const list = cells.get(cellKey(cellOf(s.x), cellOf(s.z)))
       if (!s.end) {
+        const [x, z] = s.pts[0]
+        const list = cells.get(cellKey(cellOf(x), cellOf(z)))
         let support = -Infinity
         let roof = false
         for (const t of list) {
-          const y = heightAt(T, t * 9, s.x, s.z)
+          const y = heightAt(T, t * 9, x, z)
           if (y === null) continue
           if (y <= w.y + UNDERFOOT) support = Math.max(support, y)
           else if (y < w.y + HEAD) roof = true
@@ -331,15 +417,24 @@ function walk(name) {
         if (roof) bad.head++
       }
       BANDS.forEach((band, bi) => {
+        // 外探线取其全部点中最近的一个
         let d = Infinity
-        for (const t of list) {
-          const poly = clipSlab(T, t * 9, w.y + band.y0, w.y + band.y1)
-          if (poly.length) d = Math.min(d, polyDist(poly, s.x, s.z))
+        for (const [x, z] of s.pts) {
+          const list = cells.get(cellKey(cellOf(x), cellOf(z)))
+          for (const t of list) {
+            const poly = clipSlab(T, t * 9, w.y + band.y0, w.y + band.y1)
+            if (poly.length) d = Math.min(d, polyDist(poly, x, z))
+          }
         }
-        near[bi] = Math.min(near[bi], d)
-        // 端点外探样点只查「碰到障碍」（落在高度带内三角形的水平投影内或边上），
-        // 路径本体样点要满足该高度带的完整净距
-        if (s.end ? d <= 0 : d < band.clear) bandBad[bi]++
+        if (s.end) {
+          // 外探线只查是否碰到障碍（含竖直墙面）
+          probeNear = Math.min(probeNear, d)
+          if (d <= TOUCH) bandBad[bi]++
+        } else {
+          // 路径本体样点要满足该高度带的完整净距
+          near[bi] = Math.min(near[bi], d)
+          if (d < band.clear) bandBad[bi]++
+        }
       })
     }
     const n = bad.support + bad.head + bandBad.reduce((a, b) => a + b, 0)
@@ -350,19 +445,37 @@ function walk(name) {
         BANDS.map((b, i) => `${b.name} ${bandBad[i]}`).join("  ") +
         `  最近：` +
         BANDS.map((b, i) => `${b.name} ${fmt(near[i])}`).join(" / ") +
-        " m"
+        " m" +
+        (w.closed ? "" : `  外探最近 ${fmt(probeNear)} m`)
     )
   })
   console.log(`坏点合计 ${total}`)
-  if (total > 0) process.exitCode = 1
+  if (total > 0) fail(1)
 }
 
 const [mode, ...names] = process.argv.slice(2)
-if (mode === "stats" && names.length) names.forEach(stats)
-else if (mode === "walk" && names.length) names.forEach(walk)
-else {
+const runner = mode === "stats" ? stats : mode === "walk" ? walk : null
+if (!runner || !names.length) {
   console.error(
     "用法：node scripts/city-landmark-check.mjs stats|walk <景点名> …"
   )
-  process.exitCode = 2
+  fail(2)
+} else {
+  for (const name of names) {
+    if (!SPOTS.some((s) => s.name === name)) {
+      console.error(
+        `未知景点：${name}\n可用景点：${SPOTS.map((s) => s.name).join("、")}`
+      )
+      fail(2)
+      continue
+    }
+    if (!LANDMARK_MODULES[name]) {
+      console.warn(
+        `警告：${name} 在 SPOTS 里有、但没有注册景点模块（landmarks/index.js 的 LANDMARK_MODULES），无法校验`
+      )
+      fail(1)
+      continue
+    }
+    runner(name)
+  }
 }
