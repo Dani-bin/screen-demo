@@ -517,10 +517,14 @@ def main():
     layers = {k: list(main_part[k]) for k in LAYERS}
     # 主城区各类要素个数（飞地追加之前）：写进 meta.mainCounts，之后重跑 --keep-main 靠它分出主城区
     main_counts = {k: len(layers[k]) for k in LAYERS}
-    # 水面 / 绿地多边形按几何去重：大面（如河流关系）可能被主城区与飞地的查询都返回，
-    # 同一区域内同一 OSM 面也可能出两次（如关系的 outer way 自身也带 natural=water），
-    # 同一 OSM 面两次投影、取整的结果逐点相同。主城区部分原样保留，只用来判重
-    seen = {k: {json.dumps(p) for p in layers[k]} for k in ("water", "parks")}
+    # 水面 / 绿地多边形按几何去重（同一 OSM 面两次投影、取整的结果逐点相同）。两个来源要分开处理：
+    # - 与主城区比：飞地查询返回的大面（如河流关系）可能主城区已经带了一份完整（未裁剪）的，
+    #   拿裁剪前的原始几何跟主城区判重，重了就整块不要；主城区部分原样保留，只用来判重
+    # - 飞地之间、飞地内部比：一块面跨两个飞地时，每个飞地应各留自己裁出来的那一块，
+    #   所以拿裁剪后的几何判重（同一飞地里同一 OSM 面出两次，如关系的 outer way 自身也带
+    #   natural=water，裁出来的形状必然相同，同样会被去掉）
+    main_keys = {k: {json.dumps(p) for p in layers[k]} for k in ("water", "parks")}
+    out_keys = {k: set(v) for k, v in main_keys.items()}  # 主城区 + 已收下的飞地多边形（裁剪后）
 
     # ---- 飞地：逐块拉取并追加在主城区之后（主城区数组下标不变） ----
     enclaves = []
@@ -531,31 +535,29 @@ def main():
         added = {}
         dup = clipped = dropped = 0
         for k in LAYERS:
-            if k not in seen:
+            if k not in main_keys:
                 layers[k].extend(part[k])
                 added[k] = len(part[k])
                 continue
             # 飞地的水面 / 绿地多边形不裁剪的话，会伸进飞地与主城区之间空旷的地带
-            # （如长达 10 km 的运河、在飞地外撒一堆通用树木的大公园），所以逐个去重后
+            # （如长达 10 km 的运河、在飞地外撒一堆通用树木的大公园），所以去重后
             # 裁剪到本飞地的裁剪矩形；主城区的多边形保持原样不裁剪
             n0 = len(layers[k])
             for p in part[k]:
-                key = json.dumps(p)
-                if key in seen[k]:
+                if json.dumps(p) in main_keys[k]:  # 主城区已有完整的一份：用裁剪前的几何判重
                     dup += 1
                     continue
-                seen[k].add(key)
                 q = clip_polygon(p, x0, z0, x1, z1)
                 if q is None:
                     dropped += 1
                     continue
+                key = json.dumps(q)
+                if key in out_keys[k]:  # 与已收下的重复（含两块不同的面裁完后恰好相同，如都盖满整个矩形）
+                    dup += 1
+                    continue
+                out_keys[k].add(key)
                 if q != p:
                     clipped += 1
-                    key = json.dumps(q)
-                    if key in seen[k]:  # 两块不同的面裁剪后可能完全相同（如都把整个矩形盖住）
-                        dup += 1
-                        continue
-                    seen[k].add(key)
                 layers[k].append(q)
             added[k] = len(layers[k]) - n0
         # 自检：飞地楼栋应落在飞地裁剪框内（楼不裁剪；Overpass 只返回与范围相交的楼，跨框的个别楼会计入「超出」）
@@ -575,19 +577,31 @@ def main():
         **layers,
     }
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
-    with open(args.out, "w", encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
+    # 原子写出：先写到 --out 旁边的临时文件，自检通过后再 os.replace 覆盖；
+    # 写出或自检失败就删掉临时文件，--out（可能正是 --keep-main 的输入）保持原样不被写坏
+    tmp = args.out + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
 
-    if args.keep_main:
-        # 自检：把写出的文件读回来，前 mainCounts[k] 项必须与旧文件里取出的主城区部分逐项一致
-        # （飞地只追加在后面），且数组总长与内存里一致；不一致就以非零状态退出
-        with open(args.out, encoding="utf-8") as f:
-            written = json.load(f)
-        if written["meta"]["mainCounts"] != main_counts or not all(
-            len(written[k]) == len(layers[k]) and written[k][: main_counts[k]] == main_part[k] for k in LAYERS
-        ):
-            raise SystemExit(f"自检失败：{args.out} 的主城区数据与 {args.keep_main} 不一致")
-        print("自检：输出文件的主城区数据与旧文件逐项一致")
+        if args.keep_main:
+            # 自检：把写出的临时文件读回来，前 mainCounts[k] 项必须与旧文件里取出的主城区部分逐项一致
+            # （飞地只追加在后面），且数组总长与内存里一致；不一致就以非零状态退出
+            with open(tmp, encoding="utf-8") as f:
+                written = json.load(f)
+            if written["meta"]["mainCounts"] != main_counts or not all(
+                len(written[k]) == len(layers[k]) and written[k][: main_counts[k]] == main_part[k]
+                for k in LAYERS
+            ):
+                raise SystemExit(
+                    f"自检失败：写出的主城区数据与 {args.keep_main} 不一致，已删除临时文件，{args.out} 保持不变"
+                )
+            print("自检：输出文件的主城区数据与旧文件逐项一致")
+        os.replace(tmp, args.out)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
 
     size_kb = os.path.getsize(args.out) // 1024
     print(
