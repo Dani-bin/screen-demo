@@ -44,6 +44,8 @@ export const C = {
   gateWhite: "#F2F0EA", // 南大门白壳、花盆沿、圆窗
   gateSlat: "#B9826C", // 南大门竖向格栅
   gateSign: "#2E3033", // 南大门名牌座
+  // 南大门头环、右小拱里的背板：照片里处在壳体阴影中，比白壳暗一档，才衬得出白色眼斑与格栅
+  gateShade: "#CFCBC2",
   bronze: "#C9A043", // 熊猫铜像金
   bronzeDark: "#8C6A2E", // 铜像暗部
   flowerRed: "#D8352A",
