@@ -78,7 +78,9 @@ export const C = {
   sakura: "#F2A7B8",
   swanRed: "#D8352A",
   deck: "#9A7B58", // 木栈平台
-  bankStone: "#9A948A" // 驳岸石
+  bankStone: "#9A948A", // 驳岸石
+  // 天鹅湖边的红色长椅（照片 sheet_main_3 #87、#89、#90）：比花坛红暗一档，不与花坛、天鹅红喙混成一色
+  bench: "#B8402F"
 }
 
 /** 竹叶四色（同杜甫草堂、望江楼） */
