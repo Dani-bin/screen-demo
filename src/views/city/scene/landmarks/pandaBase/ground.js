@@ -27,11 +27,8 @@ import {
 
 /** 路面带厚度（米）：顶面在 y，侧面向下 0.15 m，底埋在草地里 */
 const ROAD_THICK = 0.15
-/**
- * 开放园路渲染时两端各外延的长度（米）：与相邻路面带、广场重叠，接缝处不漏出草地。
- * 导出给 gate.js：门洞地面要对齐 entry 外延后的起端封口，与它对边而不重叠
- */
-export const ROAD_END_EXT = 0.4
+/** 开放园路渲染时两端各外延的长度（米）：与相邻路面带、广场重叠，接缝处不漏出草地 */
+const ROAD_END_EXT = 0.4
 
 /**
  * 园路：id 供 walkways 引用；main 为观光车道 / 主路（PAVE_Y、宽 w），否则为次级步道（PATH_Y）；
@@ -337,6 +334,32 @@ export function roadRibbon(r) {
   const y = r.main ? PAVE_Y : PATH_Y
   const pts = r.closed ? r.pts : extendEnds(r.pts, ROAD_END_EXT)
   return ribbon(pts, r.w, y - ROAD_THICK, y, { closed: !!r.closed })
+}
+
+/**
+ * 开放园路渲染后一端的封口边：两端外延 ROAD_END_EXT 后，端点沿该端所在段的左右法向各偏半宽
+ * （与 roadRibbon → ribbon 在开放端的算法一致：端点只有一段，斜接系数为 1）。
+ * 供相邻铺装（如南大门门洞地面）对齐这条边、只对边不重叠。
+ * @param {object} r ROADS 里的一条开放园路
+ * @param {"start" | "end"} which 起端或末端
+ * @returns {[[number, number], [number, number]]} [左角, 右角]：沿点列前进方向的左手侧、右手侧
+ *   （左手法向为 (−dz, dx)，同 ribbon 的 L0 / R0）
+ */
+export function roadEndCap(r, which = "start") {
+  if (r.closed) throw new Error(`熊猫基地：环形园路 ${r.id} 没有端口`)
+  const pts = extendEnds(r.pts, ROAD_END_EXT)
+  const n = pts.length
+  const [a, b] = which === "start" ? [pts[0], pts[1]] : [pts[n - 2], pts[n - 1]]
+  const p = which === "start" ? a : b
+  const dx = b[0] - a[0]
+  const dz = b[1] - a[1]
+  const l = Math.hypot(dx, dz) || 1
+  const sx = ((-dz / l) * r.w) / 2
+  const sz = ((dx / l) * r.w) / 2
+  return [
+    [p[0] + sx, p[1] + sz],
+    [p[0] - sx, p[1] - sz]
+  ]
 }
 
 /** 铺一条园路：路面带进地面批、栅格打 F_PAVE（用原始点列，不含外延）、登记到 site.paths */

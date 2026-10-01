@@ -283,6 +283,40 @@ export function bearingDiff(a, b, period = 360) {
   return Math.min(d, period - d)
 }
 
+/**
+ * 多边形各边向内平移 d 米，返回新多边形（不改原数组）：角点取相邻两条平移边的交点（斜接）。
+ * 绕向按带符号面积判断，顺时针、逆时针输入都向内收；d < 0 即向外扩。
+ * 只适用于凸多边形或近凸的平缓轮廓（池沿、花坛、驳岸内线）：凹角处平移边的交点可能越过
+ * 相邻边、收出自交轮廓；d 也不要超过最短边附近的内切宽度。
+ * @param {Array<[number, number]>} poly 轮廓 [[x, z], ...]（不重复首点）
+ * @param {number} d 内收距离（米）
+ * @returns {Array<[number, number]>}
+ */
+export function insetPolygon(poly, d) {
+  const n = poly.length
+  // 带符号面积的两倍：> 0 为 x→z 逆时针（俯视、北在上时为顺时针，Z 向南）
+  let area2 = 0
+  for (let i = 0; i < n; i++) {
+    const [x0, z0] = poly[i]
+    const [x1, z1] = poly[(i + 1) % n]
+    area2 += x0 * z1 - x1 * z0
+  }
+  const s = area2 > 0 ? 1 : -1
+  // 各边的单位内法向：逆时针取左手法向 (−dz, dx)，顺时针取反
+  const nor = poly.map((p, i) => {
+    const q = poly[(i + 1) % n]
+    const l = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1
+    return [(-s * (q[1] - p[1])) / l, (s * (q[0] - p[0])) / l]
+  })
+  return poly.map(([x, z], i) => {
+    const a = nor[(i - 1 + n) % n]
+    const b = nor[i]
+    // 两条平移边交点：沿两法向之和走 d / (1 + a·b)
+    const k = d / (1 + a[0] * b[0] + a[1] * b[1])
+    return [x + (a[0] + b[0]) * k, z + (a[1] + b[1]) * k]
+  })
+}
+
 /** 圆形替换区：以 (cx, cz) 为中心、半径 r 的正 n 边形 */
 export function circlePolygon(cx, cz, r, n = 16) {
   return Array.from({ length: n }, (_, k) => {

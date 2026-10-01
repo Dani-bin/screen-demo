@@ -13,9 +13,13 @@
  *   → 右端平顶亭；白带、头环、小拱与下方拱线之间是一排竖向赭红木格栅。
  *   门洞：主拱净宽 8 × 1.25 = 10 m、净高 5.5 × 1.25 ≈ 6.9 m（> 小人头顶净空 4.35 m），
  *   门洞中点由 gatePassage() 给出，第 1 条步行路径从这里穿过。
- * 门洞地面（地面批，PAVE_Y，与广场同色）：从广场北缘铺到入园主路 entry 的起点，
- *   与广场、entry 都只对边、不重叠（同高共面、颜色不同，重叠会闪烁），见 buildForecourt。
- * 熊猫铜像（插画放大 ×2.2）：三层同心圆花坛 + 金色「蛋形」母熊猫怀抱幼崽，面朝东南的大门。
+ * 门洞地面（地面批，PAVE_Y）：从广场北缘铺到入园主路 entry 的起点，见 buildForecourt。
+ *   颜色与广场相同（C.plaza，读成一整片门前广场），只有 entry 路面（C.road）颜色不同；
+ *   与两者都只对边、不重叠（同高共面，与 entry 重叠会闪烁，与广场重叠也是多余的共面三角形）。
+ * 门东侧补地：园界与广场东北臂之间有一条两边都不管的空档，露出城市地面（−0.5）成坑，
+ *   用同色铺装补平，见 buildEastFill。
+ * 熊猫铜像（插画放大 ×2.2）：三层同心圆花坛 + 金色「蛋形」母熊猫怀抱幼崽，面朝东南的大门；
+ *   脸前留一条视线走廊（占用栅格 F_WALK），后续种树种竹不进。
  * 南门广场：OSM 的 5 块草坪内环与喷泉池从广场挖洞（site.plazaHoles），洞里的草坪、池沿、池水在这里画。
  */
 import {
@@ -35,10 +39,10 @@ import { THEME } from "../../theme.js"
 import { GROUND_Y } from "../../terrain.js"
 import { frame, local } from "../kit/builder.js"
 import { addTree } from "../kit/figures.js"
-import { circlePolygon, distToSegment } from "../kit/footprint.js"
+import { circlePolygon, distToSegment, insetPolygon } from "../kit/footprint.js"
 import { box, extrudePolygon, fromTriangles } from "../kit/shapes.js"
-import { ROAD_END_EXT, ROADS } from "./ground.js"
-import { C, F_PAVE, F_TREE, LAWN_Y, PAVE_Y } from "./site.js"
+import { ROADS, roadEndCap } from "./ground.js"
+import { C, F_PAVE, F_TREE, F_WALK, LAWN_Y, PAVE_Y } from "./site.js"
 
 const L = THEME.landmark
 const DEG = Math.PI / 180
@@ -57,8 +61,17 @@ const SINK = (GROUND_Y - PAVE_Y) / S
 
 /* 南大门构件（真实尺寸，米；u、v、h 见文件头） */
 const GATE = {
-  // 黑色名牌座：朝广场一面一道白色字带（「成都大熊猫繁育研究基地」）与一块白色熊猫标志
-  sign: { u0: -15, u1: -7, v0: 0.5, v1: 5.5, h: 3.2 },
+  // 黑色名牌座：朝广场一面一道白色字带（「成都大熊猫繁育研究基地」，宽 w、高 h、底高 y，
+  // 左右居中）与一块白色熊猫标志（边长 s，中心 u、底高 y），照片 pb_southgate02
+  sign: {
+    u0: -15,
+    u1: -7,
+    v0: 0.5,
+    v1: 5.5,
+    h: 3.2,
+    text: { w: 6.6, h: 0.5, y: 1.0 },
+    logo: { u: -12.8, y: 1.8, s: 0.9 }
+  },
   // 后翼平顶房（OSM 门体轮廓伸向园内的一块；外观无照片，做白墙平顶）
   wing: { u0: -15.2, u1: -3.4, v0: -10.9, v1: 0, h: 4.0 },
   // 波浪白带：截面宽（v 向）6、厚 0.6；中线高度按 smoothstep 从名牌座顶升到头环左肩：
@@ -88,8 +101,9 @@ const GATE = {
     n: 8
   },
   // 熊猫头环：椭圆环外沿半轴 3.3（u）× 3.5（h）、环带宽 0.8、厚（v 向）1.6，前面与白带前沿齐平。
-  // 环心高取 6.85（文档 7.0）：左耳顶离门前铺装 10.48 × 1.25 = 13.1 m（即文档「耳顶 10.5 × 1.25」、
-  // index.js 的 MARKER_HEIGHT），照片里耳顶又略高于环顶，环顶只能压到 10.35
+  // 环心高取 6.85（文档 7.0）：左耳顶离门前铺装 10.48 × 1.25 = 13.1 m（即文档「耳顶 10.5 × 1.25」，
+  // 世界高度 PAVE_Y + 13.1 = 14.1，由 buildGate 返回作定位针底座），照片里耳顶又略高于环顶，
+  // 环顶只能压到 10.35
   ring: { u: 7.5, h: 6.85, a: 3.3, b: 3.5, w: 0.8, v0: 4.4, v1: 6.0, n: 24 },
   // 左耳：横卧圆筒（轴沿 v），圆心落在环外沿左上方（u 5.3 处外沿高 9.46），顶 10.48。
   // 长取 6（文档 3）：与白带同宽，正好把白带末端封住；照片 pb_southgate01 里耳筒也几乎通长
@@ -118,9 +132,11 @@ const GATE = {
     v1: 6,
     n: 5
   },
-  // 右端平顶亭：u 14～24.7 为售票 / 安检亭（玻璃立面 + 细柱 + 出挑 0.5 的白色平顶板）。
+  // 右端平顶亭：u 14～24.7 为售票 / 安检亭（玻璃立面 + 细柱 + 出挑 over 的白色平顶板，板厚 slab）。
   // 照片里亭子往左一直接到主拱右腿边（右小拱底下是一段带深色展示窗的白墙），
-  // 所以白墙段 u 10～14 补齐，右小拱的左脚才有处落
+  // 所以白墙段 u 10～uGlass 补齐，右小拱的左脚才有处落。
+  // window：白墙正面的深色展示窗（宽、高、底高，左右居中）；glassEnd：玻璃盒东端离亭端的内收，
+  // glassInset：玻璃盒前后离亭边的内收；columns：前檐细柱的 u 位置，边长 col、离前沿 colInset
   pavilion: {
     u0: 10,
     uGlass: 14,
@@ -129,12 +145,26 @@ const GATE = {
     v1: 5.8,
     h: 3.2,
     slab: 0.35,
-    over: 0.5
+    over: 0.5,
+    window: { w: 3.0, h: 2.2, y: 0.4 },
+    glassEnd: 0.5,
+    glassInset: 0.5,
+    columns: [16.6, 20.2, 23.8],
+    col: 0.3,
+    colInset: 0.25
   },
   // 竖向格栅：每 0.9 m 一根 0.12 × 0.25 的赭红木条，立在 v 4.6 的平面上（白带前沿后 1.4 m），
   // 正好落在头环的进深（4.4～6.0）里：木条上端埋进环带，前有眼斑、后有背板
   slats: { u0: -14.55, u1: 16.5, step: 0.9, w: 0.12, d: 0.25, v: 4.6 }
 }
+// 贴在立面上的色块（字带、标志、展示窗）厚度（真实尺寸）
+const PLATE = 0.06
+
+/*
+ * 门前地面的范围（放大后米数，门坐标 u）：南边沿广场北缘从 uWest 铺到 uEast（都要落在那条广场边上，
+ * 否则 buildForecourt 会警告），北边沿门体后沿从 uWest 铺到 uGateEast（门体东端 30.9 外再让 0.6）
+ */
+const FORECOURT = { uWest: -20, uEast: 30, uGateEast: 31.5 }
 
 // 逗号形眼斑轮廓（归一化：宽约 0.8、高约 1.32，圆头在右上、尾巴向左下弯），逆时针
 const COMMA = [
@@ -226,7 +256,10 @@ const STATUE = {
   // 母熊猫「蛋形」头身一体：三轴半轴、中心（离内圈顶）、向后仰角
   body: { r: [3.6, 4.6, 3.2], y: 4.3, z: -0.3, lean: 15 },
   // 怀中幼崽头：贴在母熊猫胸前右下沿、半个头探出母熊猫轮廓（同照片）；放在脸正中会读成猪鼻子
-  cub: { r: [1.5, 1.3, 1.25], at: [2.3, -1.0], out: 0.6 }
+  cub: { r: [1.5, 1.3, 1.25], at: [2.3, -1.0], out: 0.6 },
+  // 视线走廊：自铜像中心、方位 from～to（度）、半径 r 的扇形（每 step 度一个弧点）。
+  // 到站机位方位约 125°、近景 120°～150°，这片扇形里的树冠会挡住铜像的脸
+  view: { from: 115, to: 160, r: 40, step: 5 }
 }
 
 /* ---------------- 入园主路两侧的大叶樟 ---------------- */
@@ -300,30 +333,16 @@ function ellipse(u, h, a, b, n) {
 }
 
 /**
- * 多边形向内收 d 米（各边平移、角点取相邻两边交点），适用于凸多边形（喷泉池近圆）。
- * 按带符号面积判断绕向，保证总是向内。
+ * 入园主路 entry（ROADS 里的一条两点直路）：起点 p0、单位方向 dir（向北偏西）、
+ * 东侧单位法向 east（即 ribbon 的左手法向 (−dz, dx)）、长 len；ROADS 里没有 entry 时报错
  */
-function insetPolygon(poly, d) {
-  const n = poly.length
-  let area = 0
-  for (let i = 0; i < n; i++) {
-    const [x0, z0] = poly[i]
-    const [x1, z1] = poly[(i + 1) % n]
-    area += x0 * z1 - x1 * z0
-  }
-  const s = area > 0 ? 1 : -1
-  // 各边的单位内法向
-  const nor = poly.map((p, i) => {
-    const q = poly[(i + 1) % n]
-    const l = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1
-    return [(-s * (q[1] - p[1])) / l, (s * (q[0] - p[0])) / l]
-  })
-  return poly.map(([x, z], i) => {
-    const a = nor[(i - 1 + n) % n]
-    const b = nor[i]
-    const k = d / (1 + a[0] * b[0] + a[1] * b[1])
-    return [x + (a[0] + b[0]) * k, z + (a[1] + b[1]) * k]
-  })
+function entryAxis() {
+  const road = ROADS.find((r) => r.id === "entry")
+  if (!road) throw new Error("熊猫基地：ROADS 里缺入园主路 entry")
+  const [p0, p1] = road.pts
+  const len = Math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+  const dir = [(p1[0] - p0[0]) / len, (p1[1] - p0[1]) / len]
+  return { road, p0, dir, east: [-dir[1], dir[0]], len }
 }
 
 /** 竖向木条（4 个侧面，上下端埋进白带 / 拱 / 地面），list 为 [u, h0, h1]，全部合成一个几何体 */
@@ -371,49 +390,59 @@ function smallArchInner(u) {
   return base + (top - base - thick) * Math.sqrt(1 - x * x)
 }
 
-/** 头环外沿上半在 u 处的高度；u 在环外返回 null */
-function ringTop(u) {
-  const { u: cu, h, a, b } = GATE.ring
-  const x = (u - cu) / a
-  if (Math.abs(x) >= 1) return null
-  return h + b * Math.sqrt(1 - x * x)
+/**
+ * 头环在 u 处、格栅木条上端该到的高度（真实尺寸）；u 在环外返回 null。
+ * 环内（内椭圆范围）到内椭圆上沿；环带两侧（内椭圆之外、外椭圆之内）到外椭圆下沿，
+ * 木条不会从白色环带上面戳出来。调用方再上加 0.1 m 埋进环带
+ */
+function ringSlatTop(u) {
+  const { u: cu, h, a, b, w } = GATE.ring
+  const xo = (u - cu) / a
+  if (Math.abs(xo) >= 1) return null
+  const xi = (u - cu) / (a - w)
+  if (Math.abs(xi) < 1) return h + (b - w) * Math.sqrt(1 - xi * xi)
+  return h - b * Math.sqrt(1 - xo * xo)
 }
 
-/**
- * 南大门几何（真实尺寸，局部 (u, h, v)），全部用放大矩阵 M 加进主体批。
- * 返回左耳顶的真实高度（核对定位针用）。
- */
-function addGateBody(b, M) {
-  const g = GATE
-  const white = C.gateWhite
-  // 背板：(u, h) 轮廓的单层平板放在 v = panelV（材质双面，一层就够）
-  const panel = (outline) => {
-    const pg = new ShapeGeometry(
-      new Shape(outline.map(([u, h]) => new Vector2(u, h)))
-    )
-    pg.translate(0, 0, g.panelV)
-    return pg
-  }
+/** 背板：(u, h) 轮廓的单层平板放在 v = panelV（材质双面，一层就够） */
+function backPanel(outline) {
+  const pg = new ShapeGeometry(
+    new Shape(outline.map(([u, h]) => new Vector2(u, h)))
+  )
+  pg.translate(0, 0, GATE.panelV)
+  return pg
+}
 
-  // 名牌座 + 字带 + 熊猫标志
-  const sg = g.sign
+/** 名牌座（字带、熊猫标志）与后翼平顶房 */
+function addSignAndWing(b, M) {
+  const { sign: sg, wing: wg } = GATE
+  const cu = (sg.u0 + sg.u1) / 2
   b.add(
     box(sg.u1 - sg.u0, sg.h - SINK, sg.v1 - sg.v0),
     C.gateSign,
-    local(M, (sg.u0 + sg.u1) / 2, SINK, (sg.v0 + sg.v1) / 2)
+    local(M, cu, SINK, (sg.v0 + sg.v1) / 2)
   )
-  b.add(box(6.6, 0.5, 0.06), white, local(M, (sg.u0 + sg.u1) / 2, 1.0, sg.v1))
-  b.add(box(0.9, 0.9, 0.06), white, local(M, -12.8, 1.8, sg.v1))
-  // 后翼平顶房
-  const wg = g.wing
+  b.add(
+    box(sg.text.w, sg.text.h, PLATE),
+    C.gateWhite,
+    local(M, cu, sg.text.y, sg.v1)
+  )
+  b.add(
+    box(sg.logo.s, sg.logo.s, PLATE),
+    C.gateWhite,
+    local(M, sg.logo.u, sg.logo.y, sg.v1)
+  )
   b.add(
     box(wg.u1 - wg.u0, wg.h - SINK, wg.v1 - wg.v0),
-    white,
+    C.gateWhite,
     local(M, (wg.u0 + wg.u1) / 2, SINK, (wg.v0 + wg.v1) / 2)
   )
+}
 
+/** 波浪白带与主拱 */
+function addBandAndArch(b, M) {
   // 波浪白带：上沿自左向右、下沿自右向左围成一条弯板
-  const bd = g.band
+  const bd = GATE.band
   const top = []
   const bottom = []
   for (let i = 0; i <= bd.n; i++) {
@@ -422,10 +451,10 @@ function addGateBody(b, M) {
     top.push([u, m + bd.thick / 2])
     bottom.push([u, m - bd.thick / 2])
   }
-  b.add(slab([...top, ...bottom.reverse()], bd.v0, bd.v1), white, M)
+  b.add(slab([...top, ...bottom.reverse()], bd.v0, bd.v1), C.gateWhite, M)
 
   // 主拱：拱背（外沿）自左脚到右脚、两腿向下伸到城市地面，再沿内拱线（净空）回到左脚
-  const ar = g.arch
+  const ar = GATE.arch
   const outer = archCurve(
     ar.uL - ar.thick,
     ar.uc,
@@ -447,33 +476,37 @@ function addGateBody(b, M) {
       ar.v0,
       ar.v1
     ),
-    white,
+    C.gateWhite,
     M
   )
+}
 
-  // 熊猫头环：外椭圆挖掉内椭圆
-  const rg = g.ring
+/**
+ * 熊猫头环：环带、环内背板、左耳圆筒、右耳半圆、两块逗号形眼斑
+ * @returns {number} 左耳顶的真实高度（离门前铺装）
+ */
+function addHeadRing(b, M) {
+  const { ring: rg, earL: el, earR: er } = GATE
+  // 环带：外椭圆挖掉内椭圆
   b.add(
     slab(ellipse(rg.u, rg.h, rg.a, rg.b, rg.n), rg.v0, rg.v1, [
       ellipse(rg.u, rg.h, rg.a - rg.w, rg.b - rg.w, rg.n)
     ]),
-    white,
+    C.gateWhite,
     M
   )
   // 环内背板：内椭圆外扩 0.1 m（板边埋进环带）
   b.add(
-    panel(ellipse(rg.u, rg.h, rg.a - rg.w + 0.1, rg.b - rg.w + 0.1, rg.n)),
+    backPanel(ellipse(rg.u, rg.h, rg.a - rg.w + 0.1, rg.b - rg.w + 0.1, rg.n)),
     C.gateShade,
     M
   )
   // 左耳：横卧圆筒（CylinderGeometry 轴沿 Y，绕 X 转 90° 后沿 v）
-  const el = g.earL
   const ear = new CylinderGeometry(el.r, el.r, el.v1 - el.v0, el.n, 1, false)
   ear.rotateX(Math.PI / 2)
   ear.translate(el.u, el.h, (el.v0 + el.v1) / 2)
-  b.add(ear, white, M)
+  b.add(ear, C.gateWhite, M)
   // 右耳：半圆小片，圆心在环外沿上，朝外法向张开
-  const er = g.earR
   const t = Math.acos((er.u - rg.u) / rg.a) // 椭圆参数角
   const ch = rg.h + rg.b * Math.sin(t)
   // 椭圆外法向 (cos t / a, sin t / b) 的方向角
@@ -483,20 +516,22 @@ function addGateBody(b, M) {
     const a = nAng - Math.PI / 2 + (k / er.n) * Math.PI
     half.push([er.u + er.r * Math.cos(a), ch + er.r * Math.sin(a)])
   }
-  b.add(slab(half, er.v0, er.v1), white, M)
-
+  b.add(slab(half, er.v0, er.v1), C.gateWhite, M)
   // 眼斑：逗号形轮廓按大小缩放，右眼斑左右镜像（改点坐标、不用负缩放矩阵）
-  for (const e of g.eyes) {
+  for (const e of GATE.eyes) {
     let pts = COMMA.map(([x, y]) => [
       e.u + (e.mirror ? -x : x) * (e.w / 0.8),
       e.h + y * (e.hgt / 1.32)
     ])
     if (e.mirror) pts = pts.reverse() // 镜像后恢复逆时针
-    b.add(slab(pts, g.eyeV[0], g.eyeV[1]), white, M)
+    b.add(slab(pts, GATE.eyeV[0], GATE.eyeV[1]), C.gateWhite, M)
   }
+  return el.h + el.r
+}
 
-  // 右小拱：外拱线、内拱线都立在亭顶上，脚下埋进亭顶板 0.2 m
-  const sa = g.smallArch
+/** 右小拱与拱内背板：外拱线、内拱线都立在亭顶上，脚下埋进亭顶板 0.2 m */
+function addSmallArch(b, M) {
+  const sa = GATE.smallArch
   const uc = (sa.u0 + sa.u1) / 2
   const lift = (pts) => pts.map(([u, h]) => [u, h + sa.base])
   const sOuter = lift(archCurve(sa.u0, uc, sa.u1, sa.top - sa.base, sa.n))
@@ -523,12 +558,12 @@ function addGateBody(b, M) {
       sa.v0,
       sa.v1
     ),
-    white,
+    C.gateWhite,
     M
   )
-  // 小拱里的背板：内拱线外扩 0.1 m，底边落在亭顶
+  // 拱内背板：内拱线外扩 0.1 m，底边落在亭顶
   b.add(
-    panel(
+    backPanel(
       lift(
         archCurve(
           sa.u0 + sa.thick - 0.1,
@@ -542,122 +577,208 @@ function addGateBody(b, M) {
     C.gateShade,
     M
   )
+}
 
-  // 右端平顶亭：白墙段（深色展示窗）+ 玻璃售票亭 + 细柱 + 出挑的白色平顶板
-  const pv = g.pavilion
+/** 右端平顶亭：白墙段（深色展示窗）+ 玻璃售票亭 + 细柱 + 出挑的白色平顶板 */
+function addPavilion(b, M) {
+  const pv = GATE.pavilion
   const roofBot = pv.h - pv.slab
   const depth = pv.v1 - pv.v0
+  const cv = (pv.v0 + pv.v1) / 2
+  const wallU = (pv.u0 + pv.uGlass) / 2
   b.add(
     box(pv.uGlass - pv.u0, roofBot - SINK, depth),
-    white,
-    local(M, (pv.u0 + pv.uGlass) / 2, SINK, depth / 2)
+    C.gateWhite,
+    local(M, wallU, SINK, cv)
   )
   b.add(
-    box(3.0, 2.2, 0.06),
+    box(pv.window.w, pv.window.h, PLATE),
     C.windowBand,
-    local(M, (pv.u0 + pv.uGlass) / 2, 0.4, pv.v1)
+    local(M, wallU, pv.window.y, pv.v1)
   )
+  const glassU1 = pv.u1 - pv.glassEnd
   b.add(
-    box(pv.u1 - 0.5 - pv.uGlass, roofBot - SINK, depth - 1),
+    box(glassU1 - pv.uGlass, roofBot - SINK, depth - 2 * pv.glassInset),
     L.glass,
-    local(M, (pv.uGlass + pv.u1 - 0.5) / 2, SINK, depth / 2)
+    local(M, (pv.uGlass + glassU1) / 2, SINK, cv)
   )
-  for (const u of [16.6, 20.2, 23.8]) {
-    b.add(box(0.3, roofBot - SINK, 0.3), white, local(M, u, SINK, pv.v1 - 0.25))
+  for (const u of pv.columns) {
+    b.add(
+      box(pv.col, roofBot - SINK, pv.col),
+      C.gateWhite,
+      local(M, u, SINK, pv.v1 - pv.colInset)
+    )
   }
   // 平顶板只向东、南、北三面出挑：西端紧贴头环下的格栅，不往那边伸
   b.add(
     box(pv.u1 - pv.u0 + pv.over, pv.slab, depth + 2 * pv.over, {
       bottom: true
     }),
-    white,
-    local(M, (pv.u0 + pv.u1 + pv.over) / 2, roofBot, depth / 2)
+    C.gateWhite,
+    local(M, (pv.u0 + pv.u1 + pv.over) / 2, roofBot, cv)
   )
+}
 
-  // 竖向格栅：每根木条的上端取白带底 / 头环外沿 / 右小拱内沿，下端取名牌座顶 / 地面 / 拱背 / 亭顶
-  const sl = g.slats
+/** 木条上端该到的高度（真实尺寸）：白带底 / 头环（见 ringSlatTop）/ 右小拱内沿；都不在时返回 null */
+function slatTopAt(u) {
+  if (u <= GATE.band.u1) return bandMid(u) - GATE.band.thick / 2
+  return ringSlatTop(u) ?? smallArchInner(u)
+}
+
+/**
+ * 竖向格栅。上端取木条两侧边（u ± w/2）上 slatTopAt 的较大值，再上加 0.1 m 埋进白带 / 环带 / 拱带
+ * （环带两侧、拱脚一带轮廓很陡，只按木条中线取高，一侧角会露缝）。
+ * 下端取名牌座顶 / 地面 / 亭顶（各下沉 0.1 m）；主拱范围内落在拱背上，取两侧边拱背的较小值
+ * 再下沉半个拱带厚：拱背是 8 段折线、弦在解析椭圆里面，拱脚一带又很陡，只下沉 0.1 m 时
+ * 木条一侧会悬空约 0.27 m
+ */
+function addSlats(b, M) {
+  const { slats: sl, sign: sg, arch: ar, pavilion: pv } = GATE
+  const edges = (u) => [u - sl.w / 2, u + sl.w / 2]
   const bars = []
   for (let u = sl.u0; u <= sl.u1 + 1e-6; u += sl.step) {
-    let hi = null
-    if (u <= bd.u1) hi = bandMid(u) - bd.thick / 2
-    else if (ringTop(u) !== null) hi = ringTop(u)
-    else hi = smallArchInner(u)
-    if (hi === null) continue
+    const tops = edges(u)
+      .map(slatTopAt)
+      .filter((h) => h !== null)
+    if (tops.length < 2) continue
+    const hi = Math.max(...tops)
     // 下端：名牌座顶；主拱范围内落在拱背上（门洞净空里不会有木条）；
     // 名牌座与主拱之间、主拱右腿与亭子之间落地
+    const backs = edges(u).map(archBack)
+    const onArch = u >= sg.u1 && backs.every((h) => h !== null)
     let lo = 0
     if (u < sg.u1) lo = sg.h
-    else if (archBack(u) !== null) lo = archBack(u)
+    else if (onArch) lo = Math.min(...backs)
     else if (u >= pv.u0) lo = pv.h
     if (hi - lo < 0.3) continue
-    // 上下各埋进 0.1 m，接缝处不漏光
-    bars.push([u, lo - 0.1, hi + 0.1])
+    const sink = onArch ? ar.thick / 2 : 0.1
+    bars.push([u, lo - sink, hi + 0.1])
   }
   b.add(slatBars(bars, sl.w, sl.d, sl.v), C.gateSlat, M)
+}
 
-  return el.h + el.r
+/**
+ * 南大门几何（真实尺寸，局部 (u, h, v)），全部用放大矩阵 M 加进主体批。
+ * @returns {number} 左耳顶的真实高度（离门前铺装，核对定位针用）
+ */
+function addGateBody(b, M) {
+  addSignAndWing(b, M)
+  addBandAndArch(b, M)
+  const earTop = addHeadRing(b, M)
+  addSmallArch(b, M)
+  addPavilion(b, M)
+  addSlats(b, M)
+  return earTop
+}
+
+/**
+ * 离门前最近的广场边（取门洞前方 12 m 处的点来找）：{ e0, e1, i0, i1 }，端点及其在 site.plaza 里的下标
+ */
+function plazaEdgeNearGate(site) {
+  const { spot } = site.ctx
+  const plaza = site.plaza
+  const probe = uvToXZ(spot, 4.25, 12, 1)
+  let best = null
+  let bestD = Infinity
+  for (let i = 0; i < plaza.length; i++) {
+    const j = (i + 1) % plaza.length
+    const d = distToSegment(probe[0], probe[1], plaza[i], plaza[j])
+    if (d < bestD) {
+      bestD = d
+      best = { e0: plaza[i], e1: plaza[j], i0: i, i1: j }
+    }
+  }
+  return best
 }
 
 /**
  * 门洞地面（地面批）：一整块 PAVE_Y 铺装，覆盖门前空地、门洞与门后通道。
- *   南边：沿广场北缘（离门最近的那条广场边所在直线）与广场对边，不重叠；
- *   中段：门前整条立面宽（放大后 u −20～+31.5），门洞内宽同主拱净宽（u −2～+8）；
- *   北边：收窄到 entry 路面的起端封口（entry 渲染时自 [7447, −8617] 往外延 ROAD_END_EXT），
- *   与它对边、不重叠。地面与广场同色（读成一整片门前广场），与 entry 路面颜色不同。
+ *   南边：沿广场北缘（离门最近的那条广场边）从 FORECOURT.uWest 到 uEast，与广场对边、不重叠；
+ *   中段：门前整条立面宽，门洞内宽同主拱净宽（放大后 u −2～+8）；
+ *   北边：收窄到 entry 路面的起端封口（roadEndCap，已含渲染外延），与它对边、不重叠。
  * @returns {Array<[number, number]>} 地面轮廓（世界坐标）
  */
 function buildForecourt(site) {
   const { spot } = site.ctx
-  const plaza = site.plaza
-  // 离门前最近的广场边（取门洞前方 12 m 处的点来找）
-  const probe = uvToXZ(spot, 4.25, 12, 1)
-  let e0 = null
-  let e1 = null
-  let best = Infinity
-  for (let i = 0; i < plaza.length; i++) {
-    const a = plaza[i]
-    const c = plaza[(i + 1) % plaza.length]
-    const d = distToSegment(probe[0], probe[1], a, c)
-    if (d < best) {
-      best = d
-      e0 = a
-      e1 = c
-    }
-  }
-  // 广场边所在直线上、门坐标 u = target 的点（与广场边严格共线，两块铺装只对边）
+  const { e0, e1 } = plazaEdgeNearGate(site)
+  // 广场边所在直线上、门坐标 u = target 的点（与广场边严格共线，两块铺装只对边）。
+  // 直线是外推的：target 落到广场边线段之外时，地面会伸进广场转角之外的空地，开发期警告
   const [u0] = xzToUV(spot, ...e0)
   const [u1] = xzToUV(spot, ...e1)
   const onEdge = (target) => {
     const s = (target - u0) / (u1 - u0)
-    return [e0[0] + (e1[0] - e0[0]) * s, e0[1] + (e1[1] - e0[1]) * s]
+    const p = [e0[0] + (e1[0] - e0[0]) * s, e0[1] + (e1[1] - e0[1]) * s]
+    const off = distToSegment(p[0], p[1], e0, e1)
+    if (off > 0.5) {
+      console.warn(
+        `熊猫基地：门前地面端点 u ${target} 落在广场北缘之外 ${off.toFixed(1)} m，可能与广场错位`
+      )
+    }
+    return p
   }
-  // entry 起端封口的两个角点（算法同 ground.js 的 roadRibbon：起点沿首段反方向外延后左右各偏半宽）
-  const entry = ROADS.find((r) => r.id === "entry")
-  const [p0, p1] = entry.pts
-  const dx = p1[0] - p0[0]
-  const dz = p1[1] - p0[1]
-  const l = Math.hypot(dx, dz)
-  const sx = p0[0] - (dx / l) * ROAD_END_EXT
-  const sz = p0[1] - (dz / l) * ROAD_END_EXT
-  const nx = (-dz / l) * (entry.w / 2)
-  const nz = (dx / l) * (entry.w / 2)
-  let capA = [sx + nx, sz + nz]
-  let capB = [sx - nx, sz - nz]
-  // capA 取 u 较大的一端（多边形按 u 递减方向绕回）
-  if (xzToUV(spot, ...capA)[0] < xzToUV(spot, ...capB)[0]) {
-    ;[capA, capB] = [capB, capA]
-  }
+  // entry 起端封口：按门坐标 u 从大到小排（多边形沿门后沿自东向西绕回）
+  const cap = roadEndCap(entryAxis().road, "start").sort(
+    (p, q) => xzToUV(spot, ...q)[0] - xzToUV(spot, ...p)[0]
+  )
   const ar = GATE.arch
+  const fc = FORECOURT
   const poly = [
-    onEdge(-20),
-    onEdge(31.5),
-    uvToXZ(spot, 31.5, 0, 1),
+    onEdge(fc.uWest),
+    onEdge(fc.uEast),
+    uvToXZ(spot, fc.uGateEast, 0, 1),
     uvToXZ(spot, ar.uR * S, 0, 1),
-    capA,
-    capB,
+    cap[0],
+    cap[1],
     uvToXZ(spot, ar.uL * S, 0, 1),
-    uvToXZ(spot, -20, 0, 1)
+    uvToXZ(spot, fc.uWest, 0, 1)
   ]
+  site.gb.add(extrudePolygon(poly, [], GROUND_Y, PAVE_Y), C.plaza)
+  site.grid.fillPoly(poly, F_PAVE)
+  return poly
+}
+
+/**
+ * 门东侧补地（地面批，PAVE_Y、广场同色、打 F_PAVE）：园界在门东端外折向东北
+ * （park 顶点约 (7502, −8591) → (7498, −8598) → (7534, −8627)），广场东北臂的北缘
+ * （plaza 顶点约 (7498, −8589) → (7501, −8584) → (7525, −8605)）离它 8～12 m，
+ * 中间一条约 27 × 12 m 的空档两边都不管，露出城市地面（−0.5），夹在广场（1.0）与林下草地（0.85）之间成坑。
+ * 补地沿广场边用广场的原顶点（只对边不重叠），沿园界用园界的原顶点（草地低 0.15，搭边也无妨），
+ * 东头在广场臂尖 (7525, −8605) 处沿门坐标 u 收到园界上。离门体东端（放大后 u 30.9）≥ 2 m。
+ * 顶点按坐标关系取（数据重拉后下标会变）；形状与预期不符时只警告、不补。
+ * @returns {Array<[number, number]>|null} 补地轮廓（世界坐标）
+ */
+function buildEastFill(site) {
+  const { spot } = site.ctx
+  const plaza = site.plaza
+  const park = site.park
+  const { e0, e1, i0, i1 } = plazaEdgeNearGate(site)
+  const ue = (p) => xzToUV(spot, ...p)[0]
+  const ve = (p) => xzToUV(spot, ...p)[1]
+  // 广场边东端点 pE，及其往广场东北臂方向（背离西端点）的下两个顶点
+  const [iE, iW] = ue(e0) > ue(e1) ? [i0, i1] : [i1, i0]
+  const n = plaza.length
+  const step = (iE - iW + n) % n === 1 ? 1 : -1
+  const at = (poly, i) => poly[(i + poly.length) % poly.length]
+  const pE = plaza[iE]
+  const pArm1 = at(plaza, iE + step)
+  const pArm2 = at(plaza, iE + 2 * step)
+  // 园界上离 pE 最近的顶点 q0（门东端外的折点），再往园内一侧（门坐标 v 变小）走两个顶点
+  const dist = (p) => Math.hypot(p[0] - pE[0], p[1] - pE[1])
+  let k = 0
+  for (let i = 1; i < park.length; i++) if (dist(park[i]) < dist(park[k])) k = i
+  const dirK = ve(at(park, k + 1)) < ve(at(park, k - 1)) ? 1 : -1
+  const q0 = park[k]
+  const q1 = at(park, k + dirK)
+  const q2 = at(park, k + 2 * dirK)
+  // 东头收口：q1 → q2 这段园界上、门坐标 u 与广场臂尖 pArm2 相同的点
+  const s = (ue(pArm2) - ue(q1)) / (ue(q2) - ue(q1))
+  const gateEast = GATE.pavilion.u1 * S
+  if (!(dist(q0) < 8 && s > 0 && s < 1 && ue(q1) > gateEast + 2)) {
+    console.warn("熊猫基地：门东侧园界 / 广场顶点与预期不符，未补地")
+    return null
+  }
+  const qEnd = [q1[0] + (q2[0] - q1[0]) * s, q1[1] + (q2[1] - q1[1]) * s]
+  const poly = [pE, q0, q1, qEnd, pArm2, pArm1]
   site.gb.add(extrudePolygon(poly, [], GROUND_Y, PAVE_Y), C.plaza)
   site.grid.fillPoly(poly, F_PAVE)
   return poly
@@ -738,6 +859,17 @@ function addStatue(site) {
   }
   const outerR = st.beds[0][0]
   site.solid(circlePolygon(x, z, outerR, st.bedSegs))
+  // 视线走廊：铜像脸前的扇形打 F_WALK（语义同步行路径外扩带：树冠、竹丛不进），
+  // 后续种树种竹（vegetation）会避开，到站机位与近景都看得到铜像的脸
+  const vw = st.view
+  const corridor = [[x, z]]
+  for (let bDeg = vw.from; bDeg <= vw.to + 1e-6; bDeg += vw.step) {
+    corridor.push([
+      x + vw.r * Math.sin(bDeg * DEG),
+      z - vw.r * Math.cos(bDeg * DEG)
+    ])
+  }
+  site.grid.fillPoly(corridor, F_WALK)
 
   const base = LAWN_Y + st.beds[st.beds.length - 1][1]
   const F = frame(x, base, z, st.facing + 180)
@@ -810,18 +942,11 @@ function addStatue(site) {
 /* ---------------- 入园主路行道树 ---------------- */
 
 function plantCamphors(site) {
-  const entry = ROADS.find((r) => r.id === "entry")
-  const [p0, p1] = entry.pts
-  const dx = p1[0] - p0[0]
-  const dz = p1[1] - p0[1]
-  const l = Math.hypot(dx, dz)
-  // 东侧单位向量：entry 向北偏西走，左手法向 (−dz, dx) 指向东
-  const ex = -dz / l
-  const ez = dx / l
+  const { p0, dir, east, len } = entryAxis()
   const greens = [...C.forest, ...THEME.tree.greens]
   CAMPHORS.forEach(([t, side, off, r], i) => {
-    const x = p0[0] + dx * t + side * ex * off
-    const z = p0[1] + dz * t + side * ez * off
+    const x = p0[0] + dir[0] * len * t + side * east[0] * off
+    const z = p0[1] + dir[1] * len * t + side * east[1] * off
     // 干高取 0.85 r（比默认 0.75 r 高）：树冠下沿离草地 0.65 r，冠缘探到路面上空时
     // 仍高过小人头顶净空（路面 PAVE_Y + 4.35）
     addTree(site.b, x, LAWN_Y, z, {
@@ -838,8 +963,8 @@ function plantCamphors(site) {
 /* ---------------- 入口 ---------------- */
 
 /**
- * 南大门、门洞地面、南门广场草坪与喷泉、熊猫铜像、入园行道树。在 buildPaths 之后调用。
- * @returns {{ earTop: number }} 左耳顶的世界高度（定位针核对用）
+ * 南大门、门洞地面、门东侧补地、南门广场草坪与喷泉、熊猫铜像、入园行道树。在 buildPaths 之后调用。
+ * @returns {{ earTop: number }} 左耳顶的世界高度（PAVE_Y + 10.48 × 1.25 ≈ 14.1），即定位针底座
  */
 export function buildGate(site) {
   const { spot } = site.ctx
@@ -872,6 +997,7 @@ export function buildGate(site) {
   site.solid(rect(g.arch.uR, g.pavilion.u1, g.band.v0, g.band.v1))
 
   buildForecourt(site)
+  buildEastFill(site)
   buildPlazaDetails(site)
   addStatue(site)
   plantCamphors(site)
