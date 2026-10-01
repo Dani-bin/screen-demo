@@ -1887,7 +1887,7 @@ addPanda(site.b, frame(x, y, z, 125 + 180 + 抖动), { height: 6.5, pose: "sit",
 | 10 | `no2Loop` | 2.4 | 0.5 | — |
 | 11 | `no1` | 2.4 | 0.4 | — |
 
-第 1 条的广场段 y 取 `PAVE_Y`（广场顶）；拼接两段时去掉重复点。各路径登记 `grid.stampLine(points, width / 2 + 4.5, F_WALK)`（树竹离可走带 ≥ 4.5 m，见 4.13「净空」）。
+第 1 条的广场段 y 取 `PAVE_Y`（广场顶）；拼接两段时去掉重复点。各路径登记 `grid.stampLine(points, width / 2 + 1.5, F_WALK, closed)`（可走带外留 1.5 m；树冠按真实半径避让它，一般竹丛另查离可走带 ≥ 4.5 m，竹林甬道按路径偏移落位，见 Task 12）。
 
 **接口：** `export function buildWalkways(site)` 返回 `[{ points, y, width, closed, density }]`。
 
@@ -1908,7 +1908,11 @@ addPanda(site.b, frame(x, y, z, 125 + 180 + 抖动), { height: 6.5, pose: "sit",
 
 **熊猫视线**：每棵乔木（冠心、半径约 1.15 r）与每丛竹（半高处、半径约 簇半径 + 半高）落位前调用 `site.blocksView(cx, cy, cz, radius)`，为真就跳过（Task 10 导出，保护 10 只熊猫到站点机位的视线；它只保护头部那条线，调用时半径再加约 1.5 m，免得擦过视线挡住熊猫身体）。活动场里的低竹已由 yards.js 直接并进 `site.b`，不要重复加进 `site.bambooBufs`。
 
-避让：乔木、竹丛中心要求 `grid.freeDisk(x, z, r, F_SOLID | F_PAVE | F_WATER | F_WALK | F_TREE | F_YARD)` 为真（活动场内只有 Task 10 布置的套竹筒树），种下后 `grid.disk(x, z, r, F_TREE)`；竹梢与树冠不得压到路径头顶 4.35 m 以内。
+避让（执行时修订）：`F_WALK` 现为「可走带 + 1.5 m」。
+- 乔木：`grid.freeDisk(x, z, 冠半径 r, F_SOLID | F_PAVE | F_WATER | F_WALK | F_TREE | F_YARD)` 为真（按树冠赤道半径查，不是树干），树冠边离可走带 ≥ 1.5 m。
+- 一般竹丛：同一掩码按簇半径查，并另查中心离每条步行路径可走带边缘 ≥ 4.5 m（参照 wangjiang.js 的 `nearLine` / BAMBOO_CLEAR）。
+- 竹林甬道（`loop` 西半段、`villas` 两侧）：按路径偏移落位（根部离中线 4.7 m、每 8 m 一丛、竿顶向路心倾 14°），不查 `F_WALK`，只查 `F_SOLID | F_WATER | F_YARD | F_TREE` 与根部不在路面上；由步行路径校验（头顶 4.35 m、分部件净距）兜底。
+- 原写法（已取代）：避让：乔木、竹丛中心要求 `grid.freeDisk(x, z, r, F_SOLID | F_PAVE | F_WATER | F_WALK | F_TREE | F_YARD)` 为真（活动场内只有 Task 10 布置的套竹筒树），种下后 `grid.disk(x, z, r, F_TREE)`；竹梢与树冠不得压到路径头顶 4.35 m 以内。
 
 **接口：** `export function plantAll(site, walkways)`。
 
