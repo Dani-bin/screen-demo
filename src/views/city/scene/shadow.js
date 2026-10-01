@@ -134,12 +134,14 @@ function convexHull(as, bs) {
  * @param {Array} [casters.trees] 通用树布局（trees.js 的 layoutTrees，即 createTrees().layout）
  * @param {THREE.Object3D[]} [casters.objects] 其余投影物的根节点（景点组、落点球组）；
  *   不要传通用树或合并楼栋的 Mesh（整城一个包围盒，会把范围撑到最大）
+ * @param {(x: number, z: number) => boolean} [casters.within] 只计入落在该区域内的投影物
+ *   （楼按首个轮廓点、树按树根、Mesh 按包围盒中心判断）；缺省全部计入
  * @param {object} light THEME.light
  * @returns {{ up: number[], left: number, right: number, top: number,
  *   bottom: number, near: number, far: number, bias: number }}
  */
 export function computeCityShadow(
-  { buildings = [], trees = [], objects = [] },
+  { buildings = [], trees = [], objects = [], within = null },
   light
 ) {
   const sunPos = new Vector3(...light.sunPosition)
@@ -182,12 +184,16 @@ export function computeCityShadow(
   }
   for (const b of buildings) {
     if (!b.p) continue
+    // 区域过滤：楼按首个轮廓点判断，整栋进出
+    if (within && !within(b.p[0][0], b.p[0][1])) continue
     for (const [x, z] of b.p) {
       add(x, 0, z)
       add(x, b.h, z)
     }
   }
   for (const { x, z, size, height } of trees) {
+    // 区域过滤：树按树根位置判断
+    if (within && !within(x, z)) continue
     const c = treeShape(size, height)
     add(x, c.centerY, z, c.boundRadius)
   }
@@ -208,6 +214,11 @@ export function computeCityShadow(
         box.copy(obj.geometry.boundingBox)
       }
       if (box.isEmpty()) return
+      // 区域过滤按包围盒中心的世界坐标判断（景点模型、定位针各自整块进出）
+      if (within) {
+        box.getCenter(p).applyMatrix4(obj.matrixWorld)
+        if (!within(p.x, p.z)) return
+      }
       // 局部包围盒的 8 个角点换到世界坐标：几何体在角点的凸包内，凸包投影后仍包住它
       for (const [i, j, k] of BOX_CORNERS) {
         p.set(

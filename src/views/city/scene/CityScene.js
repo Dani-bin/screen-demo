@@ -217,12 +217,18 @@ export class CityScene {
 
     // 初始为整城阴影：全部投影物建完后实算一次正交范围、朝向与偏移（shadow.js 的 computeCityShadow）——
     // 楼栋轮廓、通用树的真实树冠、景点模型与落点球的 Mesh，含影子落到地面的深度；
-    // 停靠站点时由 _fitShadow 收紧，回总览 / 离站时 _resetShadow 恢复
+    // 停靠站点时由 _fitShadow 收紧，回总览 / 离站时 _resetShadow 恢复。
+    // 只计入主城区（meta.clip）：飞地离主城区约 5 km，并进来会把阴影框撑大约一倍、主城区阴影糊一倍；
+    // 飞地只在停靠该站时由 _fitShadow 收紧出阴影，人工拉远去看飞地时没有阴影（已知限制）
+    const [cx0, cz0, cx1, cz1] = d.meta.clip
+    // 主城区判定（meta.clip）：整城阴影只计入主城区，_loop 也按它决定停站阴影如何退出
+    this._inMain = (x, z) => x >= cx0 && x <= cx1 && z >= cz0 && z <= cz1
     this.cityShadow = computeCityShadow(
       {
         buildings: d.buildings,
         trees: this.trees.layout,
-        objects: [this.landmarks.group, this.markers.group]
+        objects: [this.landmarks.group, this.markers.group],
+        within: this._inMain
       },
       this.theme.light
     )
@@ -453,7 +459,8 @@ export class CityScene {
   /**
    * 阴影收紧到 center 周围 ±R 米（见 shadow.js），并重绘一次静态阴影。
    * 代价：停留期间离站点 R 以外的楼没有阴影；站点机位视野基本落在 R 以内，
-   * 人工拉远、或滚轮缩放把注视点带离站点，视野超出收紧范围时由 _loop 自动恢复整城阴影
+   * 人工拉远、或滚轮缩放把注视点带离站点，视野超出收紧范围时由 _loop 处理：
+   * 主城区恢复整城阴影，飞地（整城阴影不含飞地）则把收紧范围移到当前注视点
    */
   _fitShadow(center, R) {
     applyStopShadow(this.sun, this.theme.light, center, R)
@@ -521,16 +528,23 @@ export class CityScene {
     const dt = Math.max(0, Math.min(this.timer.getDelta(), 0.25))
     this.tour.update(dt)
     this._updateClip()
-    // 停靠时人工拉远、或滚轮缩放把注视点带离站点，视野超出收紧范围：恢复整城阴影，
-    // 免得视野外圈的楼没有影子。视野粗估为「注视点离收紧中心的水平距离 + 相机距离」。
-    // 恢复后不会因拉近而重新收紧，只在下一次飞抵站点时收紧；
-    // 因此各站机位距离（cityData.js 的 cam.offset，目前约 300～1050 m）加上注视点平移（cam.look，
-    // 目前 ≤ 约 100 m）必须小于该阈值，否则一飞抵就会被这里立即恢复
+    // 停靠时人工拉远、或滚轮缩放把注视点带离站点，视野超出收紧范围：
+    // 主城区——恢复整城阴影（整城阴影覆盖整个主城区）；
+    // 飞地——整城阴影不含飞地，恢复它飞地就没有影子了，改为把收紧范围移到当前注视点（重绘一次），
+    //   注视点离收紧中心超过半径一半才移，避免逐帧重绘。
+    // 视野粗估为「注视点离收紧中心的水平距离 + 相机距离」；恢复后不会因拉近而重新收紧，只在下一次飞抵站点时收紧；
+    // 因此各站机位距离加注视点平移（cam.look）必须小于 1.5 倍半径，否则一飞抵就会被这里立即恢复
     if (this.shadowFitted) {
       const t = this.tour.target
       const [cx, , cz] = this.shadowCenter
-      const reach = Math.hypot(t.x - cx, t.z - cz) + this.tour.getDistance()
-      if (reach > STOP_SHADOW_RADIUS * 1.5) this._resetShadow()
+      const off = Math.hypot(t.x - cx, t.z - cz)
+      if (this._inMain(t.x, t.z)) {
+        if (off + this.tour.getDistance() > STOP_SHADOW_RADIUS * 1.5) {
+          this._resetShadow()
+        }
+      } else if (off > STOP_SHADOW_RADIUS * 0.5) {
+        this._fitShadow([t.x, 0, t.z], STOP_SHADOW_RADIUS)
+      }
     }
     this.elapsed += dt
     this.landmarks.update(this.elapsed)
