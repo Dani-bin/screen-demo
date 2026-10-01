@@ -52,6 +52,11 @@ export const C = {
   flowerPink: "#E27AA6",
   museumStone: "#8A8D90",
   museumUpper: "#4E535A",
+  hallRoof: "#C3C6C7", // 博物馆浅灰金属屋面（影像为大跨浅灰金属屋面）
+  // 园内平屋面（矮房、办公区、探秘馆、门前小楼、熊猫厨房）：比女儿墙压顶暗一档，俯看留出一圈浅色边
+  flatRoof: "#A3A5A1",
+  wallGrey: "#D3D1CA", // 矮房浅灰墙（与白墙 L.plaster 交替）
+  hallGreen: "#3E8A56", // 熊猫科学探秘馆檐口绿带（推定）
   officeTile: "#D9D2C3",
   nurseryWall: "#EDEBE4", // 产房白墙
   nurseryRoof: "#D6D3CB", // 产房屋面
