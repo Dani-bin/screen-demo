@@ -29,32 +29,92 @@ import {
   OctahedronGeometry,
   Vector3
 } from "three"
+import { WATER_Y } from "../../terrain.js"
 import { THEME } from "../../theme.js"
-import { hashInts, mulberry32 } from "../../utils.js"
+import { hashInts, mulberry32, pointInPolygon } from "../../utils.js"
 import { frame, local } from "../kit/builder.js"
 import { insetPolygon, rectPolygon } from "../kit/footprint.js"
-import { box, fromTriangles, prism } from "../kit/shapes.js"
+import { box, extrudePolygon, fromTriangles, prism } from "../kit/shapes.js"
+import { ROADS, roadRibbon } from "./ground.js"
 import { C, F_TREE, ISLAND_Y, LAWN_Y } from "./site.js"
 
 const L = THEME.landmark
 const DEG = Math.PI / 180
-
-/** 城市水面层的高度（terrain.js 的 buildFlatPolygons(data.water, 0.3)） */
-const WATER_Y = 0.3
 
 /* ---------------- 驳岸 ---------------- */
 
 /*
  * 护岸：外沿在草地洞边、高 LAWN_Y（与草地顶面齐平、只对边不重叠，不会共面闪烁），
  * 向湖内平铺 w 米、斜落到水面以下 low（插画里读成一圈石砌斜坡护岸，即文档的「0.3 → 0.85」）。
- * 宽度取 1.6 m 的原因：草地洞用的是抽稀 1.5 m 的湖岸线（附录 B），城市水面层用 OSM 全量轮廓，
- * 两者最多差约 1.5 m（天鹅湖南岸、北岸、东岸几段），洞边与水边之间会露出城市地面（−0.5）；
- * 护岸铺 1.6 m 正好盖住这条缝。
+ * 宽度取 1.9 m 的原因：草地洞用的是抽稀 1.5 m 的湖岸线（附录 B），城市水面层用 OSM 全量轮廓，
+ * 两者在几段湖岸上差得最多 —— 西湾（湖岸线第 2 段，中点约 (7425, −8932)）约 1.5 m、
+ * 北岸（第 11 段）约 1.15 m、东北岸（第 13 段）约 1.2 m、东岸（第 14 段）约 0.7 m；
+ * 洞边与水边之间会露出城市地面（−0.5）。护岸铺 1.9 m，比最大的缝多留约 0.4 m 余量，
+ * 由 checkBank 在构建时自检（东北小湖两者只差约 0.14 m）。
  * 没有照计划用 sweepBar：它不能闭合成环（接缝处两端封口朝内）、折点取相邻边平均法向而不斜接，
- * 外沿跟不上洞边，会与草地顶面重叠闪烁或留缝；1.6 m 宽的方截面条带也会读成一圈石板路。
+ * 外沿跟不上洞边，会与草地顶面重叠闪烁或留缝；1.9 m 宽的方截面条带也会读成一圈石板路。
  * 这里用斜接内收（kit insetPolygon）的斜坡带，每段 2 个三角形，外沿逐点落在洞边上。
  */
-const BANK = { w: 1.6, top: LAWN_Y, low: 0.2 }
+const BANK = { w: 1.9, top: LAWN_Y, low: 0.2 }
+
+/*
+ * 城市水面层的轮廓（public/city/chengdu.json 的 water 里对应的两个多边形，局部坐标 x, z 交替平铺）：
+ * 景点 ctx 里没有水面数据，自检只能按这份常量比对。重拉 chengdu.json 后若两湖轮廓变了，
+ * checkBank 会报警，按新数据更新这里（或加宽护岸）即可。
+ */
+const CITY_WATER = {
+  swan: [
+    7498.3, -8910, 7479, -8870, 7461.4, -8835, 7452.2, -8829, 7438, -8824.2,
+    7426.8, -8826.5, 7419.4, -8834.3, 7411.8, -8846.4, 7410, -8852.8, 7417.4,
+    -8854.6, 7419.7, -8860.8, 7418.5, -8872.9, 7417.3, -8886.6, 7428.2, -8889.1,
+    7440.8, -8891.8, 7449.2, -8897.6, 7452.1, -8906.4, 7445.8, -8910.5, 7435.1,
+    -8907.9, 7421.7, -8907.2, 7409.9, -8902.7, 7395.3, -8905.4, 7391.7, -8912.2,
+    7401.2, -8923.9, 7413.1, -8932, 7424.2, -8930.4, 7437.1, -8931.8, 7450.2,
+    -8936.1, 7453.5, -8953.8, 7446.5, -8973.3, 7454.2, -8981.1, 7460.4, -8975,
+    7472, -8979.1, 7478.3, -8988.1, 7486, -8996.5, 7497.3, -9003, 7509.3,
+    -9001.5, 7518.6, -9002.5, 7544.9, -9012.8, 7551.1, -9000.2, 7559.3, -8988.2,
+    7568, -8974.9, 7548.8, -8955.1, 7515.3, -8926.8
+  ],
+  ne: [
+    7610.5, -9007.1, 7620, -9000.1, 7633.9, -8994, 7644.4, -8994.2, 7655.8,
+    -8999, 7664.3, -9007.1, 7670.7, -9014.7, 7674.5, -9023.1, 7670.8, -9032.3,
+    7663.8, -9039, 7649.2, -9044.7, 7641.2, -9045.1, 7628.8, -9040, 7615.9,
+    -9034.7, 7605.3, -9025.1, 7604.2, -9015.8, 7608.4, -9008.4
+  ]
+}
+
+/** 平铺的 [x0, z0, x1, z1, …] → [[x, z], …] */
+function pairs(flat) {
+  const out = []
+  for (let i = 0; i + 1 < flat.length; i += 2) out.push([flat[i], flat[i + 1]])
+  return out
+}
+
+/**
+ * 开发期自检：草地洞里、城市水面以外、又没被护岸盖住的地方会露出城市地面。
+ * 这种缝都从洞边伸向湖心，伸出护岸时必然跨过护岸内沿，所以只需沿内沿再往湖心 0.05 m 的一圈
+ * 每 0.25 m 取一点，查是否都在城市水面轮廓里（逐格扫全湖要几百毫秒，这样不到 1 ms）。
+ * 有点落在外面就 console.warn，不阻断构建。
+ */
+function checkBank(name, hole, water) {
+  const ring = insetPolygon(hole, BANK.w + 0.05)
+  let bad = 0
+  for (let i = 0; i < ring.length; i++) {
+    const [ax, az] = ring[i]
+    const [bx, bz] = ring[(i + 1) % ring.length]
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 0.25))
+    for (let k = 0; k < n; k++) {
+      const x = ax + ((bx - ax) * k) / n
+      const z = az + ((bz - az) * k) / n
+      if (!pointInPolygon(x, z, water)) bad++
+    }
+  }
+  if (bad > 0) {
+    console.warn(
+      `熊猫基地：${name}护岸内沿有 ${bad} 个取样点不在城市水面里，草地洞与水面之间的缝会露出城市地面`
+    )
+  }
+}
 
 /**
  * 一圈护岸（进地面批，单面材质：三角形统一朝上）
@@ -102,6 +162,8 @@ function faceUp(pos) {
  * 其余 3.4 m 伸到水面上；三处陆侧都挨着湖边步道（lakeWest），木栏离步道可走带边 1.9～2.6 m。
  *   西湾西头：湖岸线第 0 段（西湾西端）45% 处，朝东南伸进西湾（也正对到站机位方位 125°）；
  *   西南角：第 19 段中点，朝东北；南岸：第 17 段 45% 处，朝北偏西。
+ * 台体（不含木栏）再向陆侧接长到步道路面带边、只对边不压路面（见 deckBody），读成从步道伸出去的平台；
+ * 台面 1.0 比步道路面 0.97 高 3 cm。
  */
 const DECKS = [
   { at: [7397.0, -8916.6], bearing: 129.0 },
@@ -111,18 +173,116 @@ const DECKS = [
 // 平台 w（沿岸）× d（进深）、台面顶 top（文档「高 1.0」，比草地高 0.15）、台体下沿 bottom（落到水面以下，
 // 读成一整块实心栈台，不在水面上悬空）；木栏高 rail、离台边内收 railIn，只在临水三面
 const DECK = { w: 6, d: 4, top: 1.0, bottom: 0.2, rail: 0.9, railIn: 0.06 }
+// 台体接长：沿两条侧边从陆侧角往岸上找园路 road 的路面带边（最远 maxExt 米），停在边前 gap 处；
+// 再沿台宽取 rays 等分的射线核对直的陆侧边不压路面
+const DECK_LINK = { road: "lakeWest", maxExt: 6, gap: 0.01, rays: 12 }
 // 长椅色块：长 len、高 h、深 dep（照片里是红漆木长椅，这个尺度只读得出一块红色）
 const BENCH = { len: 1.8, h: 0.5, dep: 0.55 }
 // 草地上的长椅：西岸步道（lakeWest）东侧、南湾西岸的草地上，面朝东边湖面（离路面带边 2.4 m）
 const LAWN_BENCH = { at: [7404.5, -8872.0], facing: 90 }
 
-/** 一处栈台：台体 + 三面木栏（竖直面带）+ 靠一侧木栏的长椅；陆侧压在草地上，登记为实体 */
-function addDeck(site, dk) {
+/** 园路路面带的顶面三角形（俯视二维 [ax, az, bx, bz, cx, cz]），取自 roadRibbon 的实际几何 */
+function ribbonTops(id) {
+  const g = roadRibbon(ROADS.find((r) => r.id === id))
+  const p = g.attributes.position.array
+  let top = -Infinity
+  for (let k = 1; k < p.length; k += 3) top = Math.max(top, p[k])
+  const tris = []
+  for (let k = 0; k < p.length; k += 9) {
+    if ([1, 4, 7].every((j) => Math.abs(p[k + j] - top) < 1e-4)) {
+      tris.push([p[k], p[k + 2], p[k + 3], p[k + 5], p[k + 6], p[k + 8]])
+    }
+  }
+  g.dispose()
+  return tris
+}
+
+/** 点 (x, z) 是否落在某个顶面三角形里（含边） */
+function onTops(tris, x, z) {
+  return tris.some(([ax, az, bx, bz, cx, cz]) => {
+    const d1 = (x - bx) * (az - bz) - (ax - bx) * (z - bz)
+    const d2 = (x - cx) * (bz - cz) - (bx - cx) * (z - cz)
+    const d3 = (x - ax) * (cz - az) - (cx - ax) * (z - az)
+    const neg = d1 < 0 || d2 < 0 || d3 < 0
+    const pos = d1 > 0 || d2 > 0 || d3 > 0
+    return !(neg && pos)
+  })
+}
+
+/**
+ * 从 (x, z) 沿单位方向 (dx, dz) 走到路面带边的距离：每 0.05 m 粗找第一个落在路面上的点，
+ * 再二分到 1 mm；maxT 以内碰不到返回 null
+ */
+function distToTops(tris, x, z, dx, dz, maxT) {
+  let lo = 0
+  for (let t = 0.05; t <= maxT; t += 0.05) {
+    if (onTops(tris, x + dx * t, z + dz * t)) {
+      let hi = t
+      while (hi - lo > 0.001) {
+        const m = (lo + hi) / 2
+        if (onTops(tris, x + dx * m, z + dz * m)) hi = m
+        else lo = m
+      }
+      return lo
+    }
+    lo = t
+  }
+  return null
+}
+
+/**
+ * 台体轮廓（世界坐标 4 点）：临水两角不动，陆侧边接长到路面带边前 gap 处。
+ * 两条侧边各求一次到路面带边的距离，定出陆侧两角；再沿台宽取 rays 等分的射线核对：
+ * 路面带边在中间凸向平台时（直的陆侧边会压到路面上），整条陆侧边按最大差值往回收。
+ * 侧边在 maxExt 以内碰不到路面时不接长
+ */
+function deckBody(dk, F, tops) {
+  const D = DECK
+  const K = DECK_LINK
+  const toWorld = (u, v) => {
+    const p = new Vector3(u, 0, v).applyMatrix4(F)
+    return [p.x, p.z]
+  }
+  // frame 局部 −Z 指向 bearing，局部 +Z（陆侧）的世界方向为 (−sin, cos)
+  const dx = -Math.sin(dk.bearing * DEG)
+  const dz = Math.cos(dk.bearing * DEG)
+  const reach = (u) => {
+    const [x, z] = toWorld(u, D.d / 2)
+    return distToTops(tops, x, z, dx, dz, K.maxExt)
+  }
+  const e0 = reach(-D.w / 2)
+  const e1 = reach(D.w / 2)
+  let a = 0
+  let c = 0
+  if (e0 !== null && e1 !== null) {
+    let deficit = 0
+    for (let i = 1; i < K.rays; i++) {
+      const s = i / K.rays
+      const e = reach(-D.w / 2 + D.w * s)
+      if (e !== null) deficit = Math.max(deficit, e0 + (e1 - e0) * s - e)
+    }
+    a = Math.max(0, e0 - deficit - K.gap)
+    c = Math.max(0, e1 - deficit - K.gap)
+  }
+  return [
+    toWorld(-D.w / 2, -D.d / 2),
+    toWorld(D.w / 2, -D.d / 2),
+    toWorld(D.w / 2, D.d / 2 + c),
+    toWorld(-D.w / 2, D.d / 2 + a)
+  ]
+}
+
+/**
+ * 一处栈台：台体（陆侧接长到步道）+ 三面木栏（竖直面带）+ 靠一侧木栏的长椅；
+ * 台体压在岸上草地的部分登记为实体
+ */
+function addDeck(site, dk, tops) {
   const b = site.b
   const D = DECK
   const [x, z] = dk.at
   const F = frame(x, 0, z, dk.bearing)
-  b.add(box(D.w, D.top - D.bottom, D.d), C.deck, local(F, 0, D.bottom, 0))
+  const body = deckBody(dk, F, tops)
+  b.add(extrudePolygon(body, [], D.bottom, D.top), C.deck)
   // 木栏：两侧与临水一面连成 U 形，单面竖直面带（主体批是双面材质），0.06 m 的栏杆厚度在这个尺度看不出
   const hx = D.w / 2 - D.railIn
   const hz = D.d / 2 - D.railIn
@@ -148,8 +308,7 @@ function addDeck(site, dk) {
     C.bench,
     local(F, -hx + 0.1 + BENCH.dep / 2, D.top, -0.3)
   )
-  // 实体：长边 w 沿岸（方位 bearing + 90）
-  site.solid(rectPolygon(x, z, D.w, D.d, dk.bearing + 90))
+  site.solid(body)
 }
 
 /** 草地上的长椅：长边与面朝方向垂直，登记为实体 */
@@ -167,13 +326,14 @@ function addLawnBench(site) {
 const ICO_HALF = 1.618034 / Math.hypot(1, 1.618034)
 
 /**
- * 树冠模板：单位二十面体去掉法线（合批器按面重算，与 kit addTree 的棱面一致）。
+ * addLiteTree 用的树冠模板（与 kit/figures.js 模块内的 crownTemplate 无关）：
+ * 单位二十面体去掉法线（合批器按面重算，与 kit addTree 的棱面一致）。
  * 下半部可变形成垂柳的「裙摆」：按离赤道的深度逐渐外张（冠底放宽 1 + flare 倍）并压扁 squash 倍，
  * 赤道及以上不变 —— 上面是拉长的圆顶、下面是张开的垂枝。
  * @returns {{ geo, above: number, below: number, spread: number }} 单位尺寸下冠顶高出冠心 above、
  *   冠底低于冠心 below、最大水平半径 spread（按 (r, sy·r, r) 缩放后各乘相应的 r）
  */
-function crownTemplate(flare = 0, squash = 1) {
+function liteCrown(flare = 0, squash = 1) {
   const geo = new IcosahedronGeometry(1, 0)
   geo.deleteAttribute("normal")
   const p = geo.attributes.position
@@ -192,7 +352,7 @@ function crownTemplate(flare = 0, squash = 1) {
 
 /*
  * 垂柳（文档：addTree 冠拉长，r 6、竖向 1.5 倍、柳色）。kit addTree 的冠竖向固定 1.15 倍，这里自写：
- * 三棱树干 + 竖向拉长 sy 倍的二十面体冠，下半部外张 flare、压扁 squash（见 crownTemplate），
+ * 三棱树干 + 竖向拉长 sy 倍的二十面体冠，下半部外张 flare、压扁 squash（见 liteCrown），
  * 冠底离草地 lift（柳枝垂到人高附近）。
  * [x, z, r]：树干都在岸上草地、离湖洞边约 2.5 m（冠伸到水面上），离湖边步道路面带 ≥ 9.6 m
  * （外张后冠缘最远 1.11 r，离步道可走带仍 ≥ 3.5 m）。自南向北：南湾西岸 2 株、南湾与西湾之间的岬角、
@@ -217,11 +377,11 @@ const ISLAND_TREES = [
   [7511.5, -8981.5, 4.2]
 ]
 const SAKURA = { at: [7503.0, -8976.0], r: 3.4, sy: 0.95 }
-// 岛上树冠竖向 1.15 倍、冠底离地 0.7 r（同 kit addTree 的比例）
-const ISLAND_TREE = { sy: 1.15, lift: 0.7 }
+// 岛上树冠竖向 sy 倍、冠底离地 liftK × r（系数，乘冠半径；同 kit addTree 的比例）
+const ISLAND_TREE = { sy: 1.15, liftK: 0.7 }
 
 /**
- * 低多边形树：三棱树干（伸到冠心）+ 冠模板（crownTemplate 的结果）按 (r, sy·r, r) 缩放，
+ * 低多边形树：三棱树干（伸到冠心）+ 冠模板（liteCrown 的结果）按 (r, sy·r, r) 缩放，
  * 冠底离树根 lift；返回树顶高度。三棱树干比 kit addTree 的六棱圆柱省 6 个三角形（本分区预算紧）
  */
 function addLiteTree(b, x, y, z, o) {
@@ -238,7 +398,7 @@ function addLiteTree(b, x, y, z, o) {
 
 function plantTrees(site) {
   const { b, grid } = site
-  const willowCrown = crownTemplate(WILLOW.flare, WILLOW.squash)
+  const willowCrown = liteCrown(WILLOW.flare, WILLOW.squash)
   WILLOWS.forEach(([x, z, r], i) => {
     addLiteTree(b, x, LAWN_Y, z, {
       r,
@@ -250,13 +410,13 @@ function plantTrees(site) {
     })
     grid.disk(x, z, r * willowCrown.spread, F_TREE)
   })
-  const crown = crownTemplate()
+  const crown = liteCrown()
   const greens = [...C.forest, ...THEME.tree.greens]
   ISLAND_TREES.forEach(([x, z, r], i) => {
     addLiteTree(b, x, ISLAND_Y, z, {
       r,
       sy: ISLAND_TREE.sy,
-      lift: ISLAND_TREE.lift * r,
+      lift: ISLAND_TREE.liftK * r,
       color: greens[i % greens.length],
       crown,
       yaw: i * 2.1 + 0.4
@@ -267,7 +427,7 @@ function plantTrees(site) {
   addLiteTree(b, s.at[0], ISLAND_Y, s.at[1], {
     r: s.r,
     sy: s.sy,
-    lift: ISLAND_TREE.lift * s.r,
+    lift: ISLAND_TREE.liftK * s.r,
     color: C.sakura,
     crown,
     yaw: 0.9
@@ -278,15 +438,16 @@ function plantTrees(site) {
 /* ---------------- 芦苇 ---------------- */
 
 /*
- * 芦苇丛中心（水里）：北岸 4 丛离湖洞边 2.6 m（在 1.6 m 宽的护岸以外），西北岸 1 丛（湖心岛西侧窄水道），
+ * 芦苇丛中心（水里）：北岸 4 丛、西北岸 1 丛（湖心岛西侧窄水道）离湖洞边 3.0 m（在 1.9 m 宽的护岸以外；
+ * 外侧几根的根部会落到护岸斜坡上，根部高 0.2 不高于护岸最低处，埋在坡里），
  * 湖心岛西、东、东北 3 丛离岛边 1.0 m。岛南侧（朝机位）不种，免得挡住樱花与天鹅
  */
 const REEDS = [
-  [7481.7, -8987.0],
-  [7524.9, -9002.1],
-  [7534.1, -9005.7],
-  [7541.9, -9008.8],
-  [7547.3, -9003.8],
+  [7482.0, -8986.8],
+  [7525.0, -9001.8],
+  [7534.2, -9005.3],
+  [7542.1, -9008.4],
+  [7547.0, -9003.6],
   [7483.3, -8977.9],
   [7517.3, -8983.1],
   [7510.9, -8991.2]
@@ -470,7 +631,10 @@ function addSwans(b) {
 export function buildLake(site) {
   addBank(site.gb, site.lakes.swan)
   addBank(site.gb, site.lakes.ne)
-  for (const dk of DECKS) addDeck(site, dk)
+  checkBank("天鹅湖", site.lakes.swan, pairs(CITY_WATER.swan))
+  checkBank("东北小湖", site.lakes.ne, pairs(CITY_WATER.ne))
+  const tops = ribbonTops(DECK_LINK.road)
+  for (const dk of DECKS) addDeck(site, dk, tops)
   addLawnBench(site)
   plantTrees(site)
   addReeds(site.b)

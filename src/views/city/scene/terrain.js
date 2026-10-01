@@ -30,6 +30,12 @@ const GROUND_SIZE = 120000
  */
 export const GROUND_Y = -0.5
 
+/**
+ * 城市水面层高度（米）：OSM 水面多边形平铺在这个高度。景点在城市水面上布置构件
+ * （驳岸、浮在水面的天鹅等）时引用这个常量，与水面层保持同高。
+ */
+export const WATER_Y = 0.3
+
 /** 把 [[x, z], ...] 转成 Shape */
 export function polygonToShape(points) {
   return new Shape(points.map(([x, z]) => new Vector2(x, -z)))
@@ -77,7 +83,7 @@ export function createTerrain(data, materials) {
     m.receiveShadow = true
     group.add(m)
   }
-  const water = buildFlatPolygons(data.water, 0.3)
+  const water = buildFlatPolygons(data.water, WATER_Y)
   if (water) {
     const m = new Mesh(water, materials.water)
     m.receiveShadow = true
