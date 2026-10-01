@@ -30,16 +30,7 @@
  * 「成都 339」裙楼、339 OFFICE B 座、C 座不属于本模块，保持通用楼不动（B 座紧贴基台东侧北半段，
  * 那一段不做护坡；339 裙楼东北角贴着西斜撑脚）。
  */
-import {
-  BackSide,
-  CylinderGeometry,
-  IcosahedronGeometry,
-  Matrix4,
-  Mesh,
-  Quaternion,
-  RingGeometry,
-  Vector3
-} from "three"
+import { BackSide, CylinderGeometry, Mesh, RingGeometry } from "three"
 import { THEME } from "../theme.js"
 import { GROUND_Y } from "../terrain.js"
 import {
@@ -58,10 +49,9 @@ import {
   prism,
   sphere
 } from "./kit/shapes.js"
-import { addTree } from "./kit/figures.js"
+import { addPanda, addTree } from "./kit/figures.js"
 
 const L = THEME.landmark
-const DEG = Math.PI / 180
 
 /* ---------------- 定位 ---------------- */
 
@@ -300,9 +290,7 @@ const C = {
   step: "#D9D4C9", // 台阶
   plaza: L.stonePave, // 广场铺装
   plinth: L.marble, // 熊猫底座
-  plinthTrim: "#A7AAAF", // 底座顶沿
-  bamboo: "#5DA83A", // 熊猫手里的竹子
-  leaf: "#7CC24E"
+  plinthTrim: "#A7AAAF" // 底座顶沿
 }
 
 /* ---------------- 几何小工具 ---------------- */
@@ -798,109 +786,6 @@ function addTop(b, F) {
   )
 }
 
-/* ---------------- 熊猫雕塑（插画装饰） ---------------- */
-
-const v3 = (x, y, z) => new Vector3(x, y, z)
-
-/** 从 a 到 b 的长椭球肢体（粗 r，两端各探出约 0.6r 的圆头），同 kit 攀爬熊猫的做法 */
-function limbPart(a, bEnd, r, black = true) {
-  const dir = bEnd.clone().sub(a)
-  const len = dir.length()
-  return {
-    c: a.clone().add(bEnd).multiplyScalar(0.5),
-    r: [r, len / 2 + r * 0.6, r],
-    q: new Quaternion().setFromUnitVectors(v3(0, 1, 0), dir.normalize()),
-    black
-  }
-}
-
-/**
- * 低多边形坐姿熊猫（配 flatMaterial）。kit 的 addPanda 只有「趴在女儿墙上」一种姿态，
- * 这里在模块内写坐姿：身体略后仰的蛋形、黑色肩带与四肢、后腿前伸、双手抱在肚前，
- * 右手握一根竹子（竹竿向外斜出，不挡脸）。
- * 局部原点在臀下（y = 0 为底座顶面），+Z 为脸的朝向；总高（脚底到耳尖）= height。
- * 部件单位为总高的倍数，二十面体（细分 1 次）按三轴半径拉伸。
- */
-function addSittingPanda(pb, parent, height) {
-  const back = new Quaternion().setFromAxisAngle(v3(1, 0, 0), -8 * DEG)
-  const none = new Quaternion()
-  const parts = [
-    { c: v3(0, 0.34, -0.02), r: [0.29, 0.34, 0.26], q: back, black: false },
-    // 肩带：比身体略大一圈的扁椭球，只在肩背一段露出
-    { c: v3(0, 0.55, -0.04), r: [0.305, 0.12, 0.275], q: back, black: true },
-    { c: v3(0, 0.765, 0.02), r: [0.215, 0.185, 0.195], q: none, black: false },
-    // 吻部（白）与鼻头（黑）
-    { c: v3(0, 0.725, 0.175), r: [0.1, 0.07, 0.07], q: none, black: false },
-    { c: v3(0, 0.745, 0.24), r: [0.04, 0.028, 0.025], q: none, black: true },
-    // 尾巴
-    { c: v3(0, 0.07, -0.26), r: [0.065, 0.055, 0.055], q: none, black: false }
-  ]
-  for (const sx of [-1, 1]) {
-    parts.push({
-      c: v3(sx * 0.15, 0.925, -0.01),
-      r: [0.07, 0.07, 0.045],
-      q: none,
-      black: true
-    })
-    // 眼圈：外眼角下垂（绕脸轴转 ±25°）
-    parts.push({
-      c: v3(sx * 0.078, 0.79, 0.175),
-      r: [0.05, 0.068, 0.04],
-      q: new Quaternion().setFromAxisAngle(v3(0, 0, 1), sx * 25 * DEG),
-      black: true
-    })
-    // 前肢：肩 → 肚前的爪（右爪偏外，握住竹子）
-    const paw = sx > 0 ? v3(0.19, 0.36, 0.25) : v3(-0.1, 0.35, 0.23)
-    parts.push(limbPart(v3(sx * 0.23, 0.56, 0.02), paw, 0.085))
-    // 后腿：臀部 → 向前伸出的脚
-    parts.push(
-      limbPart(v3(sx * 0.16, 0.13, 0.06), v3(sx * 0.2, 0.08, 0.37), 0.1)
-    )
-  }
-  const k = height
-  const m = new Matrix4()
-  const s = new Vector3()
-  for (const p of parts) {
-    m.compose(
-      p.c.clone().multiplyScalar(k),
-      p.q,
-      s.set(...p.r).multiplyScalar(k)
-    )
-    pb.add(
-      new IcosahedronGeometry(1, 1),
-      p.black ? L.pandaBlack : L.pandaWhite,
-      parent.clone().multiply(m)
-    )
-  }
-  // 竹子：竹竿自脚边斜向外上方，顶端三片竹叶
-  const bot = v3(0.14, 0.03, 0.3)
-  const top = v3(0.32, 1.02, 0.2)
-  const dir = top.clone().sub(bot)
-  const q = new Quaternion().setFromUnitVectors(
-    v3(0, 1, 0),
-    dir.clone().normalize()
-  )
-  m.compose(bot.clone().multiplyScalar(k), q, s.set(1, 1, 1))
-  pb.add(
-    cylinder(0.024 * k, 0.018 * k, dir.length() * k, { segments: 6 }),
-    C.bamboo,
-    parent.clone().multiply(m)
-  )
-  const leaves = [
-    [0.36, 1.0, 0.24, 30],
-    [0.27, 1.0, 0.16, -40],
-    [0.31, 0.95, 0.27, 75]
-  ]
-  for (const [x, y, z, yaw] of leaves) {
-    m.compose(
-      v3(x, y, z).multiplyScalar(k),
-      new Quaternion().setFromAxisAngle(v3(0, 1, 0), yaw * DEG),
-      s.set(0.11 * k, 0.018 * k, 0.035 * k)
-    )
-    pb.add(new IcosahedronGeometry(1, 0), C.leaf, parent.clone().multiply(m))
-  }
-}
-
 /* ---------------- 入口 ---------------- */
 
 export function build(ctx) {
@@ -933,11 +818,10 @@ export function build(ctx) {
     C.plinthTrim,
     local(null, px, plinthTop + 0.12, pz)
   )
-  addSittingPanda(
-    pb,
-    frame(px, plinthTop, pz, PANDA.facing + 180),
-    PANDA.height
-  )
+  addPanda(pb, frame(px, plinthTop, pz, PANDA.facing + 180), {
+    height: PANDA.height,
+    pose: "sit"
+  })
 
   // 广场树（按位置固定朝向，打散棱面）
   const greens = THEME.tree.greens

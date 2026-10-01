@@ -82,6 +82,8 @@ import {
   roofHeight
 } from "./kit/roofs.js"
 import { addPitchedHouse, clamp, eaveDrop, edgeFrame } from "./kit/parts.js"
+import { createGrid } from "./kit/grid.js"
+import { pushSpindle } from "./kit/plants.js"
 
 const L = THEME.landmark
 const DEG = Math.PI / 180
@@ -1027,102 +1029,6 @@ function xzOf(m, x, z) {
 const spread = (a, n) =>
   Array.from({ length: n + 1 }, (_, i) => -a + (2 * a * i) / n)
 
-/* ---------------- 占用栅格（布置树木、竹丛时判断空地；写法同 wuhou.js） ---------------- */
-
-function createGrid(x0, z0, x1, z1, cell = 0.5) {
-  const nx = Math.ceil((x1 - x0) / cell)
-  const nz = Math.ceil((z1 - z0) / cell)
-  const a = new Uint8Array(nx * nz)
-  const ix = (x) => Math.floor((x - x0) / cell)
-  const iz = (z) => Math.floor((z - z0) / cell)
-  const set = (i, k, flag) => {
-    if (i >= 0 && i < nx && k >= 0 && k < nz) a[k * nx + i] |= flag
-  }
-  const grid = {
-    get(x, z) {
-      const i = ix(x)
-      const k = iz(z)
-      if (i < 0 || i >= nx || k < 0 || k >= nz) return 0
-      return a[k * nx + i]
-    },
-    /** 多边形（世界坐标）内的格子打标记；pad > 0 时再沿边外扩 */
-    fillPoly(poly, flag, pad = 0) {
-      let zMin = Infinity
-      let zMax = -Infinity
-      for (const [, z] of poly) {
-        zMin = Math.min(zMin, z)
-        zMax = Math.max(zMax, z)
-      }
-      for (
-        let k = Math.max(0, iz(zMin));
-        k <= Math.min(nz - 1, iz(zMax));
-        k++
-      ) {
-        const zc = z0 + (k + 0.5) * cell
-        const xs = []
-        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-          const [xa, za] = poly[j]
-          const [xb, zb] = poly[i]
-          if (za > zc !== zb > zc)
-            xs.push(xa + ((zc - za) * (xb - xa)) / (zb - za))
-        }
-        xs.sort((p, q) => p - q)
-        for (let m = 0; m + 1 < xs.length; m += 2) {
-          const i0 = Math.max(0, Math.ceil((xs[m] - x0) / cell - 0.5))
-          const i1 = Math.min(nx - 1, Math.floor((xs[m + 1] - x0) / cell - 0.5))
-          for (let i = i0; i <= i1; i++) a[k * nx + i] |= flag
-        }
-      }
-      if (pad > 0) {
-        for (let i = 0; i < poly.length; i++) {
-          grid.stamp(poly[i], poly[(i + 1) % poly.length], pad, flag)
-        }
-      }
-    },
-    /** 线段两侧 r 以内的格子打标记 */
-    stamp(p, q, r, flag) {
-      const len = Math.hypot(q[0] - p[0], q[1] - p[1])
-      const n = Math.max(1, Math.ceil(len / (cell * 0.8)))
-      const rr = Math.ceil(r / cell)
-      for (let s = 0; s <= n; s++) {
-        const x = p[0] + ((q[0] - p[0]) * s) / n
-        const z = p[1] + ((q[1] - p[1]) * s) / n
-        const ci = ix(x)
-        const ck = iz(z)
-        for (let di = -rr; di <= rr; di++) {
-          for (let dk = -rr; dk <= rr; dk++) {
-            const xc = x0 + (ci + di + 0.5) * cell
-            const zc = z0 + (ck + dk + 0.5) * cell
-            if (Math.hypot(xc - x, zc - z) <= r) set(ci + di, ck + dk, flag)
-          }
-        }
-      }
-    },
-    /** 折线整体盖印（线宽 2r；closed 时含末点回到首点的一段） */
-    stampLine(pts, r, flag, closed = false) {
-      const n = closed ? pts.length : pts.length - 1
-      for (let i = 0; i < n; i++) {
-        grid.stamp(pts[i], pts[(i + 1) % pts.length], r, flag)
-      }
-    },
-    /** 圆盘打标记 */
-    disk(cx, cz, r, flag) {
-      grid.stamp([cx, cz], [cx, cz], r, flag)
-    },
-    /** 圆盘内（圆心 + 圆周 8 点）是否都不含 mask 中的任何标记 */
-    freeDisk(cx, cz, r, mask) {
-      if (grid.get(cx, cz) & mask) return false
-      for (let k = 0; k < 8; k++) {
-        const t = (k / 8) * Math.PI * 2
-        if (grid.get(cx + r * Math.cos(t), cz + r * Math.sin(t)) & mask)
-          return false
-      }
-      return true
-    }
-  }
-  return grid
-}
-
 /* ---------------- 通用构件 ---------------- */
 
 /** 台基（或任何从草地以下长起的实心块）：底埋进草地以下 0.35 m，顶面在局部 y = h */
@@ -1631,24 +1537,6 @@ function addLayeredPine(b, x, y, z, h, r, color, yaw) {
 
 /* ---------------- 竹丛（批量写顶点，同 wangjiang.js） ---------------- */
 
-// 竹梢叶团的单位三角形（半径 1、高 1）四棱双锥：顶尖 (0, 1, 0)，最宽一圈在 62% 高，
-// 下尖细长到 0.3 m 处（像一束竹竿）
-const SPINDLE = (() => {
-  const n = 4
-  const ring = Array.from({ length: n + 1 }, (_, k) => {
-    const a = (k / n) * Math.PI * 2
-    return [Math.sin(a), Math.cos(a)]
-  })
-  const tris = []
-  for (let k = 0; k < n; k++) {
-    const [s0, c0] = ring[k]
-    const [s1, c1] = ring[k + 1]
-    tris.push([0, 1, 0, 0], [s0, 0.62, c0, 1], [s1, 0.62, c1, 1])
-    tris.push([0, 0, 0, 0], [s1, 0.62, c1, 1], [s0, 0.62, c0, 1])
-  }
-  return tris
-})()
-
 /**
  * 一簇竹：n 束竹梢叶团，簇心 (x, y, z)。lean 给出时（{ dx, dz, deg }）各束朝该方向倾斜
  * （花径两侧竿顶向夹道弯，形成拱廊感），否则从簇心向外微倾。顶点直接写进 bufs[颜色下标]。
@@ -1657,7 +1545,6 @@ function addBamboo(bufs, x, y, z, rand, h, n, lean) {
   const m = new Matrix4()
   const rx = new Matrix4()
   const ry = new Matrix4()
-  const v = new Vector3()
   for (let i = 0; i < n; i++) {
     const a = rand() * Math.PI * 2
     const off = 0.3 + rand() * 0.9
@@ -1675,12 +1562,7 @@ function addBamboo(bufs, x, y, z, rand, h, n, lean) {
     m.makeTranslation(x + Math.sin(a) * off, y, z + Math.cos(a) * off)
       .multiply(ry)
       .multiply(rx)
-    for (const [ux, uy, uz, wide] of SPINDLE) {
-      const yy = uy === 0 ? 0.3 : uy * hh
-      const k = wide ? r : 0
-      v.set(ux * k, yy, uz * k).applyMatrix4(m)
-      out.push(v.x, v.y, v.z)
-    }
+    pushSpindle(out, m, hh, r)
   }
 }
 

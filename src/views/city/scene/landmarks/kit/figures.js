@@ -2,8 +2,8 @@
  * 小件：低多边形熊猫、游船、太阳神鸟金盘、图腾柱、低多边形树
  * ----------------------------------------------------------
  * 与 parts.js 相同：addXxx(b, parent, opts) 直接加进 ColorBuilder，parent 为 frame。
- * 熊猫要配 flatMaterial()（棱面分明的折纸感），应单独放进一个 ColorBuilder；
- * 其余小件配 landmarkMaterial()。
+ * 熊猫默认要配 flatMaterial()（棱面分明的折纸感），应单独放进一个 ColorBuilder；
+ * 传 flat: true 则删掉法线，可配 landmarkMaterial() 并入景点主体批。其余小件配 landmarkMaterial()。
  */
 import { Euler, IcosahedronGeometry, Matrix4, Quaternion, Vector3 } from "three"
 import { THEME } from "../../theme.js"
@@ -40,7 +40,7 @@ const at = (base, ...terms) => {
   return p
 }
 
-/** 熊猫部件表：{ c 中心, r 三轴半径, q 朝向, black 是否黑色 } */
+/** 熊猫部件表：{ c 中心, r 三轴半径, q 朝向, black 是否黑色, small 是否小部件（detail: 0 时降细分） } */
 function pandaParts() {
   const X = v3(1, 0, 0)
   const bodyQ = new Quaternion().setFromEuler(new Euler(-TILT, 0, 0))
@@ -63,14 +63,16 @@ function pandaParts() {
       c: at(body, [AXIS, -0.37], [BELLY, -0.13]),
       r: [0.07, 0.06, 0.06],
       q: bodyQ,
-      black: false
+      black: false,
+      small: true
     },
     // 鼻头
     {
       c: at(head, [FACE, 0.19], [HEAD_UP, -0.05]),
       r: [0.04, 0.03, 0.03],
       q: faceQ,
-      black: true
+      black: true,
+      small: true
     }
   ]
   for (const sx of [-1, 1]) {
@@ -79,7 +81,8 @@ function pandaParts() {
       c: at(head, [HEAD_UP, 0.165], [X, sx * 0.14], [FACE, -0.03]),
       r: [0.075, 0.075, 0.05],
       q: faceQ,
-      black: true
+      black: true,
+      small: true
     })
     // 眼圈：贴在脸上的扁椭球，外眼角下垂（绕脸轴转 ±25°）
     const eyeQ = faceQ
@@ -89,7 +92,8 @@ function pandaParts() {
       c: at(head, [FACE, 0.165], [X, sx * 0.078], [HEAD_UP, 0.02]),
       r: [0.05, 0.07, 0.045],
       q: eyeQ,
-      black: true
+      black: true,
+      small: true
     })
     // 前肢：肩部 → 搭在墙内屋面上的前爪
     parts.push(
@@ -124,23 +128,130 @@ function limb(a, b, r) {
 }
 
 /**
- * 低多边形熊猫（配合 flatMaterial 使用）：二十面体（细分 1 次）拉伸成
- * 头、身体、四肢、耳朵；耳朵、眼圈、鼻头、四肢、肩带黑色，其余白色。
- * parent 可为 null（即世界坐标）。pose "climb"（目前唯一姿态）：身体前倾约 35°，前爪搭在墙顶内侧，后腿悬在墙外。
- * 局部原点为女儿墙顶外沿中点（y = 0 墙顶、z = 0 外立面，墙在 z < 0 一侧）；
- * +Z 为背部朝向（朝街），-Z 为头部朝向（朝屋顶花园）。
- * 竖向总高约 height：脚底约在 -0.56·height，耳尖约在 +0.44·height；
- * 前爪、鼻尖伸进墙内约 0.36·height，臀部离外立面约 0.47·height。
- * @param {object} [opts] { height = 15, pose = "climb" }
+ * 坐姿熊猫部件（单位为总高）：身体略后仰的蛋形、黑色肩带与四肢、后腿前伸、双手抱在肚前。
+ * 局部原点在臀下（y = 0 为坐面），+Z 为脸的朝向。数值由 pandaTower.js 的模块内实现原样移入
  */
-export function addPanda(b, parent, { height = 15 } = {}) {
-  // parent 可传 null，表示直接用世界坐标
-  const base = parent ?? new Matrix4()
-  const k = height / PANDA_SPAN
+function sittingParts() {
+  const back = new Quaternion().setFromAxisAngle(v3(1, 0, 0), -8 * DEG)
+  const none = new Quaternion()
+  const parts = [
+    { c: v3(0, 0.34, -0.02), r: [0.29, 0.34, 0.26], q: back, black: false },
+    // 肩带：比身体略大一圈的扁椭球，只在肩背一段露出
+    { c: v3(0, 0.55, -0.04), r: [0.305, 0.12, 0.275], q: back, black: true },
+    { c: v3(0, 0.765, 0.02), r: [0.215, 0.185, 0.195], q: none, black: false },
+    // 吻部（白）与鼻头（黑）
+    { c: v3(0, 0.725, 0.175), r: [0.1, 0.07, 0.07], q: none, black: false },
+    {
+      c: v3(0, 0.745, 0.24),
+      r: [0.04, 0.028, 0.025],
+      q: none,
+      black: true,
+      small: true
+    },
+    // 尾巴
+    {
+      c: v3(0, 0.07, -0.26),
+      r: [0.065, 0.055, 0.055],
+      q: none,
+      black: false,
+      small: true
+    }
+  ]
+  for (const sx of [-1, 1]) {
+    // 耳朵
+    parts.push({
+      c: v3(sx * 0.15, 0.925, -0.01),
+      r: [0.07, 0.07, 0.045],
+      q: none,
+      black: true,
+      small: true
+    })
+    // 眼圈：外眼角下垂（绕脸轴转 ±25°）
+    parts.push({
+      c: v3(sx * 0.078, 0.79, 0.175),
+      r: [0.05, 0.068, 0.04],
+      q: new Quaternion().setFromAxisAngle(v3(0, 0, 1), sx * 25 * DEG),
+      black: true,
+      small: true
+    })
+    // 前肢：肩 → 肚前的爪（右爪偏外，握住竹子）
+    const paw = sx > 0 ? v3(0.19, 0.36, 0.25) : v3(-0.1, 0.35, 0.23)
+    parts.push(limb(v3(sx * 0.23, 0.56, 0.02), paw, 0.085))
+    // 后腿：臀部 → 向前伸出的脚
+    parts.push(limb(v3(sx * 0.16, 0.13, 0.06), v3(sx * 0.2, 0.08, 0.37), 0.1))
+  }
+  return parts
+}
+
+/** 坐姿熊猫右手握的竹子：竹竿自脚边斜向外上方，顶端三片竹叶（k 为总高） */
+function addHeldBamboo(b, base, k, { bamboo, leaf, flat }) {
   const m = new Matrix4()
   const s = new Vector3()
-  for (const p of pandaParts()) {
-    const g = new IcosahedronGeometry(1, 1)
+  const bot = v3(0.14, 0.03, 0.3)
+  const top = v3(0.32, 1.02, 0.2)
+  const dir = top.clone().sub(bot)
+  const q = new Quaternion().setFromUnitVectors(
+    v3(0, 1, 0),
+    dir.clone().normalize()
+  )
+  m.compose(bot.clone().multiplyScalar(k), q, s.set(1, 1, 1))
+  b.add(
+    cylinder(0.024 * k, 0.018 * k, dir.length() * k, { segments: 6 }),
+    bamboo,
+    base.clone().multiply(m)
+  )
+  const leaves = [
+    [0.36, 1.0, 0.24, 30],
+    [0.27, 1.0, 0.16, -40],
+    [0.31, 0.95, 0.27, 75]
+  ]
+  for (const [x, y, z, yaw] of leaves) {
+    m.compose(
+      v3(x, y, z).multiplyScalar(k),
+      new Quaternion().setFromAxisAngle(v3(0, 1, 0), yaw * DEG),
+      s.set(0.11 * k, 0.018 * k, 0.035 * k)
+    )
+    const g = new IcosahedronGeometry(1, 0)
+    if (flat) g.deleteAttribute("normal")
+    b.add(g, leaf, base.clone().multiply(m))
+  }
+}
+
+/**
+ * 低多边形熊猫：二十面体按三轴半径拉伸成头、身体、四肢、耳朵；
+ * 耳朵、眼圈、鼻头、四肢、肩带黑色，其余白色。parent 可为 null（即世界坐标）。
+ * pose "climb"（默认）：身体前倾约 35°，前爪搭在墙顶内侧，后腿悬在墙外。
+ *   局部原点为女儿墙顶外沿中点（y = 0 墙顶、z = 0 外立面，墙在 z < 0 一侧）；
+ *   +Z 为背部朝向（朝街），-Z 为头部朝向（朝屋顶花园）。
+ *   竖向总高约 height：脚底约在 -0.56·height，耳尖约在 +0.44·height；
+ *   前爪、鼻尖伸进墙内约 0.36·height，臀部离外立面约 0.47·height。
+ * pose "sit"：坐姿抱竹。局部原点在臀下（y = 0 为坐面），+Z 为脸的朝向；
+ *   总高（脚底到耳尖）= height；右手握一根斜出的竹子，顶端三片竹叶。
+ * flat：false（默认）保留二十面体的平滑法线，须配 flatMaterial() 单独成批；
+ *   true 时删掉法线，ColorBuilder 按面重算，配 landmarkMaterial 也是棱面分明的折纸感，可并入景点主体批。
+ * detail：1（默认）全部部件细分 1 次；0 时耳朵、眼圈、鼻头、尾巴改用 20 面（远景看不出，省三角形）。
+ * @param {object} [opts] { height = 15, pose = "climb", flat = false, detail = 1,
+ *   bamboo = "#5DA83A", leaf = "#7CC24E" }（bamboo / leaf 只用于坐姿手里的竹子）
+ */
+export function addPanda(b, parent, opts = {}) {
+  const {
+    height = 15,
+    pose = "climb",
+    flat = false,
+    detail = 1,
+    bamboo = "#5DA83A",
+    leaf = "#7CC24E"
+  } = opts
+  // parent 可传 null，表示直接用世界坐标
+  const base = parent ?? new Matrix4()
+  const sit = pose === "sit"
+  // 坐姿部件以总高为单位；趴姿部件的竖向总跨度为 PANDA_SPAN
+  const k = sit ? height : height / PANDA_SPAN
+  const m = new Matrix4()
+  const s = new Vector3()
+  for (const p of sit ? sittingParts() : pandaParts()) {
+    const g = new IcosahedronGeometry(1, p.small && detail === 0 ? 0 : 1)
+    if (flat) g.deleteAttribute("normal")
     m.compose(
       p.c.clone().multiplyScalar(k),
       p.q,
@@ -148,6 +259,7 @@ export function addPanda(b, parent, { height = 15 } = {}) {
     )
     b.add(g, p.black ? L.pandaBlack : L.pandaWhite, base.clone().multiply(m))
   }
+  if (sit) addHeldBamboo(b, base, k, { bamboo, leaf, flat })
 }
 
 /* ---------------- 游船 ---------------- */
