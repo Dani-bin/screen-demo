@@ -10,8 +10,16 @@
         --bbox 30.230,120.180,30.270,120.230 --origin 120.2050,30.2500 \
         --out public/city/hangzhou.json
 
+飞地（主城区以外单独拉数的小块区域，元素追加在主城区之后，见 meta.enclaves）：
+    python3 scripts/fetch-osm-city.py --enclave 熊猫基地:30.727,104.115,30.760,104.157
+    不给 --enclave 时用 DEFAULT_ENCLAVES；可重复给出多块。
+
+只拉飞地、主城区沿用已有文件（本地没有 Overpass 缓存时，避免主城区随 OSM 更新而变化）：
+    python3 scripts/fetch-osm-city.py --keep-main public/city/chengdu.json
+
 输出结构（坐标为以 origin 为原点的米制局部坐标，X 向东、Z 向南）：
-    meta      城市名、原点经纬度、范围、clip 裁剪矩形 [xmin, zmin, xmax, zmax]
+    meta      城市名、原点经纬度、主城区范围 bbox 与 clip 裁剪矩形 [xmin, zmin, xmax, zmax]、
+              飞地列表 enclaves [{ name, bbox, clip }]
     buildings [{ p: [[x, z], ...], h: 楼高(米), n: 楼名或 null }]
     roads     [{ p: [[x, z], ...], c: "a"|"b"|"c"|"d" }]   a 主干 b 次干 c 支路 d 街巷
     water     [[[x, z], ...]]   水面多边形
@@ -59,6 +67,14 @@ TYPE_HEIGHT = {
     "roof": (3, 5), "carport": (3, 5), "shed": (3, 5),
     "garage": (3, 5), "garages": (3, 5), "hut": (3, 5),
 }
+
+# 默认飞地：成都大熊猫繁育研究基地（OSM way 941885688）在主城区数据东北角外约东 2.3 km、北 5.1 km，
+# 整体扩图楼栋会从约 1.9 万翻到 3.8 万，所以只把基地周边单独拉一块（约 333 栋楼），
+# 见 docs/superpowers/specs/2026-10-01-city-panda-base-design.md
+DEFAULT_ENCLAVES = ["熊猫基地:30.727,104.115,30.760,104.157"]
+
+# 输出的五类要素，主城区与飞地按这个顺序合并
+LAYERS = ("buildings", "roads", "water", "parks", "rivers")
 
 
 def overpass(query, cache_dir):
@@ -218,15 +234,18 @@ def main():
     # 为收录该景点南扩到 30.624（约 1.3 km）；西界原为 104.040，杜甫草堂在其外约 1.3 km，
     # 为收录该景点并给镜头留约 1.2 km 余量西扩到 104.012；北、东两边不变
     ap.add_argument("--bbox", default="30.624,104.012,30.686,104.098", help="south,west,north,east")
+    ap.add_argument(
+        "--enclave", action="append", metavar="名称:南,西,北,东",
+        help="飞地（主城区以外单独拉数的小块区域），可重复；不给时用 DEFAULT_ENCLAVES",
+    )
+    ap.add_argument("--keep-main", metavar="旧JSON", help="主城区沿用该文件的数据（不重拉），只拉飞地并追加")
     ap.add_argument("--origin", default="104.0657,30.6574", help="lon,lat，作为局部坐标原点")
     ap.add_argument("--out", default="public/city/chengdu.json")
     ap.add_argument("--cache-dir", default="scripts/osm-cache")
     ap.add_argument("--clip-margin", type=float, default=300, help="道路 / 河流裁剪矩形在范围外扩的米数")
     args = ap.parse_args()
 
-    south, west, north, east = [float(v) for v in args.bbox.split(",")]
     lon0, lat0 = [float(v) for v in args.origin.split(",")]
-    bbox = f"({south},{west},{north},{east})"
 
     # 等距圆柱投影：1 度经度 ≈ 111320·cos(lat) 米，1 度纬度 ≈ 110540 米
     kx = 111320 * math.cos(math.radians(lat0))
@@ -246,77 +265,137 @@ def main():
             pts = pts[:-1]  # 去掉闭合重复点
         return pts
 
-    # 裁剪矩形：范围四角投影到局部坐标，再向外扩 clip_margin 米（北在 -Z，所以取 min / max）
-    corners = [to_local({"lon": lon, "lat": lat}) for lon in (west, east) for lat in (south, north)]
-    xmin = round(min(c[0] for c in corners) - args.clip_margin, 1)
-    xmax = round(max(c[0] for c in corners) + args.clip_margin, 1)
-    zmin = round(min(c[1] for c in corners) - args.clip_margin, 1)
-    zmax = round(max(c[1] for c in corners) + args.clip_margin, 1)
-    clip = [xmin, zmin, xmax, zmax]
+    def fetch_region(south, west, north, east):
+        """拉取一块矩形范围的五类要素；道路与河流中心线裁剪到「范围 + clip_margin」的矩形。"""
+        bbox = f"({south},{west},{north},{east})"
+        # 裁剪矩形：范围四角投影到局部坐标，再向外扩 clip_margin 米（北在 -Z，所以取 min / max）
+        corners = [to_local({"lon": lon, "lat": lat}) for lon in (west, east) for lat in (south, north)]
+        clip = [
+            round(min(c[0] for c in corners) - args.clip_margin, 1),
+            round(min(c[1] for c in corners) - args.clip_margin, 1),
+            round(max(c[0] for c in corners) + args.clip_margin, 1),
+            round(max(c[1] for c in corners) + args.clip_margin, 1),
+        ]
 
-    print("拉取建筑…")
-    raw_b = overpass(f'[out:json][timeout:120];(way["building"]{bbox};);out geom;', args.cache_dir)
-    buildings = []
-    for w in raw_b["elements"]:
-        if w["type"] != "way":
-            continue
-        p = ring(w.get("geometry", []))
-        if len(p) < 3:
-            continue
-        tags = w.get("tags", {})
-        buildings.append({"p": p, "h": estimate_height(tags, w["id"]), "n": tags.get("name")})
-
-    print("拉取道路…")
-    kinds = "|".join(ROAD_CLASS.keys())
-    raw_r = overpass(f'[out:json][timeout:120];(way["highway"~"^({kinds})$"]{bbox};);out geom;', args.cache_dir)
-    roads = []
-    for w in raw_r["elements"]:
-        if w["type"] != "way" or len(w.get("geometry", [])) < 2:
-            continue
-        c = ROAD_CLASS[w["tags"]["highway"]]
-        # 裁剪到城区矩形，一条 way 可能被切成多段，每段保留原道路等级
-        for piece in clip_polyline([to_local(n) for n in w["geometry"]], *clip):
-            roads.append({"p": piece, "c": c})
-
-    print("拉取水系与绿地…")
-    raw_l = overpass(
-        f'[out:json][timeout:120];('
-        f'way["natural"="water"]{bbox};way["waterway"~"^(river|canal|stream)$"]{bbox};'
-        f'way["leisure"~"^(park|garden)$"]{bbox};way["landuse"~"^(grass|forest)$"]{bbox};'
-        f'relation["natural"="water"]{bbox};relation["leisure"="park"]{bbox};'
-        f');out geom;',
-        args.cache_dir,
-    )
-    water, parks, rivers = [], [], []
-    for e in raw_l["elements"]:
-        tags = e.get("tags", {})
-        is_water = tags.get("natural") == "water" or "waterway" in tags
-        if e["type"] == "way":
-            if "waterway" in tags:
-                # 河流中心线同样裁剪到城区矩形，可能切成多段
-                rivers.extend(clip_polyline([to_local(n) for n in e.get("geometry", [])], *clip))
+        print("  拉取建筑…")
+        raw_b = overpass(f'[out:json][timeout:120];(way["building"]{bbox};);out geom;', args.cache_dir)
+        buildings = []
+        for w in raw_b["elements"]:
+            if w["type"] != "way":
                 continue
-            p = ring(e.get("geometry", []))
-            if len(p) >= 3:
-                (water if is_water else parks).append(p)
-        elif e["type"] == "relation":
-            # 多面关系只取 outer 成员并拼接成闭合环；inner（岛 / 洞）成员忽略，场景里不做挖洞
-            outers = [m for m in e.get("members", []) if m.get("role") == "outer" and m.get("geometry")]
-            for nodes in stitch_rings(outers):
-                p = ring(nodes)
+            p = ring(w.get("geometry", []))
+            if len(p) < 3:
+                continue
+            tags = w.get("tags", {})
+            buildings.append({"p": p, "h": estimate_height(tags, w["id"]), "n": tags.get("name")})
+
+        print("  拉取道路…")
+        kinds = "|".join(ROAD_CLASS.keys())
+        raw_r = overpass(f'[out:json][timeout:120];(way["highway"~"^({kinds})$"]{bbox};);out geom;', args.cache_dir)
+        roads = []
+        for w in raw_r["elements"]:
+            if w["type"] != "way" or len(w.get("geometry", [])) < 2:
+                continue
+            c = ROAD_CLASS[w["tags"]["highway"]]
+            # 裁剪到本区域矩形，一条 way 可能被切成多段，每段保留原道路等级
+            for piece in clip_polyline([to_local(n) for n in w["geometry"]], *clip):
+                roads.append({"p": piece, "c": c})
+
+        print("  拉取水系与绿地…")
+        raw_l = overpass(
+            f'[out:json][timeout:120];('
+            f'way["natural"="water"]{bbox};way["waterway"~"^(river|canal|stream)$"]{bbox};'
+            f'way["leisure"~"^(park|garden)$"]{bbox};way["landuse"~"^(grass|forest)$"]{bbox};'
+            f'relation["natural"="water"]{bbox};relation["leisure"="park"]{bbox};'
+            f');out geom;',
+            args.cache_dir,
+        )
+        water, parks, rivers = [], [], []
+        for e in raw_l["elements"]:
+            tags = e.get("tags", {})
+            is_water = tags.get("natural") == "water" or "waterway" in tags
+            if e["type"] == "way":
+                if "waterway" in tags:
+                    # 河流中心线同样裁剪到本区域矩形，可能切成多段
+                    rivers.extend(clip_polyline([to_local(n) for n in e.get("geometry", [])], *clip))
+                    continue
+                p = ring(e.get("geometry", []))
                 if len(p) >= 3:
                     (water if is_water else parks).append(p)
+            elif e["type"] == "relation":
+                # 多面关系只取 outer 成员并拼接成闭合环；inner（岛 / 洞）成员忽略，场景里不做挖洞
+                outers = [m for m in e.get("members", []) if m.get("role") == "outer" and m.get("geometry")]
+                for nodes in stitch_rings(outers):
+                    p = ring(nodes)
+                    if len(p) >= 3:
+                        (water if is_water else parks).append(p)
+        return {"clip": clip, "buildings": buildings, "roads": roads, "water": water, "parks": parks, "rivers": rivers}
+
+    # ---- 主城区：重新拉取，或沿用旧文件 ----
+    if args.keep_main:
+        with open(args.keep_main, encoding="utf-8") as f:
+            old = json.load(f)
+        if old["meta"]["origin"] != [lon0, lat0]:
+            raise SystemExit(f"--keep-main 文件原点 {old['meta']['origin']} 与 --origin 不一致")
+        main_part = {k: old[k] for k in LAYERS}
+        main_bbox, main_clip = old["meta"]["bbox"], old["meta"]["clip"]
+        print(f"主城区沿用 {args.keep_main}：建筑 {len(old['buildings'])}，道路 {len(old['roads'])}")
+    else:
+        south, west, north, east = [float(v) for v in args.bbox.split(",")]
+        print("拉取主城区…")
+        main_part = fetch_region(south, west, north, east)
+        main_bbox, main_clip = [south, west, north, east], main_part["clip"]
+
+    layers = {k: list(main_part[k]) for k in LAYERS}
+    # 水面 / 绿地多边形不裁剪：大面（如河流关系）可能被主城区与飞地的查询都返回，按几何去重
+    # （同一 OSM 面两次投影、取整的结果逐点相同）
+    seen = {k: {json.dumps(p) for p in layers[k]} for k in ("water", "parks")}
+
+    # ---- 飞地：逐块拉取并追加在主城区之后（主城区数组下标不变） ----
+    enclaves = []
+    for spec in args.enclave if args.enclave is not None else DEFAULT_ENCLAVES:
+        name, _, box = spec.partition(":")
+        es, ew, en, ee = [float(v) for v in box.split(",")]
+        print(f"拉取飞地「{name}」…")
+        part = fetch_region(es, ew, en, ee)
+        added = {}
+        for k in LAYERS:
+            items = part[k]
+            if k in seen:
+                items = [p for p in items if json.dumps(p) not in seen[k]]
+                seen[k].update(json.dumps(p) for p in items)
+            layers[k].extend(items)
+            added[k] = len(items)
+        # 自检：飞地楼栋应落在飞地裁剪框内（楼不裁剪；Overpass 只返回与范围相交的楼，跨框的个别楼会计入「超出」）
+        x0, z0, x1, z1 = part["clip"]
+        outside = sum(
+            1 for b in part["buildings"] if not all(x0 <= x <= x1 and z0 <= z <= z1 for x, z in b["p"])
+        )
+        print(f"  新增：" + "，".join(f"{k} {v}" for k, v in added.items()) + f"；楼栋超出裁剪框 {outside}")
+        enclaves.append({"name": name, "bbox": [es, ew, en, ee], "clip": part["clip"]})
+
+    if args.keep_main:
+        # 自检：主城区部分与旧文件逐项一致（飞地只追加在后面）
+        if not all(layers[k][: len(old[k])] == old[k] for k in LAYERS):
+            raise SystemExit("自检失败：主城区数据与旧文件不一致")
+        print("自检：主城区数据与旧文件逐项一致")
 
     out = {
-        "meta": {"city": args.city, "origin": [lon0, lat0], "bbox": [south, west, north, east], "clip": clip},
-        "buildings": buildings, "roads": roads, "water": water, "parks": parks, "rivers": rivers,
+        "meta": {
+            "city": args.city, "origin": [lon0, lat0],
+            "bbox": main_bbox, "clip": main_clip, "enclaves": enclaves,
+        },
+        **layers,
     }
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
 
     size_kb = os.path.getsize(args.out) // 1024
-    print(f"完成：建筑 {len(buildings)}，道路 {len(roads)}，水面 {len(water)}，绿地 {len(parks)}，河流 {len(rivers)}，文件 {size_kb} KB → {args.out}")
+    print(
+        f"完成：建筑 {len(layers['buildings'])}，道路 {len(layers['roads'])}，水面 {len(layers['water'])}，"
+        f"绿地 {len(layers['parks'])}，河流 {len(layers['rivers'])}，文件 {size_kb} KB → {args.out}"
+    )
 
 
 if __name__ == "__main__":
