@@ -115,7 +115,7 @@ function pandaParts() {
   return parts
 }
 
-/** 四肢：从关节 a 到末端 b 的长椭球，粗 r（两端各探出 r 的圆头） */
+/** 四肢：从关节 a 到末端 b 的长椭球，粗 r（两端各探出约 0.6r 的圆头） */
 function limb(a, b, r) {
   const dir = b.clone().sub(a)
   const len = dir.length()
@@ -129,7 +129,7 @@ function limb(a, b, r) {
 
 /**
  * 坐姿熊猫部件（单位为总高）：身体略后仰的蛋形、黑色肩带与四肢、后腿前伸、双手抱在肚前。
- * 局部原点在臀下（y = 0 为坐面），+Z 为脸的朝向。数值由 pandaTower.js 的模块内实现原样移入
+ * 局部原点在臀下（y = 0 为坐面），+Z 为脸的朝向。数值自原 pandaTower.js 的 addSittingPanda 原样移入
  */
 function sittingParts() {
   const back = new Quaternion().setFromAxisAngle(v3(1, 0, 0), -8 * DEG)
@@ -195,11 +195,12 @@ function addHeldBamboo(b, base, k, { bamboo, leaf, flat }) {
     dir.clone().normalize()
   )
   m.compose(bot.clone().multiplyScalar(k), q, s.set(1, 1, 1))
-  b.add(
-    cylinder(0.024 * k, 0.018 * k, dir.length() * k, { segments: 6 }),
-    bamboo,
-    base.clone().multiply(m)
-  )
+  const stalk = cylinder(0.024 * k, 0.018 * k, dir.length() * k, {
+    segments: 6
+  })
+  // flat：去掉竹竿的平滑法线（cylinder 已是非索引，由合批器按面重算）
+  if (flat) stalk.deleteAttribute("normal")
+  b.add(stalk, bamboo, base.clone().multiply(m))
   const leaves = [
     [0.36, 1.0, 0.24, 30],
     [0.27, 1.0, 0.16, -40],
@@ -230,6 +231,7 @@ function addHeldBamboo(b, base, k, { bamboo, leaf, flat }) {
  * flat：false（默认）保留二十面体的平滑法线，须配 flatMaterial() 单独成批；
  *   true 时删掉法线，ColorBuilder 按面重算，配 landmarkMaterial 也是棱面分明的折纸感，可并入景点主体批。
  * detail：1（默认）全部部件细分 1 次；0 时耳朵、眼圈、鼻头、尾巴改用 20 面（远景看不出，省三角形）。
+ * pose 传了未知值会抛错（与 ColorBuilder.add 对镜像矩阵抛错一致），不会悄悄退回趴姿。
  * @param {object} [opts] { height = 15, pose = "climb", flat = false, detail = 1,
  *   bamboo = "#5DA83A", leaf = "#7CC24E" }（bamboo / leaf 只用于坐姿手里的竹子）
  */
@@ -242,6 +244,9 @@ export function addPanda(b, parent, opts = {}) {
     bamboo = "#5DA83A",
     leaf = "#7CC24E"
   } = opts
+  if (pose !== "climb" && pose !== "sit") {
+    throw new Error(`addPanda：未知姿态 ${pose}`)
+  }
   // parent 可传 null，表示直接用世界坐标
   const base = parent ?? new Matrix4()
   const sit = pose === "sit"

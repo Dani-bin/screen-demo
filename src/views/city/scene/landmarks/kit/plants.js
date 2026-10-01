@@ -12,7 +12,7 @@ import { Vector3 } from "three"
  * 竹梢叶团的单位三角形（半径 1、高 1）四棱双锥：顶尖 (0, 1, 0)，最宽一圈在 62% 高，
  * 下尖细长（建模时抬到 0.3 m，像一束竹竿）。每项 [x, y, z, 是否在最宽一圈]
  */
-export const SPINDLE = (() => {
+const SPINDLE = (() => {
   const n = 4
   const ring = Array.from({ length: n + 1 }, (_, k) => {
     const a = (k / n) * Math.PI * 2
@@ -34,7 +34,7 @@ const _v = new Vector3()
  * 按变换 m 写入一束竹梢叶团的 8 个三角形：高 h、最宽一圈半径 r，下尖在 0.3 m。
  * @param {number[]} out 顶点坐标数组（平铺 x, y, z），按颜色分组由调用方管理
  * @param {Matrix4} m 局部 → 世界变换（原点在束根，局部 +Y 为竹梢方向）
- * @param {number} h 叶团高（米）
+ * @param {number} h 叶团高（米）；下尖固定在 0.3 m，h 须明显大于 0.3 m（小于约 0.5 m 时叶团会上下翻转）
  * @param {number} r 最宽一圈半径（米）
  */
 export function pushSpindle(out, m, h, r) {

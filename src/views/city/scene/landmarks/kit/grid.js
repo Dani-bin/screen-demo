@@ -4,7 +4,12 @@
  * 按 cell 米划分的位标记栅格（Uint8，每格最多 8 种标记），世界坐标 [x, z]。
  * fillPoly 多边形打标记（可沿边外扩）、stamp / stampLine 线段盖印、disk 圆盘、
  * freeDisk 判断圆盘内是否不含某些标记。标记位由各景点自定义（如 F_SOLID、F_WATER）。
- * 由 dufu.js 移出共用；wuhou.js 的同名函数 stampLine / freeDisk 细节不同，保持原样不并入。
+ * 由 dufu.js 移出共用。wuhou.js 里仍有自己的一份 createGrid：与这里相比只是 stampLine
+ * 少了 closed 参数，其余等价；本次改动不并入。
+ *
+ * 取样约束：stamp / disk / stampLine 以及 fillPoly 的 pad 外扩，只给「格心离采样点
+ * 不超过 r」的格子打标记，采样点所在格本身并不保证被标记。所以 r（pad）应不小于
+ * 约 0.71 × cell（格心到格内最远点的距离），否则可能一格也标不上。
  */
 
 export function createGrid(x0, z0, x1, z1, cell = 0.5) {
