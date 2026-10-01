@@ -11,6 +11,7 @@ import { FrontSide, Mesh } from "three"
 import { landmarkMaterial } from "../kit/builder.js"
 import { createSite } from "./site.js"
 import { buildLawn, buildPaths, buildPlaza } from "./ground.js"
+import { buildGate } from "./gate.js"
 
 // 定位针底座高度：南大门熊猫头左耳顶（真实约 10.5 m × 1.25 插画放大）
 const MARKER_HEIGHT = 13.1
@@ -18,9 +19,10 @@ const MARKER_HEIGHT = 13.1
 export function build(ctx) {
   const site = createSite(ctx)
   buildPaths(site)
+  buildGate(site)
   const walkways = []
   // 各分区在这里加构件，并登记草地要挖的洞（site.addYard、site.lawnHoles）与
-  // 广场要挖的洞（site.plazaHoles）；骨架阶段还没有分区，后续任务往这里加
+  // 广场要挖的洞（site.plazaHoles）；后续分区按既定构建顺序往这里加
   // 草地和广场最后挤出：此时所有洞都已登记完整
   buildLawn(site)
   buildPlaza(site)
