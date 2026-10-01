@@ -1818,7 +1818,7 @@ git commit -m "feat(city): 新增熊猫基地站点、场地与地面" -m "第 1
 
 **规格：** 设计文档 4.4（南大门，整体 ×1.25，绕形心 (7464.1, −8588.4)）、4.5（入园主路两侧行道树、铜像 ×2.2 与三层花坛）、4.3「南门广场」（5 块草坪内环与喷泉池，内环轮廓可在 `/tmp/panda-research/core.json` 里按 relation 16672648 取；临时目录不在时，用 3～5 个椭圆草坪按广场形状示意）。
 
-**接口：** `export function buildGate(site)`；门洞地面铺到 `PAVE_Y`，从广场接到入园主路 `entry` 起点；名牌座、白壳、头环、格栅、亭都用 `site.solid` 登记（门洞通道不登记）。
+**接口：** `export function buildGate(site)`；南大门「绕形心放大」的中心用 `site.ctx.spot.x / z`（OSM 面积形心 (7464.1, −8588.4)），不要用 `centroid(site.gate)`（顶点平均，差 2.7 m）；门洞地面与 `entry` 园路都在 `PAVE_Y`、颜色不同，只能对接、不能重叠；广场草坪内环与喷泉池用 `site.plazaHoles.push(poly)` 从广场挖洞（须在广场内、互不相交），洞里的草坪 / 池水 / 池沿由本文件画（城市水面层的喷泉水面 0.3 m 会从洞里露出）；门洞地面铺到 `PAVE_Y`，从广场接到入园主路 `entry` 起点；名牌座、白壳、头环、格栅、亭都用 `site.solid` 登记（门洞通道不登记）。
 
 - [ ] **Step 1:** 按规格实现 `gate.js`，在 index.js 接入（`buildPaths` 之后）。
 - [ ] **Step 2:** 核对左耳顶高：放大后约 13.1 m（= `MARKER_HEIGHT`），定位针球应悬在耳顶上方约 14 m。
@@ -1853,7 +1853,7 @@ addPanda(site.b, frame(x, y, z, 125 + 180 + 抖动), { height: 6.5, pose: "sit",
 ```
 （幼崽 `height: 3.8`；趴姿 `pose: "climb"`、`height: 6`，`frame(台沿中点, 台顶, 125)`）。抖动 ±20° 用 `mulberry32(hashInts(…))` 按位置播种。
 
-**活动场与草地洞：** 每个下沉活动场的场地多边形 push 进 `site.lawnHoles`（必须互不相交、都在园界内、不压园路），场地面 `extrudePolygon(场地, [], GROUND_Y, YARD_Y)` 进 `site.gb`，`grid.fillPoly(场地, F_YARD)`；挡土墙、木栏、绿篱进 `site.b` 并 `site.solid`。
+**活动场与草地洞：** 每个下沉活动场的场地多边形用 `site.addYard(poly)` 登记（它会加进 `lawnHoles`、打 `F_YARD`、把场地面挤出到地面批，并在压到园路 / 水面 / 其他活动场时告警；多边形必须互不相交、都在园界内、不压园路，控制台出现告警就改形状）；挡土墙、木栏、绿篱进 `site.b` 并 `site.solid`。
 
 **接口：** `export function buildEnclosures(site)`。
 
@@ -1865,7 +1865,7 @@ addPanda(site.b, frame(x, y, z, 125 + 180 + 抖动), { height: 6.5, pose: "sit",
 
 ### Task 11: 步行路径（`pandaBase/walkways.js`）
 
-**规格：** 设计文档第 6 节 11 条路径与其后的微调说明。路径点列直接取 `ground.js` 的 `ROADS`（同 id 的折线），高度用 `pathById(site, id).y`，不要另抄坐标：
+**规格：** 设计文档第 6 节 11 条路径与其后的微调说明。路径点列直接取 `site.paths`（即 `ground.js` 的 `ROADS` 原始点列；渲染的路面两端已外延 0.4 m、折点带斜接，路径端点不会落在路面边缘），高度用 `pathById(site, id).y`，不要另抄坐标：
 
 | # | 园路 id | width | density | closed |
 |---|---|---|---|---|
@@ -1896,7 +1896,7 @@ addPanda(site.b, frame(x, y, z, 125 + 180 + 抖动), { height: 6.5, pose: "sit",
 
 ### Task 12: 树竹（`pandaBase/vegetation.js`）
 
-**规格：** 设计文档 4.13 按最终决策：核心区乔木**全部** `addTree` detail 0、共 160 棵（入口区、太阳产房周边优先）；竹林甬道沿 `loop` 西半段与 `villas` 两侧约 120 丛 + 点种约 60 丛，竿顶向路心倾 14°；西区**林冠起伏面**：园区西区部分（园区多边形减去核心区 x ≥ 6660 且 z ≥ −9440）按 40 m 网格三角网、顶点高 8～16 m（`mulberry32(hashInts(种子, ix, iz))`），只保留三个顶点都在西区园界内的三角形，颜色取 `C.forest` 与 `THEME.tree.greens`；西区竹约 40 丛沿园区西南边界内侧。
+**规格：** 设计文档 4.13 按最终决策：核心区乔木**全部** `addTree` detail 0、共 160 棵（入口区、太阳产房周边优先）；竹林甬道沿 `loop` 西半段与 `villas` 两侧约 120 丛 + 点种约 60 丛，竿顶向路心倾 14°；西区**林冠起伏面**：园区西区部分（园区多边形减去核心区 x ≥ 6660 且 z ≥ −9440）按 40 m 网格三角网、顶点高 8～16 m（`mulberry32(hashInts(种子, ix, iz))`），只保留三个顶点都在西区园界内、且三角形中心不在 `F_WATER` 格（西区两池已打水面标记）上的三角形，颜色取 `C.forest` 与 `THEME.tree.greens`；西区竹约 40 丛沿园区西南边界内侧。
 
 竹丛写法：本文件内 `addBamboo(bufs, x, y, z, rand, h, n, lean)` 自写随机规则（可参照 `dufu.js` 的同名函数），写顶点一律调 `kit/plants.js` 的 `pushSpindle`；种完后 `site.bambooBufs[i]` 每色 `fromTriangles` 一个几何体加进 `site.b`。
 
