@@ -14,6 +14,7 @@ import { buildLawn, buildPaths, buildPlaza } from "./ground.js"
 import { buildGate } from "./gate.js"
 import { buildHalls } from "./halls.js"
 import { buildLake } from "./lake.js"
+import { buildEnclosures } from "./enclosures.js"
 
 export function build(ctx) {
   const site = createSite(ctx)
@@ -23,6 +24,7 @@ export function build(ctx) {
   const { earTop } = buildGate(site)
   buildHalls(site)
   buildLake(site)
+  buildEnclosures(site)
   const walkways = []
   // 各分区在这里加构件，并登记草地要挖的洞（site.addYard、site.lawnHoles）与
   // 广场要挖的洞（site.plazaHoles）；后续分区按既定构建顺序往这里加
