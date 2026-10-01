@@ -1857,6 +1857,8 @@ addPanda(site.b, frame(x, y, z, 125 + 180 + 抖动), { height: 6.5, pose: "sit",
 
 **接口：** `export function buildEnclosures(site)`。
 
+**交接（Task 8 已做）：** 686460737（(7030.9, −9185.7)）已在 `halls.js` 的 `LOW_HOUSES` 里按 7.5 m 矮房建成，轮廓也已被 `footprintNear` 取走。若本任务按 4.11 改做塑石兽舍，必须同时把它从 `LOW_HOUSES` 删掉，否则会叠两栋、且取轮廓得到 null。
+
 - [ ] **Step 1:** 实现别墅模板函数与 7 座别墅、栖架、水池。
 - [ ] **Step 2:** 实现太阳产房、月亮产房、吊桥、小熊猫区、兽舍。
 - [ ] **Step 3:** 摆 10 只熊猫，接入 index.js（`buildLake` 之后）。
