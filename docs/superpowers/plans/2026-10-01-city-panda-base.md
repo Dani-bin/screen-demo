@@ -1906,6 +1906,8 @@ addPanda(site.b, frame(x, y, z, 125 + 180 + 抖动), { height: 6.5, pose: "sit",
 
 竹丛写法：本文件内 `addBamboo(bufs, x, y, z, rand, h, n, lean)` 自写随机规则（可参照 `dufu.js` 的同名函数），写顶点一律调 `kit/plants.js` 的 `pushSpindle`；种完后 `site.bambooBufs[i]` 每色 `fromTriangles` 一个几何体加进 `site.b`。
 
+**熊猫视线**：每棵乔木（冠心、半径约 1.15 r）与每丛竹（半高处、半径约 簇半径 + 半高）落位前调用 `site.blocksView(cx, cy, cz, radius)`，为真就跳过（Task 10 导出，保护 10 只熊猫到站点机位的视线）。活动场里的低竹已由 yards.js 直接并进 `site.b`，不要重复加进 `site.bambooBufs`。
+
 避让：乔木、竹丛中心要求 `grid.freeDisk(x, z, r, F_SOLID | F_PAVE | F_WATER | F_WALK | F_TREE | F_YARD)` 为真（活动场内只有 Task 10 布置的套竹筒树），种下后 `grid.disk(x, z, r, F_TREE)`；竹梢与树冠不得压到路径头顶 4.35 m 以内。
 
 **接口：** `export function plantAll(site, walkways)`。
