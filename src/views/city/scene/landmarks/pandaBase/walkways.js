@@ -7,17 +7,34 @@
  * 0.4 m、折点带斜接，原始端点不会落在路面边缘；高度取园路自己的 y（主路 PAVE_Y、步道 PATH_Y）。
  * 只做这 11 条：Task 6 / 10 补的短连接路（sunSouthLink、villasLink、lakeWestLink、sunEntry、
  * moonPlatformLink）不在规格表里，不进人流；月亮产房的吊桥也不接（moonLoop 止于西桥头）。
- * 每条路径在占用栅格上登记 F_WALK（可走带外扩 4.5 m），后面的树、竹种植（vegetation）据此
- * 离开可走带 ≥ 4.5 m，给行人留出头顶净空。
+ * 每条路径在占用栅格上登记 F_WALK（可走带外扩 1.5 m，见 WALK_CLEAR），供后面的树、竹种植
+ * （vegetation）避让。
  */
 import { gatePassage } from "./gate.js"
 import { pathById } from "./ground.js"
 import { F_WALK } from "./site.js"
 
-/** 可走带外扩（米）：树冠、竹丛离可走带边缘至少这么远（设计文档 4.13「净空」） */
-const WALK_CLEAR = 4.5
+/**
+ * F_WALK 标记在可走带（width / 2）之外再外扩的距离（米）。
+ * 这里只标「可走带 + 一小圈余量」，不是整条净空带：Task 12 种树时拿树冠的真实半径去测这块标记
+ * （树冠离可走带边缘 ≥ 1.5 m，冠沿侵入可走带的情况另有步行路径校验兜底）；通用竹丛另用明确的距离
+ * 检查，保证离可走带边缘 ≥ 4.5 m（同 wangjiang 的 BAMBOO_CLEAR 做法）；loop / villas 两侧的
+ * 竹林甬道按路径偏移直接布置（竹根离中线 4.7 m，竹梢向路面上方探出，都在 4.35 m 头顶净空之上），
+ * 不走这块标记。若这里取 4.5 m，会把甬道里每一丛竹都挡掉，并在每条路两侧留下 27～39 m 宽的无树带。
+ */
+const WALK_CLEAR = 1.5
 
-/** 第 1 条的广场段：广场边缘的闸口前后两点（设计文档第 6 节）；广场顶与 entry 同为 PAVE_Y，无需另取高度 */
+/** 两点视为同一点的距离阈值（米）：点列拼接去重、接点查找都用它，不依赖浮点全等 */
+const SAME_EPS = 0.01
+
+/** 两个 [x, z] 点是否重合（距离 < SAME_EPS） */
+const samePoint = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]) < SAME_EPS
+
+/**
+ * 第 1 条的广场段：广场边缘的闸口前后两点（设计文档第 6 节）；广场顶与 entry 同为 PAVE_Y，
+ * 无需另取高度。两点是按当前广场轮廓（PLAZA_LL）取的，广场多边形一旦改动，
+ * 必须重跑 walk 校验确认这一段仍在铺装上、没有压到草坪岛或喷泉池。
+ */
 const PLAZA_LEG = [
   [7503, -8551],
   [7478, -8571]
@@ -31,7 +48,7 @@ function joinPoints(...parts) {
   for (const part of parts) {
     for (const p of part) {
       const last = out[out.length - 1]
-      if (last && last[0] === p[0] && last[1] === p[1]) continue
+      if (last && samePoint(last, p)) continue
       out.push(p)
     }
   }
@@ -40,6 +57,8 @@ function joinPoints(...parts) {
 
 /**
  * 构建步行路径。
+ * 副作用：每条路径都会往 site.grid 上盖 F_WALK 标记（可走带外扩 WALK_CLEAR），
+ * 后面的树竹种植依赖它，所以必须在种植（vegetation）之前调用。
  * @param {object} site 场地对象（需已铺好园路：site.paths；已打好各分区的占用标记）
  * @returns {Array<{ points: number[][], y: number, width: number, closed: boolean, density: number }>}
  */
@@ -79,7 +98,7 @@ export function buildWalkways(site) {
   // 两段在 (6996, −9210) 相接，joinPoints 去掉重复点。toMoon 的首点 (7201, −9341) 是
   // 另一头的支线起点，不属于本路径（所以从 (6996, −9210) 起取）
   const toMoon = pts("toMoon")
-  const joinAt = toMoon.findIndex((p) => p[0] === 6996 && p[1] === -9210)
+  const joinAt = toMoon.findIndex((p) => samePoint(p, [6996, -9210]))
   if (joinAt < 0) throw new Error("熊猫基地：toMoon 里找不到接点 (6996, −9210)")
   add(
     joinPoints(pts("sunToNo2"), toMoon.slice(joinAt)),
