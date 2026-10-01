@@ -79,6 +79,7 @@ import {
 } from "./kit/parts.js"
 import { addBoat } from "./kit/figures.js"
 import { roundedLoop } from "./kit/walkways.js"
+import { pushSpindle } from "./kit/plants.js"
 
 const L = THEME.landmark
 const DEG = Math.PI / 180
@@ -1019,24 +1020,6 @@ function buildBank(b, line) {
 
 /* ---------------- 竹林 ---------------- */
 
-// 竹梢叶团的局部三角形顶点（单位尺寸：半径 1、高 1），四棱双锥：
-// 顶尖 (0, 1, 0)，最宽一圈在 62% 高，下尖细长到 0.3 / h 处（像一束竹竿）
-const SPINDLE = (() => {
-  const n = 4
-  const ring = Array.from({ length: n + 1 }, (_, k) => {
-    const a = (k / n) * Math.PI * 2
-    return [Math.sin(a), Math.cos(a)]
-  })
-  const tris = []
-  for (let k = 0; k < n; k++) {
-    const [s0, c0] = ring[k]
-    const [s1, c1] = ring[k + 1]
-    tris.push([0, 1, 0, 0], [s0, 0.62, c0, 1], [s1, 0.62, c1, 1])
-    tris.push([0, 0, 0, 0], [s1, 0.62, c1, 1], [s0, 0.62, c0, 1])
-  }
-  return tris // 每项 [x, y, z, 是否在最宽一圈]；y = 0 的下尖在建模时抬到 0.3 m
-})()
-
 /**
  * 一簇竹：n 束细长的竹梢叶团从簇心附近向外微倾（5°～15°），高 h 上下浮动，
  * 亮绿、嫩绿、深绿、中绿混排；(x, y, z) 为簇心地面点。
@@ -1047,7 +1030,6 @@ function addBamboo(bufs, x, y, z, rand, h, n) {
   const m = new Matrix4()
   const rx = new Matrix4()
   const ry = new Matrix4()
-  const v = new Vector3()
   for (let i = 0; i < n; i++) {
     const a = rand() * Math.PI * 2
     const tilt = (5 + rand() * 10) * DEG
@@ -1060,12 +1042,7 @@ function addBamboo(bufs, x, y, z, rand, h, n) {
     m.makeTranslation(x + Math.sin(a) * off, y, z + Math.cos(a) * off)
       .multiply(ry)
       .multiply(rx)
-    for (const [ux, uy, uz, wide] of SPINDLE) {
-      const yy = uy === 0 ? 0.3 : uy * hh
-      const k = wide ? r : 0
-      v.set(ux * k, yy, uz * k).applyMatrix4(m)
-      out.push(v.x, v.y, v.z)
-    }
+    pushSpindle(out, m, hh, r)
   }
 }
 
