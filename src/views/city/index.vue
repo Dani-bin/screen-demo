@@ -407,7 +407,7 @@
       }
 
       /*
-       * 标签压到顶栏时淡出隐藏（当前站先缩短引线下压，压不下才隐藏，见 markers.js 的 avoidTop）。
+       * 标签压到顶栏时淡出隐藏（当前站先缩短引线下压，压不下才隐藏，见 markers.js 的 avoidLabels）。
        * 淡出结束（0.3s）后再设 visibility: hidden，隐藏的标签不再参与绘制与无障碍树
        */
       &.is-clipped {

@@ -6,9 +6,10 @@
  * 一旦有人操作（拖拽 / 滚轮 / 点击 / 工具栏）立即暂停，空闲一段时间后自动恢复。
  *
  * 轨道控制自行实现：只需要「绕注视点旋转 + 缩放」，与巡览状态机共用同一套球坐标。
+ * 滚轮以光标所指处为中心缩放（与地图 App 一致），可放大到画面任意位置，而不只是当前景点。
  * 注视点被限制在数据范围内，俯仰与距离也有夹取，避免转到地底或飞出城区。
  */
-import { Spherical, Vector3 } from "three"
+import { Plane, Raycaster, Spherical, Vector2, Vector3 } from "three"
 
 const DEG = Math.PI / 180
 // 大角度转向放慢：方位差超过 SLOW_TURN_FROM 时，飞行时长按「方位差 / SLOW_TURN_FROM」放大，
@@ -58,6 +59,11 @@ export class CameraTour {
 
     this.target = new Vector3()
     this.spherical = new Spherical()
+    // 滚轮缩放求光标落点用的临时对象，复用以免每次滚轮都新建
+    this.raycaster = new Raycaster()
+    this.ndc = new Vector2()
+    this.anchorPlane = new Plane(new Vector3(0, 1, 0), 0)
+    this.anchor = new Vector3()
 
     this.current = -1
     this.playing = true
@@ -127,7 +133,7 @@ export class CameraTour {
         dy *= (typeof window !== "undefined" && window.innerHeight) || 800
       }
       dy = Math.max(-100, Math.min(100, dy))
-      this.zoom(Math.exp(dy * 0.0015))
+      this.zoom(Math.exp(dy * 0.0015), this._pointerAnchor(e))
     }
     // 屏蔽右键菜单：大屏上右键误触不应弹出浏览器菜单
     this._onContextMenu = (e) => e.preventDefault()
@@ -174,9 +180,42 @@ export class CameraTour {
     this.camera.lookAt(this.target)
   }
 
-  /** 缩放：factor > 1 拉远，< 1 拉近；属于人工操作，会暂停巡览 */
-  zoom(factor) {
-    this.spherical.radius *= factor
+  /**
+   * 光标所指处在「注视点高度水平面」上的世界坐标，作为滚轮缩放的不动点；视线不与该平面相交时返回 null。
+   * 取注视点高度而不是地面：高层地标站的注视点抬高了底座的一半（见 CityScene._initTour），
+   * 不动点与注视点同高，缩放时注视点只在水平方向移动，高度保持不变
+   */
+  _pointerAnchor(e) {
+    const rect = this.dom.getBoundingClientRect()
+    if (!rect.width || !rect.height) return null
+    this.ndc.set(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1
+    )
+    // 同一帧内可能连续收到多个滚轮事件（触控板），apply() 之后相机矩阵要等渲染时才更新，这里先手动更新
+    this.camera.updateMatrixWorld()
+    this.raycaster.setFromCamera(this.ndc, this.camera)
+    this.anchorPlane.constant = -this.target.y
+    return this.raycaster.ray.intersectPlane(this.anchorPlane, this.anchor)
+  }
+
+  /**
+   * 缩放：factor > 1 拉远，< 1 拉近；属于人工操作，会暂停巡览。
+   * 传 anchor（滚轮时为光标落点，见 _pointerAnchor）则以它为不动点：相机与注视点一起按同一比例
+   * 朝 anchor 收拢 / 远离，视线方向不变，anchor 在屏幕上的位置也就不变；
+   * 不传（工具栏按钮）则以注视点即画面中心缩放。
+   * 比例按夹取后的距离算，距离已到上下限时注视点也不再移动
+   */
+  zoom(factor, anchor) {
+    const s = this.spherical
+    const L = this.limits
+    const from = s.radius
+    s.radius = Math.max(L.radiusMin, Math.min(L.radiusMax, from * factor))
+    if (anchor && from > 0) {
+      const k = s.radius / from
+      this.target.x = anchor.x + (this.target.x - anchor.x) * k
+      this.target.z = anchor.z + (this.target.z - anchor.z) * k
+    }
     this.flying = false
     this.pause()
     this.apply()
