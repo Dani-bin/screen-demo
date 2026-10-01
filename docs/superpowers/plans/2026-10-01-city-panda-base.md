@@ -74,7 +74,7 @@
  *     1 支撑面：可走带内每个样点，路径高度 y + 0.25 以下最高的景点表面须与 y 相差 ≤ 0.06 m；
  *     2 头顶净空：样点正上方 y + 0.25 ～ y + 4.35 之间不得有景点表面；
  *     3 分部件净距：腿 / 身体 / 头三个高度带内的景点三角形，离样点的水平距离分别 ≥ 0.63 / 0.86 / 0.52 m；
- *       开放路径端点再沿路径方向外探 1 m 取样（只查净距）。
+ *       开放路径端点再沿路径方向外探 1 m 取样，只查是否碰到障碍（不要求净距；同 dufu.js 设计注释的口径）。
  *     只看景点自己的三角形（城市通用楼、通用树、水面不在其中）。有坏点时退出码为 1。
  * 景点构建与线上一致：ctx = { project, buildings, theme, spot }（同 lab.js 的 buildSubject）。
  */
@@ -397,7 +397,7 @@ function walk(name) {
           if (poly.length) d = Math.min(d, polyDist(poly, s.x, s.z))
         }
         near[bi] = Math.min(near[bi], d)
-        if (d < band.clear) bandBad[bi]++
+        if (s.end ? d <= 0 : d < band.clear) bandBad[bi]++
       })
     }
     const n = bad.support + bad.head + bandBad.reduce((a, b) => a + b, 0)
