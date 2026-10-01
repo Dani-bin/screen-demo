@@ -108,3 +108,35 @@ export function polygonCenter(poly) {
   }
   return [sx / poly.length, sz / poly.length]
 }
+
+/**
+ * 点 (x, z) 离哪块数据区域最近：返回 clips 中点到矩形距离最小的下标（点在矩形内距离为 0）。
+ * clips 是各区域的裁剪矩形 [x0, z0, x1, z1]（meta.clip 与 meta.enclaves[].clip），
+ * 下标 0 是主城区；距离并列时取下标小者，主城区优先。
+ *
+ * 为什么按「最近」而不是「是否落在 clip 内」：
+ * - 主城区的公园面不按 clip 裁剪，通用树会撒到 clip 外约 170 m（西北角最多）；
+ * - 飞地的树同样会超出飞地 clip 约 30 m。
+ * 若用「不在飞地 clip 内就归主城区」，这些树会被错归到另一块；严格按「在 clip 内」筛选又会把它们丢掉。
+ * 最近归类让每个投影物恰好落进一块区域，且离哪块近就归哪块（区域之间相距数公里，不会有歧义）。
+ * @param {number} x
+ * @param {number} z
+ * @param {number[][]} clips 各区域裁剪矩形 [[x0, z0, x1, z1], ...]
+ * @returns {number} 最近区域的下标
+ */
+export function nearestRegion(x, z, clips) {
+  let best = 0
+  let bestDist = Infinity
+  for (let i = 0; i < clips.length; i++) {
+    const [x0, z0, x1, z1] = clips[i]
+    // 点到矩形的距离：各轴上超出区间的部分，区间内取 0
+    const dx = Math.max(x0 - x, 0, x - x1)
+    const dz = Math.max(z0 - z, 0, z - z1)
+    const dist = Math.hypot(dx, dz)
+    if (dist < bestDist) {
+      bestDist = dist
+      best = i
+    }
+  }
+  return best
+}
