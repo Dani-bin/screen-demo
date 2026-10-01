@@ -8,23 +8,14 @@
  *
  * 尺度（4.1）：平面按 OSM，现代建筑高度 ×1.25。下面的高度常量都是放大后的模型值，从林下草地 LAWN_Y 起算；
  * 墙体下沿一律从城市地面 GROUND_Y 立起（不建底面，不多花三角形），埋进草地与铺装，不露缝。
- * 轮廓：优先 site.footprintNear(设计文档 3.2 / 3.5 的中心)；取不到时（数据重拉后楼没了或挪了）按 3.2 的
- * 长 × 宽 @ 方位做 rectPolygon 兜底（按 OSM 面积等比缩小，不让兜底矩形比原楼大一圈）并在开发期警告。
- * 博物馆 relation 18696465 的 4 个外环没有 building 标签、不进 chengdu.json，轮廓从 Overpass 结果抄成常量。
- * 平屋面做法见 flatBlock：侧墙 + 女儿墙压顶（环形面）+ 女儿墙内侧 + 下沉的屋面。
- * 全部进主体批 site.b（双面材质：贴墙的窗、玻璃色块只做单面片，离墙 0.06 m），每栋楼用 site.solid 登记，
- * 后续种树种竹会避开。
+ * 轮廓：blocks.js 的 outlineOf（先找包含设计文档 3.2 / 3.5 中心的 OSM 楼，再找 12 m 内最近的；
+ * 取不到时按 3.2 的矩形兜底）。博物馆 relation 18696465 的 4 个外环没有 building 标签、不进 chengdu.json，
+ * 轮廓从 Overpass 结果抄成常量。
+ * 楼体做法（平屋面女儿墙、窗带、玻璃、外圈色带、圆窗 / 拱窗模板、共墙判断）在 blocks.js。
+ * 每栋楼先用 site.solid 登记、再贴窗：贴着邻楼的墙（facingBlocked）不贴窗带与窗。
+ * 全部进主体批 site.b；后续种树种竹会避开登记过的轮廓。
  */
-import {
-  CircleGeometry,
-  Matrix4,
-  Path,
-  PlaneGeometry,
-  Shape,
-  ShapeGeometry,
-  Vector2,
-  Vector3
-} from "three"
+import { PlaneGeometry, Vector3 } from "three"
 import { THEME } from "../../theme.js"
 import { GROUND_Y } from "../../terrain.js"
 import { hashInts, pointInPolygon, polygonCenter } from "../../utils.js"
@@ -37,16 +28,28 @@ import {
   rectFrame,
   rectPolygon
 } from "../kit/footprint.js"
-import { housePieces } from "../kit/houses.js"
+import { housePieces } from "../kit/parts.js"
 import { hipRoof } from "../kit/roofs.js"
 import { box, extrudePolygon, fromTriangles } from "../kit/shapes.js"
+import {
+  PLATE_OFF,
+  PROBE,
+  archWindow,
+  facadeBands,
+  facades,
+  facingBlocked,
+  flatBlock,
+  flatFace,
+  orient,
+  outlineOf,
+  roundWindow,
+  sideWalls,
+  skin
+} from "./blocks.js"
 import { C, LAWN_Y } from "./site.js"
 
 const L = THEME.landmark
 const DEG = Math.PI / 180
-
-/** 贴墙色块（窗、玻璃、色带）离墙面的距离（米） */
-const PLATE_OFF = 0.06
 
 /* ---------------- 大熊猫博物馆（relation 18696465，局部坐标，四块彼此共边） ---------------- */
 
@@ -90,8 +93,9 @@ const MUSEUM = {
     [7526.5, -8700.8]
   ]
 }
-// 高度（×1.25 后，离草地）：A、D 一层石材墙基到 base，墙基顶一圈外挑 0.3 m 的白色檐板（照片里那道白板），
-// 其上深灰上层到 A / D；B 石材塔通高；C 石材墙到 cWall，再盖低坡浅灰金属四坡顶（屋脊高 C）
+// 高度（×1.25 后，离草地）：A、D 一层石材墙基到 base，墙基顶一圈外挑 corniceOut 的白色檐板
+// （照片里那道白板），其上深灰上层到 A / D；B 石材塔通高；C 石材墙到 cWall，墙顶一圈外扩 cBand.out、
+// 高 cBand.h 的白色檐口带，再盖低坡浅灰金属四坡顶（屋脊高 C，出檐 cOverhang）
 const MUSEUM_H = {
   base: 6.3,
   cornice: [6.0, 6.5],
@@ -100,9 +104,11 @@ const MUSEUM_H = {
   B: 18.8,
   C: 10,
   cWall: 8.7,
+  cBand: { out: 0.25, h: 0.5 },
+  cOverhang: 0.6,
   D: 12.5
 }
-// A 上层白色圆窗：每面按边长每 step 米一个（至多 max 个，短于 minLen 的边与共边不开），
+// A 上层白色圆窗：每面按边长每 step 米一个（至多 max 个，短于 minLen 的墙与共墙不开），
 // 半径 r 上下浮动 ±15%、窗心高度在 y ± jitter / 2 之间按位置播种（照片里圆窗大小、高低错落）
 const ROUND_WIN = {
   r: 0.8,
@@ -127,33 +133,130 @@ const PERGOLA = {
   rafterX: [-4.5, -1.5, 1.5, 4.5]
 }
 
-/* ---------------- 其余建筑（设计文档 3.2 / 3.5） ---------------- */
+/* ---------------- 游客服务中心、办公区 ---------------- */
 
 // name：警告用；at：OSM 面积形心；rect：兜底矩形 [长, 宽, 长边方位]；area：OSM 面积（兜底矩形按它缩小）
 const VISITOR = {
   name: "游客服务中心 281241821",
   at: [7401.4, -8615.7],
   rect: [60.2, 26.6, 169],
-  area: 838
+  area: 838,
+  // 沿长轴中点横切两半：朝南门广场的一半 2 层（high）、另一半 1 层（low），深灰屋面成两级台阶；
+  // 切出的任一半小于 minHalf ㎡ 时不切（整栋按 high）
+  high: 8.8,
+  low: 5.6,
+  minHalf: 30,
+  parapet: 0.5,
+  // 2 层那半朝广场的墙挂玻璃：底离草地 glass[0]、顶离墙顶 glass[1]，长 ≥ 4 m、两端内收 0.6 m
+  glass: [0.4, 1.2]
 }
-const KIOSK = {
-  name: "门前小楼 686460728",
-  at: [7421.4, -8582.5],
-  rect: [11.4, 8.9, 177],
-  area: 101
-}
+// 游客中心与门前小楼朝广场一面挂玻璃：外法向方位离 GLASS_FACING ≤ 55° 的墙
+// （140° 约为游客中心指向南门广场中部的方位）
+const GLASS_FACING = 140
+
 const OFFICE = {
   name: "办公区 306335312",
   at: [7343.3, -8713.9],
   rect: [63.9, 28.5, 140],
-  area: 798
+  area: 798,
+  h: 13, // 3 层，层高 h / 3
+  // 二、三层拱窗：宽 w、直段高 hs（上接半径 w / 2 的拱）、窗底离楼层地面 sill、间距约 step、
+  // 只开在长 ≥ minLen 的墙上
+  arch: { w: 1.5, hs: 1.5, sill: 0.9, step: 3.4, minLen: 5 }
+}
+
+/* ---------------- 表驱动的平屋面楼（门前小楼、探秘馆、熊猫厨房、矮房） ---------------- */
+
+/*
+ * 字段：name / at / rect / area 同上（取轮廓）；h 高（×1.25 后，离草地）；wall / roof / coping 墙、屋面、
+ * 压顶色；parapet / inset 女儿墙高、厚（缺省 0.6 / 0.45，见 blocks.js flatBlock）；
+ * bands：贴墙色带 [{ y0, y1（离草地）, minLen, end, color?, facing?, spread?, best? }]（见 facadeBands）；
+ * trim：外圈色带 { y0, y1（离草地）, color }
+ */
+const KIOSK = {
+  name: "门前小楼 686460728",
+  at: [7421.4, -8582.5],
+  rect: [11.4, 8.9, 177],
+  area: 101,
+  h: 5,
+  wall: L.plaster,
+  roof: C.flatRoof,
+  parapet: 0.4,
+  inset: 0.35,
+  // 只在最正对广场的一面挂玻璃
+  bands: [
+    {
+      y0: 0.4,
+      y1: 3.9,
+      color: L.glass,
+      minLen: 4,
+      end: 0.6,
+      facing: GLASS_FACING,
+      best: true
+    }
+  ]
 }
 const SCIENCE = {
   name: "熊猫科学探秘馆 281241820",
   at: [7276.0, -8739.0],
   rect: [62.1, 16.9, 87],
-  area: 998
+  area: 998,
+  h: 7.5,
+  wall: L.plaster,
+  roof: C.flatRoof,
+  parapet: 0.5,
+  bands: [{ y0: 1.4, y1: 3.8, minLen: 10, end: 1.5 }],
+  trim: { y0: 6.2, y1: 7.2, color: C.hallGreen } // 檐口绿色带（推定）
 }
+const KITCHEN = {
+  name: "熊猫厨房 306455470",
+  at: [6930.2, -8918.4],
+  rect: [50.4, 45.6, 151],
+  area: 1254,
+  h: 6.3,
+  wall: C.wallGrey,
+  roof: C.flatRoof, // 灰色平屋面，比墙暗一档，女儿墙勾出 L 形
+  bands: [{ y0: 1.6, y1: 3.2, minLen: 8, end: 1.2 }]
+}
+
+// 3.5 节改平屋面矮房：[way, 中心 x, z, OSM 面积, 兜底矩形长, 宽, 方位（现数据轮廓的最小外接矩形）, 墙色, 高]。
+// 墙色逐行写明（白墙 / 浅灰墙交替），删改某一行不会让其余各栋换色；
+// 高缺省按面积分档（lowHouseHeight），686460740 按文档 3.2「约 4 m」（×1.25）写明 5 m
+const W = L.plaster
+const G = C.wallGrey
+const LOW_HOUSES = [
+  [686460729, 7474.3, -8730.3, 206, 20.5, 10.8, 164, W],
+  [686460726, 7239.8, -8681.3, 245, 33.6, 7.6, 81, G],
+  [686460727, 7279.3, -8685.0, 213, 20.3, 12.1, 91, W],
+  [306335313, 7214.2, -8745.6, 411, 27.8, 18.0, 86, G],
+  [306335314, 7187.0, -8746.2, 287, 26.3, 12.8, 153, W],
+  [686460725, 7008.8, -8839.0, 200, 18.1, 16.8, 29, G],
+  [686460737, 7030.9, -9185.7, 583, 32.1, 20.9, 77, W],
+  [686460740, 7158.6, -9196.8, 235, 17.2, 14.8, 65, G, 5],
+  [1226059870, 6661.0, -8808.0, 865, 29.7, 29.3, 153, W],
+  [1222939137, 6698.6, -9414.8, 294, 44.2, 9.3, 89, G],
+  [1222939135, 6699.9, -9424.3, 505, 46.4, 17.4, 87, W],
+  [1222939136, 6683.4, -9427.8, 107, 28.9, 6.0, 57, G]
+]
+// 矮房共用：女儿墙、窗带（7 m 以上的两层楼再加一条 upper）
+const LOW_HOUSE = {
+  roof: C.flatRoof,
+  parapet: 0.5,
+  inset: 0.4,
+  band: { y0: 1.5, y1: 2.6, minLen: 6, end: 1 },
+  upper: { y0: 4.6, y1: 5.7, minLen: 6, end: 1 },
+  twoStorey: 7
+}
+
+/** 矮房高度（×1.25 后的模型值，5～8 m）：按面积分三档 */
+function lowHouseHeight(area) {
+  if (area < 230) return 5
+  if (area < 450) return 6.3
+  return 7.5
+}
+
+/* ---------------- 竹韵餐厅、玫瑰苑（覆藤木屋） ---------------- */
+
 const CABINS = [
   {
     name: "竹韵餐厅 686460731",
@@ -168,237 +271,36 @@ const CABINS = [
     area: 218
   }
 ]
-const KITCHEN = {
-  name: "熊猫厨房 306455470",
-  at: [6930.2, -8918.4],
-  rect: [50.4, 45.6, 151],
-  area: 1254
-}
-
-// 高度（×1.25 后，离草地）：游客中心朝广场的一半 2 层、另一半 1 层（深灰阶梯屋面两级）；
-// 门前小楼；办公区 3 层（层高 office / 3）；探秘馆；木屋餐厅檐口 / 屋脊；熊猫厨房
-const HALL_H = {
-  visitorHigh: 8.8,
-  visitorLow: 5.6,
-  kiosk: 5,
-  office: 13,
-  science: 7.5,
-  cabinEave: 5,
-  cabinRidge: 8,
-  annex: 3.8, // 木屋旁窄条附属间（进深 < 6 m 的轮廓块）的平顶高
-  kitchen: 6.3
-}
-
-// 游客中心朝广场一面（含门前小楼）挂玻璃：外法向方位在 GLASS_FACING ± 55° 以内、长 ≥ 4 m 的墙面。
-// 140° 约为游客中心指向南门广场中部的方位
-const GLASS_FACING = 140
-
-// 办公区二、三层拱窗：宽 w、直段高 hs（上接半径 w / 2 的半圆拱）、窗底离楼层地面 sill、间距约 step
-const ARCH_WIN = { w: 1.5, hs: 1.5, sill: 0.9, step: 3.4, minLen: 5 }
-
-// 3.5 节改平屋面矮房：[way, 中心 x, z, OSM 面积, 兜底矩形长, 宽, 方位（现数据轮廓的最小外接矩形）]。
-// 1222939137 / 135 / 136 三栋相邻：按表中顺序取轮廓，每栋拿到的都是离自己最近的那一栋
-const LOW_HOUSES = [
-  [686460729, 7474.3, -8730.3, 206, 20.5, 10.8, 164],
-  [686460726, 7239.8, -8681.3, 245, 33.6, 7.6, 81],
-  [686460727, 7279.3, -8685.0, 213, 20.3, 12.1, 91],
-  [306335313, 7214.2, -8745.6, 411, 27.8, 18.0, 86],
-  [306335314, 7187.0, -8746.2, 287, 26.3, 12.8, 153],
-  [686460725, 7008.8, -8839.0, 200, 18.1, 16.8, 29],
-  [686460737, 7030.9, -9185.7, 583, 32.1, 20.9, 77],
-  [686460740, 7158.6, -9196.8, 235, 17.2, 14.8, 65],
-  [1226059870, 6661.0, -8808.0, 865, 29.7, 29.3, 153],
-  [1222939137, 6698.6, -9414.8, 294, 44.2, 9.3, 89],
-  [1222939135, 6699.9, -9424.3, 505, 46.4, 17.4, 87],
-  [1222939136, 6683.4, -9427.8, 107, 28.9, 6.0, 57]
-]
-
-/** 矮房高度（×1.25 后的模型值，5～8 m）：按面积分三档 */
-function lowHouseHeight(area) {
-  if (area < 230) return 5
-  if (area < 450) return 6.3
-  return 7.5
-}
-
-/* ---------------- 轮廓工具 ---------------- */
-
-/** 带符号面积的两倍（> 0 为 x→z 逆时针，同 footprint.js 的 insetPolygon） */
-function area2(poly) {
-  let a = 0
-  for (let i = 0; i < poly.length; i++) {
-    const [x0, z0] = poly[i]
-    const [x1, z1] = poly[(i + 1) % poly.length]
-    a += x0 * z1 - x1 * z0
-  }
-  return a
-}
-
-/** 统一绕向（返回新数组）：使每条边 a→b 的左手法向 (−dz, dx) 朝外 */
-function orient(poly) {
-  return area2(poly) > 0 ? poly.slice().reverse() : poly.slice()
-}
-
-/** 两条线段是否严格相交（端点相接、共线不算） */
-function segmentsCross(p, q, r, s) {
-  const cross = (o, a, b) =>
-    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
-  const d1 = cross(r, s, p)
-  const d2 = cross(r, s, q)
-  const d3 = cross(p, q, r)
-  const d4 = cross(p, q, s)
-  return d1 * d2 < 0 && d3 * d4 < 0
-}
-
-/** 多边形是否自交（任意两条不相邻的边相交） */
-function selfIntersects(poly) {
-  const n = poly.length
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 2; j < n; j++) {
-      if (i === 0 && j === n - 1) continue // 首尾两边相邻
-      if (
-        segmentsCross(poly[i], poly[(i + 1) % n], poly[j], poly[(j + 1) % n])
-      ) {
-        return true
-      }
-    }
-  }
-  return false
-}
-
-/**
- * 轮廓向内收 d 米（女儿墙内皮）：insetPolygon 只适合近凸轮廓，短边、凹角处可能收出自交或越界，
- * 这里逐项自检（面积变小但不过小、顶点都在原轮廓内、不自交），不合格返回 null（调用方不做女儿墙）
- */
-function safeInset(poly, d) {
-  const inner = insetPolygon(poly, d)
-  const a0 = polygonArea(poly)
-  const a1 = polygonArea(inner)
-  if (!(a1 > 0.2 * a0 && a1 < a0)) return null
-  if (!inner.every(([x, z]) => pointInPolygon(x, z, poly))) return null
-  if (selfIntersects(inner)) return null
-  return inner
-}
-
-/**
- * 侧墙：轮廓每条边一块 y0～y1 的竖直四边形（不含顶面、底面）。
- * inward 为 true 时法线朝里（女儿墙内侧面）
- */
-function sideWalls(poly, y0, y1, inward = false) {
-  const p = inward ? orient(poly).reverse() : orient(poly)
-  const pos = []
-  for (let i = 0; i < p.length; i++) {
-    const [ax, az] = p[i]
-    const [bx, bz] = p[(i + 1) % p.length]
-    pos.push(ax, y0, az, bx, y0, bz, bx, y1, bz)
-    pos.push(ax, y0, az, bx, y1, bz, ax, y1, az)
-  }
-  return fromTriangles(pos)
-}
-
-/** 水平面：轮廓（可带洞）在高度 y 的一层面，法线朝上 */
-function flatFace(outer, holes, y) {
-  // Shape 的 (x, y) 取 (x, −z)，绕 X 轴转 −90° 后落回 (x, 0, z)，正面朝上
-  const v = ([x, z]) => new Vector2(x, -z)
-  const shape = new Shape(outer.map(v))
-  for (const h of holes) shape.holes.push(new Path(h.map(v)))
-  const g = new ShapeGeometry(shape)
-  g.rotateX(-Math.PI / 2)
-  g.translate(0, y, 0)
-  return g
-}
-
-/**
- * 平屋面楼：侧墙（y0 → top）+ 女儿墙压顶（轮廓挖掉内收 inset 的环形面）+ 女儿墙内侧
- * + 下沉 parapet 的屋面。内收轮廓不合格时不做女儿墙，屋面直接封在 top。
- * @param {object} o { top, wall, roof, coping = wall（压顶色）, parapet = 0.6, inset = 0.45, y0 = GROUND_Y }
- */
-function flatBlock(b, poly, o) {
-  const { top, wall, roof, parapet = 0.6, inset = 0.45, y0 = GROUND_Y } = o
-  const coping = o.coping ?? wall
-  b.add(sideWalls(poly, y0, top), wall)
-  const inner = parapet > 0 ? safeInset(orient(poly), inset) : null
-  if (!inner) {
-    b.add(flatFace(poly, [], top), roof)
-    return
-  }
-  b.add(flatFace(poly, [inner], top), coping)
-  b.add(sideWalls(inner, top - parapet, top, true), wall)
-  b.add(flatFace(inner, [], top - parapet), roof)
-}
-
-/** 贴在轮廓外 off 米的一圈色带（y0～y1，只有侧面）：檐口带、墙基顶的色线 */
-function skin(poly, y0, y1, off = PLATE_OFF) {
-  return sideWalls(insetPolygon(orient(poly), -off), y0, y1)
-}
-
-/**
- * 轮廓各面外墙：{ a, b, len, m, facing, n }。a、b 为边的起点、终点（[x, z]，已按外法向统一绕向）；
- * m 为墙面坐标系：原点在边起点、y = 0，局部 X 沿墙、Y 向上、+Z 朝外（贴墙色块的
- * PlaneGeometry / ShapeGeometry 正面朝外）；facing 为外法向方位角（度），n 为外法向单位向量 [x, z]
- */
-function facades(poly) {
-  const p = orient(poly)
-  return p.map((a, i) => {
-    const b = p[(i + 1) % p.length]
-    const len = Math.hypot(b[0] - a[0], b[1] - a[1])
-    const tx = (b[0] - a[0]) / len
-    const tz = (b[1] - a[1]) / len
-    // 外法向 (−tz, tx)；X × Y = Z，行列式为正（ColorBuilder 不收镜像矩阵）
-    const m = new Matrix4()
-      .makeBasis(
-        new Vector3(tx, 0, tz),
-        new Vector3(0, 1, 0),
-        new Vector3(-tz, 0, tx)
-      )
-      .setPosition(a[0], 0, a[1])
-    const facing = (Math.atan2(-tz, -tx) / DEG + 360) % 360
-    return { a, b, len, m, facing, n: [-tz, tx] }
-  })
-}
-
-/** 两方位角之差（0～180） */
-function angleDiff(a, b) {
-  const d = (((a - b) % 360) + 360) % 360
-  return Math.min(d, 360 - d)
-}
-
-/**
- * 长 ≥ minLen 的每面墙上贴一条横向色带（窗带、玻璃）：底 y0、顶 y1（世界高度），两端各内收 end 米
- * @param {(f) => boolean} [pick] 额外筛选（如只挑朝广场的面）
- */
-function facadeBands(b, poly, y0, y1, color, minLen, end, pick) {
-  for (const f of facades(poly)) {
-    if (f.len < minLen || (pick && !pick(f))) continue
-    b.add(
-      new PlaneGeometry(f.len - 2 * end, y1 - y0),
-      color,
-      local(f.m, f.len / 2, (y0 + y1) / 2, PLATE_OFF)
-    )
-  }
-}
-
-/**
- * 取 OSM 轮廓：设计文档中心附近（12 m 内）的替换区楼；没有时按 3.2 的矩形兜底并警告
- * @param {object} spec { name, at, rect: [长, 宽, 方位], area }
- */
-function outlineOf(site, spec) {
-  const p = site.footprintNear(spec.at[0], spec.at[1])
-  if (p) return p
-  console.warn(`熊猫基地：未找到 ${spec.name} 的 OSM 轮廓，按设计文档矩形兜底`)
-  const [w, d, bearing] = spec.rect
-  const k = Math.min(1, Math.sqrt(spec.area / (w * d)))
-  return rectPolygon(spec.at[0], spec.at[1], w * k, d * k, bearing)
+// 木屋（×1.25 后，离草地）：檐口 eave、屋脊 ridge、四面出檐 overhang；
+// 进深 < minDepth 的轮廓块做原木平顶附属间（高 annex、深灰顶）；
+// 轮廓充满度 < fillMin 时 housePieces 退回整个外接矩形（同 kit/houses.js 的阈值），
+// 这时长宽按 √(OSM 面积 / 矩形面积) 缩小，木屋不比 OSM 楼大一圈
+const CABIN = {
+  eave: 5,
+  ridge: 8,
+  overhang: 0.6,
+  minDepth: 6,
+  annex: 3.8,
+  fillMin: 0.85,
+  // 藤蔓：屋面坡上沿檐口一条（水平进深 along）、沿两端博风各一条（宽 rake），略抬离屋面 lift；
+  // 檐下每 step 米垂一个长 drop[0]～drop[1] 的三角（按位置播种）；垂在附属间上方的藤，
+  // 尖端至少高出附属间屋面 clear
+  vine: {
+    lift: 0.05,
+    along: 1.4,
+    rake: 0.7,
+    step: 2.5,
+    drop: [0.6, 1.4],
+    clear: 0.15
+  },
+  // 长墙窗：每 step 米一扇，宽 w、高 h、窗心离草地 y；两端山墙正中各一扇门（宽 w、高 h）
+  window: { w: 1.6, h: 1.8, y: 2.1, step: 6 },
+  door: { w: 2, h: 2.6 }
 }
 
 /* ---------------- 大熊猫博物馆 ---------------- */
 
-/** 圆窗模板（单面圆片，正面 +Z） */
-const roundWindow = () => new CircleGeometry(1, ROUND_WIN.seg)
-
-/**
- * A、D：石材墙基 + 白色檐板 + 深灰上层（女儿墙压顶同色）+ 浅灰屋面
- * @returns {number} 顶高（世界 y）
- */
+/** A、D：石材墙基 + 白色檐板 + 深灰上层（女儿墙压顶同色）+ 浅灰屋面 */
 function addMuseumWing(b, poly, topH) {
   const H = MUSEUM_H
   b.add(sideWalls(poly, GROUND_Y, LAWN_Y + H.base), C.museumStone)
@@ -418,20 +320,14 @@ function addMuseumWing(b, poly, topH) {
     wall: C.museumUpper,
     roof: C.hallRoof
   })
-  return LAWN_Y + topH
 }
 
-/**
- * A 上层一圈白色圆窗：与 B、C、D 共边的墙面（外侧 0.6 m 处落在别的块里）不开
- */
-function addRoundWindows(b, poly, others) {
+/** A 上层一圈白色圆窗：共墙（facingBlocked）与短墙不开 */
+function addRoundWindows(b, poly, blockers) {
   const rw = ROUND_WIN
-  const tmpl = roundWindow()
+  const tmpl = roundWindow(rw.seg)
   for (const f of facades(poly)) {
-    if (f.len < rw.minLen) continue
-    const mx = (f.a[0] + f.b[0]) / 2 + f.n[0] * 0.6
-    const mz = (f.a[1] + f.b[1]) / 2 + f.n[1] * 0.6
-    if (others.some((o) => pointInPolygon(mx, mz, o))) continue
+    if (f.len < rw.minLen || facingBlocked(f, blockers)) continue
     const n = Math.min(rw.max, Math.max(1, Math.round(f.len / rw.step)))
     const step = f.len / n
     for (let i = 0; i < n; i++) {
@@ -494,9 +390,10 @@ function buildMuseum(site) {
   const b = site.b
   const H = MUSEUM_H
   const { A, B, C: hall, D } = MUSEUM
+  for (const p of [A, B, hall, D]) site.solid(p)
 
   addMuseumWing(b, A, H.A)
-  addRoundWindows(b, A, [B, hall, D])
+  addRoundWindows(b, A, site.solids)
   addMuseumWing(b, D, H.D)
 
   // B 石材塔：通高石材，白色压顶（照片里塔顶一圈白框），浅灰屋面
@@ -509,15 +406,15 @@ function buildMuseum(site) {
     inset: 0.5
   })
 
-  // C 大厅：石材墙到 cWall，顶上一圈白色檐口带（外扩 0.25 m 的实心板，顶面封住墙顶），
-  // 再盖低坡四坡顶：最小外接矩形（C 的充满度 0.99）、出檐 0.6、坡面各 1 段（约 14 个三角形）
+  // C 大厅：石材墙到 cWall，顶上一圈白色檐口带（外扩的实心板，顶面封住墙顶），
+  // 再盖低坡四坡顶：最小外接矩形（C 的充满度 0.99）、坡面各 1 段（约 14 个三角形）
   const wallTop = LAWN_Y + H.cWall
   b.add(sideWalls(hall, GROUND_Y, wallTop), C.museumStone)
   b.add(
     extrudePolygon(
-      insetPolygon(orient(hall), -0.25),
+      insetPolygon(orient(hall), -H.cBand.out),
       [],
-      wallTop - 0.5,
+      wallTop - H.cBand.h,
       wallTop
     ),
     C.gateWhite
@@ -525,7 +422,7 @@ function buildMuseum(site) {
   const r = minAreaRect(hall)
   b.add(
     hipRoof(r.w, r.d, H.C - H.cWall, {
-      overhang: 0.6,
+      overhang: H.cOverhang,
       curl: 0,
       ridge: 0.5,
       segS: 1,
@@ -538,23 +435,23 @@ function buildMuseum(site) {
     rectFrame(r, wallTop)
   )
 
-  for (const p of [A, B, hall, D]) site.solid(p)
   site.solid(addPergola(b))
 }
 
-/* ---------------- 游客服务中心与门前小楼 ---------------- */
+/* ---------------- 游客服务中心、办公区 ---------------- */
 
 /**
- * 沿最小外接矩形长轴的中点横切成两半：[离 toward 近的一半, 另一半]；切出碎片时返回 null
+ * 沿最小外接矩形长轴的中点横切成两半：[离 toward 近的一半, 另一半]；
+ * 任一半小于 minArea ㎡（切出碎片）时返回 null
  */
-function splitAcross(poly, toward) {
+function splitAcross(poly, toward, minArea) {
   const r = minAreaRect(poly)
   const n = [Math.sin(r.bearing * DEG), -Math.cos(r.bearing * DEG)]
   const o = [r.cx, r.cz]
   const a = clipHalfPlane(poly, o, n)
   const c = clipHalfPlane(poly, o, [-n[0], -n[1]])
   if (a.length < 3 || c.length < 3) return null
-  if (polygonArea(a) < 30 || polygonArea(c) < 30) return null
+  if (polygonArea(a) < minArea || polygonArea(c) < minArea) return null
   const dist = (p) => {
     const [x, z] = polygonCenter(p)
     return Math.hypot(x - toward[0], z - toward[1])
@@ -562,139 +459,169 @@ function splitAcross(poly, toward) {
   return dist(a) <= dist(c) ? [a, c] : [c, a]
 }
 
-/** 朝广场的墙面（外法向在 GLASS_FACING ± 55° 内） */
-const facingPlaza = (f) => angleDiff(f.facing, GLASS_FACING) <= 55
-
 /**
  * 游客服务中心：沿长轴横切两半，朝南门广场的一半 2 层、另一半 1 层，白墙、深灰屋面（阶梯两级）；
- * 2 层那半朝广场的墙面挂玻璃。门前小楼：白墙平顶，朝广场一面玻璃
+ * 2 层那半朝广场的墙挂玻璃
  */
 function buildVisitorCentre(site) {
   const b = site.b
+  const v = VISITOR
   const { spot } = site.ctx
-  const poly = outlineOf(site, VISITOR)
-  const halves = splitAcross(poly, [spot.x, spot.z])
+  const poly = outlineOf(site, v)
+  site.solid(poly)
+  const halves = splitAcross(poly, [spot.x, spot.z], v.minHalf)
   const parts = halves
     ? [
-        [halves[0], HALL_H.visitorHigh],
-        [halves[1], HALL_H.visitorLow]
+        [halves[0], v.high],
+        [halves[1], v.low]
       ]
-    : [[poly, HALL_H.visitorHigh]]
+    : [[poly, v.high]]
   for (const [p, h] of parts) {
     flatBlock(b, p, {
       top: LAWN_Y + h,
       wall: L.plaster,
       roof: C.museumUpper,
-      parapet: 0.5
+      parapet: v.parapet
     })
   }
   const [front, frontH] = parts[0]
-  facadeBands(
-    b,
-    front,
-    LAWN_Y + 0.4,
-    LAWN_Y + frontH - 1.2,
-    L.glass,
-    4,
-    0.6,
-    facingPlaza
-  )
-  site.solid(poly)
-
-  const kiosk = outlineOf(site, KIOSK)
-  flatBlock(b, kiosk, {
-    top: LAWN_Y + HALL_H.kiosk,
-    wall: L.plaster,
-    roof: C.flatRoof,
-    parapet: 0.4,
-    inset: 0.35
+  facadeBands(b, front, {
+    y0: LAWN_Y + v.glass[0],
+    y1: LAWN_Y + frontH - v.glass[1],
+    color: L.glass,
+    minLen: 4,
+    end: 0.6,
+    facing: GLASS_FACING,
+    blockers: site.solids
   })
-  facadeBands(
-    b,
-    kiosk,
-    LAWN_Y + 0.4,
-    LAWN_Y + HALL_H.kiosk - 1.1,
-    L.glass,
-    4,
-    0.6,
-    facingPlaza
-  )
-  site.solid(kiosk)
-}
-
-/* ---------------- 办公区、熊猫科学探秘馆 ---------------- */
-
-/** 拱窗模板：宽 w、直段高 hs、顶上半径 w / 2 的拱（三段折线），底边中点在原点，正面 +Z */
-function archWindow() {
-  const { w, hs } = ARCH_WIN
-  const r = w / 2
-  const pts = [
-    [-r, 0],
-    [r, 0],
-    [r, hs],
-    [r * Math.cos(60 * DEG), hs + r * Math.sin(60 * DEG)],
-    [r * Math.cos(120 * DEG), hs + r * Math.sin(120 * DEG)],
-    [-r, hs]
-  ]
-  return new ShapeGeometry(new Shape(pts.map(([x, y]) => new Vector2(x, y))))
 }
 
 /** 办公区：按 OSM 轮廓挤出 13 m，米灰面砖，平屋面女儿墙；二、三层每面一排深色拱窗 */
 function buildOffice(site) {
   const b = site.b
+  const ar = OFFICE.arch
   const poly = outlineOf(site, OFFICE)
-  const top = LAWN_Y + HALL_H.office
-  flatBlock(b, poly, { top, wall: C.officeTile, roof: C.flatRoof })
-  const floorH = HALL_H.office / 3
-  const tmpl = archWindow()
+  site.solid(poly)
+  flatBlock(b, poly, {
+    top: LAWN_Y + OFFICE.h,
+    wall: C.officeTile,
+    roof: C.flatRoof
+  })
+  const floorH = OFFICE.h / 3
+  const tmpl = archWindow(ar.w, ar.hs)
   for (const f of facades(poly)) {
-    if (f.len < ARCH_WIN.minLen) continue
-    const n = Math.max(1, Math.floor(f.len / ARCH_WIN.step))
+    if (f.len < ar.minLen || facingBlocked(f, site.solids)) continue
+    const n = Math.max(1, Math.floor(f.len / ar.step))
     const step = f.len / n
     for (const floor of [1, 2]) {
-      const y = LAWN_Y + floor * floorH + ARCH_WIN.sill
+      const y = LAWN_Y + floor * floorH + ar.sill
       for (let i = 0; i < n; i++) {
         b.add(tmpl, C.windowBand, local(f.m, (i + 0.5) * step, y, PLATE_OFF))
       }
     }
   }
-  site.solid(poly)
 }
 
-/** 熊猫科学探秘馆：白墙平顶 7.5 m，檐口一道绿色带（推定），长墙面一条深色窗带 */
-function buildScienceHall(site) {
+/* ---------------- 表驱动的平屋面楼 ---------------- */
+
+/**
+ * 按 spec 建一栋平屋面楼（轮廓 poly 须已登记 site.solid，共墙判断才认得出邻楼）：
+ * 女儿墙平屋面 + 外圈色带 trim + 贴墙色带 bands（贴着邻楼的墙不贴）
+ */
+function buildFlatHall(site, spec, poly) {
   const b = site.b
-  const poly = outlineOf(site, SCIENCE)
-  const top = LAWN_Y + HALL_H.science
   flatBlock(b, poly, {
-    top,
-    wall: L.plaster,
-    roof: C.flatRoof,
-    parapet: 0.5
+    top: LAWN_Y + spec.h,
+    wall: spec.wall,
+    roof: spec.roof,
+    coping: spec.coping,
+    parapet: spec.parapet,
+    inset: spec.inset
   })
-  b.add(skin(poly, top - 1.3, top - 0.3), C.hallGreen)
-  facadeBands(b, poly, LAWN_Y + 1.4, LAWN_Y + 3.8, C.windowBand, 10, 1.5)
+  if (spec.trim) {
+    const t = spec.trim
+    b.add(skin(poly, LAWN_Y + t.y0, LAWN_Y + t.y1), t.color)
+  }
+  for (const band of spec.bands ?? []) {
+    facadeBands(b, poly, {
+      ...band,
+      y0: LAWN_Y + band.y0,
+      y1: LAWN_Y + band.y1,
+      blockers: site.solids
+    })
+  }
+}
+
+/** 取轮廓、登记、建楼（门前小楼、探秘馆、熊猫厨房） */
+function buildSingleHall(site, spec) {
+  const poly = outlineOf(site, spec)
   site.solid(poly)
+  buildFlatHall(site, spec, poly)
+}
+
+/**
+ * 12 栋改平屋面矮房（3.5 节）：先取齐全部轮廓并登记（1222939137 / 135 / 136 三栋共墙，
+ * 都登记后共墙判断才完整），再逐栋建：高度按面积 5 / 6.3 / 7.5 m（或表中写明），
+ * 长 ≥ 6 m 且不贴邻楼的墙面一条深色窗带（两层楼两条）
+ */
+function buildLowHouses(site) {
+  const lh = LOW_HOUSE
+  const list = LOW_HOUSES.map(([id, x, z, area, w, d, bearing, wall, h]) => {
+    const poly = outlineOf(site, {
+      name: `矮房 ${id}`,
+      at: [x, z],
+      rect: [w, d, bearing],
+      area
+    })
+    site.solid(poly)
+    return { poly, wall, h: h ?? lowHouseHeight(polygonArea(poly)) }
+  })
+  for (const { poly, wall, h } of list) {
+    buildFlatHall(
+      site,
+      {
+        h,
+        wall,
+        roof: lh.roof,
+        parapet: lh.parapet,
+        inset: lh.inset,
+        bands: h > lh.twoStorey ? [lh.band, lh.upper] : [lh.band]
+      },
+      poly
+    )
+  }
 }
 
 /* ---------------- 竹韵餐厅、玫瑰苑（覆藤木屋） ---------------- */
 
+/** frame 局部 (x, 0, z) → 世界 [x, z] */
+function toWorld(F, x, z) {
+  const p = new Vector3(x, 0, z).applyMatrix4(F)
+  return [p.x, p.z]
+}
+
 /**
  * 悬山顶木屋：墙体取 rect 的矩形（原木墙），屋脊沿长边，屋面在墙线处正好等于檐口高；
- * 两端山墙三角用墙色；屋面四周一圈藤蔓（屋面边缘的绿色条 + 檐下垂挂的锯齿），长墙面开深色窗
+ * 两端山墙三角用墙色、正中各一扇门；屋面四周一圈藤蔓（屋面边缘的绿色条 + 檐下垂挂的锯齿）；
+ * 长墙面开深色窗。blockers 里的实体（只会是同一木屋的附属间）上方：窗不开、垂藤收短到附属间屋面以上
  */
-function addCabin(b, rect) {
+function addCabin(b, rect, blockers) {
+  const cb = CABIN
+  const vn = cb.vine
   const { w, d } = rect
-  const eave = HALL_H.cabinEave
-  const rise = HALL_H.cabinRidge - eave
-  const ov = 0.6 // 出檐（四面）
+  const rise = cb.ridge - cb.eave
+  const ov = cb.overhang
   const ex = w / 2 + ov
   const ez = d / 2 + ov
   const yE = (-ov * rise) / (d / 2) // 檐口外沿高度（相对墙顶）
   // 局部 X 沿屋脊（长边）、+Z 为一侧长墙外侧，y = 0 为墙顶（檐口高）
-  const F = frame(rect.cx, LAWN_Y + eave, rect.cz, rect.bearing - 90)
+  const F = frame(rect.cx, LAWN_Y + cb.eave, rect.cz, rect.bearing - 90)
+  const blocked = (x, z) => {
+    const [wx, wz] = toWorld(F, x, z)
+    return blockers.some((p) => pointInPolygon(wx, wz, p))
+  }
   const walls = rectPolygon(rect.cx, rect.cz, w, d, rect.bearing)
-  b.add(sideWalls(walls, GROUND_Y, LAWN_Y + eave), C.cabinLog)
+  b.add(sideWalls(walls, GROUND_Y, LAWN_Y + cb.eave), C.cabinLog)
 
   const pos = []
   const quad = (p, q, r, s) => pos.push(...p, ...q, ...r, ...p, ...r, ...s)
@@ -711,119 +638,111 @@ function addCabin(b, rect) {
   }
   b.add(fromTriangles(gab), C.cabinLog, F)
 
-  // 藤蔓：屋面坡上沿檐口一条（宽 vine 米）、沿两端博风各一条（宽 0.7 m），略抬离屋面 0.05 m；
-  // 檐口下垂挂一排长短不一的三角（每 2.5 m 一个），读成照片里垂下的藤
+  // 藤蔓
   const vine = []
-  const lift = 0.05
-  const along = 1.4 // 檐口绿条沿坡面的水平进深
   const slope = rise / (d / 2)
+  // 垂在附属间上方的藤：尖端最低到附属间屋面以上 clear（相对墙顶的高度）
+  const lowest = cb.annex + vn.clear - cb.eave
   for (const sz of [-1, 1]) {
     const z0 = sz * ez
-    const z1 = sz * (ez - along)
-    const y0 = yE + lift
-    const y1 = yE + along * slope + lift
+    const z1 = sz * (ez - vn.along)
+    const y0 = yE + vn.lift
+    const y1 = yE + vn.along * slope + vn.lift
     vine.push(-ex, y0, z0, ex, y0, z0, ex, y1, z1)
     vine.push(-ex, y0, z0, ex, y1, z1, -ex, y1, z1)
-    // 两端博风：自檐口到屋脊、宽 0.7 m 的条
+    // 两端博风：自檐口到屋脊、宽 rake 的条
     for (const sx of [-1, 1]) {
       const xa = sx * ex
-      const xb = sx * (ex - 0.7)
-      vine.push(xa, y0, z0, xb, y0, z0, xb, rise + lift, 0)
-      vine.push(xa, y0, z0, xb, rise + lift, 0, xa, rise + lift, 0)
+      const xb = sx * (ex - vn.rake)
+      vine.push(xa, y0, z0, xb, y0, z0, xb, rise + vn.lift, 0)
+      vine.push(xa, y0, z0, xb, rise + vn.lift, 0, xa, rise + vn.lift, 0)
     }
-    // 檐下垂藤：锯齿三角，长 0.6～1.4 m（按位置播种）
-    const n = Math.max(2, Math.round((2 * ex) / 2.5))
+    // 檐下垂藤：锯齿三角，长短按位置播种
+    const n = Math.max(2, Math.round((2 * ex) / vn.step))
     const step = (2 * ex) / n
     for (let i = 0; i < n; i++) {
       const xa = -ex + i * step
       const h = hashInts(29, Math.round((rect.cx + xa) * 10), sz)
-      const drop = 0.6 + 0.8 * ((h & 0xffff) / 0x10000)
+      let drop =
+        vn.drop[0] + (vn.drop[1] - vn.drop[0]) * ((h & 0xffff) / 0x10000)
+      if (blocked(xa + step / 2, z0)) drop = Math.min(drop, yE - lowest)
       vine.push(xa, yE, z0, xa + step, yE, z0, xa + step / 2, yE - drop, z0)
     }
   }
   b.add(fromTriangles(vine), C.hedge, F)
 
-  // 两面长墙各开几扇深色窗（每 6 m 一扇），窗高 1.2～3.0 m
-  const n = Math.max(1, Math.floor(w / 6))
+  // 长墙窗（每 window.step 米一扇；窗外 PROBE 米处是附属间的不开）与山墙门
+  const wn = cb.window
+  const n = Math.max(1, Math.floor(w / wn.step))
   for (const sz of [-1, 1]) {
     for (let i = 0; i < n; i++) {
       const x = -w / 2 + ((i + 0.5) * w) / n
+      if (blocked(x, sz * (d / 2 + PROBE))) continue
       b.add(
-        new PlaneGeometry(1.6, 1.8),
+        new PlaneGeometry(wn.w, wn.h),
         C.windowBand,
-        local(F, x, 2.1 - eave, sz * (d / 2 + PLATE_OFF), sz > 0 ? 0 : Math.PI)
+        local(
+          F,
+          x,
+          wn.y - cb.eave,
+          sz * (d / 2 + PLATE_OFF),
+          sz > 0 ? 0 : Math.PI
+        )
       )
     }
-    // 两端山墙正中各一扇深色门（宽 2、高 2.6）：沿屋脊方向看过来（到站机位看竹韵餐厅）不是一面光墙
+    // 山墙正中的门：沿屋脊方向看过来（到站机位看竹韵餐厅）不是一面光墙
     b.add(
-      new PlaneGeometry(2, 2.6),
+      new PlaneGeometry(cb.door.w, cb.door.h),
       C.windowBand,
-      local(F, sz * (w / 2 + PLATE_OFF), 1.3 - eave, 0, (sz * Math.PI) / 2)
+      local(
+        F,
+        sz * (w / 2 + PLATE_OFF),
+        cb.door.h / 2 - cb.eave,
+        0,
+        (sz * Math.PI) / 2
+      )
     )
   }
-  return walls
 }
 
 /**
- * 竹韵餐厅 / 玫瑰苑：轮廓按 housePieces 切成近矩形的块，进深 ≥ 6 m 的块盖悬山木屋，
- * 更窄的附属间做原木平顶小屋（深灰顶）
+ * 竹韵餐厅 / 玫瑰苑：轮廓按 housePieces 切成近矩形的块，进深 ≥ minDepth 的块盖悬山木屋，
+ * 更窄的附属间做原木平顶小屋（深灰顶）。先把各块都登记成实体，木屋才认得出旁边的附属间
  */
 function buildCabins(site) {
   const b = site.b
+  const cb = CABIN
+  const cabins = []
+  const annexes = []
   for (const spec of CABINS) {
     const poly = outlineOf(site, spec)
-    for (const piece of housePieces(poly)) {
-      if (piece.rect.d >= 6) {
-        site.solid(addCabin(b, piece.rect))
-      } else {
-        const top = LAWN_Y + HALL_H.annex
-        b.add(sideWalls(piece.points, GROUND_Y, top), C.cabinLog)
-        b.add(flatFace(piece.points, [], top), L.roof)
-        site.solid(piece.points)
+    const pieces = housePieces(poly)
+    for (const piece of pieces) {
+      if (piece.rect.d < cb.minDepth) {
+        annexes.push(piece.points)
+        continue
       }
+      let rect = piece.rect
+      // housePieces 退回整个外接矩形（只有一块且轮廓充满度不够）：长宽等比缩到 OSM 面积
+      const fill = polygonArea(poly) / (rect.w * rect.d)
+      if (pieces.length === 1 && fill < cb.fillMin) {
+        const k = Math.sqrt(fill)
+        rect = { ...rect, w: rect.w * k, d: rect.d * k }
+      }
+      cabins.push(rect)
     }
   }
-}
+  for (const rect of cabins) {
+    site.solid(rectPolygon(rect.cx, rect.cz, rect.w, rect.d, rect.bearing))
+  }
+  for (const p of annexes) site.solid(p)
 
-/* ---------------- 熊猫厨房与矮房 ---------------- */
-
-/** 熊猫厨房：L 形平屋面 6.3 m，浅灰墙、灰色屋面（比墙暗一档，女儿墙勾出 L 形），长墙面一条深色窗带 */
-function buildKitchen(site) {
-  const b = site.b
-  const poly = outlineOf(site, KITCHEN)
-  const top = LAWN_Y + HALL_H.kitchen
-  flatBlock(b, poly, { top, wall: C.wallGrey, roof: C.flatRoof })
-  facadeBands(b, poly, LAWN_Y + 1.6, LAWN_Y + 3.2, C.windowBand, 8, 1.2)
-  site.solid(poly)
-}
-
-/**
- * 12 栋改平屋面矮房（3.5 节）：按轮廓挤出，高度按面积 5 / 6.3 / 7.5 m，白墙与浅灰墙交替，
- * 平屋面女儿墙；长 ≥ 6 m 的墙面一条深色窗带（7.5 m 的两层楼两条）
- */
-function buildLowHouses(site) {
-  const b = site.b
-  LOW_HOUSES.forEach(([id, x, z, area, w, d, bearing], i) => {
-    const poly = outlineOf(site, {
-      name: `矮房 ${id}`,
-      at: [x, z],
-      rect: [w, d, bearing],
-      area
-    })
-    const h = lowHouseHeight(polygonArea(poly))
-    flatBlock(b, poly, {
-      top: LAWN_Y + h,
-      wall: i % 2 ? C.wallGrey : L.plaster,
-      roof: C.flatRoof,
-      parapet: 0.5,
-      inset: 0.4
-    })
-    facadeBands(b, poly, LAWN_Y + 1.5, LAWN_Y + 2.6, C.windowBand, 6, 1)
-    if (h > 7) {
-      facadeBands(b, poly, LAWN_Y + 4.6, LAWN_Y + 5.7, C.windowBand, 6, 1)
-    }
-    site.solid(poly)
-  })
+  for (const rect of cabins) addCabin(b, rect, annexes)
+  for (const p of annexes) {
+    const top = LAWN_Y + cb.annex
+    b.add(sideWalls(p, GROUND_Y, top), C.cabinLog)
+    b.add(flatFace(p, [], top), L.roof)
+  }
 }
 
 /* ---------------- 入口 ---------------- */
@@ -835,9 +754,10 @@ function buildLowHouses(site) {
 export function buildHalls(site) {
   buildMuseum(site)
   buildVisitorCentre(site)
+  buildSingleHall(site, KIOSK)
   buildOffice(site)
-  buildScienceHall(site)
+  buildSingleHall(site, SCIENCE)
   buildCabins(site)
-  buildKitchen(site)
+  buildSingleHall(site, KITCHEN)
   buildLowHouses(site)
 }

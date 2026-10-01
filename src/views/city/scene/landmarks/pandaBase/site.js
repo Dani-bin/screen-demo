@@ -476,20 +476,36 @@ export function createSite(ctx) {
       grid.fillPoly(poly, F_SOLID, pad)
     },
     /**
-     * 取形心离 (x, z) 最近且不超过 maxDist 的 OSM 楼轮廓；没有时返回 null，
-     * 调用方用设计文档 3.2 的中心 / 尺寸 / 方位做 rectPolygon 兜底（数据重拉后 id 与顺序会变，只按坐标找）。
+     * 取 (x, z) 处的 OSM 楼轮廓（数据重拉后 id 与顺序会变，只按坐标找）：
+     *   1. 先找轮廓包含 (x, z) 的楼，有多栋时取顶点平均点最近的（不受 maxDist 限制）。
+     *      设计文档给的是面积形心，与这里比较用的顶点平均点可差 5～9 m（如熊猫厨房 8.6 m），
+     *      只按距离找时，相邻的几栋楼要靠调用顺序才不拿错；面积形心落在自己轮廓里时按包含找最稳。
+     *   2. 没有包含它的楼时（凹形楼的面积形心可能在轮廓外），取顶点平均点离 (x, z) 最近且不超过
+     *      maxDist 的楼。
+     *   都没有时返回 null，调用方用设计文档 3.2 的中心 / 尺寸 / 方位做 rectPolygon 兜底。
      * 只在形心落在替换区内的楼里找（这些楼本来就会被隐藏），且每栋楼只会被取走一次：
      * 已返回过的轮廓不会再返回，两处相邻的取用不会拿到同一栋楼。
      */
     footprintNear(x, z, maxDist = 12) {
       let best = null
-      let bestD = maxDist
+      let bestD = Infinity
       for (const c of candidates) {
-        if (usedFootprints.has(c)) continue
+        if (usedFootprints.has(c) || !pointInPolygon(x, z, c.p)) continue
         const d = Math.hypot(c.cx - x, c.cz - z)
-        if (d <= bestD) {
+        if (d < bestD) {
           bestD = d
           best = c
+        }
+      }
+      if (!best) {
+        bestD = maxDist
+        for (const c of candidates) {
+          if (usedFootprints.has(c)) continue
+          const d = Math.hypot(c.cx - x, c.cz - z)
+          if (d <= bestD) {
+            bestD = d
+            best = c
+          }
         }
       }
       if (!best) return null
