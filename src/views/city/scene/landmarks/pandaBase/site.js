@@ -6,9 +6,11 @@
  * 坐标约定同其他景点：世界 X 东、Z 南、Y 上，单位米。
  */
 import { ColorBuilder } from "../kit/builder.js"
-import { centroid, rectPolygon } from "../kit/footprint.js"
+import { buildingsInZones, centroid, rectPolygon } from "../kit/footprint.js"
 import { createGrid } from "../kit/grid.js"
-import { polygonBounds } from "../../utils.js"
+import { extrudePolygon } from "../kit/shapes.js"
+import { GROUND_Y } from "../../terrain.js"
+import { pointInPolygon, polygonBounds } from "../../utils.js"
 
 /* ---------------- 分层高度（米） ---------------- */
 
@@ -403,8 +405,10 @@ export function createSite(ctx) {
   const park = ll(PARK_LL)
   const plaza = ll(PLAZA_LL)
   const gate = ll(GATE_LL)
-  // 南大门两端（含东端岗亭 686460743）与门前空间一并替换：门的长轴 61°、进深 151°，
-  // 沿长轴 u −24～36 m、进深 v −14～12 m 的矩形，中心按形心沿两轴平移（u +6、v −1）
+  // 南大门一带另设一个矩形替换区作保险：门的长轴 61°、进深 151°，沿长轴 u −24～36 m、
+  // 进深 v −14～12 m，中心按形心沿两轴平移（u +6、v −1），盖住门体、门前空间与东端岗亭
+  // 686460743 一带。现在这一带的 OSM 楼（门体、岗亭）形心都落在园界内，由 park 区替换；
+  // 这个矩形让数据重拉、园界微调后门体与门前空间仍被覆盖，不依赖园界恰好包住它们
   const [gx, gz] = centroid(gate)
   const gateZone = rectPolygon(gx + 4.76, gz - 3.78, 60, 26, 61)
   const zones = [park, plaza, gateZone]
@@ -427,19 +431,36 @@ export function createSite(ctx) {
     ne: ll(NE_LAKE_LL)
   }
   const solids = []
+  // footprintNear 的候选楼：形心落在替换区内的 OSM 楼（只有这些会被隐藏、需要被模型取代），
+  // 形心预先算好缓存；usedFootprints 记录已被取走的轮廓
+  const candidates = []
+  for (const i of buildingsInZones(buildings, zones)) {
+    const p = buildings[i].p
+    if (!p || p.length < 3) continue
+    const [cx, cz] = centroid(p)
+    candidates.push({ p, cx, cz })
+  }
+  const usedFootprints = new Set()
+  // 林下草地要挖的洞：湖、池在这里先登记，活动场由 addYard 追加
+  const lawnHoles = [lakes.swan, lakes.ne, ...WEST_POOLS]
+  const gb = new ColorBuilder() // 地面批（单面）：草地、广场、园路、活动场地面
   return {
     ctx,
     ll,
     b: new ColorBuilder(), // 主体（landmarkMaterial，双面）
-    gb: new ColorBuilder(), // 地面批（单面）：草地、广场、园路、活动场地面
+    gb,
     park,
     plaza,
     gate,
     zones,
     grid,
     lakes,
-    // 林下草地要挖的洞：湖、池在这里先登记，活动场由 enclosures 追加（各洞互不相交、都在园界内）
-    lawnHoles: [lakes.swan, lakes.ne, ...WEST_POOLS],
+    // 林下草地（buildLawn）要挖的洞：湖、池、活动场。各洞必须互不相交、都在园界内，
+    // 否则草地三角剖分会悄悄出错；活动场请用 addYard 登记（带重叠检查）
+    lawnHoles,
+    // 南门广场（buildPlaza）要挖的洞：草坪岛、喷泉池，由 gate.js 登记。多边形须在广场轮廓内、
+    // 彼此不相交；洞里的内容（草坪、水面）由登记方自己画
+    plazaHoles: [],
     paths: [], // 已铺园路 { id, pts, w, y, closed }，walkways 按 id 取高度
     solids,
     /** 登记实体（建筑、墙、兽舍）：占用栅格打 F_SOLID，并沿边外扩 pad 米（≥ 0.71 m，见上方格宽说明） */
@@ -449,21 +470,57 @@ export function createSite(ctx) {
     },
     /**
      * 取形心离 (x, z) 最近且不超过 maxDist 的 OSM 楼轮廓；没有时返回 null，
-     * 调用方用设计文档 3.2 的中心 / 尺寸 / 方位做 rectPolygon 兜底（数据重拉后 id 与顺序会变，只按坐标找）
+     * 调用方用设计文档 3.2 的中心 / 尺寸 / 方位做 rectPolygon 兜底（数据重拉后 id 与顺序会变，只按坐标找）。
+     * 只在形心落在替换区内的楼里找（这些楼本来就会被隐藏），且每栋楼只会被取走一次：
+     * 已返回过的轮廓不会再返回，两处相邻的取用不会拿到同一栋楼。
      */
     footprintNear(x, z, maxDist = 12) {
       let best = null
       let bestD = maxDist
-      for (const bd of buildings) {
-        if (!bd.p || bd.p.length < 3) continue
-        const [cx, cz] = centroid(bd.p)
-        const d = Math.hypot(cx - x, cz - z)
+      for (const c of candidates) {
+        if (usedFootprints.has(c)) continue
+        const d = Math.hypot(c.cx - x, c.cz - z)
         if (d <= bestD) {
           bestD = d
-          best = bd.p
+          best = c
         }
       }
-      return best
+      if (!best) return null
+      usedFootprints.add(best)
+      return best.p
+    },
+    /**
+     * 登记一块熊猫活动场（Task 10 用）：在林下草地上开洞、栅格打 F_YARD、把场地地面
+     * 挤出到 YARD_Y（草绿色）进地面批。多边形须在园界内，且与其他洞、已铺园路 / 水面 /
+     * 其他活动场都不重叠：洞互相重叠会让草地三角剖分悄悄出错，这里只做开发期自检，
+     * 发现重叠或越界时 console.warn，不阻断构建。
+     * @param {Array<[number, number]>} poly 活动场轮廓（世界坐标 [x, z]）
+     */
+    addYard(poly) {
+      const b = polygonBounds(poly)
+      let overlap = 0
+      // 逐个 1 m 格心检查：落在活动场内、却已有 F_PAVE / F_WATER / F_YARD 标记的格子数
+      for (let x = Math.floor(b.minX) + 0.5; x < b.maxX; x++) {
+        for (let z = Math.floor(b.minZ) + 0.5; z < b.maxZ; z++) {
+          if (
+            grid.get(x, z) & (F_PAVE | F_WATER | F_YARD) &&
+            pointInPolygon(x, z, poly)
+          ) {
+            overlap++
+          }
+        }
+      }
+      if (overlap > 0) {
+        console.warn(
+          `熊猫基地：活动场与已登记的园路 / 水面 / 其他活动场重叠 ${overlap} 格，草地开洞可能出错`
+        )
+      }
+      if (!poly.every(([x, z]) => pointInPolygon(x, z, park))) {
+        console.warn("熊猫基地：活动场有顶点落在园界之外，草地开洞可能出错")
+      }
+      lawnHoles.push(poly)
+      grid.fillPoly(poly, F_YARD)
+      gb.add(extrudePolygon(poly, [], GROUND_Y, YARD_Y), C.yardGrass)
     },
     bambooBufs: BAMBOO.map(() => []) // 竹梢顶点按颜色分组（vegetation 写入，最后合成）
   }

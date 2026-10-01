@@ -20,7 +20,7 @@
  */
 import { Group, Matrix4, Vector3 } from "three"
 import { buildingsInZones } from "./kit/footprint.js"
-import { pointInPolygon, polygonBounds } from "../utils.js"
+import { polygonBounds } from "../utils.js"
 import { treeShapeMax } from "../trees.js"
 import { build as tianfu } from "./tianfu.js"
 import { build as taikooli } from "./taikooli.js"
@@ -135,6 +135,22 @@ function segmentDistance(x, z, [ax, az], [bx, bz]) {
 }
 
 /**
+ * 水平线 z 与多边形的交点区间，扁平数组 [x0, x1, x2, x3, …]（已升序）：
+ * 点 (x, z) 在多边形内当且仅当某个 m 使 x_{2m} ≤ x < x_{2m+1}。
+ * 交点公式与奇偶规则同 utils.js 的 pointInPolygon（z 方向半开区间、x < 交点才计数），
+ * 所以对任意点两者结论一致；占用网格用它做扫描线填充，不再逐格调用 pointInPolygon。
+ */
+function zoneRowSpans(poly, z) {
+  const xs = []
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, zi] = poly[i]
+    const [xj, zj] = poly[j]
+    if (zi > z !== zj > z) xs.push(((xj - xi) * (z - zi)) / (zj - zi) + xi)
+  }
+  return xs.sort((p, q) => p - q)
+}
+
+/**
  * 由景点 Mesh 与替换区生成占用网格。
  * - Mesh：逐个三角形（按 matrixWorld 换到世界坐标）检查，任一顶点 y > OCC_MIN_Y 时，
  *   它的 XZ 包围盒覆盖到的格子记为实体格，全部实体格再统一向外膨胀 OCC_GROW 格；
@@ -217,17 +233,22 @@ export function buildOccupancy(roots, zones, corridors = []) {
       }
     }
   }
+  // 替换区：按行扫描填充，判定与逐格 pointInPolygon(格子中心) 完全一致（见 zoneRowSpans）。
+  // 熊猫基地园区 2.4 km² 有 15 万格，逐格做多边形判断要 1 秒以上，扫描只算每行的交点
   for (const poly of zones) {
     if (!poly || poly.length < 3) continue
     const b = polygonBounds(poly)
-    const ix1 = Math.floor(b.maxX / OCC_CELL)
     const iz1 = Math.floor(b.maxZ / OCC_CELL)
-    for (let ix = Math.floor(b.minX / OCC_CELL); ix <= ix1; ix++) {
-      for (let iz = Math.floor(b.minZ / OCC_CELL); iz <= iz1; iz++) {
-        // 以格子中心判断是否在区内
-        const cx = (ix + 0.5) * OCC_CELL
-        const cz = (iz + 0.5) * OCC_CELL
-        if (pointInPolygon(cx, cz, poly)) cells.add(key(ix, iz))
+    for (let iz = Math.floor(b.minZ / OCC_CELL); iz <= iz1; iz++) {
+      const spans = zoneRowSpans(poly, (iz + 0.5) * OCC_CELL)
+      for (let m = 0; m < spans.length; m += 2) {
+        // 区间 [spans[m], spans[m+1]) 内的格子中心都在区内；
+        // 先按公式估起点 / 终点，再用同一个中心坐标表达式校正浮点误差
+        let ix = Math.ceil(spans[m] / OCC_CELL - 0.5)
+        while ((ix - 1 + 0.5) * OCC_CELL >= spans[m]) ix--
+        while ((ix + 0.5) * OCC_CELL < spans[m]) ix++
+        for (; (ix + 0.5) * OCC_CELL < spans[m + 1]; ix++)
+          cells.add(key(ix, iz))
       }
     }
   }

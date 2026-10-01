@@ -49,6 +49,7 @@ import {
   extrudePolygon,
   fromTriangles,
   prism,
+  ribbon,
   sphere,
   sweepBar
 } from "./kit/shapes.js"
@@ -533,52 +534,6 @@ function normals(pts) {
 
 /** [x, z] 折线 → sweepBar 用的 [x, y, z] */
 const lift = (pts, y) => pts.map(([x, z]) => [x, y, z])
-
-/**
- * 带斜接的路面带：沿折线 pts（[x, z]）铺宽 w、从 y0 到 y1 的实心带（顶面 + 两侧面 + 两端封口）。
- * 折点处两侧边线按斜接（miter）求交，急弯外角不缺块、内角不重叠（kit 的 sweepBar 在折点只取
- * 相邻两段的平均法向，90° 弯处路面会扭成窄条）；斜接长度限制在 2.5 倍半宽以内。
- */
-function ribbon(pts, w, y0, y1) {
-  const n = pts.length
-  const seg = []
-  for (let i = 0; i < n - 1; i++) {
-    const dx = pts[i + 1][0] - pts[i][0]
-    const dz = pts[i + 1][1] - pts[i][1]
-    const l = Math.hypot(dx, dz) || 1
-    seg.push([-dz / l, dx / l])
-  }
-  const side = pts.map((p, i) => {
-    const a = seg[Math.max(0, i - 1)]
-    const c = seg[Math.min(n - 2, i)]
-    let mx = a[0] + c[0]
-    let mz = a[1] + c[1]
-    const ml = Math.hypot(mx, mz) || 1
-    mx /= ml
-    mz /= ml
-    // 斜接长度 = 半宽 / cos(半转角)
-    const k = Math.min(2.5, 1 / Math.max(0.4, mx * c[0] + mz * c[1]))
-    return [mx * (w / 2) * k, mz * (w / 2) * k]
-  })
-  const L0 = pts.map(([x, z], i) => [x + side[i][0], z + side[i][1]])
-  const R0 = pts.map(([x, z], i) => [x - side[i][0], z - side[i][1]])
-  const pos = []
-  const quad = (a, b, c, d) => pos.push(...a, ...b, ...c, ...a, ...c, ...d)
-  const v3 = ([x, z], y) => [x, y, z]
-  for (let i = 0; i < n - 1; i++) {
-    quad(v3(L0[i], y1), v3(L0[i + 1], y1), v3(R0[i + 1], y1), v3(R0[i], y1))
-    quad(v3(L0[i], y0), v3(L0[i + 1], y0), v3(L0[i + 1], y1), v3(L0[i], y1))
-    quad(v3(R0[i], y1), v3(R0[i + 1], y1), v3(R0[i + 1], y0), v3(R0[i], y0))
-  }
-  quad(v3(R0[0], y0), v3(L0[0], y0), v3(L0[0], y1), v3(R0[0], y1))
-  quad(
-    v3(L0[n - 1], y0),
-    v3(R0[n - 1], y0),
-    v3(R0[n - 1], y1),
-    v3(L0[n - 1], y1)
-  )
-  return fromTriangles(pos)
-}
 
 /** 5 边圆锥（无底，顶点汇于一点，不产生退化三角形） */
 function cone(sides, r, h) {
