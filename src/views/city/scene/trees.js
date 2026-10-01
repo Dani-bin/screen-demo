@@ -34,7 +34,7 @@ const CROWN_STRETCH = 1.15
 const CROWN_LIFT = 0.95
 
 /**
- * 单棵通用树的外形尺寸（米）。树的造型、整城阴影范围（shadow.js）、
+ * 单棵通用树的外形尺寸（米）。树的造型、区域静态阴影范围（shadow.js）、
  * 步行路径走廊（landmarks/index.js）都从这里取，改造型时三处自动一致。
  * @param {number} size 树冠水平半径（layoutTrees 的 size）
  * @param {number} height 树干高（layoutTrees 的 height）
@@ -224,7 +224,7 @@ export function layoutTrees(data, theme, blocked = null) {
  * @param {object} theme
  * @param {{ has: (x: number, z: number) => boolean }} [blocked] 景点占用网格，见 scatterTrees
  * @returns {{ group: Group, count: number, layout: Array, dispose: Function }}
- *   layout 为 layoutTrees 的结果（每棵树的位置与尺寸），供整城阴影按真实树冠求范围
+ *   layout 为 layoutTrees 的结果（每棵树的位置与尺寸），供区域静态阴影按真实树冠求范围
  */
 export function createTrees(data, materials, theme, blocked = null) {
   const t = theme.tree

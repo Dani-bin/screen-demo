@@ -151,7 +151,7 @@ export class CityScene {
     this.sun = sun
     sun.castShadow = true
     sun.shadow.mapSize.set(L.shadowMapSize, L.shadowMapSize)
-    // 整城阴影范围要等全部投影物建完才能算，在 _buildCity 末尾设置
+    // 各区域静态阴影的范围要等全部投影物建完才能算，在 _buildCity 末尾设置
     this.shadowFitted = false
     this.scene.add(sun)
     // 平行光朝向 target；target 需在场景中才会更新 matrixWorld，否则阴影方向不对
@@ -225,19 +225,38 @@ export class CityScene {
     // 初始为主城区的静态阴影；停靠站点时由 _fitShadow 收紧，离站 / 回总览 / 拉远时由
     // _resetShadow 恢复注视点所在区域的静态阴影
     const meta = d.meta
-    this.regionClips = [meta.clip, ...(meta.enclaves || []).map((e) => e.clip)]
+    const enclaves = meta.enclaves || []
+    this.regionClips = [meta.clip, ...enclaves.map((e) => e.clip)]
     this._regionOf = (x, z) => nearestRegion(x, z, this.regionClips)
-    this.regionShadows = this.regionClips.map((_, i) =>
-      computeCityShadow(
-        {
-          buildings: d.buildings,
-          trees: this.trees.layout,
-          objects: [this.landmarks.group, this.markers.group],
-          within: (x, z) => this._regionOf(x, z) === i
-        },
-        this.theme.light
-      )
-    )
+    this.regionShadows = []
+    this.regionClips.forEach((_, i) => {
+      const compute = () =>
+        computeCityShadow(
+          {
+            buildings: d.buildings,
+            trees: this.trees.layout,
+            objects: [this.landmarks.group, this.markers.group],
+            within: (x, z) => this._regionOf(x, z) === i
+          },
+          this.theme.light
+        )
+      if (i === 0) {
+        // 主城区算不出阴影说明数据有问题，照常抛出
+        this.regionShadows.push(compute())
+        return
+      }
+      // 飞地没有投影物（数据被裁空等）时 computeCityShadow 会抛错：
+      // 不让整个页面起不来，该区域退回主城区的静态阴影（范围不覆盖飞地，只是没有影子）
+      try {
+        this.regionShadows.push(compute())
+      } catch (err) {
+        console.warn(
+          `飞地「${enclaves[i - 1].name}」没有投影物，阴影退回主城区的静态阴影`,
+          err
+        )
+        this.regionShadows.push(this.regionShadows[0])
+      }
+    })
     this.shadowRegion = 0
     applyCityShadow(this.sun, this.theme.light, this.regionShadows[0])
 
@@ -291,7 +310,8 @@ export class CityScene {
       timing: this.theme.tour,
       onStopChange: (index) => {
         this.markers.setActive(index)
-        // 离站飞往下一站：先恢复整城阴影，飞行途中沿途楼体照常有影；飞抵后再收紧
+        // 离站飞往下一站：先恢复出发地所在区域的静态阴影，飞行途中沿途楼体照常有影，
+        // 跨区飞行时注视点换了区域会在 _loop 里再切换一次；飞抵后再收紧
         this._resetShadow()
         // 离站：上一站的行人淡出回收
         this.crowd.hide()

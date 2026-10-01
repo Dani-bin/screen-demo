@@ -17,7 +17,7 @@
  *   shadow    city：阴影与相机 near = 20 完全照搬城市场景（景点模式默认，所见即线上效果，
  *             near = 20 时近景距离须 ≥ 300 m，验收截图按此取 dist）。景点模式下等同线上
  *             「巡览停靠该站」时的阴影：按站点收紧到景点周围 ±1000 m（shadow.js 的 applyStopShadow）；
- *             kit 指定 shadow=city 时没有站点，用整城阴影（applyCityShadow），范围按线上同一批投影物
+ *             kit 指定 shadow=city 时没有站点，用主城区的静态阴影（applyCityShadow），范围按线上同一批投影物
  *             实算（见 cityShadowBox），texel 与深度区间与线上总览一致；
  *             tight：阴影收紧到注视点周围、相机 near = 1（kit 默认，适合近看构件造型）
  * 地面、道路、河流、光照颜色与强度与城市场景一致（阴影开启）。
@@ -175,7 +175,7 @@ function contextExcluded(data, center, zones) {
 }
 
 /**
- * 主城区的整城阴影范围：与 CityScene 主城区那张静态阴影同一批投影物——主城区的楼栋、景点模型、
+ * 主城区的静态阴影范围：与 CityScene 主城区那张静态阴影同一批投影物——主城区的楼栋、景点模型、
  * 按景点占用网格撒的通用树（树冠尺寸与线上完全一致）、落点球——再加上预览对象自身（kit 样例）。
  * 投影物按离哪块区域最近归类（nearestRegion），只取最近区域为主城区（下标 0）的，
  * 飞地（熊猫基地）另有一张静态阴影，这里不计入。
@@ -239,7 +239,7 @@ function createRenderer(canvas) {
 /**
  * 光照颜色、强度、方向与 CityScene 相同。阴影两种模式：
  *   city  —— 与 CityScene 共用 shadow.js：有景点中心 center 时按站点收紧（±STOP_SHADOW_RADIUS，
- *            同线上巡览停靠该站），否则整城一张阴影贴图（cityBox 为 cityShadowBox 的结果）；
+ *            同线上巡览停靠该站），否则用主城区的静态阴影（cityBox 为 cityShadowBox 的结果）；
  *   tight —— 太阳沿同一方向对准注视点，正交范围收紧到周围 radius 米，近景阴影更实。
  */
 function addLights(scene, target, radius, mode, center, cityBox) {
@@ -330,7 +330,7 @@ async function main() {
     applyShadowFlags(m)
     scene.add(m)
   }
-  // 只有「city 模式且没有站点」（kit 指定 shadow=city）用整城阴影，才需要实算整城范围
+  // 只有「city 模式且没有站点」（kit 指定 shadow=city）用主城区静态阴影，才需要实算它的范围
   const cityBox =
     shadowMode === "city" && !subject.center
       ? cityShadowBox(data, project, materials, subject.meshes)
