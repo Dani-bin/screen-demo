@@ -33,6 +33,7 @@ import { build as wangjiang } from "./wangjiang.js"
 import { build as pandaTower } from "./pandaTower.js"
 import { build as wuhou } from "./wuhou.js"
 import { build as dufu } from "./dufu.js"
+import { build as pandaBase } from "./pandaBase/index.js"
 
 /** 景点名 → 构建函数；键与 cityData.js 的 SPOTS[i].name 完全一致 */
 export const LANDMARK_MODULES = {
@@ -46,7 +47,8 @@ export const LANDMARK_MODULES = {
   望江楼: wangjiang,
   天府熊猫塔: pandaTower,
   "武侯祠·锦里": wuhou,
-  杜甫草堂: dufu
+  杜甫草堂: dufu,
+  熊猫基地: pandaBase
 }
 
 /** 空结果：模块不存在或构建失败时使用 */
@@ -148,7 +150,7 @@ function segmentDistance(x, z, [ax, az], [bx, bz]) {
 export function buildOccupancy(roots, zones, corridors = []) {
   // 格子键用小整数 (ix + OFF) · 2^13 + (iz + OFF)（加偏移保证非负）：
   // 比字符串键快一个数量级，且结果 < 2^26，始终是 V8 的小整数（不装箱）。
-  // OFF = 4096 格 = ±16 km，城市数据范围约 ±3.5 km，绰绰有余
+  // OFF = 4096 格 = ±16 km：主城区数据约 ±5.5 km，熊猫基地飞地最远到约 ±11.6 km，仍在范围内
   const OFF = 1 << 12
   const key = (ix, iz) => ((ix + OFF) << 13) | (iz + OFF)
   const raw = new Set() // 未膨胀的实体格
