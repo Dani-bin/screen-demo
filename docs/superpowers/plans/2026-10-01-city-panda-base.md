@@ -1378,13 +1378,14 @@ export function createSite(ctx) {
   const zones = [park, plaza, gateZone]
 
   const pb = polygonBounds(park)
-  // 园区 2.6 × 2.5 km：2 m 一格（约 1300 × 1230 格）；树竹间距都在数米以上，够用
+  // 园区 2.6 × 2.5 km：1 m 一格（约 2700 × 2540 格、6.9 MB）。kit/grid.js 的盖印只标记格心在半径内的格子，
+  // 半径须 ≥ 0.71 × 格宽才可靠：1 m 格下园路半宽（≥ 1.5 m）、实体外扩（0.8 m）都满足；2 m 格会漏盖细路
   const grid = createGrid(
     pb.minX - 40,
     pb.minZ - 40,
     pb.maxX + 40,
     pb.maxZ + 40,
-    2
+    1
   )
   grid.fillPoly(park, F_PARK)
 
@@ -1409,8 +1410,8 @@ export function createSite(ctx) {
     lawnHoles: [lakes.swan, lakes.ne, ...WEST_POOLS],
     paths: [], // 已铺园路 { id, pts, w, y, closed }，walkways 按 id 取高度
     solids,
-    /** 登记实体（建筑、墙、兽舍）：占用栅格打 F_SOLID，并沿边外扩 pad 米 */
-    solid(poly, pad = 0.6) {
+    /** 登记实体（建筑、墙、兽舍）：占用栅格打 F_SOLID，并沿边外扩 pad 米（≥ 0.71 m，见上方格宽说明） */
+    solid(poly, pad = 0.8) {
       solids.push(poly)
       grid.fillPoly(poly, F_SOLID, pad)
     },
@@ -1755,7 +1756,8 @@ git commit -m "feat(city): 新增熊猫基地站点、场地与地面" -m "第 1
   plantAll(site, walkways)
   buildLawn(site)
   ```
-- 构件进 `site.b`（主体）或 `site.gb`（贴地平面）；实体轮廓用 `site.solid(poly)` 登记，水面 / 铺装 / 活动场分别打 `F_WATER` / `F_PAVE` / `F_YARD`。颜色一律用 `site.js` 的 `C` / `BAMBOO`，确需新色就加进 `C` 并注释用途。
+- 构件进 `site.b`（主体）或 `site.gb`（贴地平面）；实体轮廓用 `site.solid(poly)` 登记，水面 / 铺装 / 活动场分别打 `F_WATER` / `F_PAVE` / `F_YARD`。
+- 占用栅格 1 m 一格：`stamp` / `disk` / `stampLine` / `fillPoly` 的外扩只标记格心在半径内的格子，**半径与 pad 须 ≥ 0.71 m**，否则可能一格都盖不上（见 `kit/grid.js` 文件头）。颜色一律用 `site.js` 的 `C` / `BAMBOO`，确需新色就加进 `C` 并注释用途。
 - 尺寸、坐标、高度、放大系数严格按设计文档对应小节；调研推定的内容（太阳产房扇形院、月亮产房内院、3～7 号别墅布局）照文档推定值做。
 - **三角形子预算**（合计 ≤ 40,000，每个任务结束都跑 `stats` 核对总数）：
 
