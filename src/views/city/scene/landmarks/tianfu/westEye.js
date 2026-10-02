@@ -18,7 +18,7 @@
  * - 柱身：深青铜色，直径 1.7，从内池水面到托盘底，上中下三道金箍（顶上一道是 c29 里柱头的金色回纹带）；
  * - 托盘：直径 18，盘面 5.6，浅色包边，底面是倒锥面：外缘一圈金色回纹带、近柱处一圈金色云纹带（c29）；
  * - 白杆：5.6～9.6；
- * - 金龙：宽 1.8 的扁带从内池水面起，在托盘下绕柱身约 3/4 圈，绕出托盘外缘，再向内绕到白杆顶，
+ * - 金龙：宽 1.8 的扁带从内池水面下起，在托盘下绕柱身约 3/4 圈，绕出托盘外缘，再向内绕到白杆顶，
  *   全程约 1.15 圈，龙首顶端 10.8。
  * 池内约 3 圈螺旋暗纹不做（计划 Task 4：省预算）。
  *
@@ -28,20 +28,21 @@
  * - 托盘底：报告写盘底 4.6；c29 以龙首顶 10.8 m 定比例（50 px/m），托盘底面与柱子相接处比盘沿低约 1.7 m，
  *   c17 约 1.6 m，所以底面做成倒锥：外缘 5.3、到柱子处 4.0。盘面 5.6、白杆顶 9.6 与照片吻合。
  *
- * 金龙路径（c17 从西往东拍，左北右南，方向可定）：龙尾在西南侧低处入水，贴着柱子外侧经西、北、东绕行、
- * 在托盘下逐渐升高，于东南—南侧从盘沿外绕上盘面，再向内收到白杆顶、龙首停在西侧朝北。俯视顺时针上升
+ * 金龙路径（c17 从西往东拍，左北右南，方向可定）：龙尾在西南侧没入内池水下，在托盘下、半径 7～8 m 处
+ * 绕柱经西、北、东绕行、逐渐升高，于东南—南侧从盘沿外绕上盘面，再向内收到白杆顶、龙首停在西侧朝北。俯视顺时针上升
  * （c29 同样如此：近端飘带都往左走）。龙带用 kit 的 sweepBar 扫出：截面竖直（宽 1.8 在竖直方向，
- * 厚 0.3 在径向），照片里飘带在托盘下、盘沿外都是宽面朝外，平视、斜俯视都看得到宽面。
- * 托盘旋转体、金龙扁带与龙首的做法与东鱼眼共用，放在 sculpture.js（Task 5 抽出，几何逐位不变）。
+ * 厚 0.3 在径向），照片里飘带在托盘下、盘沿外都是宽面朝外，平视、斜俯视都看得到宽面；
+ * 带底面（低机位近看托盘下的龙带不露槽，悬空段也照常画进阴影贴图）。
+ * 托盘旋转体、金龙扁带与龙首的做法与东鱼眼共用，放在 sculpture.js（Task 5 抽出）。
  *
- * 三角形（实测）：深色盘 96、池壁与水面 704、柱与金箍 128、托盘 520、白杆 36、龙带 376、龙首 72，
- * 共 1,932；另 ground.js 挖口多出 50，本件合计 1,982（设计第 5 节上限 3,200）。
+ * 三角形（实测）：深色盘 96、池壁与水面 704、柱与金箍 128、托盘 520、白杆 36、龙带 500（含底面 124）、
+ * 龙首 72，共 2,056；另 ground.js 挖口多出 50，本件合计 2,106（设计第 5 节上限 3,200）。
  */
 import { local } from "../kit/builder.js"
 import { circlePolygon } from "../kit/footprint.js"
-import { cylinder, fromTriangles } from "../kit/shapes.js"
+import { annulus, cylinder, fromTriangles } from "../kit/shapes.js"
 import { C, PAVE, pushUp, triangulate } from "./site.js"
-import { addDragon, addRevolved, ring } from "./sculpture.js"
+import { addDragon, addRevolved } from "./sculpture.js"
 
 const DEG = Math.PI / 180
 
@@ -69,14 +70,15 @@ const TUCK = 0.05
 // 柱身：直径 1.7（见文件头），16 段；金箍比柱身粗 5 cm
 const COLUMN = { r: 0.85, seg: 16 }
 const HOOP_R = COLUMN.r + 0.05
-// 三道金箍 [底, 顶]（离铺装）：水面处一道、中段一道细箍、柱头一道 0.7 m 高的回纹带（c29）
+// 三道金箍 [底, 顶]（离铺装）：水面处一道、中段一道细箍、柱头一道 0.75 m 高的回纹带（c29）
 const HOOPS = [
   [WATER_IN - 0.05, 1.1],
   [2.2, 2.4],
   [3.3, 4.05]
 ]
 // 托盘剖面 [半径, 离铺装高度]：从盘面中心向外、沿盘沿下折、再沿底面倒锥回到柱子（末点收进柱身 5 cm），
-// 每段配一个颜色。托盘直径 18、盘面 5.6（报告 6.3）；底面高度按照片（见文件头）
+// 每段配一个颜色。托盘直径 18、盘面 5.6（报告 6.3）；包边高度、金纹带位置与底面高度在 c29 里量取
+// （50 px/m，见文件头）
 const TRAY_TOP = 5.6
 const TRAY = [
   { p: [0, TRAY_TOP], color: C.tray }, // 盘面
@@ -97,17 +99,17 @@ const POLE = { r: 0.28, y1: 9.6, seg: 12 }
  * 金龙飘带：截面竖直，宽 1.8（报告 6.3「宽 1.6～2.0」）、厚 0.3。
  * 中线关键点 [方位角°, 半径, 中线离铺装高度]；方位角从东（+u）起向南（+v）转，即俯视顺时针，
  * 360° 以上表示第二圈。中线高度 ± 0.9 是带子的上下沿。
- * - 135°～350°：龙尾在西南入水（下沿低于内池水面），贴柱外侧半径 7～8 m 绕行，在托盘下逐渐升高；
- *   托盘底面在半径 8 m 处高约 5.15，这一段带子上沿 ≤ 4.1；
+ * - 135°～350°：龙尾在西南从内池水下起（起点中线 −0.2，上沿 0.7 低于水面 0.8，端头封口整块在水下），
+ *   在托盘下、半径 7～8 m 处绕柱逐渐升高；托盘底面在半径 8 m 处高约 5.15，这一段带子上沿 ≤ 4.1；
  * - 395°～430°：半径放大到 9.9～10.1，从盘沿（半径 9）外侧升过盘面高度；
  * - 465°～545°：下沿高过盘面后向内收，到白杆旁（半径 1.6）时上沿 10.8，接龙首（报告 4.2：雕塑高 10.8）。
- * 龙带与托盘最近处约 0.5 m（盘沿外侧），全长约 59 m（报告 4.2「龙长 58 m」）。
+ * 龙带与托盘最近处约 0.5 m，在盘沿上方（约半径 9.3、离铺装 6.0 处），全长约 59 m（报告 4.2「龙长 58 m」）。
  */
 const DRAGON = {
   thick: 0.3,
   half: 0.9,
   keys: [
-    [135, 7.0, 0.5],
+    [135, 7.0, -0.2],
     [180, 7.2, 0.9],
     [240, 7.5, 1.5],
     [300, 7.8, 2.3],
@@ -133,18 +135,13 @@ const DRAGON = {
 // 盘面与铺装齐平，盘缘不算障碍）。设计第 6 节「绕西鱼眼水池环，半径 20～24」
 const WALK = { r: 22.5, width: 3, density: 1.5, n: 48 }
 
-/* ---------------- 入口 ---------------- */
+/* ---------------- 各部分 ---------------- */
 
 /**
- * 建西鱼眼：深色石盘、内外池壁与水面、雕塑（柱身、托盘、白杆、金龙）。
- * 铺装上的口子由调用方把 WEST_EYE_CUT 交给 buildGround 的 cuts。
- * @param {ColorBuilder} b 静态件
- * @param {object} site 场地对象（site.js 的 createSite），用 site.design、site.toWorldPts
- * @returns {{ walkways: Array }} 绕水池一圈的步行路径（世界坐标）
+ * 深色石盘与内外两圈池子：石盘、外池壁、外环水面、内池壁、内池水面
+ * @param {Matrix4} f 鱼眼坐标系
  */
-export function buildWestEye(b, site) {
-  // 鱼眼坐标系：设计系平移到鱼眼中心
-  const f = local(site.design, WEST_EYE.u, 0, WEST_EYE.v)
+function buildDiscAndPools(b, site, f) {
   const at = (y) => local(f, 0, y, 0)
 
   // 深色石盘：设计系里铺（外圈就是挖口的那组顶点），内圈收进外池壁 5 cm
@@ -167,9 +164,13 @@ export function buildWestEye(b, site) {
     C.marbleLight,
     at(PAVE + WATER_OUT - TUCK)
   )
-  b.add(ring(outIn, OUTER.r, SEG), C.marbleLight, at(PAVE + OUTER.h))
+  b.add(annulus(outIn, OUTER.r, SEG), C.marbleLight, at(PAVE + OUTER.h))
   // 外环水面：从内池壁外侧到外池壁内侧，两头各插进壁里 5 cm
-  b.add(ring(INNER.r - TUCK, outIn + TUCK, SEG), C.water, at(PAVE + WATER_OUT))
+  b.add(
+    annulus(INNER.r - TUCK, outIn + TUCK, SEG),
+    C.water,
+    at(PAVE + WATER_OUT)
+  )
 
   // 内池壁：外侧面从外环水面下起，内侧面从内池水面下起
   const inIn = INNER.r - INNER.t
@@ -185,13 +186,21 @@ export function buildWestEye(b, site) {
     C.marbleDark,
     at(PAVE + WATER_IN - TUCK)
   )
-  b.add(ring(inIn, INNER.r, INNER.seg), C.marbleDark, at(PAVE + INNER.h))
+  b.add(annulus(inIn, INNER.r, INNER.seg), C.marbleDark, at(PAVE + INNER.h))
   // 内池水面：从柱身到内池壁
   b.add(
-    ring(COLUMN.r - TUCK, inIn + TUCK, INNER.seg),
+    annulus(COLUMN.r - TUCK, inIn + TUCK, INNER.seg),
     C.water,
     at(PAVE + WATER_IN)
   )
+}
+
+/**
+ * 雕塑本体：柱身与三道金箍、托盘、白杆（金龙另由 sculpture.js 的 addDragon 建）
+ * @param {Matrix4} f 鱼眼坐标系
+ */
+function buildSculpture(b, f) {
+  const at = (y) => local(f, 0, y, 0)
 
   // 柱身：从内池水面下到托盘底面里（托盘在柱边高 4.0），开口圆柱（两头都看不见）
   const colTop = TRAY[TRAY.length - 1].p[1] + 0.1
@@ -222,8 +231,24 @@ export function buildWestEye(b, site) {
     C.sculptPole,
     at(PAVE + TRAY_TOP)
   )
+}
 
-  // 金龙：竖直截面的扁带（中线上下各 0.9）+ 龙首，做法见 sculpture.js 的 addDragon
+/* ---------------- 入口 ---------------- */
+
+/**
+ * 建西鱼眼：深色石盘与池子 → 雕塑本体（柱身、托盘、白杆）→ 金龙。
+ * 调用顺序决定合批后的顶点顺序，不要随意调换。
+ * 铺装上的口子由调用方把 WEST_EYE_CUT 交给 buildGround 的 cuts。
+ * @param {ColorBuilder} b 静态件
+ * @param {object} site 场地对象（site.js 的 createSite），用 site.design、site.toWorldPts
+ * @returns {{ walkways: Array }} 绕水池一圈的步行路径（世界坐标）
+ */
+export function buildWestEye(b, site) {
+  // 鱼眼坐标系：设计系平移到鱼眼中心
+  const f = local(site.design, WEST_EYE.u, 0, WEST_EYE.v)
+  buildDiscAndPools(b, site, f)
+  buildSculpture(b, f)
+  // 金龙：竖直截面的扁带（中线上下各 0.9，带底面）+ 龙首，做法见 sculpture.js 的 addDragon
   addDragon(b, f, DRAGON, PAVE)
 
   return {

@@ -30,7 +30,8 @@ import {
   insetPolygon,
   polygonArea,
   rectPolygon,
-  selfIntersects
+  selfIntersects,
+  signedArea2
 } from "../kit/footprint.js"
 import { sideWalls } from "../kit/shapes.js"
 import { C, F_SOLID } from "./site.js"
@@ -48,22 +49,11 @@ export const PROBE = 0.6
 /* ---------------- 轮廓 ---------------- */
 
 /**
- * 带符号面积的两倍（> 0 为 x→z 逆时针，同 footprint.js 的 insetPolygon）。
- * kit 的 polygonArea 取了绝对值，判断绕向要用带符号的，这里留一个小工具
+ * 统一绕向（返回新数组）：使每条边 a→b 的左手法向 (−dz, dx) 朝外。
+ * 带符号面积 > 0 为 x→z 逆时针（kit/footprint.js 的 signedArea2）
  */
-function area2(poly) {
-  let a = 0
-  for (let i = 0; i < poly.length; i++) {
-    const [x0, z0] = poly[i]
-    const [x1, z1] = poly[(i + 1) % poly.length]
-    a += x0 * z1 - x1 * z0
-  }
-  return a
-}
-
-/** 统一绕向（返回新数组）：使每条边 a→b 的左手法向 (−dz, dx) 朝外 */
 export function orient(poly) {
-  return area2(poly) > 0 ? poly.slice().reverse() : poly.slice()
+  return signedArea2(poly) > 0 ? poly.slice().reverse() : poly.slice()
 }
 
 /**

@@ -3,14 +3,14 @@
  * ----------------------------------------------------------
  * 两座鱼眼雕塑是同一套做法（调研报告 4.2：底色青铜、云龙纹贴金箔；照片 c29、c00、c09）：
  * 柱身 + 旋转体托盘 + 白杆 + 绕柱盘升的金色扁带龙。这里放两处共用的几何函数：
- * - ring：水平圆环面（水面、池壁顶面）；
  * - revolveBand / addRevolved：剖面绕竖轴旋转的托盘（逐段配色）；
  * - hermite / dragonLine / addDragon：金龙飘带中线插值、扁带与龙首。
+ * 水面、池壁顶面这类水平圆环面用 kit/shapes.js 的 annulus（与天府熊猫塔共用）。
  * 坐标一律在「鱼眼坐标系」里：原点在鱼眼中心（y 仍从地面算），x 沿设计系 u（东）、z 沿 v（南）。
  * 方位角从东（+x）起向南（+z）转，即俯视顺时针，360° 以上表示第二圈。
- * 从 westEye.js 原样抽出（Task 5），西鱼眼几何逐位不变。
+ * 从 westEye.js 原样抽出（Task 5）。
  */
-import { BufferAttribute, BufferGeometry, Matrix4, RingGeometry } from "three"
+import { BufferAttribute, BufferGeometry, Matrix4 } from "three"
 import { local } from "../kit/builder.js"
 import { box, sweepBar } from "../kit/shapes.js"
 import { C } from "./site.js"
@@ -36,13 +36,6 @@ export const DRAGON_HEAD = [
 export const DRAGON_HEAD_TOP = 0.9
 
 /* ---------------- 旋转体 ---------------- */
-
-/** 水平圆环面（法线朝上）：three 的 RingGeometry 转到水平面，顶点方位角与 circlePolygon、kit cylinder 同一组 */
-export function ring(r0, r1, seg) {
-  const g = new RingGeometry(r0, r1, seg, 1)
-  g.rotateX(-Math.PI / 2)
-  return g
-}
 
 /**
  * 旋转体的一段：剖面线段 p0 → p1（[半径, 高]）绕竖轴转一圈，seg 段。
@@ -198,6 +191,7 @@ export function addDragonHead(b, f, line) {
 /**
  * 金龙：竖直截面的扁带（kit 的 sweepBar：「宽」是水平径向厚度 thick，「高」是竖直带宽，
  * 中线上下各 half）+ 龙首。照片里飘带宽面朝外，平视、斜俯视都看得到宽面。
+ * 扁带补底面：低机位近看悬空的下沿不露槽；阴影只画背光面，悬空段的底面朝下、背对太阳，照样投影。
  * @param {Matrix4} f 鱼眼坐标系
  * @param {{ keys: number[][], chord: number, maxStep: number, thick: number, half: number }} dragon
  * @param {number} base 高度基准
@@ -206,7 +200,10 @@ export function addDragonHead(b, f, line) {
 export function addDragon(b, f, dragon, base) {
   const line = dragonLine(dragon, base)
   b.add(
-    sweepBar(line, dragon.thick, dragon.half, { sink: dragon.half }),
+    sweepBar(line, dragon.thick, dragon.half, {
+      sink: dragon.half,
+      bottom: true
+    }),
     C.sculptGold,
     f
   )

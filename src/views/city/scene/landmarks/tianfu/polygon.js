@@ -7,15 +7,19 @@
  *
  * cuts 的约定：
  * - 每个 cut 必须是凸多边形（入口检查，凹的或自交的直接抛错：逐三角形相减只对凸 cut 成立）；
- * - cuts 应彼此不重叠。重叠时结果仍正确：两个都整块落在铺装里（inside）而又相交或互相包含的 cut，
- *   会降级为逐三角形相减（cross），只是多出一些三角形。
+ * - cuts 应彼此不重叠。重叠时结果仍正确：两个都整块落在铺装里（inside）而又相交、互相包含或贴边的 cut，
+ *   会降级为逐三角形相减（cross），只是多出一些三角形；
+ * - cut 可以与铺装外轮廓、洞、别的 cut 共边、共点或顶点落在边上（如 0.5 m 网格上的矩形）：
+ *   贴边一律按 cross 处理，见 cutRelation 的 TOUCH。
  */
 import {
   clipHalfPlane,
+  distToSegment,
   insetPolygon,
   polygonArea,
-  segmentsCross,
-  selfIntersects
+  ringsCross,
+  selfIntersects,
+  signedArea2
 } from "../kit/footprint.js"
 import { pointInPolygon } from "../../utils.js"
 import { cleanRing, triangulate } from "./site.js"
@@ -23,27 +27,29 @@ import { cleanRing, triangulate } from "./site.js"
 /* ---------------- 挖口 ---------------- */
 
 /**
- * 检查 cut 是凸多边形：相邻两边的叉积同号（共线的零叉积跳过），且不自交（五角星形各角叉积也同号）。
+ * 检查 cut 是凸多边形：每个角的转向（相邻两边的叉积）都与整个多边形的绕向（带符号面积）同号
+ * （共线的零叉积跳过），且不自交（五角星形各角叉积也同号）。
  * 不满足时抛错——凹 cut 若照常相减，会把凹进去的那块也挖掉（L 形少挖、多挖都可能）。
+ * 绕向取带符号面积而不是第一个角的转向：第一个角恰好是凹角时，后者会把凸角报成凹角；
+ * 报错里的顶点就是第一个转向与绕向相反的凹角顶点（从 1 数）。
  */
 function assertConvex(cut) {
   const n = cut.length
-  let sign = 0
+  const sign = Math.sign(signedArea2(cut))
+  if (n < 3 || sign === 0 || selfIntersects(cut)) {
+    throw new Error("天府广场地面挖口：cut 须为不自交、面积非零的凸多边形")
+  }
   for (let i = 0; i < n; i++) {
     const a = cut[i]
     const b = cut[(i + 1) % n]
     const c = cut[(i + 2) % n]
     const cr = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
     if (Math.abs(cr) < 1e-12) continue
-    if (sign === 0) sign = Math.sign(cr)
-    else if (Math.sign(cr) !== sign) {
+    if (Math.sign(cr) !== sign) {
       throw new Error(
-        `天府广场地面挖口：cut 须为凸多边形（第 ${i + 1} 个角是凹角）`
+        `天府广场地面挖口：cut 须为凸多边形（第 ${((i + 1) % n) + 1} 个顶点是凹角）`
       )
     }
-  }
-  if (n < 3 || sign === 0 || selfIntersects(cut)) {
-    throw new Error("天府广场地面挖口：cut 须为不自交、面积非零的凸多边形")
   }
 }
 
@@ -66,13 +72,7 @@ function subtractConvex(tri, cut) {
     return [tri]
   }
   // cut 的绕向：带符号面积 > 0 时内法向取左手 (−dz, dx)，否则取反（同 kit 的 insetPolygon）
-  let a2 = 0
-  for (let i = 0; i < cut.length; i++) {
-    const [x0, z0] = cut[i]
-    const [x1, z1] = cut[(i + 1) % cut.length]
-    a2 += x0 * z1 - x1 * z0
-  }
-  const s = a2 > 0 ? 1 : -1
+  const s = signedArea2(cut) > 0 ? 1 : -1
   const pieces = []
   let rest = tri
   for (let i = 0; i < cut.length && rest.length >= 3; i++) {
@@ -86,25 +86,35 @@ function subtractConvex(tri, cut) {
   return pieces
 }
 
+/*
+ * 贴边判定容差（米）：一方的某个顶点离另一方的某条边比这还近，就算两者碰到。
+ * 碰边只靠严格相交（segmentsCross）判断时，共边、共点、顶点落在边上都判成「不相交」，接着用
+ * 一个顶点做点在多边形内判断，点正好落在边界上时结果不确定——会把贴着外轮廓、洞的 cut 误判成
+ * inside / outside 而悄悄漏挖（审查的模糊测试：共边、0.5 m 网格坐标、cut 与洞重合等情形）。
+ * 碰到就一律走逐三角形相减（cross），结果总是对的，只是多些三角形
+ */
+const TOUCH = 1e-6
+/** 点 p 离轮廓 ring 的某条边不到 TOUCH */
+const onRing = (p, ring) =>
+  ring.some(
+    (a, i) => distToSegment(p[0], p[1], a, ring[(i + 1) % ring.length]) < TOUCH
+  )
+/** 两个轮廓贴边：任一方的顶点落在另一方的边上（含共点、共边） */
+const touches = (a, b) =>
+  a.some((p) => onRing(p, b)) || b.some((p) => onRing(p, a))
+
 /**
  * cut 与一块铺装（outer 挖掉 holes）的关系：
  * - "inside"：整块落在铺装里（不碰外轮廓、不碰也不包住任何洞）→ 直接当洞交给 earcut，最省三角形；
  * - "outside"：与铺装不相交 → 跳过；
- * - "cross"：其余情况（跨过边界、把某个洞包在里面、把整块铺装包在里面）→ 逐个三角形相减。
+ * - "cross"：其余情况（跨过边界、与边界贴边或共点、把某个洞包在里面、把整块铺装包在里面）
+ *   → 逐个三角形相减。
+ * 先排除贴边，后面用单个顶点做点在多边形内判断才可靠（该顶点必定离边界 ≥ TOUCH）。
  */
 function cutRelation(cut, outer, holes) {
   const rings = [outer, ...holes]
-  for (const ring of rings) {
-    for (let i = 0; i < ring.length; i++) {
-      const a = ring[i]
-      const b = ring[(i + 1) % ring.length]
-      for (let j = 0; j < cut.length; j++) {
-        if (segmentsCross(a, b, cut[j], cut[(j + 1) % cut.length])) {
-          return "cross"
-        }
-      }
-    }
-  }
+  if (rings.some((r) => touches(cut, r))) return "cross"
+  if (rings.some((r) => ringsCross(r, cut))) return "cross"
   if (holes.some((h) => pointInPolygon(h[0][0], h[0][1], cut))) return "cross"
   // 边不相交、而铺装的一个顶点落在 cut 里：整块铺装都在 cut 里（如包住整段地灯带的矩形），
   // 不能判成 outside，交给逐三角形相减，结果为空
@@ -115,17 +125,13 @@ function cutRelation(cut, outer, holes) {
   return inPave ? "inside" : "outside"
 }
 
-/** 两个凸多边形是否相交或互相包含（边严格相交，或一方的顶点落在另一方里） */
+/**
+ * 两个凸多边形是否相交、互相包含或贴边（贴边、共点也算：见 TOUCH；
+ * 排除贴边之后，一方的顶点落在另一方里即为包含）
+ */
 function convexOverlap(a, b) {
-  for (let i = 0; i < a.length; i++) {
-    for (let j = 0; j < b.length; j++) {
-      if (
-        segmentsCross(a[i], a[(i + 1) % a.length], b[j], b[(j + 1) % b.length])
-      ) {
-        return true
-      }
-    }
-  }
+  if (touches(a, b)) return true
+  if (ringsCross(a, b)) return true
   return (
     pointInPolygon(a[0][0], a[0][1], b) || pointInPolygon(b[0][0], b[0][1], a)
   )
@@ -133,8 +139,8 @@ function convexOverlap(a, b) {
 
 /**
  * 多边形（可带洞）三角化后减去全部 cuts，返回三角形数组（凸块按扇形拆成三角形）。
- * 整块落在铺装里的 cut 直接并进洞里三角化；跨边界的才逐个三角形相减，被切到的三角形会碎成很多小块。
- * 两个 inside 的 cut 若相交或互相包含，作为两个洞交给 earcut 会输出重叠三角形，所以都降级为 cross。
+ * 整块落在铺装里的 cut 直接并进洞里三角化；跨边界或贴着边界的才逐个三角形相减，被切到的三角形会碎成很多小块。
+ * 两个 inside 的 cut 若相交、互相包含或贴边，作为两个洞交给 earcut 会输出重叠三角形或出错，所以都降级为 cross。
  * 实测：
  * - 西鱼眼深色盘（48 边形，半径 27）整块在外板里，只多 50 个；
  * - Task 5 的下沉坑口跨阴鱼、东段地灯带与外板，与西鱼眼盘同时挖时：48 边形半径 27.5 多 720 个，

@@ -48,14 +48,15 @@
  * 店面带在阴影里。坑底低于城市地面，阴影深度范围的核实见 Task 5 报告。
  *
  * 三角形（实测）：坑底 46、坑壁店面与圆柱 544、坑口栏杆 184、南雨棚 56、北雨棚 112、西南大台阶 135、
- * 采光顶 384、A / B 玻璃亭 60、雕塑 1,588（圆池 256、方墩 40、柱身与金带 200、下托盘 288、中柱 24、
- * 上托盘 308、白杆 36、金龙 436），本体共 3,109；另 ground.js 铺装挖口多出 720，本件合计 3,829
- * （设计第 5 节上限 5,500）。
+ * 采光顶 384、A / B 玻璃亭 60、雕塑 1,708（圆池 256、方墩 40、柱身与金带 200、下托盘 288、中柱 24、
+ * 上托盘 308、白杆 36、金龙 556，其中龙带底面 120），本体共 3,229；另 ground.js 铺装挖口多出 720，
+ * 本件合计 3,949（设计第 5 节上限 5,500）。
  */
 import { BufferAttribute, BufferGeometry } from "three"
 import { local } from "../kit/builder.js"
 import { circlePolygon } from "../kit/footprint.js"
 import {
+  annulus,
   box,
   cylinder,
   fromTriangles,
@@ -63,7 +64,7 @@ import {
   sweepBar
 } from "../kit/shapes.js"
 import { C, PAVE, pushUp, triangulate } from "./site.js"
-import { DRAGON_HEAD_TOP, addDragon, addRevolved, ring } from "./sculpture.js"
+import { DRAGON_HEAD_TOP, addDragon, addRevolved } from "./sculpture.js"
 
 const DEG = Math.PI / 180
 
@@ -675,13 +676,13 @@ function buildSculpture(b, site) {
     C.marbleDark,
     at(0)
   )
-  b.add(ring(inR, POOL.r, POOL.seg), C.marbleLight, at(POOL.h))
+  b.add(annulus(inR, POOL.r, POOL.seg), C.marbleLight, at(POOL.h))
   b.add(
     cylinder(inR, inR, POOL.h - POOL.water + TUCK, { segments: POOL.seg }),
     C.marbleDark,
     at(POOL.water - TUCK)
   )
-  b.add(ring(COLUMN.r - TUCK, inR + TUCK, POOL.seg), C.water, at(POOL.water))
+  b.add(annulus(COLUMN.r - TUCK, inR + TUCK, POOL.seg), C.water, at(POOL.water))
   // 柱脚方墩：45° 起每 90° 一个，方墩一面朝坑心
   for (let i = 0; i < 4; i++) {
     const a = (45 + 90 * i) * DEG
