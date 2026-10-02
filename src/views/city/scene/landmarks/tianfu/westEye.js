@@ -40,7 +40,7 @@ import { BufferAttribute, BufferGeometry, Matrix4, RingGeometry } from "three"
 import { local } from "../kit/builder.js"
 import { circlePolygon } from "../kit/footprint.js"
 import { box, cylinder, fromTriangles, sweepBar } from "../kit/shapes.js"
-import { C, PAVE, pushUp, ringPoints, triangulate } from "./site.js"
+import { C, PAVE, pushUp, triangulate } from "./site.js"
 
 const DEG = Math.PI / 180
 
@@ -393,7 +393,7 @@ export function buildWestEye(b, site) {
     walkways: [
       {
         points: site.toWorldPts(
-          ringPoints(WEST_EYE.u, WEST_EYE.v, WALK.r, WALK.n)
+          circlePolygon(WEST_EYE.u, WEST_EYE.v, WALK.r, WALK.n)
         ),
         y: PAVE,
         width: WALK.width,

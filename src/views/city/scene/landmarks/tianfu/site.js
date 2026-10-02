@@ -2,7 +2,7 @@
  * 天府广场 · 场地公共部分
  * ----------------------------------------------------------
  * 职责：两套坐标系（广场局部系、设计系）、铺装高度 PAVE、广场与北侧组团共用的颜色表 C、
- * 通用小函数（平面三角化、侧墙等）。各分区模块（ground / sunbird / north / neighbors，以及后续任务
+ * 通用小函数（平面三角化等；竖直侧墙用 kit/shapes.js 的 sideWalls，圆周点用 kit/footprint.js 的 circlePolygon）。各分区模块（ground / sunbird / north / neighbors，以及后续任务
  * 新增的 westEye、eastEye 等）都从这里取坐标与颜色，不各自换算。
  *
  * 两套坐标（设计文档第 1 节、调研报告第 1 节；世界 X 东、Z 南、Y 上，单位米）：
@@ -19,7 +19,7 @@
  */
 import { Matrix4, Quaternion, ShapeUtils, Vector2, Vector3 } from "three"
 import { frame } from "../kit/builder.js"
-import { cylinder, fromTriangles } from "../kit/shapes.js"
+import { cylinder } from "../kit/shapes.js"
 
 const DEG = Math.PI / 180
 
@@ -116,8 +116,10 @@ export const C = {
   yin: "#776E64", // 深色阴鱼
   lamp: "#3C3A38", // S 线上的深色地灯带（照片 c16）
   grass: "#7DB653", // 广场草坪
-  flowerRed: "#C8372D", // 草坪外圈花带红底、南侧草坪红色花饰（照片 c22、c18）
-  flowerYellow: "#F2C230", // 花带里的黄色祥云块
+  flowerRed: "#C8372D", // 草坪外圈花带红底（照片 c22、c18）
+  // 花带里的黄色祥云块：照片 c22 黄花中位色约 #E1C740；报告 6.9 的 #F2C230 饱和度高，
+  // 在红底上显得刺眼，取两者之间略降饱和的 #E6C547
+  flowerYellow: "#E6C547",
   // 太阳神鸟盘（报告 6.2、6.9；照片 old2、c13）
   sunGold: "#E2B54A", // 金色盘面、旋纹光芒
   sunGoldDeep: "#C08A2E", // 细金环、太阳外缘环（比盘面深一档，俯视才分得开）
@@ -156,13 +158,6 @@ export const C = {
 export const offsetPoints = (pts, ox, oz) =>
   pts.map(([x, z]) => [ox + x, oz + z])
 
-/** 圆周上等分的 n 个点 [x, z]：从 +X（东）起转向 +Z（南），俯视顺时针；闭合路径用，不含重复首点 */
-export const ringPoints = (cx, cz, r, n) =>
-  Array.from({ length: n }, (_, i) => {
-    const a = (i / n) * Math.PI * 2
-    return [cx + Math.cos(a) * r, cz + Math.sin(a) * r]
-  })
-
 /** 两点之间的圆柱（a、c 为父坐标系 [x, y, z]），用于雕像手臂等斜杆 */
 export function strut(b, parent, a, c, r0, r1, color) {
   const dir = new Vector3(c[0] - a[0], c[1] - a[1], c[2] - a[2])
@@ -179,7 +174,7 @@ export function strut(b, parent, a, c, r0, r1, color) {
   )
 }
 
-/* ---------------- 平面三角化与侧墙（地面、神鸟盘共用） ---------------- */
+/* ---------------- 平面三角化（地面、神鸟盘、西鱼眼共用） ---------------- */
 
 /**
  * 去掉相邻的重复点（含末点与首点重合）：几段弧线首尾拼接时接点会出现两次，
@@ -230,28 +225,4 @@ export function pushUp(pos, [a, b, c], yAt) {
   const cr = (b[1] - a[1]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[1] - a[1])
   const [p, q] = cr >= 0 ? [b, c] : [c, b]
   for (const [x, z] of [a, p, q]) pos.push(x, yAt(x, z), z)
-}
-
-/**
- * 竖直侧墙：沿闭合轮廓每条边一块 y0～y1 的四边形，法线朝外（每边 2 个三角形，无顶面、底面）。
- * 口径同 pandaBase/blocks.js 的 sideWalls（不跨景点引用，这里留一份）。
- * @param {Array<[number, number]>} poly 轮廓 [x, z]，不重复首点，绕向任意
- */
-export function sideWalls(poly, y0, y1) {
-  // 带符号面积 > 0（x→z 逆时针）时反转，使每条边 a→b 的左手法向 (−dz, dx) 朝外
-  let a2 = 0
-  for (let i = 0; i < poly.length; i++) {
-    const [x0, z0] = poly[i]
-    const [x1, z1] = poly[(i + 1) % poly.length]
-    a2 += x0 * z1 - x1 * z0
-  }
-  const p = a2 > 0 ? poly.slice().reverse() : poly
-  const pos = []
-  for (let i = 0; i < p.length; i++) {
-    const [ax, az] = p[i]
-    const [bx, bz] = p[(i + 1) % p.length]
-    pos.push(ax, y0, az, bx, y0, bz, bx, y1, bz)
-    pos.push(ax, y0, az, bx, y1, bz, ax, y1, az)
-  }
-  return fromTriangles(pos)
 }

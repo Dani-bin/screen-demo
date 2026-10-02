@@ -2,7 +2,8 @@
  * 熊猫基地 · 楼体工具（halls.js 建筑、enclosures.js 兽舍 / 产房共用）
  * ----------------------------------------------------------
  * - 平屋面楼 flatBlock：侧墙 + 女儿墙压顶（环形面）+ 女儿墙内侧 + 下沉屋面；
- *   底层零件 sideWalls（只有侧面的墙）、flatFace（水平面，可带洞）、safeInset（带自检的内收轮廓）。
+ *   底层零件 sideWalls（只有侧面的墙，在 kit/shapes.js，这里转出给 halls / enclosures / nurseries 用）、
+ *   flatFace（水平面，可带洞）、safeInset（带自检的内收轮廓）。
  * - 贴墙色块：facades 给出每面外墙的墙面坐标系，facadeBands 贴横向色带（窗带、玻璃），
  *   skin 贴一圈外圈色带（檐口带），roundWindow / archWindow 为圆窗、拱窗模板；
  *   facingBlocked 判断墙外紧贴着别的实体（共墙）——这种墙上的色块藏在邻楼里，不贴。
@@ -28,10 +29,14 @@ import {
   bearingDiff,
   insetPolygon,
   polygonArea,
-  rectPolygon
+  rectPolygon,
+  selfIntersects
 } from "../kit/footprint.js"
-import { fromTriangles } from "../kit/shapes.js"
+import { sideWalls } from "../kit/shapes.js"
 import { C, F_SOLID } from "./site.js"
+
+// 侧墙并入 kit（与天府广场共用），本文件仍转出，兄弟模块的导入不变
+export { sideWalls }
 
 const DEG = Math.PI / 180
 
@@ -61,31 +66,6 @@ export function orient(poly) {
   return area2(poly) > 0 ? poly.slice().reverse() : poly.slice()
 }
 
-/** 两条线段是否严格相交（端点相接、共线不算） */
-function segmentsCross(p, q, r, s) {
-  const cross = (o, a, b) =>
-    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
-  return (
-    cross(r, s, p) * cross(r, s, q) < 0 && cross(p, q, r) * cross(p, q, s) < 0
-  )
-}
-
-/** 多边形是否自交（任意两条不相邻的边相交） */
-function selfIntersects(poly) {
-  const n = poly.length
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 2; j < n; j++) {
-      if (i === 0 && j === n - 1) continue // 首尾两边相邻
-      if (
-        segmentsCross(poly[i], poly[(i + 1) % n], poly[j], poly[(j + 1) % n])
-      ) {
-        return true
-      }
-    }
-  }
-  return false
-}
-
 /**
  * 轮廓向内收 d 米（女儿墙内皮）：kit 的 insetPolygon 只适合近凸轮廓，短边、凹角处可能收出自交
  * 或越界，这里逐项自检（面积变小但不过小、顶点都在原轮廓内、不自交），不合格返回 null
@@ -102,22 +82,6 @@ export function safeInset(poly, d) {
 }
 
 /* ---------------- 墙、面、平屋面楼 ---------------- */
-
-/**
- * 侧墙：轮廓每条边一块 y0～y1 的竖直四边形（不含顶面、底面，每边 2 个三角形）。
- * @param {boolean} [inward=false] 法线朝里（女儿墙内侧面）
- */
-export function sideWalls(poly, y0, y1, inward = false) {
-  const p = inward ? orient(poly).reverse() : orient(poly)
-  const pos = []
-  for (let i = 0; i < p.length; i++) {
-    const [ax, az] = p[i]
-    const [bx, bz] = p[(i + 1) % p.length]
-    pos.push(ax, y0, az, bx, y0, bz, bx, y1, bz)
-    pos.push(ax, y0, az, bx, y1, bz, ax, y1, az)
-  }
-  return fromTriangles(pos)
-}
 
 /** 水平面：轮廓（可带洞）在高度 y 的一层面，法线朝上（n 点轮廓约 n − 2 个三角形） */
 export function flatFace(outer, holes, y) {

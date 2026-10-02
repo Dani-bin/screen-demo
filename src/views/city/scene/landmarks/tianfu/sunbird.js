@@ -27,9 +27,10 @@ const DEG = Math.PI / 180
 
 /** 神鸟盘中心（设计系）与鼓座半径（直径 14.5，报告 3.2、4.3） */
 export const SUNBIRD = { u: 0, v: -0.3, r: 7.25 }
-// 顶面倾角与盘心高度（离铺装顶面）：南北两缘各差 7.25·tan 5° ≈ 0.63
+// 顶面倾角：南北两缘各比盘心差 7.25·tan 5° ≈ 0.63
 const TILT = Math.tan(5 * DEG)
-const MID_H = 1.25
+// 盘心高度取南北两缘的平均：(0.6 + 1.9) / 2 = 1.25（报告 6.2「南缘约 0.6、北缘约 1.9」）
+const MID_H = (0.6 + 1.9) / 2
 /** 盘顶最高处（北缘）离铺装顶面的高度 ≈ 1.88 */
 export const SUNBIRD_TOP = MID_H + SUNBIRD.r * TILT
 // 顶面各圈半径

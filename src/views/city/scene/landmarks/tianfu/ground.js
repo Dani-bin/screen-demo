@@ -3,8 +3,9 @@
  * ----------------------------------------------------------
  * 依据：设计文档第 3 节「铺装高度」「浅色外板」「太极」「草坪与花带」；调研报告 3.2、6.1、6.6、6.9；
  * 附录 B（spec_frame.json）的 OSM 多边形（已换到设计系、已扣除 OSM 与影像的 4.5 m 偏移）；
- * 叠图 spec_overlay_esri.png，照片 c16（S 线地灯带）、c18（南侧草坪红色花饰）、c22（红底黄祥云花带）。
+ * 叠图 spec_overlay_esri.png，照片 c16（S 线地灯带）、c18（红色图案在花带里）、c22（红底黄祥云花带）。
  * 全部在设计系 (u, v) 里写（u 东、v 南，原点在太极圆心），b.add 时统一乘 site.design。
+ * 挖口相减、轮廓内收这类平面多边形运算在 polygon.js。
  *
  * 分层（高度从铺装顶面 PAVE 算）：
  * - 铺装顶面 PAVE：浅色外板 + 深色阴鱼 + S 线地灯带，三者共面、互不重叠（边界顶点逐个相同，没有缝也不闪）。
@@ -12,30 +13,34 @@
  * - 草坪 PAVE + 0.15（设计第 3 节）：直接压在外板上，外板不为草坪挖洞（顶面相差 0.15 m，
  *   城市总览距离下也不闪，见 kit/figures.js 的 PATTERN_LIFT 注释），省掉洞壁与洞口三角形。
  *   有花带的草坪：外圈 4 m 宽红色花带与中间绿草共面相接（同为 PAVE + 0.15），外沿侧墙红色。
- * - 黄色祥云块、南侧草坪红色花饰 PAVE + 0.3：比花带 / 草坪再高 0.15，同样为了远景不闪。
+ *   黄色祥云块也平铺在这一层：红色花带三角化时把云块当洞挖掉，云块再用同一组顶点铺回去，
+ *   共面共边，既不浮起也不闪。
+ * - 大草坪中间是纯草：照片 c18 与 Esri 影像里红色图案都在花带里，草地上不另加花饰。
  *
  * 太极（报告 3.2、6.1）：大圆半径 74.7；S 线由两个半径 37.35 的半圆组成，西半圆圆心 (−37.35, 0)
  * 向南凸、东半圆圆心 (37.35, 0) 向北凸。深色阴鱼 = 南半圆 − 西小圆南半 + 东小圆北半；
  * 浅色阳鱼与外板同色，所以外板只在「阴鱼 + 地灯带」处挖一个洞，阳鱼不单独建。
  * 地灯带宽 0.45 m，沿 S 线两段半圆铺，两端在大圆的切点附近收成尖角（推导见 taijiRings）。
  *
- * 给后续任务的挖洞接口（buildGround 的 cuts 参数）：
- * - cuts 为设计系下的凸多边形数组（如 circlePolygon(48.7, −0.7, 27.5, 48)），从外板、阴鱼、地灯带
- *   三层铺装的顶面里减掉：整块落在某一层里的直接当洞三角化；跨过阴阳分界、大圆边的逐个三角形做
- *   「三角形 − 凸多边形」（见 cutTriangles）。只减顶面、不补洞壁：洞里的坑壁、深色盘、池子由调用方
- *   自己建。草坪不受 cuts 影响。
- * - Task 4 西鱼眼深色盘：cuts 加 circlePolygon(−44.9, −0.75, 27, n)，盘面由 westEye.js 在 PAVE 上
- *   自己铺（整块在浅色阳鱼与外板里，不碰地灯带）。
+ * 给后续任务的挖洞接口（buildGround 的 cuts 参数，运算见 polygon.js 的 cutTriangles）：
+ * - cuts 为设计系下的凸多边形数组（如 circlePolygon(48.7, −0.7, 27.5, 48)），彼此不重叠；凹的或自交的
+ *   cut 直接抛错。从外板、阴鱼、地灯带三层铺装的顶面里减掉：整块落在某一层里的直接当洞三角化；
+ *   跨过阴阳分界、大圆边，或把某一层整块包在里面的，逐个三角形做「三角形 − 凸多边形」。
+ *   只减顶面、不补洞壁：洞里的坑壁、深色盘、池子由调用方自己建。草坪不受 cuts 影响。
+ * - Task 4 西鱼眼深色盘：cuts 加 westEye.js 的 WEST_EYE_CUT（circlePolygon(−44.9, −0.75, 27, 48)），
+ *   盘面由 westEye.js 用同一组顶点在 PAVE 上铺（整块在浅色阳鱼与外板里，不碰地灯带，只多 50 个三角形）。
  * - Task 5 东鱼眼下沉坑口：cuts 加坑口圆（半径 27.5，略大一点盖住栏杆脚）。坑口跨过阴鱼、东段地灯带
- *   并伸出大圆约 1.5 m，正好由逐三角形相减处理。城市地面另由 index.js 的 groundHoles 挖洞。
+ *   并伸出大圆约 1.5 m，由逐三角形相减处理：与西鱼眼盘同时挖时多 720～750 个三角形，
+ *   坑口一带有约 140 个 T 形接点（实测见 polygon.js）。城市地面另由 index.js 的 groundHoles 挖洞。
  * - Task 6 北侧两池（|u| 24.5～101.5、v −76.5～−66）：水面若低于 PAVE 就把两块矩形加进 cuts；
  *   池子整块压在铺装上（水面高于 PAVE ≥ 0.15）时不必挖。北侧花带、绿篱也在 Task 6 做。
  */
-import { clipHalfPlane, insetPolygon, polygonArea } from "../kit/footprint.js"
-import { extrudePolygon, fromTriangles } from "../kit/shapes.js"
+import { distToSegment, segmentsCross } from "../kit/footprint.js"
+import { extrudePolygon, fromTriangles, sideWalls } from "../kit/shapes.js"
 import { GROUND_Y } from "../../terrain.js"
 import { pointInPolygon } from "../../utils.js"
-import { C, PAVE, cleanRing, pushUp, sideWalls, triangulate } from "./site.js"
+import { C, PAVE, cleanRing, pushUp, triangulate } from "./site.js"
+import { cutTriangles, robustInset } from "./polygon.js"
 
 /* ---------------- 尺寸 ---------------- */
 
@@ -51,20 +56,26 @@ const SMALL_STEP = (Math.PI * 2) / 64
 
 /** 草坪顶面：比铺装高 0.15（设计第 3 节） */
 export const LAWN_TOP = PAVE + 0.15
-// 黄色祥云块、红色花饰的顶面与底面（底面埋进花带 / 草坪 0.05）
-const DECOR_TOP = PAVE + 0.3
-const DECOR_BOTTOM = LAWN_TOP - 0.05
 // 草坪靠太极圆一侧的内凹弧半径（四块大草坪，以及东侧小草坪、东南细草带、东南小三角的弧边）：
-// 与大圆同心，比大圆大 0.8 m，花带外沿贴着大圆、中间留一线浅色铺装（OSM 弧上各点半径 73.4～77.3，见附录 B）
+// 与大圆同心，比大圆大 0.8 m，花带外沿贴着大圆、中间留一线浅色铺装（OSM 弧上各点半径 73.2～77.6，见附录 B）
 const LAWN_ARC_R = 75.5
 // 草坪内凹弧的分段步长（弧度，约 2.6 m 一段）
 const LAWN_ARC_STEP = (Math.PI * 2) / 180
 // 花带宽（报告 3.2「花带宽 3.5–4 m」、6.6）
 const BAND_W = 4
-// 黄色祥云块：沿花带中线每 9 m 一块，长 4 m、宽 1.6 m 的尖头六边形（照片 c22：红底上成串的黄色团花）
-const CLOUD_SPACING = 9
-const CLOUD_LEN = 4
-const CLOUD_W = 1.6
+/*
+ * 黄色祥云块（照片 c22：红底上成串的黄色团花，大小、疏密不一）：沿花带中线排开，大小两种交替，
+ * 打破等距排列——长 5.5 × 宽 1.5 与长 3 × 宽 1.1；从这一块到下一块的中心距 10 / 7 m 交替；
+ * 横向交替偏出中线 ±0.35 m。gap 是本块到下一块的中心距
+ */
+const CLOUDS = [
+  { len: 5.5, wid: 1.5, gap: 10, off: 0.35 },
+  { len: 3, wid: 1.1, gap: 7, off: -0.35 }
+]
+// 云块轮廓点数：两端各 3 点收成圆钝的云头；每块 16 个三角形（云块 6 + 在红色花带里挖洞多出的 10）
+const CLOUD_PTS = 8
+// 云块离花带内外边线的最小距离：急弯处直的云块会顶出花带，放不下的位置跳过
+const CLOUD_MARGIN = 0.25
 
 /* ---------------- OSM 轮廓（设计系，附录 B） ---------------- */
 
@@ -103,14 +114,14 @@ export const SQUARE_OUTLINE = [
 ]
 
 /*
- * 8 块草坪（OSM，附录 B）。每块写成 { pts, arc?, band, ornaments? }：
+ * 8 块草坪（OSM，附录 B）。每块写成 { pts, arc?, tail?, band }：
  * - pts：不在内凹弧上的 OSM 顶点，按原顺序；
  * - arc：[起点, 终点]，两个 OSM 弧端点。轮廓走完 pts 后接一段半径 LAWN_ARC_R、与太极大圆同心的圆弧
  *   （角度取两端点的方位角），再回到 pts[0]。OSM 弧上的中间点不用，统一换成同心圆弧；
- * - band：外圈 4 m 红底黄祥云花带（叠图与照片里看得到花带的才加）；
- * - ornaments：草地上的红色祥云花饰（用户航拍「南侧草坪有红色花饰」、照片 c18），[u, v, 长, 宽, 转角°]。
+ * - tail：弧之后、回到 pts[0] 之前再补的点（只有东南细草带用）；
+ * - band：外圈 4 m 红底黄祥云花带（叠图与照片里看得到花带的才加）。
  * 东南草坪 w1395271432 是一条绕着「东南构筑物」（Task 6）的细草带加南端一块矩形，
- * 这里在 (57, 57.5)–(65, 57.5) 处切成两块：南端矩形加花带与花饰，细草带只铺草（太窄，放不下 4 m 花带）。
+ * 这里在 (57, 57.5)–(65, 57.5) 处切成两块：南端矩形加花带，细草带只铺草（太窄，放不下 4 m 花带）。
  * 东侧小草坪、南侧两条草带在影像上没有花带，只铺草。
  */
 const LAWNS = [
@@ -185,14 +196,7 @@ const LAWNS = [
       [-41, 64.5],
       [-70.5, 26]
     ],
-    band: true,
-    // 四朵红色祥云，沿南侧花带内沿一字排开（从南面看最显眼）
-    ornaments: [
-      [-89, 59.5, 7, 3.4, 0],
-      [-78, 60.5, 7, 3.4, 0],
-      [-67, 60.5, 7, 3.4, 0],
-      [-57, 57.5, 6, 3, -20]
-    ]
+    band: true
   },
   {
     // 东南草坪 w1395271432 的南端矩形
@@ -203,13 +207,7 @@ const LAWNS = [
       [98.5, 58],
       [65, 57.5]
     ],
-    band: true,
-    // 中间只剩 4 m 宽的草，花饰做小一点，压在草带中线上
-    ornaments: [
-      [67, 63.5, 5, 2.6, 0],
-      [78, 63.5, 5, 2.6, 0],
-      [89, 63.5, 5, 2.6, 0]
-    ]
+    band: true
   },
   {
     // 东南草坪 w1395271432 的细草带：沿内凹弧绕在东南构筑物（u 61～99、v 17～52，Task 6）西南两侧
@@ -290,168 +288,6 @@ function flatTris(tris, y) {
   return fromTriangles(pos)
 }
 
-/**
- * 三角形减去凸多边形 cut，返回剩下的若干凸多边形（三角形完全在 cut 外时原样返回）。
- * 做法：T − P = ∪ᵢ（T ∩ 第 i 条边外侧 ∩ 前 i − 1 条边内侧），每块都是凸的，
- * 用 kit 的 clipHalfPlane（半平面裁剪）逐条边切。
- */
-function subtractConvex(tri, cut) {
-  const xs = tri.map((p) => p[0])
-  const zs = tri.map((p) => p[1])
-  const cx = cut.map((p) => p[0])
-  const cz = cut.map((p) => p[1])
-  if (
-    Math.max(...xs) <= Math.min(...cx) ||
-    Math.min(...xs) >= Math.max(...cx) ||
-    Math.max(...zs) <= Math.min(...cz) ||
-    Math.min(...zs) >= Math.max(...cz)
-  ) {
-    return [tri]
-  }
-  // cut 的绕向：带符号面积 > 0 时内法向取左手 (−dz, dx)，否则取反（同 kit 的 insetPolygon）
-  let a2 = 0
-  for (let i = 0; i < cut.length; i++) {
-    const [x0, z0] = cut[i]
-    const [x1, z1] = cut[(i + 1) % cut.length]
-    a2 += x0 * z1 - x1 * z0
-  }
-  const s = a2 > 0 ? 1 : -1
-  const pieces = []
-  let rest = tri
-  for (let i = 0; i < cut.length && rest.length >= 3; i++) {
-    const o = cut[i]
-    const q = cut[(i + 1) % cut.length]
-    const nIn = [-s * (q[1] - o[1]), s * (q[0] - o[0])]
-    const out = clipHalfPlane(rest, o, [-nIn[0], -nIn[1]])
-    if (out.length >= 3 && polygonArea(out) > 1e-6) pieces.push(out)
-    rest = clipHalfPlane(rest, o, nIn)
-  }
-  return pieces
-}
-
-/**
- * cut 与一块铺装（outer 挖掉 holes）的关系：
- * - "inside"：整块落在铺装里（不碰外轮廓、不碰也不包住任何洞）→ 直接当洞交给 earcut，最省三角形；
- * - "outside"：与铺装不相交 → 跳过；
- * - "cross"：其余情况（跨过边界，或把某个洞包在里面）→ 逐个三角形相减。
- */
-function cutRelation(cut, outer, holes) {
-  const rings = [outer, ...holes]
-  for (const ring of rings) {
-    for (let i = 0; i < ring.length; i++) {
-      const a = ring[i]
-      const b = ring[(i + 1) % ring.length]
-      for (let j = 0; j < cut.length; j++) {
-        if (segmentsCross(a, b, cut[j], cut[(j + 1) % cut.length])) {
-          return "cross"
-        }
-      }
-    }
-  }
-  if (holes.some((h) => pointInPolygon(h[0][0], h[0][1], cut))) return "cross"
-  const [x, z] = cut[0]
-  const inPave =
-    pointInPolygon(x, z, outer) && !holes.some((h) => pointInPolygon(x, z, h))
-  return inPave ? "inside" : "outside"
-}
-
-/**
- * 多边形（可带洞）三角化后减去全部 cuts，返回三角形数组（凸块按扇形拆成三角形）。
- * 整块落在铺装里的 cut 直接并进洞里三角化；跨边界的才逐个三角形相减
- * （被切到的三角形会碎成很多小块。实测：48 边形西鱼眼盘整块在外板里，只多 50 个；
- * 48 边形下沉坑口跨阴鱼、地灯带与外板，多约 550 个，算进 Task 5 的预算）
- */
-function cutTriangles(outer, holes, cuts) {
-  const rel = cuts.map((c) => cutRelation(c, outer, holes))
-  const inner = cuts.filter((_, i) => rel[i] === "inside")
-  let tris = triangulate(outer, [...holes, ...inner])
-  for (const cut of cuts.filter((_, i) => rel[i] === "cross")) {
-    const next = []
-    for (const t of tris) {
-      for (const p of subtractConvex(t, cut)) {
-        for (let i = 1; i + 1 < p.length; i++) next.push([p[0], p[i], p[i + 1]])
-      }
-    }
-    tris = next
-  }
-  return tris
-}
-
-/** 两条线段是否严格相交（端点相接、共线不算） */
-function segmentsCross(p, q, r, s) {
-  const cross = (o, a, b) =>
-    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
-  return (
-    cross(r, s, p) * cross(r, s, q) < 0 && cross(p, q, r) * cross(p, q, s) < 0
-  )
-}
-
-/** 多边形是否自交（任意两条不相邻的边相交） */
-function selfIntersects(poly) {
-  const n = poly.length
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 2; j < n; j++) {
-      if (i === 0 && j === n - 1) continue
-      if (segmentsCross(poly[i], poly[(i + 1) % n], poly[j], poly[(j + 1) % n]))
-        return true
-    }
-  }
-  return false
-}
-
-/** 直线 ab 与直线 cd 的交点；近乎平行时返回 null */
-function lineCross(a, b, c, d) {
-  const r = [b[0] - a[0], b[1] - a[1]]
-  const s = [d[0] - c[0], d[1] - c[1]]
-  const den = r[0] * s[1] - r[1] * s[0]
-  if (Math.abs(den) < 1e-9) return null
-  const t = ((c[0] - a[0]) * s[1] - (c[1] - a[1]) * s[0]) / den
-  return [a[0] + r[0] * t, a[1] + r[1] * t]
-}
-
-/**
- * 轮廓向内收 d 米（花带内沿、花带中线）。kit 的 insetPolygon 按斜接平移各边，
- * 遇到「两头都是凸角的短边」（草坪圆角、钝尖）会收过头、边反向，轮廓自交。
- * 这里每轮找出反向的短边，把它删掉、让前后两条边直接相交（这条边在收 d 米后本来就不存在了），
- * 再重新内收，直到没有反向边。结果仍自交、越出原轮廓或面积过小时返回 null（这块草坪太窄）。
- * @returns {Array<[number, number]>|null}
- */
-function robustInset(poly, d) {
-  let p = cleanRing(poly)
-  while (p.length >= 3) {
-    const q = insetPolygon(p, d)
-    const n = p.length
-    // 反向（或收成零长）的边里取原长最短的一条先删
-    let bad = -1
-    let badLen = Infinity
-    for (let i = 0; i < n; i++) {
-      const j = (i + 1) % n
-      const ex = p[j][0] - p[i][0]
-      const ez = p[j][1] - p[i][1]
-      const dot = ex * (q[j][0] - q[i][0]) + ez * (q[j][1] - q[i][1])
-      const len = Math.hypot(ex, ez)
-      if (dot <= 0 && len < badLen) {
-        bad = i
-        badLen = len
-      }
-    }
-    if (bad < 0) {
-      const ok =
-        !selfIntersects(q) &&
-        q.every(([x, z]) => pointInPolygon(x, z, poly)) &&
-        polygonArea(q) > 0.05 * polygonArea(poly)
-      return ok ? q : null
-    }
-    const i0 = (bad - 1 + n) % n
-    const i2 = (bad + 1) % n
-    const i3 = (bad + 2) % n
-    const x = lineCross(p[i0], p[bad], p[i2], p[i3])
-    if (!x) return null
-    p = p.flatMap((pt, k) => (k === bad ? [x] : k === i2 ? [] : [pt]))
-  }
-  return null
-}
-
 /* ---------------- 太极 ---------------- */
 
 /**
@@ -516,134 +352,128 @@ function lawnOutline(lawn) {
 }
 
 /**
- * 沿闭合折线等距取祥云块的位置：返回 [{ p: [u, v], dir: [du, dv] }]。
- * 离急转角（转角 > 35°）不到「半块长 + 1 m」的位置跳过，免得块体压出花带。
+ * 沿闭合折线排祥云块：从起点 5 m 处开始，大小两种交替，中心距按 CLOUDS 的 gap 交替；
+ * 末块到首块（绕回起点）的中心距不足 7 m 时不再排。
+ * @returns {Array<{ p: [number, number], dir: [number, number], len: number, wid: number, off: number }>}
  */
-function bandSlots(line) {
+function cloudSlots(line) {
   const n = line.length
   const segs = line.map((a, i) => {
     const b = line[(i + 1) % n]
     const len = Math.hypot(b[0] - a[0], b[1] - a[1])
-    return { a, b, len, dir: [(b[0] - a[0]) / len, (b[1] - a[1]) / len] }
+    return { a, len, dir: [(b[0] - a[0]) / len, (b[1] - a[1]) / len] }
   })
   const total = segs.reduce((s, g) => s + g.len, 0)
-  // 急转角的弧长位置
-  const corners = []
-  let acc = 0
-  segs.forEach((g, i) => {
-    const prev = segs[(i - 1 + n) % n].dir
-    const cos = prev[0] * g.dir[0] + prev[1] * g.dir[1]
-    if (cos < Math.cos((35 * Math.PI) / 180)) corners.push(acc)
-    acc += g.len
-  })
-  const count = Math.floor(total / CLOUD_SPACING)
-  const step = total / count
+  const s0 = CLOUDS[0].gap / 2
   const out = []
-  for (let k = 0; k < count; k++) {
-    const s = (k + 0.5) * step
-    const near = corners.some((c) => {
-      const d = Math.abs(c - s)
-      return Math.min(d, total - d) < CLOUD_LEN / 2 + 1
-    })
-    if (near) continue
+  for (let s = s0, k = 0; total - s + s0 >= CLOUDS[1].gap; k++) {
+    const kind = CLOUDS[k % CLOUDS.length]
     let rest = s
     for (const g of segs) {
       if (rest <= g.len) {
         const p = [g.a[0] + g.dir[0] * rest, g.a[1] + g.dir[1] * rest]
-        out.push({ p, dir: g.dir })
+        out.push({ p, dir: g.dir, ...kind })
         break
       }
       rest -= g.len
     }
+    s += kind.gap
   }
   return out
 }
 
-/** 黄色祥云块：沿 dir 方向、长 CLOUD_LEN、宽 CLOUD_W 的尖头六边形 */
-function cloudBlock({ p, dir }) {
-  const a = CLOUD_LEN / 2
-  const w = CLOUD_W / 2
-  const tip = 0.8 // 尖头长度
-  const n = [-dir[1], dir[0]]
-  const at2 = (s, t) => [
-    p[0] + dir[0] * s + n[0] * t,
-    p[1] + dir[1] * s + n[1] * t
-  ]
-  return [
-    at2(a, 0),
-    at2(a - tip, w),
-    at2(-a + tip, w),
-    at2(-a, 0),
-    at2(-a + tip, -w),
-    at2(a - tip, -w)
-  ]
-}
-
 /**
- * 红色祥云花饰的轮廓（俯视）：椭圆，北侧（−v）一半的边缘按 |sin 3θ| 鼓出三道云头。
- * 极坐标半径处处为正，是星形多边形，不会自交。
- * @param {number} cu 中心 u
- * @param {number} cv 中心 v
- * @param {number} len 长（沿转角方向）
- * @param {number} wid 宽
- * @param {number} deg 转角（度，绕竖轴，俯视顺时针为正）
+ * 一块祥云的轮廓：沿 dir 方向的超椭圆（指数 0.6，两端圆钝，不再是尖头），中心横向偏 off；
+ * 一侧边缘按 |sin 3t| 鼓出云头（与草地花饰原来的写法相同），轮廓是星形多边形，不自交
  */
-function ornamentShape(cu, cv, len, wid, deg) {
-  const n = 16
-  const c = Math.cos((deg * Math.PI) / 180)
-  const s = Math.sin((deg * Math.PI) / 180)
-  return Array.from({ length: n }, (_, i) => {
-    const t = (i / n) * Math.PI * 2
-    const k = Math.sin(t) < 0 ? 1 + 0.28 * Math.abs(Math.sin(3 * t)) : 1
-    const x = (len / 2) * Math.cos(t) * k
-    const z = (wid / 2) * Math.sin(t) * k
-    return [cu + x * c - z * s, cv + x * s + z * c]
+function cloudShape({ p, dir, len, wid, off }) {
+  const nrm = [-dir[1], dir[0]]
+  return Array.from({ length: CLOUD_PTS }, (_, i) => {
+    const t = (i / CLOUD_PTS) * Math.PI * 2
+    const c = Math.cos(t)
+    const sn = Math.sin(t)
+    const k = sn < 0 ? 1 + 0.2 * Math.abs(Math.sin(3 * t)) : 1
+    const x = (len / 2) * Math.sign(c) * Math.abs(c) ** 0.6 * k
+    const z = (wid / 2) * Math.sign(sn) * Math.abs(sn) ** 0.6 * k + off
+    return [p[0] + dir[0] * x + nrm[0] * z, p[1] + dir[1] * x + nrm[1] * z]
   })
 }
 
+/** 两个闭合轮廓的边是否严格相交 */
+function ringsCross(a, b) {
+  for (let i = 0; i < a.length; i++) {
+    for (let j = 0; j < b.length; j++) {
+      if (
+        segmentsCross(a[i], a[(i + 1) % a.length], b[j], b[(j + 1) % b.length])
+      ) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
 /**
- * 一块草坪：草地（或整块红色花坛）+ 外圈花带 + 黄色祥云块 + 红色花饰
+ * 在花带里排祥云块，只留完整落在花带里的：顶点都在外轮廓内、内沿（草地）外，
+ * 与内外边线不相交且离边线 ≥ CLOUD_MARGIN，与已排的云块不相交、不互相包含。
+ * 留下的云块要当洞交给 earcut，所以这几条缺一不可（洞碰边、洞相交都会三角化出错）。
+ * @param {Array<[number, number]>} mid 花带中线（外轮廓内收 2 m）
+ * @param {Array<[number, number]>} outer 草坪外轮廓
+ * @param {Array<[number, number]>|null} inner 花带内沿（整块是红色花坛时为 null）
+ * @returns {Array<Array<[number, number]>>} 云块轮廓
+ */
+function placeClouds(mid, outer, inner) {
+  const rings = inner ? [outer, inner] : [outer]
+  const inside = ([x, z]) =>
+    pointInPolygon(x, z, outer) && !(inner && pointInPolygon(x, z, inner))
+  const nearEdge = ([x, z]) =>
+    rings.some((r) =>
+      r.some(
+        (a, i) => distToSegment(x, z, a, r[(i + 1) % r.length]) < CLOUD_MARGIN
+      )
+    )
+  const placed = []
+  for (const slot of cloudSlots(mid)) {
+    const c = cloudShape(slot)
+    const ok =
+      c.every(inside) &&
+      !c.some(nearEdge) &&
+      !rings.some((r) => ringsCross(c, r)) &&
+      !placed.some(
+        (q) =>
+          ringsCross(c, q) ||
+          pointInPolygon(q[0][0], q[0][1], c) ||
+          pointInPolygon(c[0][0], c[0][1], q)
+      )
+    if (ok) placed.push(c)
+  }
+  return placed
+}
+
+/**
+ * 一块草坪：只铺草的直接竖直挤出；有花带的为红色花带（或整块红色花坛）+ 中间草地 + 黄色祥云块，
+ * 三者同在 LAWN_TOP 共面拼接，外沿一圈红色侧墙
  */
 function buildLawn(b, f, lawn) {
   const outer = lawnOutline(lawn)
   if (!lawn.band) {
-    // 只铺草：顶面 + 侧墙（PAVE → LAWN_TOP）
-    b.add(flatTris(triangulate(outer), LAWN_TOP), C.grass, f)
-    b.add(sideWalls(outer, PAVE, LAWN_TOP), C.grass, f)
+    // 只铺草：顶面 + 侧墙（PAVE → LAWN_TOP），kit 的挤出体不带底面
+    b.add(extrudePolygon(outer, [], PAVE, LAWN_TOP), C.grass, f)
     return
   }
   // 花带内沿：内收 4 m 不成（草坪太小，如东南小三角）就整块做红色花坛
   const inner = robustInset(outer, BAND_W)
-  if (inner) {
-    b.add(flatTris(triangulate(outer, [inner]), LAWN_TOP), C.flowerRed, f)
-    b.add(flatTris(triangulate(inner), LAWN_TOP), C.grass, f)
-  } else {
-    b.add(flatTris(triangulate(outer), LAWN_TOP), C.flowerRed, f)
+  // 黄色祥云块：沿花带中线（内收 2 m）排开
+  const mid = robustInset(outer, BAND_W / 2)
+  const clouds = mid ? placeClouds(mid, outer, inner) : []
+  // 红色花带把草地与云块都当洞，草地、云块再各自铺回去
+  const holes = inner ? [inner, ...clouds] : clouds
+  b.add(flatTris(triangulate(outer, holes), LAWN_TOP), C.flowerRed, f)
+  if (inner) b.add(flatTris(triangulate(inner), LAWN_TOP), C.grass, f)
+  for (const c of clouds) {
+    b.add(flatTris(triangulate(c), LAWN_TOP), C.flowerYellow, f)
   }
   b.add(sideWalls(outer, PAVE, LAWN_TOP), C.flowerRed, f)
-  // 黄色祥云块：沿花带中线（内收 2 m）摆放
-  const mid = robustInset(outer, BAND_W / 2)
-  if (mid) {
-    for (const slot of bandSlots(mid)) {
-      b.add(
-        extrudePolygon(cloudBlock(slot), [], DECOR_BOTTOM, DECOR_TOP),
-        C.flowerYellow,
-        f
-      )
-    }
-  }
-  for (const [u, v, len, wid, deg] of lawn.ornaments || []) {
-    b.add(
-      extrudePolygon(
-        ornamentShape(u, v, len, wid, deg),
-        [],
-        DECOR_BOTTOM,
-        DECOR_TOP
-      ),
-      C.flowerRed,
-      f
-    )
-  }
 }
 
 /* ---------------- 入口 ---------------- */
