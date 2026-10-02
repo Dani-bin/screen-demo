@@ -277,9 +277,10 @@ export function addLog(b, a, c, r, color = C.perch) {
  *   一根斜靠的长原木当爬梯（Ø0.5、长约 6.6），自上层台台沿伸向 ladder 方位、落到场地上。
  * 趴架熊猫（kit climb 姿态）要求台顶 ≥ 0.56 × 熊猫高：6 m 熊猫 → 3.36，上层台顶取 3.6。
  * 熊猫趴在上层台背面（离机位远的）台沿中点，头朝机位、后腿垂向背面（addPerch 返回的 anchor）。
- * single：只有上层台（窄的太阳产房扇形院放不下双层），约 70 个三角形；双层约 120 个
+ * single：只有上层台（窄的太阳产房扇形院放不下双层），约 70 个三角形；双层约 120 个。
+ * 尺寸表只由本文件的 addPerch 读取，不导出（外部摆栖架一律调用 addPerch）
  */
-export const PERCH = {
+const PERCH = {
   high: { w: 4.5, d: 3.5, top: 3.6 },
   low: { w: 6.0, d: 4.5, top: 2.0 },
   board: 0.15,
@@ -544,10 +545,10 @@ export function flushBamboo(b, bufs) {
  * 塑石体：轮廓 poly 从城市地面立起，墙顶一圈收进 batter 米（墙面微微内倾，读成堆起来的岩体；
  * 收进后的轮廓不合格时不收，见 blocks.js safeInset），墙顶各顶点的高度在 h0～h1（世界 y）之间
  * 按位置抖动，顶面按收进后的轮廓三角剖分、各顶点各用自己的高度（俯看是一块不平的岩顶）。
- * n 点轮廓 3n − 2 个三角形
+ * n 点轮廓 3n − 2 个三角形。只被本文件的 addRockShelter 调用，不导出
  * @returns {{ tops: number[], batter: number }} 各顶点的顶高、实际收进量（没收时为 0）
  */
-export function addRockMass(b, poly, h0, h1, seed, batter = 0.8) {
+function addRockMass(b, poly, h0, h1, seed, batter = 0.8) {
   const tops = poly.map(([x, z]) => {
     const r = mulberry32(
       hashInts(seed, Math.round(x * 10), Math.round(z * 10))
