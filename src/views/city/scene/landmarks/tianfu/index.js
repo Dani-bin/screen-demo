@@ -28,7 +28,7 @@
 import { BackSide, Mesh } from "three"
 import { ColorBuilder, landmarkMaterial } from "../kit/builder.js"
 import { circlePolygon } from "../kit/footprint.js"
-import { PAVE, createSite } from "./site.js"
+import { PAVE, createSite, rectUV } from "./site.js"
 import { SQUARE_OUTLINE, buildGround } from "./ground.js"
 import { SUNBIRD, buildSunbird } from "./sunbird.js"
 import { WEST_EYE_CUT, buildWestEye } from "./westEye.js"
@@ -51,16 +51,12 @@ const ZONE_PAD = 2
 const SQUARE_ZONE = (() => {
   const us = SQUARE_OUTLINE.map((p) => p[0])
   const vs = SQUARE_OUTLINE.map((p) => p[1])
-  const u0 = Math.min(...us) - ZONE_PAD
-  const u1 = Math.max(...us) + ZONE_PAD
-  const v0 = Math.min(...vs) - ZONE_PAD
-  const v1 = Math.max(...vs) + ZONE_PAD
-  return [
-    [u0, v0],
-    [u1, v0],
-    [u1, v1],
-    [u0, v1]
-  ]
+  return rectUV(
+    Math.min(...us) - ZONE_PAD,
+    Math.max(...us) + ZONE_PAD,
+    Math.min(...vs) - ZONE_PAD,
+    Math.max(...vs) + ZONE_PAD
+  )
 })()
 
 /*
