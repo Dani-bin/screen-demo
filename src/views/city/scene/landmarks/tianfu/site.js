@@ -2,39 +2,36 @@
  * 天府广场 · 场地公共部分
  * ----------------------------------------------------------
  * 职责：两套坐标系（广场局部系、设计系）、铺装高度 PAVE、广场与北侧组团共用的颜色表 C、
- * 通用小函数。各分区模块（square / north / neighbors，以及后续任务新增的 ground、sunbird、
- * westEye、eastEye 等）都从这里取坐标与颜色，不各自换算。
+ * 通用小函数（平面三角化、侧墙等）。各分区模块（ground / sunbird / north / neighbors，以及后续任务
+ * 新增的 westEye、eastEye 等）都从这里取坐标与颜色，不各自换算。
  *
  * 两套坐标（设计文档第 1 节、调研报告第 1 节；世界 X 东、Z 南、Y 上，单位米）：
  * - 广场局部系：原点在 OSM「天府广场」面的包围盒中心（SQUARE.lon / lat）、铺装顶面以下的地面，
- *   X 向东、Z 向南、正南北不旋转。旧模型（square.js、north.js 的点位）都在这套坐标里写。
+ *   X 向东、Z 向南、正南北不旋转。只剩设计系原点换算还用它（north.js 用自己的 OSM 点位）。
  * - 设计系 (u, v)：原点在太极大圆圆心，u 沿广场东西轴向东、v 沿南北轴向南，方位角 −1.5°
  *   （东端偏北）。原点在广场局部系的 (2.3, −10.0)。后续任务的广场构件一律在设计系里写，
  *   用 designFrame 换到世界；路径、替换区、地面洞等世界坐标点用 site.toWorld(u, v)。
  *
  * 后续任务：
- * - Task 3～6 按报告 6.9「主要颜色」往 C 里补新颜色；旧件删掉后，只有它们用的颜色一并删掉。
+ * - Task 4～6 按报告 6.9「主要颜色」往 C 里补新颜色。
  * - Task 7 修正北侧组团时改 C 里的毛主席像、科技馆颜色；成都博物馆、四川省图书馆的颜色
  *   放在 neighbors.js 自己的表里，不受这里影响。
  */
-import { Matrix4, Quaternion, Vector3 } from "three"
+import { Matrix4, Quaternion, ShapeUtils, Vector2, Vector3 } from "three"
 import { frame } from "../kit/builder.js"
-import { cylinder } from "../kit/shapes.js"
+import { cylinder, fromTriangles } from "../kit/shapes.js"
 
 const DEG = Math.PI / 180
 
 /* ---------------- 广场局部系与铺装 ---------------- */
 
-// 广场：OSM 天府广场面包围盒中心（广场局部系原点）；294 × 190，圆角半径 12
+// 广场：OSM 天府广场面包围盒中心（广场局部系原点）
 export const SQUARE = {
   lon: 104.0632899,
-  lat: 30.6597912,
-  w: 294,
-  d: 190,
-  r: 12
+  lat: 30.6597912
 }
-// 铺装顶面高度：只需盖住道路（路面最高 0.9 m）；照片里广场边缘是一道
-// 能坐人的低矮石沿，不宜抬高成台地。广场构件的高度都从这个顶面往上算
+// 铺装顶面高度：只需盖住道路（路面最高 0.9 m）；实景广场与人行道齐平（报告 3.2），
+// 这里只保留盖住路面所需的高差，外沿是与铺装同色的直边（ground.js）。广场构件的高度都从这个顶面往上算
 export const PAVE = 1.5
 
 /* ---------------- 设计系 ---------------- */
@@ -114,18 +111,23 @@ export function createSite(ctx) {
 /* ---------------- 颜色表（广场与北侧组团） ---------------- */
 
 export const C = {
-  paveWest: "#E2DDD2", // 西半浅石材
-  paveEast: "#BDB3A1", // 东半略深的石材（与西半拉开对比，突出太极两仪）
-  curb: "#A9A499", // 外沿台阶
-  sunkenFloor: "#A39B8E",
-  step: "#C8C2B6",
-  band: "#F4E6BC", // S 形浅金白色分界带
+  // 地面（报告 6.9；Esri 实测浅鱼 RGB(190,179,161)、深鱼 RGB(128,115,98)，见报告 3.2）
+  pave: "#D8D0C2", // 浅色外板与浅色阳鱼（同色：大圆北半看不出边界）
+  yin: "#776E64", // 深色阴鱼
+  lamp: "#3C3A38", // S 线上的深色地灯带（照片 c16）
+  grass: "#7DB653", // 广场草坪
+  flowerRed: "#C8372D", // 草坪外圈花带红底、南侧草坪红色花饰（照片 c22、c18）
+  flowerYellow: "#F2C230", // 花带里的黄色祥云块
+  // 太阳神鸟盘（报告 6.2、6.9；照片 old2、c13）
+  sunGold: "#E2B54A", // 金色盘面、旋纹光芒
+  sunGoldDeep: "#C08A2E", // 细金环、太阳外缘环（比盘面深一档，俯视才分得开）
+  sunRed: "#D8532F", // 红橙色太阳
+  sunSilver: "#D9DCE0", // 银鸟、盘沿不锈钢包边
+  discSide: "#24221F", // 鼓座黑色石材侧面
+  discRing: "#4A443E", // 鼓座外一圈深色环
+  // 北侧组团：毛主席像台基两侧的绿篱花坛（Task 7 重做时再定）
   lawn: "#86C95A",
-  water: "#8FD0EA",
-  jet: "#F4FAFF",
-  rim: "#E6E1D6",
-  spiralPole: "#DCE4E0",
-  // 毛主席像（tier 也用于下沉广场雕塑圆座）
+  // 毛主席像
   tier: "#E2DCCF",
   pedestal: "#8C4A3C",
   statue: "#F2EFE7",
@@ -164,4 +166,81 @@ export function strut(b, parent, a, c, r0, r1, color) {
     color,
     parent.clone().multiply(m)
   )
+}
+
+/* ---------------- 平面三角化与侧墙（地面、神鸟盘共用） ---------------- */
+
+/**
+ * 去掉相邻的重复点（含末点与首点重合）：几段弧线首尾拼接时接点会出现两次，
+ * earcut 遇到零长度边容易漏三角形
+ * @param {Array<[number, number]>} poly
+ * @returns {Array<[number, number]>} 新数组
+ */
+export function cleanRing(poly, eps = 1e-6) {
+  const out = []
+  for (const p of poly) {
+    const q = out[out.length - 1]
+    if (!q || Math.hypot(p[0] - q[0], p[1] - q[1]) > eps) out.push(p)
+  }
+  while (
+    out.length > 1 &&
+    Math.hypot(
+      out[0][0] - out[out.length - 1][0],
+      out[0][1] - out[out.length - 1][1]
+    ) <= eps
+  ) {
+    out.pop()
+  }
+  return out
+}
+
+/**
+ * 平面多边形（可带洞）三角化：three 的 ShapeUtils（earcut），外轮廓、洞的绕向任意。
+ * 点为 [x, z]（本景点里一般是设计系 [u, v]）；洞须在外轮廓内、彼此不相交。
+ * @returns {Array<Array<[number, number]>>} 三角形数组 [[a, b, c], ...]（绕向未定，写入时由 pushUp 调整）
+ */
+export function triangulate(outer, holes = []) {
+  const rings = [cleanRing(outer), ...holes.map((h) => cleanRing(h))]
+  const verts = rings.flat()
+  const v2 = (ring) => ring.map(([x, z]) => new Vector2(x, z))
+  const faces = ShapeUtils.triangulateShape(
+    v2(rings[0]),
+    rings.slice(1).map(v2)
+  )
+  return faces.map(([i, j, k]) => [verts[i], verts[j], verts[k]])
+}
+
+/**
+ * 把一个三角形写进平铺坐标数组 pos，绕向调成法线朝上（y 分量 > 0）。
+ * 点为 [x, z]，高度由 yAt(x, z) 给出（水平面传常数函数，神鸟盘倾斜顶面传平面方程）。
+ * 法线 y 分量 = (b − a).z·(c − a).x − (b − a).x·(c − a).z，为负时交换 b、c
+ */
+export function pushUp(pos, [a, b, c], yAt) {
+  const cr = (b[1] - a[1]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[1] - a[1])
+  const [p, q] = cr >= 0 ? [b, c] : [c, b]
+  for (const [x, z] of [a, p, q]) pos.push(x, yAt(x, z), z)
+}
+
+/**
+ * 竖直侧墙：沿闭合轮廓每条边一块 y0～y1 的四边形，法线朝外（每边 2 个三角形，无顶面、底面）。
+ * 口径同 pandaBase/blocks.js 的 sideWalls（不跨景点引用，这里留一份）。
+ * @param {Array<[number, number]>} poly 轮廓 [x, z]，不重复首点，绕向任意
+ */
+export function sideWalls(poly, y0, y1) {
+  // 带符号面积 > 0（x→z 逆时针）时反转，使每条边 a→b 的左手法向 (−dz, dx) 朝外
+  let a2 = 0
+  for (let i = 0; i < poly.length; i++) {
+    const [x0, z0] = poly[i]
+    const [x1, z1] = poly[(i + 1) % poly.length]
+    a2 += x0 * z1 - x1 * z0
+  }
+  const p = a2 > 0 ? poly.slice().reverse() : poly
+  const pos = []
+  for (let i = 0; i < p.length; i++) {
+    const [ax, az] = p[i]
+    const [bx, bz] = p[(i + 1) % p.length]
+    pos.push(ax, y0, az, bx, y0, bz, bx, y1, bz)
+    pos.push(ax, y0, az, bx, y1, bz, ax, y1, az)
+  }
+  return fromTriangles(pos)
 }

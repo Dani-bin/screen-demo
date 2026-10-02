@@ -58,9 +58,11 @@ export const SPOTS = [
   {
     name: "天府广场",
     en: "TIANFU SQUARE",
-    // 依据：OSM 天府广场（place=square）面中心
-    lon: 104.0633,
-    lat: 30.6598,
+    // 依据：太阳神鸟盘中心（天府广场设计系 (0, −0.3)，调研报告 3.2），由 tianfu/site.js 的 toWorld
+    // 换到世界坐标、再用 projection.js 的 toLonLat 反算；比旧落点（OSM 广场面中心）北移约 9.4 m。
+    // 定位针底座是盘顶北缘高度（tianfu/index.js 的 markerHeight）
+    lon: 104.0633138,
+    lat: 30.6598844,
     desc: "成都市的地理中心与城市原点，位于市中心人民南路北端，四周环绕四川科技馆、四川省图书馆、成都博物馆等文化建筑。广场以太极云图为主题铺装，地下衔接地铁 1、2 号线换乘枢纽。",
     facts: [
       ["占地面积", "8.8 万㎡"],
