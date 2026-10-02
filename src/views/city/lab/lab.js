@@ -23,6 +23,8 @@
  * 地面、道路、河流、光照颜色与强度与城市场景一致（阴影开启）。
  * 只渲染一帧，完成后设 window.__labReady = true（静态截图用，省 CPU）；
  * 出错时同时设 __labError（错误信息）与 __labReady，截图脚本不必干等到超时。
+ * 景点返回 groundHoles 时，城市地面的挖洞报告打到控制台（console.info），
+ * 并挂在 window.__labGroundHoles（{ holes, parks: { cut, skipped }, water: { cut, skipped } }）。
  */
 import {
   Color,
@@ -325,7 +327,18 @@ async function main() {
   const terrain = createTerrain(data, materials)
   scene.add(terrain)
   // 与 CityScene 相同：按预览景点给的洞挖空城市地面（kit 样例与无洞景点不动，几何逐位不变）
-  terrain.setGroundHoles(subject.groundHoles || [])
+  const holes = subject.groundHoles || []
+  const holeReport = terrain.setGroundHoles(holes)
+  if (holes.length) {
+    // 挖洞报告：哪些 OSM 绿地、水面多边形被挖洞或整块跳过（下标对应 chengdu.json 的 parks / water），
+    // 供景点实测洞口范围内的 OSM 面；地面自检失败时 terrain.js 另有 console.error
+    window.__labGroundHoles = { holes: holes.length, ...holeReport }
+    const { parks, water } = holeReport
+    console.info(
+      `城市地面挖洞 ${holes.length} 个：绿地挖洞 [${parks.cut}]、整块跳过 [${parks.skipped}]；` +
+        `水面挖洞 [${water.cut}]、整块跳过 [${water.skipped}]`
+    )
+  }
   scene.add(createRivers(data.rivers, materials, THEME))
   scene.add(createRoads(data.roads, materials, THEME))
   if (subject.context) {
