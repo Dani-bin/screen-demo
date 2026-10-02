@@ -394,7 +394,9 @@ export function addForkPerch(b, x, y0, z, bearing) {
 
 /*
  * 受保护视线的起点（熊猫头部）：坐姿取坐面以上 0.85 h（头心约 0.77 h、耳尖约 1.0 h）；
- * 趴姿按 kit/figures.js 的 pandaParts 换算，头心在台沿以上约 0.275 h、朝头的方向（frame 局部 −Z）0.02 h
+ * 趴姿按 kit/figures.js 的 pandaParts 换算，头心在台沿以上约 0.275 h、朝头的方向（frame 局部 −Z）0.02 h。
+ * CLIMB_HEAD 是从 pandaParts 里 climb 姿态的头部部件位置手算出的比例，没有从 kit 读取：
+ * 改动 climb 部件表（头的位置、身体前倾角）时须同步这里，否则视线保护（blocksView）会护错位置
  */
 const SIT_HEAD = 0.85
 const CLIMB_HEAD = { y: 0.275, z: -0.02 }
