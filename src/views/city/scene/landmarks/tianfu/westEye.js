@@ -40,9 +40,9 @@
  */
 import { local } from "../kit/builder.js"
 import { circlePolygon } from "../kit/footprint.js"
-import { annulus, cylinder, fromTriangles } from "../kit/shapes.js"
+import { cylinder, fromTriangles } from "../kit/shapes.js"
 import { C, PAVE, pushUp, triangulate } from "./site.js"
-import { addDragon, addRevolved } from "./sculpture.js"
+import { TUCK, addDragon, addPool, addRevolved } from "./sculpture.js"
 
 const DEG = Math.PI / 180
 
@@ -65,8 +65,7 @@ const WATER_OUT = 0.35
 // 内池壁：外半径 9.8、厚 0.5、高 1.0（报告 6.3）；内池水面 0.8。40 段（9° 一段）
 const INNER = { r: 9.8, t: 0.5, h: 1.0, seg: 40 }
 const WATER_IN = 0.8
-// 池壁、水面相接处互相插进 5 cm，避免俯视时露出缝
-const TUCK = 0.05
+// 池壁、水面相接处互相插进 5 cm（sculpture.js 的 TUCK），避免俯视时露出缝
 // 柱身：直径 1.7（见文件头），16 段；金箍比柱身粗 5 cm
 const COLUMN = { r: 0.85, seg: 16 }
 const HOOP_R = COLUMN.r + 0.05
@@ -142,8 +141,6 @@ const WALK = { r: 22.5, width: 3, density: 1.5, n: 48 }
  * @param {Matrix4} f 鱼眼坐标系
  */
 function buildDiscAndPools(b, site, f) {
-  const at = (y) => local(f, 0, y, 0)
-
   // 深色石盘：设计系里铺（外圈就是挖口的那组顶点），内圈收进外池壁 5 cm
   const disc = []
   const inner = circlePolygon(WEST_EYE.u, WEST_EYE.v, OUTER.r - TUCK, SEG)
@@ -152,46 +149,37 @@ function buildDiscAndPools(b, site, f) {
   }
   b.add(fromTriangles(disc), C.yin, site.design)
 
-  // 外池壁：外侧面从铺装立起，内侧面从水面下 5 cm 起，顶面一圈
-  const outIn = OUTER.r - OUTER.t
-  b.add(
-    cylinder(OUTER.r, OUTER.r, OUTER.h, { segments: SEG }),
-    C.marbleLight,
-    at(PAVE)
+  // 外环池：外池壁外侧面从铺装立起，内侧面从外环水面下 5 cm 起，壁顶一圈；
+  // 外环水面从内池壁外侧铺到外池壁内侧，两头各插进壁里 5 cm
+  addPool(
+    b,
+    f,
+    {
+      r: OUTER.r,
+      t: OUTER.t,
+      h: OUTER.h,
+      water: WATER_OUT,
+      inner: INNER.r,
+      seg: SEG,
+      wall: C.marbleLight
+    },
+    PAVE
   )
-  b.add(
-    cylinder(outIn, outIn, OUTER.h - WATER_OUT + TUCK, { segments: SEG }),
-    C.marbleLight,
-    at(PAVE + WATER_OUT - TUCK)
-  )
-  b.add(annulus(outIn, OUTER.r, SEG), C.marbleLight, at(PAVE + OUTER.h))
-  // 外环水面：从内池壁外侧到外池壁内侧，两头各插进壁里 5 cm
-  b.add(
-    annulus(INNER.r - TUCK, outIn + TUCK, SEG),
-    C.water,
-    at(PAVE + WATER_OUT)
-  )
-
-  // 内池壁：外侧面从外环水面下起，内侧面从内池水面下起
-  const inIn = INNER.r - INNER.t
-  b.add(
-    cylinder(INNER.r, INNER.r, INNER.h - WATER_OUT + TUCK, {
-      segments: INNER.seg
-    }),
-    C.marbleDark,
-    at(PAVE + WATER_OUT - TUCK)
-  )
-  b.add(
-    cylinder(inIn, inIn, INNER.h - WATER_IN + TUCK, { segments: INNER.seg }),
-    C.marbleDark,
-    at(PAVE + WATER_IN - TUCK)
-  )
-  b.add(annulus(inIn, INNER.r, INNER.seg), C.marbleDark, at(PAVE + INNER.h))
-  // 内池水面：从柱身到内池壁
-  b.add(
-    annulus(COLUMN.r - TUCK, inIn + TUCK, INNER.seg),
-    C.water,
-    at(PAVE + WATER_IN)
+  // 内池：泡在外环水里，内池壁外侧面从外环水面下起；内池水面从柱身铺到内池壁
+  addPool(
+    b,
+    f,
+    {
+      r: INNER.r,
+      t: INNER.t,
+      h: INNER.h,
+      water: WATER_IN,
+      inner: COLUMN.r,
+      outside: WATER_OUT,
+      seg: INNER.seg,
+      wall: C.marbleDark
+    },
+    PAVE
   )
 }
 
