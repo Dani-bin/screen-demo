@@ -44,6 +44,9 @@ import {
 } from "./shadow.js"
 
 const DEG = Math.PI / 180
+// 相机距离超过总览距离（clipBaseDistance）的这个倍数才做标签之间的避让（见 _avoidLabels）：
+// 留 5% 余量，飞回总览到站时距离的浮点误差不会让互避时开时关
+const LABEL_SEPARATE_RATIO = 1.05
 
 export class CityScene {
   /**
@@ -589,7 +592,9 @@ export class CityScene {
    * 景点标签避让顶部栏与互相避让（规则见 markers.js 的 avoidLabels），须在 labelRenderer.render 之后调用。
    * 保留带与引线长度是设计稿 px，构建时被 pxtorem 换成 rem、运行时 1rem = 视口宽 / 10，
    * 这里与比例尺同样按视口宽 / 1920 换算成屏幕 px。
-   * 未设顶部保留带（labelSafeTop 为 0）时只做标签之间的避让
+   * 未设顶部保留带（labelSafeTop 为 0）时不避让顶部栏。
+   * 标签之间的避让只在拉到总览距离以外时做（LABEL_SEPARATE_RATIO）：总览及更近时标签只是彼此贴近，
+   * 互避反而会让贴边的标签（总览时的成都 IFS 与当前站春熙路·太古里）消失
    */
   _avoidLabels() {
     const k = this.viewportWidth / 1920
@@ -598,7 +603,8 @@ export class CityScene {
       this.width,
       this.height,
       this.labelSafeTop ? this.labelSafeTop * k : -Infinity,
-      LABEL_LEAD * k
+      LABEL_LEAD * k,
+      this.tour.getDistance() > this.clipBaseDistance * LABEL_SEPARATE_RATIO
     )
   }
 
