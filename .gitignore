@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+scripts/osm-cache/
+
+.eslintcache
+scripts/__pycache__/
