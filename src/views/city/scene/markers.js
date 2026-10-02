@@ -6,7 +6,7 @@
  * 标签用 CSS2DObject 挂在三维坐标上，由 CSS2DRenderer 换算成屏幕位置，
  * 样式在页面 index.vue 的非 scoped 样式里定义（.city-label）。
  * 标签压到顶部标题栏时按 avoidLabels 的规则避让（当前站先下压，压不下与其余标签一样隐藏）；
- * 拉远后标签互相压住时，按优先级（当前站最先，其余按景点顺序）隐藏后放置的标签。
+ * 拉远到总览距离以外、标签互相压住时，按优先级（当前站最先，其余按景点顺序）隐藏后放置的标签。
  */
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js"
 import { CylinderGeometry, Group, Mesh, SphereGeometry, Vector3 } from "three"
@@ -176,7 +176,10 @@ export function createMarkers(
      * 二、标签之间避让：拉远到总览距离以外时景点挤在一起，标签会互相压住。
      * 按优先级（当前站最先，其余按景点顺序）逐个放置，框与已放置的标签相交就淡出隐藏；
      * 已隐藏的标签要与已放置的标签拉开 CLIP_HYSTERESIS 才重新显示，镜头缓慢环绕时不会闪烁。
-     * 总览机位下标签两两不相压（见 theme.js 的 overview），不受影响。
+     * 只在 separate 为真（相机拉到总览距离以外，由 CityScene 判断）时做：总览机位下标签只是彼此贴近，
+     * 当前站的大号标签（如春熙路·太古里）与邻近标签（成都 IFS）几乎贴边，若在总览距离以内也互避，
+     * 飞往总览途中被压住而隐藏的标签到站后差不到 CLIP_HYSTERESIS 就一直不再显示；
+     * separate 为假时全部标签照常显示（与加入互避前一致），已因互避隐藏的立即恢复。
      *
      * 不针对具体站点，任何站、任何视角（含人工拖拽、缩放）都按同一规则处理。
      * @param {THREE.Camera} camera 渲染相机
@@ -184,8 +187,9 @@ export function createMarkers(
      * @param {number} height 渲染区高度（屏幕 px）
      * @param {number} safeTop 顶部保留带下沿（屏幕 px）；传 -Infinity 则不避让顶部栏
      * @param {number} lead 默认引线长度（屏幕 px，即 LABEL_LEAD 按视口缩放后的值）
+     * @param {boolean} [separate=true] 是否做标签之间的避让（第二条），为假时只避让顶部栏
      */
-    avoidLabels(camera, width, height, safeTop, lead) {
+    avoidLabels(camera, width, height, safeTop, lead, separate = true) {
       // 视口缩放变了（rem 跟着变），标签尺寸全部重测
       if (lead !== lastLead) {
         heights.fill(0)
@@ -238,7 +242,8 @@ export function createMarkers(
       if (shown.includes(activeIndex)) order.unshift(activeIndex)
       const placed = []
       for (const i of order) {
-        if (topClipped[i]) {
+        // 不做互避时（总览距离以内）只清掉互避隐藏，标签照常显示
+        if (topClipped[i] || !separate) {
           crowded[i] = false
           continue
         }
