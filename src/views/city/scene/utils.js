@@ -162,7 +162,9 @@ export function nearestRegion(x, z, clips, maxGap = Infinity) {
 
 /**
  * 各数据区域的裁剪矩形：下标 0 为主城区 meta.clip，其后依次为 meta.enclaves[].clip。
- * 数据缺 meta.clip（极旧的数据格式）时返回空数组，调用方据此跳过区域相关的检查
+ * 数据缺 meta.clip（极旧的数据格式）时返回空数组：createLandmarks 据此跳过落点检查；
+ * 但 CityScene 的分区域阴影仍需要主城区 clip（regionShadows[0]），这种数据整页会构建失败、
+ * 由 index.vue 降级提示（与加飞地前相同，现有数据都有 meta.clip）
  * @param {object} meta chengdu.json 的 meta
  * @returns {number[][]}
  */
