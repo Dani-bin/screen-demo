@@ -122,8 +122,8 @@ export function build(ctx) {
 
   const mat = landmarkMaterial()
   // 阴影贴图只画背光面（与通用楼一致）：铺装、草坪、水面这类朝上的大片单层面若双面画进阴影贴图，
-  // 会在自身上出现自阴影条纹。悬空构件（西鱼眼托盘等）都有朝下的底面，照样投影；
-  // 少数开口件（龙带下沿、柱身两端）缺的那一面藏在别的构件里，不影响投影
+  // 会在自身上出现自阴影条纹。悬空构件（鱼眼托盘、金龙扁带等）都有朝下的底面，照样投影；
+  // 下沉广场的坑壁、坑口栏杆法线朝里，西南侧背对太阳，影子落进坑里（见 eastEye.js）
   mat.shadowSide = BackSide
   const meshes = [new Mesh(b.bake(), mat)]
   // 喷泉水柱：有水柱时才建这个 Mesh（空合批 bake 得到 null，不能拿来建 Mesh）；

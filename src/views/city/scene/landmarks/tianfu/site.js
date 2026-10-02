@@ -2,8 +2,9 @@
  * 天府广场 · 场地公共部分
  * ----------------------------------------------------------
  * 职责：两套坐标系（广场局部系、设计系）、铺装高度 PAVE、广场与北侧组团共用的颜色表 C、
- * 通用小函数（平面三角化等；竖直侧墙用 kit/shapes.js 的 sideWalls，圆周点用 kit/footprint.js 的 circlePolygon）。各分区模块（ground / sunbird / north / neighbors，以及后续任务
- * 新增的 westEye、eastEye 等）都从这里取坐标与颜色，不各自换算。
+ * 通用小函数（平面三角化等；竖直侧墙用 kit/shapes.js 的 sideWalls，
+ * 圆周点用 kit/footprint.js 的 circlePolygon）。各分区模块（ground / sunbird / westEye / eastEye /
+ * north / neighbors 等）都从这里取坐标与颜色，不各自换算。
  *
  * 两套坐标（设计文档第 1 节、调研报告第 1 节；世界 X 东、Z 南、Y 上，单位米）：
  * - 广场局部系：原点在 OSM「天府广场」面的包围盒中心（SQUARE.lon / lat）、铺装顶面以下的地面，

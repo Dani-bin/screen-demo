@@ -30,7 +30,7 @@
  * 「成都 339」裙楼、339 OFFICE B 座、C 座不属于本模块，保持通用楼不动（B 座紧贴基台东侧北半段，
  * 那一段不做护坡；339 裙楼东北角贴着西斜撑脚）。
  */
-import { BackSide, CylinderGeometry, Mesh, RingGeometry } from "three"
+import { BackSide, CylinderGeometry, Mesh } from "three"
 import { THEME } from "../theme.js"
 import { GROUND_Y } from "../terrain.js"
 import {
@@ -42,6 +42,7 @@ import {
 } from "./kit/builder.js"
 import { circlePolygon, findBuilding } from "./kit/footprint.js"
 import {
+  annulus,
   box,
   cylinder,
   extrudePolygon,
@@ -365,16 +366,6 @@ function blade(y0, zi0, zo0, w0, y1, zi1, zo1, w1) {
     [b, y1, zo1],
     [-b, y1, zo1]
   ])
-}
-
-/**
- * 水平圆环面，y = 0。down 为假时法线朝上（顶面），为真时朝下（底面）。
- * 主体阴影只画背光面，悬在空中的底面必须朝下，否则挡不住阳光（见 orient 的说明）
- */
-function annulus(rIn, rOut, segments = 32, down = false) {
-  const g = new RingGeometry(rIn, rOut, segments, 1)
-  g.rotateX(down ? Math.PI / 2 : -Math.PI / 2)
-  return g
 }
 
 /**

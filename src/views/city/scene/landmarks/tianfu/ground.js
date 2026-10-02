@@ -24,8 +24,9 @@
  *
  * 给后续任务的挖洞接口（buildGround 的 cuts 参数，运算见 polygon.js 的 cutTriangles）：
  * - cuts 为设计系下的凸多边形数组（如 circlePolygon(48.7, −0.7, 27.5, 48)），彼此不重叠；凹的或自交的
- *   cut 直接抛错。从外板、阴鱼、地灯带三层铺装的顶面里减掉：整块落在某一层里的直接当洞三角化；
- *   跨过阴阳分界、大圆边，或把某一层整块包在里面的，逐个三角形做「三角形 − 凸多边形」。
+ *   cut 直接抛错。从外板、阴鱼、地灯带三层铺装的顶面里减掉：整块落在某一层里（且不贴边）的直接当洞三角化；
+ *   跨过阴阳分界、大圆边，与某层边界共边、共点或顶点落在边上（如 0.5 m 网格上的矩形），
+ *   或把某一层整块包在里面的，逐个三角形做「三角形 − 凸多边形」（判定见 polygon.js 的 cutRelation）。
  *   只减顶面、不补洞壁：洞里的坑壁、深色盘、池子由调用方自己建。草坪不受 cuts 影响。
  * - Task 4 西鱼眼深色盘：cuts 加 westEye.js 的 WEST_EYE_CUT（circlePolygon(−44.9, −0.75, 27, 48)），
  *   盘面由 westEye.js 用同一组顶点在 PAVE 上铺（整块在浅色阳鱼与外板里，不碰地灯带，只多 50 个三角形）。
@@ -36,7 +37,7 @@
  * - Task 6 北侧两池（|u| 24.5～101.5、v −76.5～−66）：水面若低于 PAVE 就把两块矩形加进 cuts；
  *   池子整块压在铺装上（水面高于 PAVE ≥ 0.15）时不必挖。北侧花带、绿篱也在 Task 6 做。
  */
-import { distToSegment, segmentsCross } from "../kit/footprint.js"
+import { distToSegment, ringsCross } from "../kit/footprint.js"
 import { extrudePolygon, fromTriangles, sideWalls } from "../kit/shapes.js"
 import { GROUND_Y } from "../../terrain.js"
 import { pointInPolygon } from "../../utils.js"
@@ -385,7 +386,7 @@ function cloudSlots(line) {
 
 /**
  * 一块祥云的轮廓：沿 dir 方向的超椭圆（指数 0.6，两端圆钝，不再是尖头），中心横向偏 off；
- * 一侧边缘按 |sin 3t| 鼓出云头（与草地花饰原来的写法相同），轮廓是星形多边形，不自交
+ * 一侧边缘按 |sin 3t| 鼓出云头，轮廓是星形多边形，不自交
  */
 function cloudShape({ p, dir, len, wid, off }) {
   const nrm = [-dir[1], dir[0]]
@@ -398,20 +399,6 @@ function cloudShape({ p, dir, len, wid, off }) {
     const z = (wid / 2) * Math.sign(sn) * Math.abs(sn) ** 0.6 * k + off
     return [p[0] + dir[0] * x + nrm[0] * z, p[1] + dir[1] * x + nrm[1] * z]
   })
-}
-
-/** 两个闭合轮廓的边是否严格相交 */
-function ringsCross(a, b) {
-  for (let i = 0; i < a.length; i++) {
-    for (let j = 0; j < b.length; j++) {
-      if (
-        segmentsCross(a[i], a[(i + 1) % a.length], b[j], b[(j + 1) % b.length])
-      ) {
-        return true
-      }
-    }
-  }
-  return false
 }
 
 /**

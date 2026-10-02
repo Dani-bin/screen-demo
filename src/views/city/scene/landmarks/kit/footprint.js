@@ -66,6 +66,24 @@ export function polygonArea(points) {
 }
 
 /**
+ * 带符号面积的两倍（鞋带公式，不取绝对值）：> 0 为 x→z 逆时针（俯视、北在上时为顺时针，Z 向南）。
+ * 判断绕向用（insetPolygon、shapes.js 的 sideWalls、天府广场的挖口与熊猫基地的楼块都靠它）；
+ * 要面积请用 polygonArea。逐项累加的顺序固定（第 i 点到第 i + 1 点），各处调用结果逐位相同
+ * @param {Array<[number, number]>} poly 轮廓 [x, z]，不重复首点
+ * @returns {number}
+ */
+export function signedArea2(poly) {
+  const n = poly.length
+  let a2 = 0
+  for (let i = 0; i < n; i++) {
+    const [x0, z0] = poly[i]
+    const [x1, z1] = poly[(i + 1) % n]
+    a2 += x0 * z1 - x1 * z0
+  }
+  return a2
+}
+
+/**
  * 用半平面裁剪多边形（Sutherland–Hodgman）：保留满足 (p - o)·n ≥ 0 的部分。
  * 凹多边形被切成几块时结果以零宽边相连，面积仍然正确；沿分界线折返的零宽尖刺会被去掉。
  * @param {Array<[number, number]>} points
@@ -282,6 +300,25 @@ export function segmentsCross(p, q, r, s) {
   )
 }
 
+/**
+ * 两个闭合轮廓是否有边严格相交（端点相接、共线重叠都不算，同 segmentsCross）。
+ * 逐对比较两边的每条边，只适合几十个点的小轮廓（挖口、草坪、云块）
+ * @param {Array<[number, number]>} a 轮廓 [x, z]，不重复首点
+ * @param {Array<[number, number]>} b 同上
+ */
+export function ringsCross(a, b) {
+  for (let i = 0; i < a.length; i++) {
+    for (let j = 0; j < b.length; j++) {
+      if (
+        segmentsCross(a[i], a[(i + 1) % a.length], b[j], b[(j + 1) % b.length])
+      ) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
 /** 多边形是否自交：任意两条不相邻的边严格相交（首尾两边相邻，不比） */
 export function selfIntersects(poly) {
   const n = poly.length
@@ -320,13 +357,7 @@ export function bearingDiff(a, b, period = 360) {
 export function insetPolygon(poly, d) {
   const n = poly.length
   // 带符号面积的两倍：> 0 为 x→z 逆时针（俯视、北在上时为顺时针，Z 向南）
-  let area2 = 0
-  for (let i = 0; i < n; i++) {
-    const [x0, z0] = poly[i]
-    const [x1, z1] = poly[(i + 1) % n]
-    area2 += x0 * z1 - x1 * z0
-  }
-  const s = area2 > 0 ? 1 : -1
+  const s = signedArea2(poly) > 0 ? 1 : -1
   // 各边的单位内法向：逆时针取左手法向 (−dz, dx)，顺时针取反
   const nor = poly.map((p, i) => {
     const q = poly[(i + 1) % n]
