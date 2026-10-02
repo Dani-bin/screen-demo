@@ -2,8 +2,13 @@
  * 景点注册表
  * ----------------------------------------------------------
  * 景点顺序与 cityData.js 的 SPOTS 一一对应（按景点名匹配，不依赖数组下标），
- * 每个模块 build(ctx) 返回 { meshes, zones, markerHeight, update?, walkways? }；
+ * 每个模块 build(ctx) 返回 { meshes, zones, markerHeight, update?, walkways?, groundHoles? }；
  * walkways 为该景点的步行路径，到站时交给人群系统（crowd.js）生成行人。
+ * groundHoles 为城市地面要挖空的区域，[[x, z], ...][]，世界坐标多边形（与 zones 同一坐标系），
+ * 用于坑底低于城市地面（GROUND_Y）的构件，如天府广场东鱼眼的下沉广场。
+ * createLandmarks 汇总全部景点的洞，调用方在景点建完后交给 terrain.js 的 setGroundHoles：
+ * 地面在洞内挖空，压在洞上的绿地、水面多边形挖洞或整块跳过（规则见 terrain.js 的 planCuts）。
+ * 洞须是简单多边形（不自交）、彼此不重叠；洞只管城市地面层，坑壁、坑底由景点自己建。
  * 单个景点构建失败只跳过该景点并打印错误，不影响城市其他部分。
  *
  * 阴影约定：城市阴影贴图是静态的（只在必要时重绘一次），因此
@@ -63,7 +68,8 @@ function emptyResult() {
     zones: [],
     markerHeight: 0,
     update: null,
-    walkways: []
+    walkways: [],
+    groundHoles: []
   }
 }
 
@@ -78,6 +84,10 @@ function normalize(r) {
     // 步行路径（人群用，格式见 crowd.js 文件头）；只做粗筛，细节由 crowd 校验
     walkways: Array.isArray(r.walkways)
       ? r.walkways.filter((w) => w && Array.isArray(w.points))
+      : [],
+    // 城市地面的洞：只保留至少 3 个点的多边形，其余细节由 terrain.js 处理
+    groundHoles: Array.isArray(r.groundHoles)
+      ? r.groundHoles.filter((h) => Array.isArray(h) && h.length >= 3)
       : []
   }
 }
@@ -313,6 +323,7 @@ export function buildLandmark(name, ctx) {
  *   excluded: Set<number>,      被景点替换区覆盖、不再画通用楼的楼栋索引
  *   markerHeights: number[],    各景点落点球底座高度，0 表示由 markers.js 自行估算
  *   walkwaysBySpot: Array[],    各景点步行路径（无则为空数组），到站时生成人群
+ *   groundHoles: Array,         全部景点的城市地面洞（世界坐标多边形），交给 terrain 的 setGroundHoles
  *   pickables: Map<Mesh, number>, Mesh → 景点索引，供射线拾取
  *   occupancy: { has(x, z) },   景点模型、替换区与步行路径走廊的占用网格，撒通用树时跳过（见 buildOccupancy）
  *   update: (t: number) => void, t 为累计秒数
@@ -327,6 +338,7 @@ export function createLandmarks({ geometry, spots, theme, project }) {
   const markerHeights = []
   const walkwaysBySpot = []
   const zones = []
+  const groundHoles = [] // 各景点的城市地面洞，按景点顺序汇总
   const updaters = [] // { name, fn, broken? }
   // 旧数据兜底：public/ 下的 chengdu.json 文件名不带哈希，上线当天浏览器可能拿到新 JS + 旧 JSON
   // （启发式缓存；index.vue 已改为每次带条件请求重新验证，这里再兜一层）。旧 JSON 没有 meta.enclaves，
@@ -362,6 +374,7 @@ export function createLandmarks({ geometry, spots, theme, project }) {
     markerHeights[i] = r.markerHeight
     walkwaysBySpot[i] = r.walkways
     zones.push(...r.zones)
+    groundHoles.push(...r.groundHoles)
     for (const mesh of r.meshes) {
       applyShadowFlags(mesh)
       group.add(mesh)
@@ -403,6 +416,7 @@ export function createLandmarks({ geometry, spots, theme, project }) {
     excluded,
     markerHeights,
     walkwaysBySpot,
+    groundHoles,
     pickables,
     occupancy,
     update(t) {
