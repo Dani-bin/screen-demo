@@ -92,6 +92,34 @@ export function extrudePolygon(outer, holes, y0, y1) {
 }
 
 /**
+ * 竖直侧墙：沿闭合轮廓每条边一块 y0～y1 的竖直四边形（每边 2 个三角形，无顶面、底面）。
+ * 先按带符号面积统一绕向（> 0 即 x→z 逆时针时反转），使每条边 a→b 的左手法向 (−dz, dx) 朝外，
+ * 法线朝外；inward 为真时再整体反转，法线朝里（女儿墙内侧、围合院落的内墙）。
+ * @param {Array<[number, number]>} poly 轮廓 [x, z]，不重复首点，绕向任意
+ * @param {number} y0 墙底高度
+ * @param {number} y1 墙顶高度
+ * @param {boolean} [inward=false] 法线朝里
+ */
+export function sideWalls(poly, y0, y1, inward = false) {
+  let a2 = 0
+  for (let i = 0; i < poly.length; i++) {
+    const [x0, z0] = poly[i]
+    const [x1, z1] = poly[(i + 1) % poly.length]
+    a2 += x0 * z1 - x1 * z0
+  }
+  const p = a2 > 0 ? poly.slice().reverse() : poly.slice()
+  if (inward) p.reverse()
+  const pos = []
+  for (let i = 0; i < p.length; i++) {
+    const [ax, az] = p[i]
+    const [bx, bz] = p[(i + 1) % p.length]
+    pos.push(ax, y0, az, bx, y0, bz, bx, y1, bz)
+    pos.push(ax, y0, az, bx, y1, bz, ax, y1, az)
+  }
+  return fromTriangles(pos)
+}
+
+/**
  * 长方体：X 向宽 w、高 h、Z 向深 d，底在 y = 0。
  * @param {{ bottom?: boolean }} [opts] bottom 为 false（默认）时去掉底面
  */

@@ -273,6 +273,31 @@ export function distToSegment(px, pz, a, b) {
   return Math.hypot(px - a[0] - t * dx, pz - a[1] - t * dz)
 }
 
+/** 两条线段 p-q、r-s 是否严格相交（端点相接、共线重叠都不算） */
+export function segmentsCross(p, q, r, s) {
+  const cross = (o, a, b) =>
+    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+  return (
+    cross(r, s, p) * cross(r, s, q) < 0 && cross(p, q, r) * cross(p, q, s) < 0
+  )
+}
+
+/** 多边形是否自交：任意两条不相邻的边严格相交（首尾两边相邻，不比） */
+export function selfIntersects(poly) {
+  const n = poly.length
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue
+      if (
+        segmentsCross(poly[i], poly[(i + 1) % n], poly[j], poly[(j + 1) % n])
+      ) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
 /**
  * 两个方位角之差的绝对值（度）。
  * period = 360（默认）时按方向比较，结果 0～180；

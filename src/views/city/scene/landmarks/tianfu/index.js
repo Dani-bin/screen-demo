@@ -22,8 +22,9 @@
  */
 import { BackSide, Mesh } from "three"
 import { ColorBuilder, landmarkMaterial } from "../kit/builder.js"
-import { PAVE, createSite, ringPoints } from "./site.js"
-import { buildGround } from "./ground.js"
+import { circlePolygon } from "../kit/footprint.js"
+import { PAVE, createSite } from "./site.js"
+import { SQUARE_OUTLINE, buildGround } from "./ground.js"
 import { SUNBIRD, buildSunbird } from "./sunbird.js"
 import { WEST_EYE_CUT, buildWestEye } from "./westEye.js"
 import { buildNorth } from "./north.js"
@@ -33,15 +34,24 @@ import { buildNeighbors } from "./neighbors.js"
 const JET_BASE = PAVE + 0.4
 
 /*
- * 替换区：OSM 广场面（ground.js 的 SQUARE_OUTLINE）在设计系里的范围 u −147.5～146、v −84～104，
- * 四边各外扩 2 m，随设计系转 −1.5°（东端偏北）
+ * 替换区：OSM 广场面（ground.js 的 SQUARE_OUTLINE）在设计系里的包围盒（u −147.5～146、v −84～104）
+ * 四边各外扩 2 m，随设计系转 −1.5°（东端偏北）。由轮廓算出，轮廓改了替换区跟着变
  */
-const SQUARE_ZONE = [
-  [-149.5, -86],
-  [148, -86],
-  [148, 106],
-  [-149.5, 106]
-]
+const ZONE_PAD = 2
+const SQUARE_ZONE = (() => {
+  const us = SQUARE_OUTLINE.map((p) => p[0])
+  const vs = SQUARE_OUTLINE.map((p) => p[1])
+  const u0 = Math.min(...us) - ZONE_PAD
+  const u1 = Math.max(...us) + ZONE_PAD
+  const v0 = Math.min(...vs) - ZONE_PAD
+  const v1 = Math.max(...vs) + ZONE_PAD
+  return [
+    [u0, v0],
+    [u1, v0],
+    [u1, v1],
+    [u0, v1]
+  ]
+})()
 
 /*
  * 临时步行路径（设计系；Task 8 按设计第 6 节重排）。都走在铺装顶面 PAVE 上：
@@ -69,7 +79,7 @@ const AXIS_SEGMENTS = [
 function squareWalkways(site) {
   return [
     {
-      points: site.toWorldPts(ringPoints(SUNBIRD.u, SUNBIRD.v, RING.r, 32)),
+      points: site.toWorldPts(circlePolygon(SUNBIRD.u, SUNBIRD.v, RING.r, 32)),
       y: PAVE,
       width: RING.width,
       closed: true,
@@ -106,8 +116,9 @@ export function build(ctx) {
   ]
 
   const mat = landmarkMaterial()
-  // 本景点全由封闭体块组成：阴影贴图只画背光面（与通用楼一致），
-  // 避免双面材质在大面积铺装上出现自阴影条纹
+  // 阴影贴图只画背光面（与通用楼一致）：铺装、草坪、水面这类朝上的大片单层面若双面画进阴影贴图，
+  // 会在自身上出现自阴影条纹。悬空构件（西鱼眼托盘等）都有朝下的底面，照样投影；
+  // 少数开口件（龙带下沿、柱身两端）缺的那一面藏在别的构件里，不影响投影
   mat.shadowSide = BackSide
   const meshes = [new Mesh(b.bake(), mat)]
   // 喷泉水柱：有水柱时才建这个 Mesh（空合批 bake 得到 null，不能拿来建 Mesh）；
