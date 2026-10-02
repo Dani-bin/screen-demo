@@ -30,6 +30,7 @@ export const F_WALK = 16 // 步行路径可走带外扩：树冠、竹丛不进
 export const F_PARK = 32 // 园界以内
 export const F_YARD = 64 // 熊猫活动场：只留场内布置的树
 export const F_CANOPY = 128 // 林冠起伏面（vegetation）：乔木、竹丛离它留出余量，不穿插
+// 栅格是 Uint8（kit/grid.js），以上 8 个标记位已用满；再加标记要把栅格换成 Uint16
 
 /* ---------------- 配色（设计文档 4.2） ---------------- */
 
@@ -455,6 +456,10 @@ const DEG = Math.PI / 180
  * site.blocksView（熊猫视线）与 vegetation.js（小熊猫区栖架、产房望向机位的线）共用。
  * @param {{ x: number, y: number, z: number }} from 视线起点（世界坐标）
  * @param {number[]} to 视线望向的点 [x, y, z]（到站机位相机）
+ * @param {number} cx 球心 x（世界坐标）
+ * @param {number} cy 球心 y
+ * @param {number} cz 球心 z
+ * @param {number} radius 球半径（米），调用方已加好余量
  * @returns {boolean}
  */
 export function sightBlocked(from, to, cx, cy, cz, radius) {

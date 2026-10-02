@@ -36,8 +36,9 @@
  * 熊猫视线：每棵乔木（冠心、半径 1.15 r）、每丛竹（半高处、半径「丛半径 + 半高」）、核心区每块林冠三角形
  * （形心、半径取到最远顶点）落位前调用 site.blocksView，半径再加 VIEW_PAD + VIEW_SLACK（见其注释）。
  *
- * 预算（本分区实际 16,783 三角形，景点合计 38,353 ≤ 38,500）：乔木 243 棵 × 32 = 7,776，竹丛 224 丛 ×
- * 4 束 × 8 = 7,168，林冠面 1,839 块。超出时依次减西区竹、补空隙的乔木（WEST_BAMBOO.count、GAP_TREES.count）。
+ * 预算（按当前 OSM 数据，本分区实际 16,783 三角形，景点合计 38,353 ≤ 38,500）：乔木 243 棵 × 32 = 7,776，
+ * 竹丛 224 丛 × 4 束 × 8 = 7,168，林冠面 1,839 块。超出时依次减西区竹、补空隙的乔木
+ * （WEST_BAMBOO.count、GAP_TREES.count）。
  */
 import { Matrix4 } from "three"
 import { THEME } from "../../theme.js"
@@ -90,7 +91,8 @@ const CROWN_WALK_GAP = 1.5
  * 离林冠面（F_CANOPY 格）的余量（米）：
  *   tree：乔木冠盘半径之外再留的距离（林冠格按格心是否落在三角形里打标记，冠缘可能差出半格）；
  *   clump：竹丛丛心到林冠的最小距离。一般竹丛叶团离丛心最远约 3.8 m（竹根散开 1.2 m + 最高一束 11 m
- *   倾 12° 后最宽一圈 2.6 m），再加 0.7 m 格子量化，竹梢就不会伸到林冠面上方或从里面穿出来
+ *   倾 12° 后最宽一圈 2.6 m），再加 0.7 m 格子量化，竹梢就不会伸到林冠面上方或从里面穿出来。
+ * 这两项都用 diskOk 查，diskOk 同时查园界：乔木冠外 1 m、竹丛心 4.5 m 的整个圆盘也必须在园界内
  */
 const CANOPY_GAP = { tree: 1, clump: 4.5 }
 
@@ -258,8 +260,9 @@ const CANOPY = {
  *   ≥ sunClear 米（乔木优先区）、不在小熊猫 2 号活动场里，才算在林冠里；
  *   核心区三角形再查熊猫视线，并按连通块（共用顶点）筛：块与保留下来的西区林冠共用顶点（把西区林冠接着
  *   铺过分区线），或块里最大净距 ≥ wide 米（草地宽约 80 m 以上）且不少于 minTris 个三角形，才保留。
- *   实测保留 5 块：与西区林冠相连的 3 块（别墅群西北、1 号别墅一带那条空带 103 个三角形，核心区西界、
- *   北缘各一小块），独立的大块 2 块（天鹅湖以东的园区东臂 107 个、月亮产房东北的北缘空地 29 个）。
+ *   按当前 OSM 数据实测保留 5 块（数据重拉、园路或活动场改动后会变）：与西区林冠相连的 3 块
+ *   （别墅群西北、1 号别墅一带那条空带 103 个三角形，核心区西界、北缘各一小块），独立的大块 2 块
+ *   （天鹅湖以东的园区东臂 107 个、月亮产房东北的北缘空地 29 个）。
  *   独立的小块（几个三角形）多半是两排树、两条路之间的夹缝，铺上去像一块补丁，所以要求宽度与块大小
  */
 const OPEN = {
@@ -278,6 +281,9 @@ const OPEN = {
  *   count 丛按 group 丛一组（组内相隔 gap 米）沿整条线均匀分布，每丛沿线抖 ±jitter / 2 米；
  *   每个位置依次试 shifts（沿线错开）× insets（向园内偏）里的候选，第一个合格的种下：
  *   林冠面已占满西区大部分，边界与林冠之间的草地宽窄不一，单一偏距常落进林冠或落到园界外。
+ *   insets 末尾的 4 m 实际上从不成功（tryClump 要求离林冠 4.5 m 的圆盘整个在园界内），但 tryClump 先从本丛的
+ *   随机流里抽丛高再做检查，这次失败的尝试也消耗一个随机数；删掉它，之后在同一位置种下的竹丛丛高、
+ *   各束形状都会变（几何哈希变）。要清掉它，得连同「检查通过后才抽随机数」一起改，作为一次几何改动单独做。
  *   丛半径、高、束数同点种竹
  */
 const WEST_BAMBOO = {
@@ -756,9 +762,48 @@ function plantRedPanda(site, walkways) {
 
 /* ---------------- 3 林冠起伏面（西区 + 核心区远处空地） ---------------- */
 
+/** 园界点内判断的分桶高度（米） */
+const PARK_BIN = 16
+/** 各多边形的分桶边表（以多边形数组本身为键） */
+const binCache = new WeakMap()
+
+/**
+ * 点是否在园区多边形内：与 utils.js 的 pointInPolygon 同一射线法判定式，只是先按 z 把边分桶。
+ * 射线法里只有「一端 z > 点、另一端 z ≤ 点」的边会翻转结果，这样的边 z 范围 [min, max) 必含点的 z，
+ * 一定登记在点所在的桶里，所以参与翻转的边与原判定完全相同，结果逐位一致。
+ * 林冠网格顶点、西区竹候选点要对 165 点园界查上万次，逐边扫是林冠构建里最慢的一步
+ */
+function inPark(site, x, z) {
+  const poly = site.park
+  let t = binCache.get(poly)
+  if (!t) {
+    const b = polygonBounds(poly)
+    const nb = Math.floor((b.maxZ - b.minZ) / PARK_BIN) + 1
+    const bins = Array.from({ length: nb }, () => [])
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, zi] = poly[i]
+      const [xj, zj] = poly[j]
+      const lo = Math.floor((Math.min(zi, zj) - b.minZ) / PARK_BIN)
+      const hi = Math.floor((Math.max(zi, zj) - b.minZ) / PARK_BIN)
+      for (let k = lo; k <= hi; k++) bins[k].push([xi, zi, xj, zj])
+    }
+    t = { minZ: b.minZ, nb, bins }
+    binCache.set(poly, t)
+  }
+  const k = Math.floor((z - t.minZ) / PARK_BIN)
+  if (!(k >= 0 && k < t.nb)) return false
+  let inside = false
+  for (const [xi, zi, xj, zj] of t.bins[k]) {
+    if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) {
+      inside = !inside
+    }
+  }
+  return inside
+}
+
 /** 点在西区园界内（园区多边形内、且不在核心区矩形里） */
 function inWest(site, x, z) {
-  return !inCoreRect(x, z) && pointInPolygon(x, z, site.park)
+  return !inCoreRect(x, z) && inPark(site, x, z)
 }
 
 /**
@@ -784,14 +829,35 @@ function triangleHits(grid, a, b, c, mask) {
   return false
 }
 
+/** 多边形包围盒缓存（以多边形数组本身为键）：林冠三角形逐个查水面时不必每次重算 */
+const boundsCache = new WeakMap()
+function cachedBounds(poly) {
+  let b = boundsCache.get(poly)
+  if (!b) {
+    b = polygonBounds(poly)
+    boundsCache.set(poly, b)
+  }
+  return b
+}
+
 /**
  * 三角形离园界 ≥ CANOPY.parkGap（三点已在园内，再看边距）、离各水面 ≥ CANOPY.waterGap
- * （不相交、互不包含、边距够）。水面：西区两池、天鹅湖、东北小湖
+ * （不相交、互不包含、边距够）。水面：西区两池、天鹅湖、东北小湖。
+ * 包围盒与三角形包围盒在 x 或 z 方向上相隔超过 waterGap 的水面直接跳过：两者的点都至少相隔这么远，
+ * 后面三项检查一项也不会成立，判定结论不变
  */
 function triangleClear(site, tri) {
   const K = CANOPY
   if (edgeGap(tri, site.park, K.parkGap) < K.parkGap) return false
+  const g = K.waterGap
+  const tx0 = Math.min(tri[0][0], tri[1][0], tri[2][0])
+  const tx1 = Math.max(tri[0][0], tri[1][0], tri[2][0])
+  const tz0 = Math.min(tri[0][1], tri[1][1], tri[2][1])
+  const tz1 = Math.max(tri[0][1], tri[1][1], tri[2][1])
   for (const w of [...WEST_POOLS, site.lakes.swan, site.lakes.ne]) {
+    const b = cachedBounds(w)
+    if (tx0 - b.maxX > g || b.minX - tx1 > g) continue
+    if (tz0 - b.maxZ > g || b.minZ - tz1 > g) continue
     if (tri.some(([x, z]) => pointInPolygon(x, z, w))) return false
     if (w.some(([x, z]) => pointInPolygon(x, z, tri))) return false
     if (edgeGap(tri, w, K.waterGap) < K.waterGap) return false
@@ -803,7 +869,7 @@ function triangleClear(site, tri) {
 function openCore(site, clear, x, z) {
   const O = OPEN
   const { spot } = site.ctx
-  if (!inCoreRect(x, z) || !pointInPolygon(x, z, site.park)) return false
+  if (!inCoreRect(x, z) || !inPark(site, x, z)) return false
   if (clear(x, z) < O.vertex) return false
   if (Math.hypot(x - spot.x, z - spot.z) < O.far) return false
   if (Math.hypot(x - SUN.c[0], z - SUN.c[1]) < O.sunClear) return false
@@ -1213,6 +1279,8 @@ function plantWestBamboo(site, walkways, bufs) {
     const brg = (Math.atan2(e.nx, -e.nz) / DEG + 360) % 360
     return brg >= K.bearing[0] && brg <= K.bearing[1] && !inCoreRect(mx, mz)
   })
+  // 没有合乎条件的边（园界数据变了）就不种：下面按弧长取点要用到边
+  if (!edges.length) return
   const total = edges.reduce((sum, e) => sum + e.len, 0)
   // 弧长 s 处的边界点（s 先夹到 [0, total]）：返回所在边与边内参数 t
   const at = (s) => {
