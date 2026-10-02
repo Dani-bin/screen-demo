@@ -14,13 +14,14 @@
  *   用 designFrame 换到世界；路径、替换区、地面洞等世界坐标点用 site.toWorld(u, v)。
  *
  * 后续任务：
- * - Task 4～6 按报告 6.9「主要颜色」往 C 里补新颜色（Task 4 已补鱼眼水池与雕塑一组，Task 5 补东鱼眼下沉广场一组）。
+ * - Task 4～6 按报告 6.9「主要颜色」往 C 里补新颜色（Task 4 已补鱼眼水池与雕塑一组，Task 5 补东鱼眼下沉广场一组，
+ *   Task 6 补北缘喷泉与国旗台、凤鸟路灯、南侧构筑物、林带四组）。
  * - Task 7 修正北侧组团时改 C 里的毛主席像、科技馆颜色；成都博物馆、四川省图书馆的颜色
  *   放在 neighbors.js 自己的表里，不受这里影响。
  */
 import { Matrix4, Quaternion, ShapeUtils, Vector2, Vector3 } from "three"
 import { frame } from "../kit/builder.js"
-import { cylinder } from "../kit/shapes.js"
+import { cylinder, fromTriangles } from "../kit/shapes.js"
 
 const DEG = Math.PI / 180
 
@@ -157,6 +158,28 @@ export const C = {
   metroSign: "#2C4466", // 地铁口蓝灰色立牌（c11、c27）
   stairStone: "#BFB8AD", // 大台阶石材
   columnGreen: "#2F5242", // 东鱼眼柱身：墨绿底（c00、c09，比西鱼眼的青铜色更绿）
+  // 北缘喷泉池、国旗台（Task 6；报告 3.2、6.5，照片 c19、old3，影像 e_flag、g_flag）
+  jet: "#F4FAFF", // 喷泉水柱（动画 Mesh，沿用旧条形喷泉的颜色）
+  poolRim: "#7C8279", // 喷泉池沿：灰绿花岗岩（c19 池沿中位色提亮一档）
+  poolWall: "#646A62", // 池内隔墙：比池沿暗一档，俯视时隔格分得开
+  hedge: "#3F7B3B", // 池北连续绿篱（代替 old3 里那排灌木球）
+  flagStage: "#D6A69C", // 国旗台：粉红色石材（报告 6.5，e_flag、g_flag）
+  flagPole: "#DCDFE2", // 不锈钢旗杆
+  flagRed: "#D8262C", // 国旗、北缘灯杆上的小红旗
+  // 凤鸟路灯（c15、c19、old3）
+  lampPole: "#5E625F", // 灯杆与弯臂：深灰金属
+  lampBulb: "#F4F1E4", // 火炬形白色灯罩
+  // 南侧构筑物（报告 3.2「南缘」「东侧玻璃构筑物」）
+  canopy: "#F7F6F2", // 「天书」雨棚：白色（影像里是广场上最亮的一块，比铺装 #D8D0C2 亮得多）
+  canopyGlass: "#9DBFC2", // 雨棚下的玻璃围护
+  stairDark: "#4A4F53", // 东入口下沉楼梯口深处（暗面，读出往下走）
+  slopeWall: "#A7A196", // 东南构筑物草坡的石材挡墙
+  channel: "#BDB7AC", // 草坡里嵌的硬质槽带
+  whiteGlass: "#E6EDEF", // 东南构筑物的白色斜玻璃
+  // 东西林带（报告 3.2「东西林带」：乔木密植）
+  forestFloor: "#5E9A48", // 林下草地：比广场草坪暗一档，衬出林带
+  // 林带乔木树冠：取城市通用树（theme.tree.greens）里偏深的两种，再加两种更深的，林带读成一片深绿
+  forest: ["#4FAE4A", "#5DA846", "#3F9443", "#6CC04A"],
   // 北侧组团：毛主席像台基两侧的绿篱花坛（Task 7 重做时再定）
   lawn: "#86C95A",
   // 毛主席像
@@ -177,8 +200,34 @@ export const C = {
 export const offsetPoints = (pts, ox, oz) =>
   pts.map(([x, z]) => [ox + x, oz + z])
 
-/** 两点之间的圆柱（a、c 为父坐标系 [x, y, z]），用于雕像手臂等斜杆 */
-export function strut(b, parent, a, c, r0, r1, color) {
+/**
+ * 由三角形列表建几何体：tris 为 [[p, q, r], ...]，每个点 [x, y, z]，法线按面计算（kit fromTriangles）。
+ * 楔形雨棚、旗面这类手拼的几块面用它，比平铺坐标数组好读
+ */
+export const triMesh = (tris) => fromTriangles(tris.flat(2))
+
+/** 设计系轴向矩形 [[u0, v0], [u1, v0], [u1, v1], [u0, v1]]（不重复首点；北缘水池、雨棚、挖口等用） */
+export const rectUV = (u0, u1, v0, v1) => [
+  [u0, v0],
+  [u1, v0],
+  [u1, v1],
+  [u0, v1]
+]
+
+/**
+ * 两点之间的圆柱（a、c 为父坐标系 [x, y, z]），用于雕像手臂、灯臂等斜杆。
+ * opts 默认 8 段、封顶（雕像手臂沿用）；细小的灯臂可传 { segments: 3, caps: false } 省三角形
+ */
+export function strut(
+  b,
+  parent,
+  a,
+  c,
+  r0,
+  r1,
+  color,
+  { segments = 8, caps = true } = {}
+) {
   const dir = new Vector3(c[0] - a[0], c[1] - a[1], c[2] - a[2])
   const len = dir.length()
   const q = new Quaternion().setFromUnitVectors(
@@ -187,7 +236,7 @@ export function strut(b, parent, a, c, r0, r1, color) {
   )
   const m = new Matrix4().compose(new Vector3(...a), q, new Vector3(1, 1, 1))
   b.add(
-    cylinder(r0, r1, len, { segments: 8, caps: true }),
+    cylinder(r0, r1, len, { segments, caps }),
     color,
     parent.clone().multiply(m)
   )
