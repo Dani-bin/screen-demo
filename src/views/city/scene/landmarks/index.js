@@ -32,7 +32,7 @@ import {
   regionClips
 } from "../utils.js"
 import { treeShapeMax } from "../trees.js"
-import { build as tianfu } from "./tianfu/square.js"
+import { build as tianfu } from "./tianfu/index.js"
 import { build as taikooli } from "./taikooli.js"
 import { build as ifs } from "./ifs.js"
 import { build as kuanzhai } from "./kuanzhai.js"

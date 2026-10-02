@@ -1,28 +1,25 @@
 /*
- * 天府广场精细模型：广场铺装 + 太阳神鸟金盘 + S 形分界线 + 下沉广场 + 条形喷泉 +
- * 12 根图腾柱 + 毛主席像 + 四川科技馆 + 成都博物馆 + 四川省图书馆
+ * 天府广场 · 旧广场部分（道路以南）
  * ----------------------------------------------------------
- * 整体正南北布置。定位依据（OpenStreetMap）：
- * - 广场：place=square「天府广场」面的包围盒中心，294 × 190；
- * - 毛主席像：building:part「毛主席像」（min_height 15.2、height 27.46，
- *   即台基 8.1 + 基座 7.1 + 像身 12.3），立在一座无名三级台基楼（h 15.1）上；
- * - 四川科技馆：tourism=museum 面（不是 building，几何数据里没有），包围盒 142 × 110，
- *   正门朝南；像在科技馆正门以南约 80 m（OSM 实测），并非紧贴门前；
- * - 成都博物馆、四川省图书馆：几何数据里按名称查到，保留轮廓与高度。
+ * 职责：重做前的广场模型，依据是维基百科与 2007 年新闻，与实景差别很大（见设计文档开头与报告第 5 节）：
+ * 圆角矩形铺装（东西两半）+ 外沿低台阶 + S 形分界带 + 太阳神鸟金盘 Φ54 + 东半下沉广场与螺旋雕塑 +
+ * 西半两道条形喷泉 + OSM 草坪 + 12 根图腾柱，以及绕开这些构件的临时步行路径。
+ * 本次拆分（Task 2）只搬家，几何、路径与拆分前逐位一致。
  *
- * 广场局部坐标系：原点在广场中心、铺装顶面以下的地面，X 向东、Z 向南。
- * 广场内的草坪取自 OSM 公园面（相对广场中心），与城市树木层撒树的范围一致，
+ * 全部在广场局部系里写（site.square：原点在 OSM 广场面包围盒中心、铺装顶面以下的地面，
+ * X 向东、Z 向南）。广场内的草坪取自 OSM 公园面（相对广场中心），与城市树木层撒树的范围一致，
  * 这样通用树木正好长在草坪上，而不会戳进喷泉或下沉广场。
+ *
+ * 后续任务逐块替换，新件改在设计系（site.design）里写、放进新文件：
+ * - Task 3：外沿台阶、东西两半铺装、S 形分界带、Φ54 金盘、条形喷泉与水柱、下沉广场、
+ *   12 根图腾柱、草坪全部删掉，由 ground.js（太极铺装、草坪花带）与 sunbird.js（神鸟盘）取代；
+ *   步行路径先换成临时的几条。
+ * - Task 4、5：西鱼眼 westEye.js、东鱼眼下沉广场 eastEye.js。
+ * - Task 6：北缘喷泉（水柱动画件）、4 根图腾柱、路灯、构筑物与树。
+ * - Task 8：步行路径按设计第 6 节重排。旧件全部替换后删掉本文件。
  */
-import { BackSide, Matrix4, Mesh, Quaternion, Vector3 } from "three"
-import { ColorBuilder, frame, landmarkMaterial, local } from "../kit/builder.js"
-import {
-  circlePolygon,
-  findBuilding,
-  minAreaRect,
-  rectFrame,
-  rectPolygon
-} from "../kit/footprint.js"
+import { local } from "../kit/builder.js"
+import { circlePolygon, rectPolygon } from "../kit/footprint.js"
 import {
   box,
   cylinder,
@@ -30,22 +27,16 @@ import {
   sphere,
   sweepBar
 } from "../kit/shapes.js"
-import { addBalustrade, addPlatform } from "../kit/parts.js"
+import { addBalustrade } from "../kit/parts.js"
 import { addSunbirdDisc, addTotem } from "../kit/figures.js"
 import { THEME } from "../../theme.js"
-import { polygonBounds } from "../../utils.js"
-import { GROUND_Y } from "../../terrain.js"
+import { C, PAVE, SQUARE, offsetPoints, ringPoints } from "./site.js"
 
-const NEAR = 400 // 按名称查楼的搜索半径（米）
 const L = THEME.landmark
 
-/* ---------------- 尺寸与定位 ---------------- */
+/* ---------------- 尺寸与定位（广场局部系） ---------------- */
 
-// 广场：OSM 天府广场面包围盒中心；294 × 190，圆角半径 12
-const SQUARE = { lon: 104.0632899, lat: 30.6597912, w: 294, d: 190, r: 12 }
-// 铺装顶面高度：只需盖住道路（路面最高 0.9 m）；照片里广场边缘是一道
-// 能坐人的低矮石沿，不宜抬高成台地。外沿再加一圈 1.5 m 宽、1.0 m 高的低台阶
-const PAVE = 1.5
+// 外沿再加一圈 1.5 m 宽、1.0 m 高的低台阶（铺装高度 PAVE 见 site.js）
 const CURB_H = 1.0
 const CURB_W = 1.5
 // S 形分界线：x = S_AMP · sin(π z / (d/2))，北半偏西、南半偏东；带宽 3 m
@@ -57,7 +48,8 @@ const SUNKEN = { x: 52, z: -10, r: 21, floor: 0.3, steps: 4, tread: 1.2 }
 const FOUNTAINS = [-102, -36]
 const FOUNTAIN_L = 76
 const FOUNTAIN_W = 8
-const WATER_TOP = PAVE + 0.4
+// 水面高度：喷泉水柱动画 Mesh 整体抬到这里（index.js）
+export const WATER_TOP = PAVE + 0.4
 // 12 根图腾柱（广场局部坐标）：南北两边各 4 根、东西两边各 2 根，避开草坪
 const TOTEMS = [
   [-115, -86],
@@ -73,42 +65,6 @@ const TOTEMS = [
   [143.5, -25],
   [143.5, 25]
 ]
-
-// 毛主席像（OSM 点位）与三级台基（台基大小取像下那座无名台基楼的轮廓 76 × 56）
-const STATUE = { lon: 104.0633079, lat: 30.6612661 }
-const STATUE_TIERS = [
-  [72, 52],
-  [50, 36],
-  [28, 20]
-]
-const TIER_H = 2.7 // 三级共 8.1
-const PEDESTAL_H = 7.1
-
-// 四川科技馆：OSM tourism=museum 面包围盒（142 × 110，正南北，正门朝南）
-const SCIENCE = { lon: 104.0633057, lat: 30.6624898, w: 142.2, d: 110.3 }
-
-// 按名称查不到时的回退轮廓（取自当前几何数据，世界坐标 [x, z]）
-const FALLBACK = {
-  成都博物馆: {
-    h: 46.9,
-    p: [
-      [-465, -330],
-      [-413, -330],
-      [-411, -172],
-      [-463, -171]
-    ]
-  },
-  四川省图书馆: {
-    h: 38.5,
-    p: [
-      [-518, -469],
-      [-414, -472],
-      [-414, -408],
-      [-477, -399],
-      [-517, -405]
-    ]
-  }
-}
 
 /*
  * 广场草坪：OSM 公园面（相对广场中心，米）。
@@ -340,44 +296,6 @@ const RING = { r: 29.5, width: 2, density: 2 }
 // 下沉广场环路：半径 12，走在坑底 SUNKEN.floor 上
 // （内侧离螺旋雕塑飘带 ≥ 3.5 m，外侧离台阶 ≥ 3.9 m）
 const SUNKEN_RING = { r: 12, width: 3, density: 1.5, y: SUNKEN.floor }
-// 科技馆前南北轴线（毛主席像北侧、科技馆正门以南的空地，直接露出 terrain 地面）：
-// 由科技馆正门前 5 m 走到像的台基北沿外 7 m，x 相对像中心
-const AXIS = { z0: -75, z1: -33, width: 8, density: 1.5, y: GROUND_Y }
-
-/* ---------------- 本景点专用色 ---------------- */
-
-const C = {
-  paveWest: "#E2DDD2", // 西半浅石材
-  paveEast: "#BDB3A1", // 东半略深的石材（与西半拉开对比，突出太极两仪）
-  curb: "#A9A499", // 外沿台阶
-  sunkenFloor: "#A39B8E",
-  step: "#C8C2B6",
-  band: "#F4E6BC", // S 形浅金白色分界带
-  lawn: "#86C95A",
-  water: "#8FD0EA",
-  jet: "#F4FAFF",
-  rim: "#E6E1D6",
-  spiralPole: "#DCE4E0",
-  // 毛主席像
-  tier: "#E2DCCF",
-  pedestal: "#8C4A3C",
-  statue: "#F2EFE7",
-  // 四川科技馆
-  sciWall: "#E8D8A8", // 米黄墙
-  sciRed: "#B4553B", // 砖红线脚、塔顶
-  sciGlass: "#2E3A4A", // 中部通高深色玻璃
-  sciWindow: "#56606C",
-  sign: "#D8352A",
-  // 成都博物馆
-  bronze: "#C9A55C", // 金色铜网
-  bronzeLine: "#A7843F",
-  museumGlass: "#4E9C82", // 绿色玻璃
-  // 四川省图书馆
-  libStone: "#D9CDB7",
-  libFin: "#BCAE95",
-  libGlass: "#5E93A6",
-  libSlab: "#E6DECF"
-}
 
 /* ---------------- 小工具 ---------------- */
 
@@ -414,31 +332,17 @@ function roundedRectHalves(w, d, r, grow = 0) {
 /** S 形分界线 x 坐标 */
 const sCurve = (z) => S_AMP * Math.sin((Math.PI * z) / (SQUARE.d / 2))
 
-/** 两点之间的圆柱（a、c 为父坐标系 [x, y, z]），用于雕像手臂 */
-function strut(b, parent, a, c, r0, r1, color) {
-  const dir = new Vector3(c[0] - a[0], c[1] - a[1], c[2] - a[2])
-  const len = dir.length()
-  const q = new Quaternion().setFromUnitVectors(
-    new Vector3(0, 1, 0),
-    dir.normalize()
-  )
-  const m = new Matrix4().compose(new Vector3(...a), q, new Vector3(1, 1, 1))
-  b.add(
-    cylinder(r0, r1, len, { segments: 8, caps: true }),
-    color,
-    parent.clone().multiply(m)
-  )
-}
-
 /* ---------------- 广场 ---------------- */
 
 /**
  * 广场铺装、分界线、金盘、下沉广场、喷泉、草坪、图腾柱。
  * @param {ColorBuilder} b 静态件
  * @param {ColorBuilder} jets 喷泉水柱（单独成动画 Mesh）
- * @param {Matrix4} f 广场坐标系（原点在广场中心地面）
+ * @param {object} site 场地对象（site.js 的 createSite）；旧件都在广场局部系 site.square 里
+ * @returns {{ zones: Array, walkways: Array }} 广场替换区与步行路径（世界坐标）
  */
-function buildSquare(b, jets, f) {
+export function buildSquare(b, jets, site) {
+  const f = site.square
   const { w, d, r } = SQUARE
   // 外沿低台阶：整块圆角矩形外扩 1.5 m，顶面 CURB_H。
   // 必须在下沉广场处挖洞：否则这块实心板的顶面（1.0）会盖住坑底 SUNKEN.floor（0.3）
@@ -499,6 +403,11 @@ function buildSquare(b, jets, f) {
   // 12 根文化图腾柱
   for (const [x, z] of TOTEMS) {
     addTotem(b, local(f, x, PAVE, z), { h: 12, r: 0.6 })
+  }
+
+  return {
+    zones: [rectPolygon(site.qx, site.qz, w + 4, d + 4, 90)],
+    walkways: squareWalkways(site.qx, site.qz)
   }
 }
 
@@ -585,358 +494,32 @@ function buildFountains(b, jets, f) {
   }
 }
 
-/* ---------------- 毛主席像 ---------------- */
-
 /**
- * 三级浅色台基（共 8.1 m）+ 红褐基座 7.1 m + 白色立像 12.3 m，面朝正南（局部 +Z）。
- * 立像用几个几何体组合：外扩的大衣下摆、身体、肩、头、上扬的右手、背在身后的左手。
+ * 步行路径：广场局部坐标 → 世界坐标（qx、qz 为广场局部原点的世界坐标）。
+ * 顺序与拆分前一致：散步线与中轴、金盘外环、下沉广场环路。
  */
-function buildStatue(b, f) {
-  let y = 0
-  STATUE_TIERS.forEach(([w, d], i) => {
-    addPlatform(b, local(f, 0, y, 0), {
-      w,
-      d,
-      h: TIER_H,
-      steps: "front",
-      color: C.tier
-    })
-    // 第一、二级台面南侧两块绿篱花坛
-    if (i < 2) {
-      const nw = STATUE_TIERS[i + 1][0]
-      const bw = (w - nw) / 2 - 4
-      for (const sx of [-1, 1]) {
-        b.add(
-          box(bw, 0.5, d * 0.4),
-          C.lawn,
-          local(f, sx * (nw / 2 + 2 + bw / 2), y + TIER_H, d * 0.18)
-        )
-      }
-    }
-    y += TIER_H
-  })
-  // 红褐基座：主体 + 顶部压檐
-  b.add(box(8, PEDESTAL_H - 0.8, 8), C.pedestal, local(f, 0, y, 0))
-  b.add(box(9, 0.8, 9), C.pedestal, local(f, 0, y + PEDESTAL_H - 0.8, 0))
-  y += PEDESTAL_H
-
-  // 立像（局部 +Z 为正面；面朝南时像的右手在局部 -X 一侧）
-  const s = local(f, 0, y, 0)
-  b.add(cylinder(1.75, 1.25, 4.4, { segments: 12, caps: true }), C.statue, s)
-  b.add(
-    cylinder(1.25, 1.1, 3.8, { segments: 12, caps: true }),
-    C.statue,
-    local(s, 0, 4.4, 0)
-  )
-  b.add(box(3.0, 0.9, 1.7), C.statue, local(s, 0, 7.6, 0))
-  b.add(
-    cylinder(0.42, 0.42, 0.6, { segments: 8, caps: true }),
-    C.statue,
-    local(s, 0, 8.4, 0)
-  )
-  b.add(sphere(0.72, 12, 9), C.statue, local(s, 0, 8.85, 0.05))
-  // 右臂：肩 → 肘 → 上扬的手
-  strut(b, s, [-1.35, 8.2, 0], [-2.05, 9.9, 0.7], 0.42, 0.36, C.statue)
-  strut(b, s, [-2.05, 9.9, 0.7], [-2.2, 11.8, 1.0], 0.36, 0.3, C.statue)
-  b.add(sphere(0.42, 8, 6), C.statue, local(s, -2.2, 11.5, 1.0))
-  // 左臂：垂下背到身后
-  strut(b, s, [1.35, 8.2, 0], [1.55, 5.6, -0.6], 0.42, 0.34, C.statue)
-}
-
-/* ---------------- 四川科技馆 ---------------- */
-
-/**
- * 米黄墙、砖红线脚与转角塔楼、中部通高深色玻璃柱廊、楼顶红色招牌。
- * f 原点在 OSM 包围盒中心、局部 +Z 朝南（正门）。
- * 平面：前部 142 × 28 的正立面体量 + 后部 112 × 83 的主体（与 OSM 轮廓一致）。
- */
-function buildScience(b, f) {
-  const hd = SCIENCE.d / 2
-  const z0 = hd - 28 // 前部体量北缘
-  const z1 = hd // 正立面
-  const dz = z1 - z0
-  const zc = (z0 + z1) / 2
-  // 后部主体与屋面
-  b.add(box(112, 27, z0 + hd), C.sciWall, local(f, 0, 0, (z0 - hd) / 2))
-  b.add(box(108, 0.8, z0 + hd - 4), "#D6C594", local(f, 0, 27, (z0 - hd) / 2))
-
-  // 正立面分段（|x| 区间、高度、类型）：两端低翼、外侧塔楼、墙段、内侧塔楼
-  const parts = [
-    { x0: 63, x1: 71.1, h: 17, kind: "wing" },
-    { x0: 53, x1: 63, h: 30, kind: "tower" },
-    { x0: 37, x1: 53, h: 24, kind: "wall" },
-    { x0: 27, x1: 37, h: 30, kind: "tower" }
-  ]
-  for (const sx of [-1, 1]) {
-    for (const p of parts) {
-      const w = p.x1 - p.x0
-      const x = (sx * (p.x0 + p.x1)) / 2
-      b.add(box(w, p.h, dz), C.sciWall, local(f, x, 0, zc))
-      // 窗带：深色横条，每层一条
-      const rows = p.kind === "wing" ? [3, 8.5] : [3, 8.5, 14, 19.5]
-      if (p.kind === "tower") rows.push(25)
-      for (const y of rows) {
-        b.add(box(w - 2.4, 2.3, 0.2), C.sciWindow, local(f, x, y, z1 + 0.05))
-      }
-      if (p.kind === "tower") {
-        // 塔顶砖红压顶
-        b.add(box(w + 0.8, 1.6, dz + 0.8), C.sciRed, local(f, x, p.h, zc))
-      } else {
-        // 顶部砖红檐口：只在正立面一条（屋面保持米黄）
-        b.add(box(w, 1.0, 0.6), C.sciRed, local(f, x, p.h - 1, z1 + 0.3))
-      }
-    }
-  }
-  // 中部柱廊：米黄墙体 + 通高深色玻璃 + 8 根方柱（柱头砖红）
-  b.add(box(54, 24, dz), C.sciWall, local(f, 0, 0, zc))
-  b.add(box(52, 21, 0.2), C.sciGlass, local(f, 0, 0.5, z1 + 0.05))
-  for (let i = 0; i < 8; i++) {
-    const x = -24.5 + i * 7
-    b.add(box(2.2, 21, 1.6), C.sciWall, local(f, x, 0, z1 + 0.8))
-    b.add(box(2.6, 1.2, 2.0), C.sciRed, local(f, x, 20.2, z1 + 0.8))
-  }
-  // 两道通长砖红线脚：檐口下与柱头处（正立面 |x| ≤ 63）
-  b.add(box(126, 1.2, 0.5), C.sciRed, local(f, 0, 22.4, z1 + 0.25))
-  // 下道线脚只画在两侧（|x| ≥ 27），不横穿中部通高玻璃柱廊
-  for (const sx of [-1, 1]) {
-    b.add(box(36, 0.6, 0.5), C.sciRed, local(f, sx * 45, 16.2, z1 + 0.25))
-  }
-
-  // 楼顶招牌：五块红色字牌（四川科技馆）+ 下方白色英文条
-  const sz = z1 - 5
-  b.add(box(44, 1.4, 0.5), "#F2EEE4", local(f, 0, 24, sz))
-  for (let i = 0; i < 5; i++) {
-    b.add(box(5.8, 5.8, 0.5), C.sign, local(f, -16 + i * 8, 25.6, sz))
-  }
-}
-
-/* ---------------- 成都博物馆 ---------------- */
-
-/** 金色铜网立面（竖向网线 + 一道折线腰带）+ 底部与入口绿色玻璃；按 OSM 轮廓与高度 */
-function buildChengduMuseum(b, bd) {
-  const rect = minAreaRect(bd.p)
-  // 局部 X 沿长边（南北），+Z 朝东（面向广场）
-  const f = rectFrame(rect, 0, 90)
-  const { w, d } = rect
-  const H = bd.h || 46.9
-  const podium = 10
-  b.add(box(w - 4, podium, d - 4), C.museumGlass, f)
-  b.add(box(w, H - podium, d), C.bronze, local(f, 0, podium, 0))
-  b.add(box(w - 2, 0.6, d - 2), C.bronzeLine, local(f, 0, H, 0))
-  // 腰带：铜网折线处略凸出
-  b.add(box(w + 0.8, 1.2, d + 0.8), C.bronzeLine, local(f, 0, 27, 0))
-  // 竖向网线：长边每 3.2 m、短边每 3.2 m 一道
-  const lineH = H - podium - 0.4
-  const nl = Math.floor(w / 3.2)
-  for (let i = 1; i < nl; i++) {
-    const x = -w / 2 + (w * i) / nl
-    for (const sz of [-1, 1]) {
-      b.add(
-        box(0.5, lineH, 0.4),
-        C.bronzeLine,
-        local(f, x, podium + 0.2, sz * (d / 2 + 0.2))
-      )
-    }
-  }
-  const ns = Math.floor(d / 3.2)
-  for (let i = 1; i < ns; i++) {
-    const z = -d / 2 + (d * i) / ns
-    for (const sx of [-1, 1]) {
-      b.add(
-        box(0.4, lineH, 0.5),
-        C.bronzeLine,
-        local(f, sx * (w / 2 + 0.2), podium + 0.2, z)
-      )
-    }
-  }
-  // 东立面中部绿色玻璃入口（通高 22 m）+ 白色雨棚
-  b.add(box(34, 22, 1.2), C.museumGlass, local(f, 0, 0, d / 2 + 0.4))
-  b.add(box(40, 0.8, 6), "#EDEBE4", local(f, 0, 9, d / 2 + 3))
-}
-
-/* ---------------- 四川省图书馆 ---------------- */
-
-/**
- * 两座石材阙楼夹台阶式玻璃中庭（由南向北逐级升高）+ 竖向石材纹；正面朝南。
- * 主体按 OSM 轮廓南部的大矩形，北侧附楼按轮廓北端的小块。
- */
-function buildLibrary(b, bd) {
-  const bb = polygonBounds(bd.p)
-  // 北侧附楼：轮廓里 z 最小（最北）一段的点
-  const annexPts = bd.p.filter(([, z]) => z < bb.minZ + 5)
-  const annexDepth = 21
-  const hasAnnex = annexPts.length >= 2 && bb.maxZ - bb.minZ > 85
-  const z0 = hasAnnex ? bb.minZ + annexDepth : bb.minZ
-  const z1 = bb.maxZ - 4
-  const W = bb.maxX - bb.minX
-  const D = z1 - z0
-  const H = bd.h || 38.5
-  const f = frame((bb.minX + bb.maxX) / 2, 0, (z0 + z1) / 2, 0)
-
-  const towerW = 22
-  const atriumW = W - 2 * towerW
-  for (const sx of [-1, 1]) {
-    const x = sx * (W / 2 - towerW / 2)
-    b.add(box(towerW, H, D), C.libStone, local(f, x, 0, 0))
-    b.add(box(towerW + 1, 1, D + 1), C.libFin, local(f, x, H, 0))
-    // 竖向石材纹：南立面与外侧立面
-    for (let i = 0; i < 8; i++) {
-      const fx = x - towerW / 2 + 1.5 + (i * (towerW - 3)) / 7
-      b.add(box(0.7, H - 2, 0.6), C.libFin, local(f, fx, 0, D / 2 + 0.3))
-    }
-    const nz = Math.floor(D / 3)
-    for (let i = 0; i <= nz; i++) {
-      const z = -D / 2 + 1.5 + ((D - 3) * i) / nz
-      b.add(box(0.6, H - 2, 0.7), C.libFin, local(f, sx * (W / 2 + 0.3), 0, z))
-    }
-  }
-  // 中庭：北半为高体量，南半四级玻璃台阶，顶面铺石
-  const back = D * 0.43
-  const zb = -D / 2 + back
-  b.add(
-    box(atriumW, H - 4, back),
-    C.libGlass,
-    local(f, 0, 0, -D / 2 + back / 2)
-  )
-  b.add(
-    box(atriumW, 0.6, back),
-    C.libSlab,
-    local(f, 0, H - 4, -D / 2 + back / 2)
-  )
-  const terraces = 4
-  const stepD = (D / 2 - zb) / terraces
-  for (let i = 0; i < terraces; i++) {
-    const h = 8 + i * 7
-    const zf = D / 2 - i * stepD
-    const depth = zf - zb
-    const zc = (zf + zb) / 2
-    b.add(box(atriumW, h, depth), C.libGlass, local(f, 0, 0, zc))
-    // 石材压顶坐在玻璃体量顶上，并向前挑出 0.4 m，避免与玻璃面共面闪烁
-    b.add(
-      box(atriumW + 0.4, 0.8, depth + 0.4),
-      C.libSlab,
-      local(f, 0, h, zc + 0.2)
-    )
-  }
-  // 正门前大台阶
-  b.add(box(40, 1.2, 5), C.tier, local(f, 0, 0, D / 2 + 2.5))
-  // 北侧附楼
-  if (hasAnnex) {
-    const ab = polygonBounds(annexPts)
-    const aw = Math.max(10, ab.maxX - ab.minX)
-    b.add(
-      box(aw, Math.min(H, 30), annexDepth + 2),
-      C.libStone,
-      frame((ab.minX + ab.maxX) / 2, 0, bb.minZ + annexDepth / 2, 0)
-    )
-  }
-}
-
-/* ---------------- 入口 ---------------- */
-
-/** 按名称查楼，查不到用回退轮廓 */
-function lookup(buildings, name, spot) {
-  const i = findBuilding(buildings, name, {
-    near: [spot.x, spot.z],
-    maxDist: NEAR
-  })
-  if (i >= 0) return buildings[i]
-  return FALLBACK[name]
-}
-
-export function build(ctx) {
-  const { project, buildings, spot } = ctx
-  const b = new ColorBuilder()
-  const jets = new ColorBuilder()
-  const zones = []
-
-  // 广场
-  const [qx, qz] = project.toLocal(SQUARE.lon, SQUARE.lat)
-  buildSquare(b, jets, frame(qx, 0, qz, 0))
-  zones.push(rectPolygon(qx, qz, SQUARE.w + 4, SQUARE.d + 4, 90))
-
-  // 毛主席像（替换像下那座无名台基楼）
-  const [sx, sz] = project.toLocal(STATUE.lon, STATUE.lat)
-  buildStatue(b, frame(sx, 0, sz, 0))
-  zones.push(rectPolygon(sx + 1.5, sz + 4.5, 80, 62, 90))
-
-  // 四川科技馆
-  const [cx, cz] = project.toLocal(SCIENCE.lon, SCIENCE.lat)
-  buildScience(b, frame(cx, 0, cz, 0))
-  zones.push(rectPolygon(cx, cz, SCIENCE.w + 2, SCIENCE.d + 2, 90))
-
-  // 成都博物馆、四川省图书馆
-  const museum = lookup(buildings, "成都博物馆", spot)
-  buildChengduMuseum(b, museum)
-  zones.push(museum.p)
-  const library = lookup(buildings, "四川省图书馆", spot)
-  buildLibrary(b, library)
-  zones.push(library.p)
-
-  const mat = landmarkMaterial()
-  // 本景点全由封闭体块组成：阴影贴图只画背光面（与通用楼一致），
-  // 避免双面材质在大面积铺装上出现自阴影条纹
-  mat.shadowSide = BackSide
-  const mesh = new Mesh(b.bake(), mat)
-  // 喷泉水柱：单独一个动画 Mesh，整体抬到水面高度，update 里只改 scale.y
-  const jetMesh = new Mesh(jets.bake(), landmarkMaterial())
-  jetMesh.position.y = WATER_TOP
-  jetMesh.userData.animated = true
-
-  // 步行路径：广场局部坐标 → 世界坐标
-  const toWorld = (pts, ox, oz) => pts.map(([x, z]) => [ox + x, oz + z])
-  const ring = (cx, cz, r, n) =>
-    Array.from({ length: n }, (_, i) => {
-      const a = (i / n) * Math.PI * 2
-      return [cx + Math.cos(a) * r, cz + Math.sin(a) * r]
-    })
-  const walkways = [
+function squareWalkways(qx, qz) {
+  return [
     ...WALK_W.map((w) => ({
-      points: toWorld(w.points, qx, qz),
+      points: offsetPoints(w.points, qx, qz),
       y: PAVE,
       width: w.width,
       closed: false,
       density: w.density
     })),
     {
-      points: ring(qx, qz, RING.r, 32),
+      points: ringPoints(qx, qz, RING.r, 32),
       y: PAVE,
       width: RING.width,
       closed: true,
       density: RING.density
     },
     {
-      points: ring(qx + SUNKEN.x, qz + SUNKEN.z, SUNKEN_RING.r, 20),
+      points: ringPoints(qx + SUNKEN.x, qz + SUNKEN.z, SUNKEN_RING.r, 20),
       y: SUNKEN_RING.y,
       width: SUNKEN_RING.width,
       closed: true,
       density: SUNKEN_RING.density
-    },
-    {
-      // 轴线相对毛主席像中心：北端在科技馆正门前，南端在像的台基北沿外
-      points: toWorld(
-        [
-          [0, AXIS.z0],
-          [0, AXIS.z1]
-        ],
-        sx,
-        sz
-      ),
-      y: AXIS.y,
-      width: AXIS.width,
-      closed: false,
-      density: AXIS.density
     }
   ]
-
-  return {
-    meshes: [mesh, jetMesh],
-    zones,
-    // 落点球坐在广场中心金盘上（盘厚 0.3 + 纹样 0.15）
-    markerHeight: PAVE + 0.45,
-    walkways,
-    update(t) {
-      jetMesh.scale.y = 1 + 0.18 * Math.sin(t * 2.2)
-    }
-  }
 }
