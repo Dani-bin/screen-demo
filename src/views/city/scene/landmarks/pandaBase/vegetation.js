@@ -1,37 +1,43 @@
 /*
- * 熊猫基地 · 树竹（核心区乔木、竹林甬道、点种竹丛、西区林冠起伏面与西区竹）
+ * 熊猫基地 · 树竹（竹林甬道、核心区乔木、点种竹丛、林冠起伏面与西区竹）
  * ----------------------------------------------------------
- * 规格：设计文档文首决策表（预算 ≤ 4 万：核心区乔木全用 addTree detail 0、160 棵；西区林团改林冠起伏面）
- * 与调研报告 3.1（分区）、4.2（配色）、4.13（全园绿地与竹林）、4.15（预算）。照片：pb_bamboo_road01 / 02
- * （竹林甬道：两侧高竹竿顶向路心弯、在路面上空合拢）、sat_core_z17（核心区几乎满铺树冠）。
+ * 规格：设计文档文首决策表（预算 ≤ 4 万：核心区乔木全用 addTree detail 0；西区林团改林冠起伏面）
+ * 与调研报告 3.1（分区）、4.2（配色）、4.11（小熊猫 2 号活动场在林下）、4.13（全园绿地与竹林）、4.15（预算）。
+ * 照片：pb_bamboo_road01 / 02（竹林甬道：两侧高竹竿顶向路心弯、在路面上空合拢）、sat_core_z17（核心区几乎满铺树冠）。
  *
  * 分区（调研 3.1）：核心区 = 园区 ∩ {x ≥ 6660} ∩ {z ≥ −9440}，西区 = 园区其余部分。
  * 种植顺序（后种的要避开先种的 F_TREE）：
  *   1 竹林甬道：第 2 条步行路径（loop，铜像 → 7 号别墅）西半段与第 3 条（villas，别墅步道）两侧，
- *     竹根离路中线 4.7 m、每 8 m 一丛、高 8～11 m，竿顶向路心倾 14°，路的镜头一侧倾角 × 0.75；
- *   2 核心区乔木 160 棵：kit addTree detail 0，r 8～13、干高 5～8，入口区与太阳产房周边优先，
- *     其余按「林团」成片（散点会读成稀疏的公园树，成片才像林子），离南大门 > 900 m 的排在最后；
- *   3 核心区点种竹约 60 丛：活动场背侧（背向机位的一侧）、天鹅湖西岸步道外侧、太阳 / 月亮产房周边；
- *   4 西区林冠起伏面：40 m 网格三角网，顶点高 8～16 m；
- *   5 西区竹（设计文档约 40 丛，按预算取 37 丛）：沿园区西南边界内侧，3 丛一组。
+ *     竹根离路中线 4.7 m、每 8 m 一丛、高 8～11 m，竿顶向路心倾 14°；路的镜头一侧倾角收小到 × 0.75，
+ *     竹梢少探到路面上空（从机位看少挡路面与行人）；
+ *   2 小熊猫 2 号活动场的林下乔木（场内不开草地洞、不打 F_YARD，见 enclosures.js）；
+ *   3 林冠起伏面：40 m 网格三角网、顶点高 8～16 m，铺满西区，并延伸进核心区远处的大片空草地
+ *     （宽约 80 m 以上、离步行路径远、不压熊猫视线；整片草地留在画面里会读成一条空带）；
+ *   4 核心区乔木：kit addTree detail 0、r 8～13、干高 5～8。先按加权随机种主体（入口区与太阳产房周边
+ *     权重最高、先种满，其余按「林团」成片；离南大门 > 900 m 的权重再 × 0.35，排得更靠后），
+ *     再按空隙大小补种中等空隙（大片空地已由第 3 步的林冠面盖住）；
+ *   5 核心区点种竹约 60 丛：活动场背侧（背向机位的一侧）、天鹅湖西岸步道外侧、太阳 / 月亮产房周边；
+ *   6 西区竹 40 丛：沿园区西南边界内侧，3 丛一组。
  * 竹丛都写进 site.bambooBufs（每色一个顶点数组），种完后每色 fromTriangles 合成一个几何体加进 site.b。
  * 活动场里的矮竹（「熊猫食堂」）由 yards.js 自己合成进了 site.b，这里不碰。
  *
  * 避让（占用栅格，1 m 一格）：
- *   - 乔木：树冠赤道半径 r 的圆盘（freeDisk）不含 F_SOLID | F_PAVE | F_WATER | F_WALK | F_TREE | F_YARD，
- *     且整盘在园界内；F_WALK 是「可走带 + 1.5 m」（walkways.js 的 WALK_CLEAR），即冠缘离可走带 ≥ 1.5 m；
- *   - 一般竹丛：同一掩码按丛半径查，另要求丛心离每条步行路径可走带边缘 ≥ 4.5 m（同望江楼 BAMBOO_CLEAR）；
+ *   - 乔木：树冠赤道半径 r 的圆盘按 0.5 m 取样扫查（diskOk，比 kit freeDisk 的圆心 + 8 点严）不含
+ *     F_SOLID | F_PAVE | F_WATER | F_WALK | F_TREE | F_YARD、整盘在园界内；另按几何距离复核
+ *     冠缘离每条步行路径可走带边缘 ≥ 1.5 m（F_WALK 标记是「可走带 + 1.5 m」，栅格量化后窄处会差一点）；
+ *   - 一般竹丛：同一掩码按丛半径扫查，另要求丛心离每条步行路径可走带边缘 ≥ 4.5 m（同望江楼 BAMBOO_CLEAR）；
  *   - 竹林甬道：按路径偏移落位，不查 F_WALK（否则每丛都会被挡掉），只查
  *     F_SOLID | F_WATER | F_YARD | F_TREE，且竹根所在格不是路面（F_PAVE）；另要求竹根离每条步行路径的
  *     可走带边缘 ≥ TUNNEL.edge（路口、急弯内侧的偏移点会贴近别的路，竹梢会探进那条路的净空）。
  *     竹梢不进 4.35 m 头顶净空与分部件净距的估算见 TUNNEL 注释，由步行路径校验兜底；
- *   - 种下后在栅格上打 F_TREE（乔木按冠半径、竹丛按丛半径）。
- * 熊猫视线：每棵乔木（冠心、半径 1.15 r）与每丛竹（半高处、半径「丛半径 + 半高」）落位前调用
- * site.blocksView，半径再加 VIEW_PAD（它只保护头部那条线，加余量免得擦过视线挡住熊猫身体）。
- * 西区林冠面在所有熊猫的背后（机位在东南、熊猫都在核心区），不查视线。
+ *   - 林冠面：三角形覆盖的格子不含实体 / 路面 / 活动场（核心区部分再加水面、可走带、已种树竹），
+ *     核心区部分种下后按三角形打 F_TREE，后面的乔木、竹丛不往里种；
+ *   - 乔木、竹丛种下后在栅格上打 F_TREE（乔木按冠半径、竹丛按丛半径）。
+ * 熊猫视线：每棵乔木（冠心、半径 1.15 r）、每丛竹（半高处、半径「丛半径 + 半高」）、核心区每块林冠三角形
+ * （形心、半径取到最远顶点）落位前调用 site.blocksView，半径再加 VIEW_PAD + VIEW_SLACK（见其注释）。
  *
- * 预算（本分区 ≤ 14,000 三角形）：乔木 32 / 棵，竹丛 4 束 × 8 = 32 / 丛，林冠面约 1.7k（设计文档估 1.9k）。
- * 超出时依次减西区竹、核心区远处乔木（WEST_BAMBOO.count、TREES.count）。
+ * 预算（本分区 ≤ 约 16,900 三角形，景点合计 ≤ 38,500）：乔木 32 / 棵，竹丛 4 束 × 8 = 32 / 丛，
+ * 林冠面每块 1 个三角形。超出时依次减西区竹、补空隙的乔木（WEST_BAMBOO.count、GAP_TREES.count）。
  */
 import { Matrix4 } from "three"
 import { THEME } from "../../theme.js"
@@ -44,6 +50,7 @@ import {
 import { addTree } from "../kit/figures.js"
 import { pushSpindle } from "../kit/plants.js"
 import { fromTriangles } from "../kit/shapes.js"
+import { FORK_PERCHES, RED_PANDA_AREA, RED_PANDA_HOUSE } from "./enclosures.js"
 import { pathById } from "./ground.js"
 import { MOON, SUN } from "./nurseries.js"
 import {
@@ -68,13 +75,23 @@ const DEG = Math.PI / 180
 const CORE_X = 6660
 const CORE_Z = -9440
 
-/** 乔木、一般竹丛的避让掩码（甬道竹另用 TUNNEL_BLOCK） */
+/** 乔木、一般竹丛、核心区林冠面的避让掩码（甬道竹另用 TUNNEL_BLOCK） */
 const BLOCK = F_SOLID | F_PAVE | F_WATER | F_WALK | F_TREE | F_YARD
 /** 竹林甬道的避让掩码：不含 F_WALK（甬道就贴着路种）与 F_PAVE（只查竹根那一格） */
 const TUNNEL_BLOCK = F_SOLID | F_WATER | F_YARD | F_TREE
 
-/** 视线判断的半径余量（米）：blocksView 只保护熊猫头部那条线，加余量免得擦过视线挡住身体 */
+/** 树冠缘离步行路径可走带边缘的最小水平距离（米），同 walkways.js 的 WALK_CLEAR */
+const CROWN_WALK_GAP = 1.5
+
+/*
+ * 视线判断的半径余量（米）：
+ *   VIEW_PAD 1.5：blocksView 只保护熊猫头部那条线，加余量免得擦过视线挡住身体（任务规格）；
+ *   VIEW_SLACK 4：到站机位还会微调（方位约 125° ± 5°、俯仰 28°～35°）。视线绕熊猫头部转动，
+ *   离头部 s 米处横向约挪 0.09 s、竖向约挪 0.05 s；树冠、竹丛能碰到视线的地方都在头部 50 m 以内，
+ *   多留 4 m 后机位在上述范围内小改也不会被挡（视线两侧各让出一条窄带，不会挨着视线种林团）
+ */
 const VIEW_PAD = 1.5
+const VIEW_SLACK = 4
 
 /** 乔木冠色：深林色两份 + 城市树四色（密林比城市公园树深一档，深色占一半） */
 const GREENS = [...C.forest, ...C.forest, ...THEME.tree.greens]
@@ -82,8 +99,8 @@ const GREENS = [...C.forest, ...C.forest, ...THEME.tree.greens]
 /*
  * 竹林甬道（设计文档 4.13）：
  *   off 竹根离路中线、step 沿路间距、h 丛高（各束再 × 0.85～1.1）、lean 竿顶向路心倾角、
- *   nearK 路的镜头一侧倾角系数（这一侧的竹梢压低些，少挡路面与行人）、along 一丛各束沿路排开的半宽、
- *   r 丛半径（查栅格、打 F_TREE，按沿路半宽取）、
+ *   nearK 路的镜头一侧倾角系数（这一侧倾角收小，竹梢少探到路面上空，从机位看少挡路面与行人）、
+ *   along 一丛各束沿路排开的半宽、r 丛半径（查栅格、打 F_TREE，按沿路半宽取）、
  *   edge 竹根离任一步行路径可走带边缘的最小距离（第 2 条宽 3.0：4.7 − 1.5 = 3.2，留 0.05 m 浮点余量）。
  * 净空估算（最坏情况：最大倾角 16.1°、竹根朝路挪 0.2 m、叶团半径 0.14 倍高）：头部带（路面上 3.11～4.35 m）
  * 里叶团离竹根至多约 2.3 m，离路中线 ≥ 2.2 m，即离第 2 条可走带边缘 ≥ 0.7 m（要求 0.52 m）；
@@ -104,13 +121,13 @@ const TUNNEL = {
 }
 
 /*
- * 核心区乔木（设计文档 4.13 最终决策）：count 棵、kit addTree detail 0，冠半径 r、干高 trunkH。
+ * 核心区乔木主体（设计文档 4.13）：count 棵、kit addTree detail 0，冠半径 r、干高 trunkH。
  * 候选点：从核心区西北角起 step 米网格、格内抖动 0.8 格，每格用「种子 + 格号」派生的独立随机流。
  * 落位顺序按加权随机（键 = 指数随机数 / 权重，从小到大逐个试种，种满 count 为止）：
- *   入口区（南大门 → 铜像一线 entry 米以内）与太阳产房周边（离圆心 sun 米以内）权重 focus；
- *   林团（groves 个圆，半径 grove 米，按种子撒在中近景的空地上，见 groveCircles）里权重 groveW；
- *   其余 rest（不为 0：林团之间也零星有树）；
- *   离南大门 > far 米的再 × farK（预算不够时先减它们）。
+ *   入口区（南大门 → 铜像一线 entry 米以内）与太阳产房周边（离圆心 sun 米以内）权重 focus
+ *   （远大于林团，这两区先种满）；林团（groves 个圆，半径 grove 米，按种子撒在中近景的空地上，
+ *   见 groveCircles）里权重 groveW；其余 rest（不为 0：林团之间也零星有树）；
+ *   离南大门 > far 米的权重再 × farK（排得更靠后，预算紧时先少种它们）。
  */
 const TREES = {
   seed: 101,
@@ -120,7 +137,7 @@ const TREES = {
   trunkH: [5, 8],
   entry: 150,
   sun: [40, 110],
-  focus: 8,
+  focus: 24,
   groves: 16,
   grove: [40, 75],
   groveW: 6,
@@ -130,6 +147,30 @@ const TREES = {
 }
 /** 铜像（入园主路 entry 北端，即第 1 条步行路径终点；同 ground.js ROADS 的 entry 末点） */
 const STATUE = [7410, -8703]
+
+/*
+ * 补空隙的乔木：主体种完后，剩下的候选点按所在处的空地净距（离最近的实体 / 路 / 水 / 可走带 / 活动场 /
+ * 已种树竹与林冠面的距离）从大到小试种 count 棵；离南大门 > far 米的净距按 farK 折算（画面里小）。
+ * 净距场是种前算一次的静态场，同一块空地会连种几棵，读成一小片林子而不是均匀散点
+ */
+const GAP_TREES = { count: 73, farK: 0.6 }
+
+/*
+ * 小熊猫 2 号活动场的林下乔木（调研 4.11「林下」）：场内 step 米网格抖动取点，按种子打乱后试种 count 棵。
+ * 冠盘不压矮墙（墙线打了 F_SOLID）、3 座树杈栖架与小熊猫产房（site.solid 登记）；冠半径取 r（比园区
+ * 乔木小一档，场地窄）。冠底离草地 trunkH − 0.03 r ≥ 4.7 m，高过树杈栖架顶（3.6 m），不会压住栖架。
+ * 另外树冠不挡住栖架顶、产房顶望向到站机位的线（同熊猫视线的判法，余量 propPad 米）：
+ * 场里本来只有这几样东西，被树冠挡住就只剩一圈矮墙和几棵树
+ */
+const RED_PANDA_TREES = {
+  seed: 97,
+  count: 10,
+  step: 6,
+  r: [6, 9],
+  trunkH: [5, 7],
+  perchTop: 3.6,
+  propPad: 1.5
+}
 
 /*
  * 核心区点种竹（设计文档 4.13「活动场背侧、湖西岸、产房周边点种约 60 丛」）：
@@ -152,12 +193,13 @@ const CLUMPS = {
 }
 
 /*
- * 西区林冠起伏面（设计文档 3 节 / 4.13 最终决策：40 m 网格三角网、顶点高 8～16 m 随机）：
+ * 林冠起伏面（设计文档 3 节 / 4.13 最终决策：40 m 网格三角网、顶点高 8～16 m 随机）：
  *   网格线对齐核心区西界与北界（x = 6660、z = −9440 落在网格线上），顶点在平面上再抖动 ±jitter 米
  *   （打散规则的网格线与锯齿状的分区边，不加三角形）；高度 h 为离林下草地的高度。
- *   只留三个顶点都在西区园界内、且中心不在 F_WATER（西区两池）的三角形；三角形若压到实体 / 路面 /
- *   活动场（核心区西界上的矮房 1226059870 有一半在西区）也去掉，免得把楼埋进林冠里。
- *   林冠面的边缘顶点（只被一侧三角形用到的边的端点）压到 edgeH：边缘斜落到林下，
+ *   顶点「在林冠里」：西区园界内，或核心区里的开阔草地顶点（见 OPEN）。只留三个顶点都在林冠里、
+ *   且中心不在 F_WATER（西区两池）的三角形；三角形覆盖的格子若有实体 / 路面 / 活动场也去掉
+ *   （核心区西界上的矮房 1226059870 有一半在西区，免得把楼埋进林冠里）。
+ *   林冠面的边缘顶点（只被一个三角形用到的边的端点）压到 edgeH：边缘斜落到林下，
  *   不悬空成一张「浮在 8～16 m 的毯子」（机位斜看时边缘下面会露出一条草地）。
  */
 const CANOPY = {
@@ -171,15 +213,32 @@ const CANOPY = {
 }
 
 /*
+ * 林冠面延伸进核心区的开阔草地：
+ *   核心区顶点的空地净距（到 BLOCK 标记或园界外的距离，种完甬道竹与小熊猫区乔木后算）≥ vertex 米、
+ *   离南大门 ≥ far 米（只铺远处：近景里一整块起伏面读成土丘，近处空地交给乔木）、离太阳产房圆心
+ *   ≥ sunClear 米（乔木优先区）、不在小熊猫 2 号活动场里，才算在林冠里；
+ *   核心区三角形再查熊猫视线，并按连通块（共用顶点）筛：块里最大净距 ≥ wide 米（草地宽约 80 m 以上）
+ *   且不少于 minTris 个三角形，或与西区林冠相连（把西区林冠接着铺过分区线），才保留
+ */
+const OPEN = {
+  vertex: 22,
+  far: 600,
+  sunClear: 130,
+  wide: 40,
+  minTris: 4,
+  cell: 2,
+  margin: 120
+}
+
+/*
  * 西区竹（设计文档 4.13「约 40 丛」，按任务说明沿园区西南边界内侧）：
  *   园界上外法向方位在 bearing 范围内（朝南～朝西）、中点在西区的边，接成一条边界线；
  *   count 丛按 group 丛一组（组内相隔 gap 米）沿整条线均匀分布，向园内偏 inset 米；
- *   丛半径、高、束数同点种竹。count 由预算定：设计文档约 40 丛，本分区 ≤ 14,000 三角形时取 37
- *   （超预算先减西区竹，见文件头）。
+ *   丛半径、高、束数同点种竹。
  */
 const WEST_BAMBOO = {
   seed: 113,
-  count: 37,
+  count: 40,
   group: 3,
   gap: 9,
   bearing: [170, 280],
@@ -233,13 +292,30 @@ function walkEdgeDist(x, z, walkways) {
   return best
 }
 
-/** 圆盘（圆心 + 圆周 8 点，同 freeDisk 的取样）是否整个在园界内（F_PARK） */
-function inPark(grid, x, z, r) {
-  if (!(grid.get(x, z) & F_PARK)) return false
-  for (let k = 0; k < 8; k++) {
-    const t = (k / 8) * Math.PI * 2
-    if (!(grid.get(x + r * Math.cos(t), z + r * Math.sin(t)) & F_PARK)) {
-      return false
+/** diskOk 扫圆盘的取样步长（米）：半格，盘内任一点离最近的取样点 ≤ 0.35 m */
+const DISK_STEP = 0.5
+
+/**
+ * 圆盘（圆心 (x, z)、半径 r）里是否没有 mask 标记、且整盘在园界内（F_PARK）。
+ * 先查圆周 16 点（多数不合格的圆盘在这里就被挡下），再按 DISK_STEP 步长扫圆盘内的点。
+ * 比 kit freeDisk（圆心 + 圆周 8 点）严：窄的路面带、可走带外扩带、实体外扩带会从 8 点之间漏过去
+ */
+function diskOk(grid, x, z, r, mask) {
+  const bad = (px, pz) => {
+    const f = grid.get(px, pz)
+    return f & mask || !(f & F_PARK)
+  }
+  for (let k = 0; k < 16; k++) {
+    const t = (k / 16) * Math.PI * 2
+    if (bad(x + r * Math.cos(t), z + r * Math.sin(t))) return false
+  }
+  const n = Math.floor(r / DISK_STEP)
+  const r2 = r * r
+  for (let i = -n; i <= n; i++) {
+    for (let j = -n; j <= n; j++) {
+      const dx = i * DISK_STEP
+      const dz = j * DISK_STEP
+      if (dx * dx + dz * dz <= r2 && bad(x + dx, z + dz)) return false
     }
   }
   return true
@@ -318,6 +394,69 @@ function outwardEdges(poly) {
   return out
 }
 
+/**
+ * 空地净距场：核心区（向西、向北各多取 OPEN.margin 米，让分区线附近也看得到西区的空地）按 OPEN.cell 米
+ * 一格，每格到最近「障碍格」（mask 标记或园界外）的近似距离：八邻域两遍倒角距离变换，误差 < 8%。
+ * @returns {(x: number, z: number) => number} 查询函数，场外返回 0
+ */
+function clearanceField(site, mask) {
+  const { grid } = site
+  const pb = polygonBounds(site.park)
+  const cs = OPEN.cell
+  const x0 = CORE_X - OPEN.margin
+  const z0 = CORE_Z - OPEN.margin
+  const nx = Math.ceil((pb.maxX - x0) / cs) + 1
+  const nz = Math.ceil((pb.maxZ - z0) / cs) + 1
+  const d = new Float32Array(nx * nz)
+  for (let k = 0; k < nz; k++) {
+    for (let i = 0; i < nx; i++) {
+      const f = grid.get(x0 + (i + 0.5) * cs, z0 + (k + 0.5) * cs)
+      d[k * nx + i] = f & mask || !(f & F_PARK) ? 0 : 1e9
+    }
+  }
+  const a = cs
+  const b = cs * Math.SQRT2
+  // 正向：左、上、左上、右上
+  for (let k = 0; k < nz; k++) {
+    for (let i = 0; i < nx; i++) {
+      const o = k * nx + i
+      let v = d[o]
+      if (i > 0) v = Math.min(v, d[o - 1] + a)
+      if (k > 0) {
+        v = Math.min(v, d[o - nx] + a)
+        if (i > 0) v = Math.min(v, d[o - nx - 1] + b)
+        if (i < nx - 1) v = Math.min(v, d[o - nx + 1] + b)
+      }
+      d[o] = v
+    }
+  }
+  // 反向：右、下、右下、左下
+  for (let k = nz - 1; k >= 0; k--) {
+    for (let i = nx - 1; i >= 0; i--) {
+      const o = k * nx + i
+      let v = d[o]
+      if (i < nx - 1) v = Math.min(v, d[o + 1] + a)
+      if (k < nz - 1) {
+        v = Math.min(v, d[o + nx] + a)
+        if (i < nx - 1) v = Math.min(v, d[o + nx + 1] + b)
+        if (i > 0) v = Math.min(v, d[o + nx - 1] + b)
+      }
+      d[o] = v
+    }
+  }
+  return (x, z) => {
+    const i = Math.floor((x - x0) / cs)
+    const k = Math.floor((z - z0) / cs)
+    if (i < 0 || i >= nx || k < 0 || k >= nz) return 0
+    return d[k * nx + i]
+  }
+}
+
+/** 熊猫视线检查（半径加 VIEW_PAD 与 VIEW_SLACK，见其注释） */
+function blocks(site, x, y, z, radius) {
+  return site.blocksView(x, y, z, radius + VIEW_PAD + VIEW_SLACK)
+}
+
 /* ---------------- 竹丛 ---------------- */
 
 /**
@@ -367,14 +506,14 @@ function addBamboo(bufs, x, y, z, rand, h, n, lean) {
 }
 
 /**
- * 一般竹丛的落位检查与种植（核心区点种、西区竹共用）：掩码、园界、离可走带边缘、熊猫视线，
+ * 一般竹丛的落位检查与种植（核心区点种、西区竹共用）：掩码与园界（diskOk 扫查）、离可走带边缘、熊猫视线，
  * 通过就种下并打 F_TREE。返回是否种下；没种下时在 rej 里按原因计数。
  */
 function tryClump(site, walkways, bufs, x, z, rand, rej) {
   const K = CLUMPS
   const { grid } = site
   const h = lerpRange(K.h, rand())
-  if (!grid.freeDisk(x, z, K.r, BLOCK) || !inPark(grid, x, z, K.r)) {
+  if (!diskOk(grid, x, z, K.r, BLOCK)) {
     rej.mask++
     return false
   }
@@ -382,7 +521,7 @@ function tryClump(site, walkways, bufs, x, z, rand, rej) {
     rej.walk++
     return false
   }
-  if (site.blocksView(x, LAWN_Y + h / 2, z, K.r + h / 2 + VIEW_PAD)) {
+  if (blocks(site, x, LAWN_Y + h / 2, z, K.r + h / 2)) {
     rej.view++
     return false
   }
@@ -424,10 +563,7 @@ function plantTunnels(site, walkways, bufs, stats) {
           rej.pave++
           continue
         }
-        if (
-          !grid.freeDisk(x, z, K.r, TUNNEL_BLOCK) ||
-          !inPark(grid, x, z, K.r)
-        ) {
+        if (!diskOk(grid, x, z, K.r, TUNNEL_BLOCK)) {
           rej.mask++
           continue
         }
@@ -436,7 +572,7 @@ function plantTunnels(site, walkways, bufs, stats) {
           continue
         }
         const h = lerpRange(K.h, rand())
-        if (site.blocksView(x, LAWN_Y + h / 2, z, K.r + h / 2 + VIEW_PAD)) {
+        if (blocks(site, x, LAWN_Y + h / 2, z, K.r + h / 2)) {
           rej.view++
           continue
         }
@@ -444,7 +580,7 @@ function plantTunnels(site, walkways, bufs, stats) {
         const q = nearestOnLine(x, z, line)
         const dx = (q.x - x) / q.d
         const dz = (q.z - z) / q.d
-        // 竹根在路的镜头一侧（路心 → 竹根的方向朝向机位）时倾角压低
+        // 竹根在路的镜头一侧（路心 → 竹根的方向朝向机位）时倾角收小
         const near = -dx * (camX - x) - dz * (camZ - z) > 0
         const deg = K.lean * (near ? K.nearK : 1)
         addBamboo(bufs, x, LAWN_Y, z, rand, h, K.n, {
@@ -460,7 +596,297 @@ function plantTunnels(site, walkways, bufs, stats) {
   })
 }
 
-/* ---------------- 2 核心区乔木 ---------------- */
+/* ---------------- 乔木公共 ---------------- */
+
+/**
+ * 一棵乔木的落位检查与种植：冠盘按 0.5 m 取样扫掩码与园界、冠缘离可走带边缘 ≥ CROWN_WALK_GAP、熊猫视线；
+ * 通过就种下（kit addTree detail 0）并按冠半径打 F_TREE。c 为 { x, z, r, trunkH, color, yaw }。
+ * 返回是否种下；没种下时在 rej 里按原因计数。
+ */
+function tryTree(site, walkways, c, rej) {
+  const { grid } = site
+  if (!diskOk(grid, c.x, c.z, c.r, BLOCK)) {
+    rej.mask++
+    return false
+  }
+  if (walkEdgeDist(c.x, c.z, walkways) - c.r < CROWN_WALK_GAP) {
+    rej.walk++
+    return false
+  }
+  // 冠心：树根以上 trunkH + 0.95 r（kit addTree）
+  const cy = LAWN_Y + c.trunkH + 0.95 * c.r
+  if (blocks(site, c.x, cy, c.z, 1.15 * c.r)) {
+    rej.view++
+    return false
+  }
+  addTree(site.b, c.x, LAWN_Y, c.z, {
+    r: c.r,
+    color: c.color,
+    trunkH: c.trunkH,
+    yaw: c.yaw,
+    detail: 0
+  })
+  grid.disk(c.x, c.z, c.r, F_TREE)
+  return true
+}
+
+/* ---------------- 2 小熊猫 2 号活动场林下乔木 ---------------- */
+
+/**
+ * 球（球心 (cx, cy, cz)、半径 radius）是否压到某个点 targets[i] 望向到站机位的线段
+ * （自该点起 1～150 m 一段，同 site.blocksView 的视线取法）
+ */
+function blocksProps(site, targets, cx, cy, cz, radius) {
+  const [px, py, pz] = site.cameraPos()
+  for (const [tx, ty, tz] of targets) {
+    const len = Math.hypot(px - tx, py - ty, pz - tz)
+    const dx = (px - tx) / len
+    const dy = (py - ty) / len
+    const dz = (pz - tz) / len
+    const s = Math.max(
+      1,
+      Math.min(150, (cx - tx) * dx + (cy - ty) * dy + (cz - tz) * dz)
+    )
+    const d = Math.hypot(cx - tx - dx * s, cy - ty - dy * s, cz - tz - dz * s)
+    if (d < radius) return true
+  }
+  return false
+}
+
+function plantRedPanda(site, walkways, stats) {
+  const R = RED_PANDA_TREES
+  const bb = polygonBounds(RED_PANDA_AREA)
+  // 受保护的点：三座栖架顶、产房屋顶中心
+  const props = [
+    ...FORK_PERCHES.map(([x, z]) => [x, LAWN_Y + R.perchTop, z]),
+    [RED_PANDA_HOUSE.at[0], RED_PANDA_HOUSE.top, RED_PANDA_HOUSE.at[1]]
+  ]
+  const cands = []
+  for (let x = bb.minX; x < bb.maxX; x += R.step) {
+    for (let z = bb.minZ; z < bb.maxZ; z += R.step) {
+      // 每格独立随机流：抖动 x、z，冠半径、干高、冠色、朝向、排序键
+      const rand = mulberry32(hashInts(R.seed, Math.round(x), Math.round(z)))
+      const px = x + rand() * R.step
+      const pz = z + rand() * R.step
+      const r = lerpRange(R.r, rand())
+      const trunkH = lerpRange(R.trunkH, rand())
+      const color = GREENS[Math.floor(rand() * GREENS.length)]
+      const yaw = rand() * Math.PI * 2
+      const key = rand()
+      if (!pointInPolygon(px, pz, RED_PANDA_AREA)) continue
+      cands.push({ x: px, z: pz, r, trunkH, color, yaw, key })
+    }
+  }
+  cands.sort((a, b) => a.key - b.key)
+  for (const c of cands) {
+    if (stats.trees.redPanda >= R.count) break
+    const cy = LAWN_Y + c.trunkH + 0.95 * c.r
+    if (blocksProps(site, props, c.x, cy, c.z, 1.15 * c.r + R.propPad)) {
+      stats.rejected.tree.props++
+      continue
+    }
+    if (tryTree(site, walkways, c, stats.rejected.tree)) stats.trees.redPanda++
+  }
+}
+
+/* ---------------- 3 林冠起伏面（西区 + 核心区远处空地） ---------------- */
+
+/** 点在西区园界内（园区多边形内、且不在核心区矩形里） */
+function inWest(site, x, z) {
+  return !inCoreRect(x, z) && pointInPolygon(x, z, site.park)
+}
+
+/** 三角形（xz 平面）覆盖的格子里是否有 mask 标记：按 2 m 步长扫包围盒，取落在三角形内的点 */
+function triangleHits(grid, a, b, c, mask) {
+  const minX = Math.min(a.x, b.x, c.x)
+  const maxX = Math.max(a.x, b.x, c.x)
+  const minZ = Math.min(a.z, b.z, c.z)
+  const maxZ = Math.max(a.z, b.z, c.z)
+  const tri = [
+    [a.x, a.z],
+    [b.x, b.z],
+    [c.x, c.z]
+  ]
+  for (let x = minX; x <= maxX; x += 2) {
+    for (let z = minZ; z <= maxZ; z += 2) {
+      if (grid.get(x, z) & mask && pointInPolygon(x, z, tri)) return true
+    }
+  }
+  return false
+}
+
+/** 核心区顶点是否算开阔草地（见 OPEN 注释）；clear 为空地净距场 */
+function openCore(site, clear, x, z) {
+  const O = OPEN
+  const { spot } = site.ctx
+  if (!inCoreRect(x, z) || !pointInPolygon(x, z, site.park)) return false
+  if (clear(x, z) < O.vertex) return false
+  if (Math.hypot(x - spot.x, z - spot.z) < O.far) return false
+  if (Math.hypot(x - SUN.c[0], z - SUN.c[1]) < O.sunClear) return false
+  return !pointInPolygon(x, z, RED_PANDA_AREA)
+}
+
+/**
+ * 核心区林冠三角形按连通块（共用顶点）筛选（见 OPEN 注释），返回保留的三角形下标集合。
+ * cores 为核心区三角形 [{ t: 顶点下标三元组, ti: 在 tris 里的下标 }]
+ */
+function keepCoreBlocks(cores, verts) {
+  const O = OPEN
+  // 并查集：共用顶点的三角形归一块
+  const parent = cores.map((_, i) => i)
+  const find = (i) => {
+    while (parent[i] !== i) {
+      parent[i] = parent[parent[i]]
+      i = parent[i]
+    }
+    return i
+  }
+  const byVert = new Map()
+  cores.forEach(({ t }, i) => {
+    for (const j of t) {
+      if (byVert.has(j)) parent[find(i)] = find(byVert.get(j))
+      else byVert.set(j, i)
+    }
+  })
+  const groups = new Map()
+  cores.forEach(({ t, ti }, i) => {
+    const root = find(i)
+    if (!groups.has(root)) groups.set(root, { tis: [], wide: 0, west: false })
+    const blk = groups.get(root)
+    blk.tis.push(ti)
+    for (const j of t) {
+      const v = verts[j]
+      if (v.west) blk.west = true
+      else blk.wide = Math.max(blk.wide, v.clear)
+    }
+  })
+  const keep = new Set()
+  for (const blk of groups.values()) {
+    if (blk.west || (blk.wide >= O.wide && blk.tis.length >= O.minTris)) {
+      for (const ti of blk.tis) keep.add(ti)
+    }
+  }
+  return keep
+}
+
+function buildCanopy(site, stats) {
+  const K = CANOPY
+  const { grid } = site
+  const pb = polygonBounds(site.park)
+  // 空地净距：此时已种甬道竹、小熊猫区乔木，已登记全部实体、路面、水面、活动场、可走带
+  const clear = clearanceField(site, BLOCK)
+  // 网格号 i、k 以核心区西北角 (CORE_X, CORE_Z) 为原点（负号在西、北）
+  const i0 = Math.floor((pb.minX - CORE_X) / K.step)
+  const i1 = Math.ceil((pb.maxX - CORE_X) / K.step)
+  const k0 = Math.floor((pb.minZ - CORE_Z) / K.step)
+  const k1 = Math.ceil((pb.maxZ - CORE_Z) / K.step)
+  const ni = i1 - i0 + 1
+  const verts = []
+  for (let k = k0; k <= k1; k++) {
+    for (let i = i0; i <= i1; i++) {
+      // 每个顶点独立随机流：平面抖动 x、z，高度
+      const rand = mulberry32(hashInts(K.seed, i, k))
+      const x = CORE_X + i * K.step + (rand() - 0.5) * 2 * K.jitter
+      const z = CORE_Z + k * K.step + (rand() - 0.5) * 2 * K.jitter
+      const h = lerpRange(K.h, rand())
+      const west = inWest(site, x, z)
+      const core = !west && openCore(site, clear, x, z)
+      verts.push({ x, z, y: LAWN_Y + h, west, core, clear: clear(x, z) })
+    }
+  }
+  const V = (i, k) => (k - k0) * ni + (i - i0)
+  // 每格两个三角形，对角线方向按格号播种（避免整片同向的斜纹）
+  const tris = []
+  const cores = []
+  for (let k = k0; k < k1; k++) {
+    for (let i = i0; i < i1; i++) {
+      const q = [V(i, k), V(i + 1, k), V(i + 1, k + 1), V(i, k + 1)]
+      const flip = hashInts(K.seed + 1, i, k) & 1
+      const pair = flip
+        ? [
+            [q[0], q[1], q[2]],
+            [q[0], q[2], q[3]]
+          ]
+        : [
+            [q[0], q[1], q[3]],
+            [q[1], q[2], q[3]]
+          ]
+      pair.forEach((t, ti) => {
+        const vs = t.map((j) => verts[j])
+        if (!vs.every((v) => v.west || v.core)) return
+        const [a, b, c] = vs
+        const cx = (a.x + b.x + c.x) / 3
+        const cz = (a.z + b.z + c.z) / 3
+        if (grid.get(cx, cz) & F_WATER) return
+        // 有核心区顶点的三角形伸进了核心区：掩码加严（水面、可走带、已种树竹），并查熊猫视线
+        const inCore = vs.some((v) => v.core)
+        const mask = inCore ? BLOCK : F_SOLID | F_PAVE | F_YARD
+        if (triangleHits(grid, a, b, c, mask)) {
+          stats.rejected.canopy.mask++
+          return
+        }
+        if (inCore) {
+          const cy = (a.y + b.y + c.y) / 3
+          const rr = Math.max(
+            ...vs.map((v) => Math.hypot(v.x - cx, v.y - cy, v.z - cz))
+          )
+          if (blocks(site, cx, cy, cz, rr)) {
+            stats.rejected.canopy.view++
+            return
+          }
+          cores.push({ t, ti: tris.length })
+        }
+        tris.push({
+          t,
+          color: hashInts(K.seed + 2, i, k, ti) % K.colors.length
+        })
+      })
+    }
+  }
+  // 核心区部分按连通块筛，西区三角形全留
+  const keepCore = keepCoreBlocks(cores, verts)
+  const coreSet = new Set(cores.map((c) => c.ti))
+  const kept = tris.filter((_, ti) => !coreSet.has(ti) || keepCore.has(ti))
+  stats.rejected.canopy.block = coreSet.size - keepCore.size
+  // 边缘顶点：只被一个保留三角形用到的边是林冠面的边界，其两端压到 edgeH
+  const edgeUse = new Map()
+  const edgeKey = (p, q) => (p < q ? `${p},${q}` : `${q},${p}`)
+  for (const { t } of kept) {
+    for (let e = 0; e < 3; e++) {
+      const key = edgeKey(t[e], t[(e + 1) % 3])
+      edgeUse.set(key, (edgeUse.get(key) || 0) + 1)
+    }
+  }
+  for (const [key, n] of edgeUse) {
+    if (n !== 1) continue
+    for (const j of key.split(",")) verts[Number(j)].y = LAWN_Y + K.edgeH
+  }
+  // 按色分组写顶点（法线朝上：xz 平面上逆着 +Y 看为逆时针）；核心区部分打 F_TREE，后种的乔木竹丛避开
+  const bufs = K.colors.map(() => [])
+  for (const { t, color } of kept) {
+    let [a, b, c] = t.map((j) => verts[j])
+    if ((b.z - a.z) * (c.x - a.x) - (b.x - a.x) * (c.z - a.z) < 0)
+      [b, c] = [c, b]
+    bufs[color].push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z)
+    if (a.core || b.core || c.core) {
+      grid.fillPoly(
+        [
+          [a.x, a.z],
+          [b.x, b.z],
+          [c.x, c.z]
+        ],
+        F_TREE
+      )
+    }
+  }
+  bufs.forEach((pos, ci) => {
+    if (pos.length) site.b.add(fromTriangles(pos), K.colors[ci])
+  })
+  stats.canopy.total = kept.length
+  stats.canopy.core = keepCore.size
+}
+
+/* ---------------- 4 核心区乔木 ---------------- */
 
 /**
  * 林团圆心：按种子在核心区包围盒里撒点，只取落在园界内、核心区内、离南大门 far 米以内
@@ -510,9 +936,11 @@ function treeWeight(site, groves, x, z) {
   return { w, zone }
 }
 
-function plantTrees(site, stats) {
+/** 核心区乔木：主体按加权随机种 TREES.count 棵，再按空隙大小补种 GAP_TREES.count 棵 */
+function plantTrees(site, walkways, stats) {
   const T = TREES
   const { grid } = site
+  const { spot } = site.ctx
   const rej = stats.rejected.tree
   const pb = polygonBounds(site.park)
   const groves = groveCircles(site)
@@ -525,7 +953,7 @@ function plantTrees(site, stats) {
       const rand = mulberry32(hashInts(T.seed, ix, iz))
       const x = CORE_X + (ix + 0.5 + (rand() - 0.5) * 0.8) * T.step
       const z = CORE_Z + (iz + 0.5 + (rand() - 0.5) * 0.8) * T.step
-      // 冠半径偏向大的一端（√u）：同样 160 棵，冠幅大些更显林密
+      // 冠半径偏向大的一端（√u）：同样棵数，冠幅大些更显林密
       const r = lerpRange(T.r, Math.sqrt(rand()))
       const trunkH = lerpRange(T.trunkH, rand())
       const color = GREENS[Math.floor(rand() * GREENS.length)]
@@ -535,36 +963,35 @@ function plantTrees(site, stats) {
       // 加权随机排序（Efraimidis–Spirakis）：键 = −ln(1 − u) / 权重，越小越先种
       const { w, zone } = treeWeight(site, groves, x, z)
       const key = -Math.log(1 - u) / w
-      cands.push({ x, z, r, trunkH, color, yaw, key, zone })
+      cands.push({ x, z, r, trunkH, color, yaw, key, zone, done: false })
     }
   }
   cands.sort((a, b) => a.key - b.key)
+  let main = 0
   for (const c of cands) {
-    if (stats.trees >= T.count) break
-    if (!grid.freeDisk(c.x, c.z, c.r, BLOCK) || !inPark(grid, c.x, c.z, c.r)) {
-      rej.mask++
-      continue
-    }
-    // 冠心：树根以上 trunkH + 0.95 r（kit addTree）
-    const cy = LAWN_Y + c.trunkH + 0.95 * c.r
-    if (site.blocksView(c.x, cy, c.z, 1.15 * c.r + VIEW_PAD)) {
-      rej.view++
-      continue
-    }
-    addTree(site.b, c.x, LAWN_Y, c.z, {
-      r: c.r,
-      color: c.color,
-      trunkH: c.trunkH,
-      yaw: c.yaw,
-      detail: 0
+    if (main >= T.count) break
+    if (!tryTree(site, walkways, c, rej)) continue
+    c.done = true
+    main++
+    stats.trees[c.zone]++
+  }
+  // 补空隙：剩下的候选按空地净距（种完主体后算一次）从大到小试种
+  const G = GAP_TREES
+  const clear = clearanceField(site, BLOCK)
+  const rest = cands
+    .filter((c) => !c.done)
+    .map((c) => {
+      const far = Math.hypot(c.x - spot.x, c.z - spot.z) > T.far
+      return { c, gap: clear(c.x, c.z) * (far ? G.farK : 1) }
     })
-    grid.disk(c.x, c.z, c.r, F_TREE)
-    stats.trees++
-    stats.treeZones[c.zone]++
+  rest.sort((a, b) => b.gap - a.gap)
+  for (const { c } of rest) {
+    if (stats.trees.gap >= G.count) break
+    if (tryTree(site, walkways, c, rej)) stats.trees.gap++
   }
 }
 
-/* ---------------- 3 核心区点种竹 ---------------- */
+/* ---------------- 5 核心区点种竹 ---------------- */
 
 /** 活动场轮廓：草地洞里除去湖、池（其余都是 site.addYard 登记的活动场） */
 function yardPolys(site) {
@@ -647,114 +1074,7 @@ function plantClumps(site, walkways, bufs, stats) {
   plantClumpSet(site, walkways, bufs, stats, nursery, "nursery", 2)
 }
 
-/* ---------------- 4 西区林冠起伏面 ---------------- */
-
-/** 点在西区园界内（园区多边形内、且不在核心区矩形里） */
-function inWest(site, x, z) {
-  return !inCoreRect(x, z) && pointInPolygon(x, z, site.park)
-}
-
-/** 三角形（xz 平面）覆盖的格子里是否有 mask 标记：按 2 m 步长扫包围盒，取落在三角形内的点 */
-function triangleHits(grid, a, b, c, mask) {
-  const minX = Math.min(a.x, b.x, c.x)
-  const maxX = Math.max(a.x, b.x, c.x)
-  const minZ = Math.min(a.z, b.z, c.z)
-  const maxZ = Math.max(a.z, b.z, c.z)
-  const tri = [
-    [a.x, a.z],
-    [b.x, b.z],
-    [c.x, c.z]
-  ]
-  for (let x = minX; x <= maxX; x += 2) {
-    for (let z = minZ; z <= maxZ; z += 2) {
-      if (grid.get(x, z) & mask && pointInPolygon(x, z, tri)) return true
-    }
-  }
-  return false
-}
-
-function buildCanopy(site, stats) {
-  const K = CANOPY
-  const { grid } = site
-  const pb = polygonBounds(site.park)
-  // 网格号 i、k 以核心区西北角 (CORE_X, CORE_Z) 为原点（负号在西、北）
-  const i0 = Math.floor((pb.minX - CORE_X) / K.step)
-  const i1 = Math.ceil((pb.maxX - CORE_X) / K.step)
-  const k0 = Math.floor((pb.minZ - CORE_Z) / K.step)
-  const k1 = Math.ceil((pb.maxZ - CORE_Z) / K.step)
-  const ni = i1 - i0 + 1
-  const verts = []
-  for (let k = k0; k <= k1; k++) {
-    for (let i = i0; i <= i1; i++) {
-      // 每个顶点独立随机流：平面抖动 x、z，高度
-      const rand = mulberry32(hashInts(K.seed, i, k))
-      const x = CORE_X + i * K.step + (rand() - 0.5) * 2 * K.jitter
-      const z = CORE_Z + k * K.step + (rand() - 0.5) * 2 * K.jitter
-      const h = lerpRange(K.h, rand())
-      verts.push({ x, z, y: LAWN_Y + h, inside: inWest(site, x, z) })
-    }
-  }
-  const V = (i, k) => (k - k0) * ni + (i - i0)
-  // 每格两个三角形，对角线方向按格号播种（避免整片同向的斜纹）
-  const tris = []
-  for (let k = k0; k < k1; k++) {
-    for (let i = i0; i < i1; i++) {
-      const q = [V(i, k), V(i + 1, k), V(i + 1, k + 1), V(i, k + 1)]
-      const flip = hashInts(K.seed + 1, i, k) & 1
-      const pair = flip
-        ? [
-            [q[0], q[1], q[2]],
-            [q[0], q[2], q[3]]
-          ]
-        : [
-            [q[0], q[1], q[3]],
-            [q[1], q[2], q[3]]
-          ]
-      pair.forEach((t, ti) => {
-        const [a, b, c] = t.map((j) => verts[j])
-        if (!a.inside || !b.inside || !c.inside) return
-        const cx = (a.x + b.x + c.x) / 3
-        const cz = (a.z + b.z + c.z) / 3
-        if (grid.get(cx, cz) & F_WATER) return
-        if (triangleHits(grid, a, b, c, F_SOLID | F_PAVE | F_YARD)) {
-          stats.rejected.canopySolid++
-          return
-        }
-        tris.push({
-          t,
-          color: hashInts(K.seed + 2, i, k, ti) % K.colors.length
-        })
-      })
-    }
-  }
-  // 边缘顶点：只被一个保留三角形用到的边是林冠面的边界，其两端压到 edgeH
-  const edgeUse = new Map()
-  const edgeKey = (p, q) => (p < q ? `${p},${q}` : `${q},${p}`)
-  for (const { t } of tris) {
-    for (let e = 0; e < 3; e++) {
-      const key = edgeKey(t[e], t[(e + 1) % 3])
-      edgeUse.set(key, (edgeUse.get(key) || 0) + 1)
-    }
-  }
-  for (const [key, n] of edgeUse) {
-    if (n !== 1) continue
-    for (const j of key.split(",")) verts[Number(j)].y = LAWN_Y + K.edgeH
-  }
-  // 按色分组写顶点（法线朝上：xz 平面上逆着 +Y 看为逆时针）
-  const bufs = K.colors.map(() => [])
-  for (const { t, color } of tris) {
-    let [a, b, c] = t.map((j) => verts[j])
-    if ((b.z - a.z) * (c.x - a.x) - (b.x - a.x) * (c.z - a.z) < 0)
-      [b, c] = [c, b]
-    bufs[color].push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z)
-  }
-  bufs.forEach((pos, ci) => {
-    if (pos.length) site.b.add(fromTriangles(pos), K.colors[ci])
-  })
-  stats.canopy = tris.length
-}
-
-/* ---------------- 5 西区竹 ---------------- */
+/* ---------------- 6 西区竹 ---------------- */
 
 function plantWestBamboo(site, walkways, bufs, stats) {
   const K = WEST_BAMBOO
@@ -811,33 +1131,34 @@ export function plantAll(site, walkways) {
   const reasons = () => ({ mask: 0, walk: 0, view: 0 })
   const stats = {
     tunnel: 0,
-    trees: 0,
-    treeZones: { focus: 0, grove: 0, rest: 0 },
+    trees: { redPanda: 0, focus: 0, grove: 0, rest: 0, gap: 0 },
+    canopy: { total: 0, core: 0 },
     clumps: { yard: 0, lake: 0, nursery: 0 },
-    canopy: 0,
     west: 0,
     triangles: {},
     rejected: {
       tunnel: { pave: 0, mask: 0, edge: 0, view: 0 },
-      tree: { mask: 0, view: 0 },
+      tree: { ...reasons(), props: 0 },
       clump: reasons(),
       west: reasons(),
-      canopySolid: 0
+      canopy: { mask: 0, view: 0, block: 0 }
     }
   }
   const b = site.b
   let t0 = b.triangles
   const tally = (name) => {
-    stats.triangles[name] = b.triangles - t0
+    stats.triangles[name] = (stats.triangles[name] || 0) + b.triangles - t0
     t0 = b.triangles
   }
   // 竹丛的三角形最后才合成进 site.b，按丛数计（每丛 n 束 × 8）
   plantTunnels(site, walkways, bufs, stats)
-  plantTrees(site, stats)
+  plantRedPanda(site, walkways, stats)
   tally("trees")
-  plantClumps(site, walkways, bufs, stats)
   buildCanopy(site, stats)
   tally("canopy")
+  plantTrees(site, walkways, stats)
+  tally("trees")
+  plantClumps(site, walkways, bufs, stats)
   plantWestBamboo(site, walkways, bufs, stats)
   bufs.forEach((pos, i) => {
     if (pos.length) b.add(fromTriangles(pos), BAMBOO[i])
