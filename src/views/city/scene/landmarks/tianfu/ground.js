@@ -34,8 +34,9 @@
  *   坑壁、雨棚、台阶在坑口上的顶点用同一组点；坑口栏杆立在挖口外 0.25 m 的铺装上。坑口跨过阴鱼、
  *   东段地灯带并伸出大圆约 1.5 m，由逐三角形相减处理：与西鱼眼盘同时挖时实测多 720 个三角形，
  *   坑口一带有约 140 个 T 形接点（见 polygon.js）。城市地面另由 index.js 的 groundHoles 挖洞。
- * - Task 6 北侧两池（|u| 24.5～101.5、v −76.5～−66）：水面若低于 PAVE 就把两块矩形加进 cuts；
- *   池子整块压在铺装上（水面高于 PAVE ≥ 0.15）时不必挖。北侧花带、绿篱也在 Task 6 做。
+ * - Task 6 北侧两池（|u| 24.5～101.5、v −76.5～−66）：水面高 PAVE + 0.45，整块压在铺装上，不挖
+ *   （northEdge.js）；北侧花带、绿篱也在那里。东入口下沉楼梯口的矩形口子进 cuts
+ *   （structures.js 的 EAST_ENTRY_CUT，只落在浅色外板里）。
  */
 import { distToSegment, ringsCross } from "../kit/footprint.js"
 import { extrudePolygon, fromTriangles, sideWalls } from "../kit/shapes.js"
@@ -161,7 +162,7 @@ const LAWNS = [
     band: true
   },
   {
-    // 东侧小草坪 w815853375（Task 6 的东入口下沉楼梯口在这块草坪里）
+    // 东侧小草坪 w815853375：东南角斜切进去的那块铺装上是东入口下沉楼梯口（structures.js，u 91～97）
     pts: [
       [89.5, -24.5],
       [85.5, -14],
@@ -283,8 +284,8 @@ function arcPoints(cu, cv, rad, a0, a1, step) {
 /** 水平面高度函数 */
 const at = (y) => () => y
 
-/** 一组三角形写成朝上的水平面几何体 */
-function flatTris(tris, y) {
+/** 一组三角形写成朝上的水平面几何体（北缘水面、东入口坑底等也用） */
+export function flatTris(tris, y) {
   const pos = []
   for (const t of tris) pushUp(pos, t, at(y))
   return fromTriangles(pos)

@@ -427,14 +427,22 @@ export function addSunbirdDisc(b, parent, { radius = 27 } = {}) {
 
 /* ---------------- 图腾柱 ---------------- */
 
-const TOTEM_GREEN = "#2F5A48"
+/** 图腾柱柱身绿色（景点在柱上补卷耳等附件时取同一色） */
+export const TOTEM_GREEN = "#2F5A48"
 
 /**
  * 图腾柱：方形柱座 + 外方（下段方形套筒）内圆（圆柱身）+ 两道金箍 + 方形柱头 + 顶部金球。
  * 底在 y = 0，总高 h（含金球）。
- * @param {object} [opts] { h = 12, r = 0.6 }
+ * segments、ballSegments 只给三角形预算紧的景点降细分用（如天府广场 4 根柱）；
+ * 不传时取默认值，几何与加这两个选项之前逐位相同。
+ * @param {object} [opts] { h = 12, r = 0.6, segments = 12, ballSegments = [14, 10] }
+ *   segments：柱身与金箍的圆周分段；ballSegments：金球的 [经向, 纬向] 分段
  */
-export function addTotem(b, parent, { h = 12, r = 0.6 } = {}) {
+export function addTotem(
+  b,
+  parent,
+  { h = 12, r = 0.6, segments = 12, ballSegments = [14, 10] } = {}
+) {
   const ball = 1.1 * r
   const capTop = h - 2 * ball
   const capH = 0.04 * h
@@ -445,13 +453,13 @@ export function addTotem(b, parent, { h = 12, r = 0.6 } = {}) {
     local(parent, 0, 0.06 * h, 0)
   )
   b.add(
-    cylinder(r, r * 0.92, capTop - capH - 0.06 * h, { segments: 12 }),
+    cylinder(r, r * 0.92, capTop - capH - 0.06 * h, { segments }),
     TOTEM_GREEN,
     local(parent, 0, 0.06 * h, 0)
   )
   for (const f of [0.6, 0.72]) {
     b.add(
-      cylinder(r * 1.08, r * 1.08, 0.02 * h, { segments: 12, caps: true }),
+      cylinder(r * 1.08, r * 1.08, 0.02 * h, { segments, caps: true }),
       L.gold,
       local(parent, 0, f * h, 0)
     )
@@ -461,7 +469,11 @@ export function addTotem(b, parent, { h = 12, r = 0.6 } = {}) {
     TOTEM_GREEN,
     local(parent, 0, capTop - capH, 0)
   )
-  b.add(sphere(ball, 14, 10), L.gold, local(parent, 0, capTop - 0.05 * r, 0))
+  b.add(
+    sphere(ball, ...ballSegments),
+    L.gold,
+    local(parent, 0, capTop - 0.05 * r, 0)
+  )
 }
 
 /* ---------------- 低多边形树 ---------------- */

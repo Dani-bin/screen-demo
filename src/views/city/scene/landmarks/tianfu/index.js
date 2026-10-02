@@ -12,15 +12,18 @@
  * - eastEye.js：东鱼眼「黄河龙」下沉广场（Task 5），坑口同样进 cuts（EAST_EYE_CUT），
  *   并返回城市地面洞 groundHoles（坑口外扩 0.5 m，世界坐标）；
  * - sculpture.js：两座鱼眼雕塑共用的托盘旋转体、金龙扁带与龙首；
+ * - northEdge.js：北缘两条喷泉池（水柱进 jets，成第 2 个 Mesh）、池北花带与绿篱、国旗台（Task 6）；
+ * - furniture.js：图腾柱 4 根、凤鸟路灯 12 盏（Task 6）；
+ * - structures.js：「天书」雨棚、东入口下沉楼梯口（铺装挖口 EAST_ENTRY_CUT）、东南构筑物（Task 6）；
+ * - trees.js：东西林带与南缘行道树，返回林带内侧两条南北步道（Task 6）；
  * - north.js：毛主席像、四川科技馆（Task 7 按照片修正）；
  * - neighbors.js：成都博物馆、四川省图书馆（几何冻结，不再改）。
- * 调用顺序决定合批后的顶点顺序，也就决定几何哈希：地面 → 神鸟盘 → 西鱼眼 → 东鱼眼 → 北侧组团 → 周边地标，
- * 不要随意调换。
+ * 调用顺序决定合批后的顶点顺序，也就决定几何哈希：地面 → 神鸟盘 → 西鱼眼 → 东鱼眼 → 北缘 → 图腾柱与路灯
+ * → 构筑物 → 林带 → 北侧组团 → 周边地标，不要随意调换。
  *
  * 后续任务在这里接入新文件：
- * - Task 6：北缘喷泉、图腾柱、路灯、构筑物与树；北缘喷泉水柱加进下面的 jets，自动成为第 2 个 Mesh；
  * - Task 8：步行路径重排（或拆出 walkways.js），替换下面的临时路径。
- * 预算：景点合计 ≤ 30,000 三角形、Mesh ≤ 3（设计第 5 节）。
+ * 预算：景点合计 ≤ 30,000 三角形、Mesh ≤ 3（设计第 5 节）。Mesh 现为 2：静态件 + 北缘水柱动画件。
  */
 import { BackSide, Mesh } from "three"
 import { ColorBuilder, landmarkMaterial } from "../kit/builder.js"
@@ -30,11 +33,15 @@ import { SQUARE_OUTLINE, buildGround } from "./ground.js"
 import { SUNBIRD, buildSunbird } from "./sunbird.js"
 import { WEST_EYE_CUT, buildWestEye } from "./westEye.js"
 import { EAST_EYE_CUT, buildEastEye } from "./eastEye.js"
+import { POOL_WATER, buildNorthEdge } from "./northEdge.js"
+import { buildFurniture } from "./furniture.js"
+import { EAST_ENTRY_CUT, buildStructures } from "./structures.js"
+import { buildTrees } from "./trees.js"
 import { buildNorth } from "./north.js"
 import { buildNeighbors } from "./neighbors.js"
 
-// 喷泉水柱动画 Mesh 的底面高度（水面）：旧条形喷泉的水面 PAVE + 0.4，Task 6 建北缘喷泉池时按池水面改
-const JET_BASE = PAVE + 0.4
+// 喷泉水柱动画 Mesh 的底面高度：北缘喷泉池水面（northEdge.js 的 POOL_WATER = PAVE + 0.45）
+const JET_BASE = POOL_WATER
 
 /*
  * 替换区：OSM 广场面（ground.js 的 SQUARE_OUTLINE）在设计系里的包围盒（u −147.5～146、v −84～104）
@@ -101,15 +108,20 @@ function squareWalkways(site) {
 export function build(ctx) {
   const site = createSite(ctx)
   const b = new ColorBuilder()
-  // 喷泉水柱（单独成动画 Mesh）：旧条形喷泉已删，Task 6 的北缘喷泉水柱加进来之前为空
+  // 喷泉水柱（单独成动画 Mesh）：北缘两池的扇形水柱（northEdge.js）
   const jets = new ColorBuilder()
 
-  // 广场：地面（铺装、太极、草坪花带；铺装在西鱼眼深色盘、东鱼眼坑口处挖口）→ 太阳神鸟盘（返回盘顶北缘高度，
-  // 作定位针底座）→ 西鱼眼（返回绕池步行环）→ 东鱼眼下沉广场（返回坑底环、坑口外环与城市地面洞）
-  buildGround(b, site, { cuts: [WEST_EYE_CUT, EAST_EYE_CUT] })
+  // 广场：地面（铺装、太极、草坪花带；铺装在西鱼眼深色盘、东鱼眼坑口、东入口楼梯口处挖口）→ 太阳神鸟盘
+  // （返回盘顶北缘高度，作定位针底座）→ 西鱼眼（返回绕池步行环）→ 东鱼眼下沉广场（返回坑底环、坑口外环与
+  // 城市地面洞）→ 北缘喷泉池与国旗台 → 图腾柱与凤鸟路灯 → 雨棚、东入口、东南构筑物 → 林带（返回林带内侧步道）
+  buildGround(b, site, { cuts: [WEST_EYE_CUT, EAST_EYE_CUT, EAST_ENTRY_CUT] })
   const sunbird = buildSunbird(b, site)
   const westEye = buildWestEye(b, site)
   const eastEye = buildEastEye(b, site)
+  buildNorthEdge(b, jets, site)
+  buildFurniture(b, site)
+  buildStructures(b, site)
+  const trees = buildTrees(b, site)
   // 北侧组团、周边地标：各自返回替换区与步行路径（世界坐标）
   const parts = [buildNorth(b, site), buildNeighbors(b, site)]
   const zones = [site.toWorldPts(SQUARE_ZONE), ...parts.flatMap((p) => p.zones)]
@@ -117,6 +129,7 @@ export function build(ctx) {
     ...squareWalkways(site),
     ...westEye.walkways,
     ...eastEye.walkways,
+    ...trees.walkways,
     ...parts.flatMap((p) => p.walkways || [])
   ]
 
