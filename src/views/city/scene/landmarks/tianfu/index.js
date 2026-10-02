@@ -9,13 +9,15 @@
  * - ground.js：浅色外板、太极阴鱼与 S 线地灯带、草坪与花带（Task 3）；
  * - sunbird.js：太阳神鸟盘（Task 3），定位针挂在盘顶；
  * - westEye.js：西鱼眼「长江龙」（Task 4），深色盘的口子经 buildGround 的 cuts 挖（WEST_EYE_CUT）；
+ * - eastEye.js：东鱼眼「黄河龙」下沉广场（Task 5），坑口同样进 cuts（EAST_EYE_CUT），
+ *   并返回城市地面洞 groundHoles（坑口外扩 0.5 m，世界坐标）；
+ * - sculpture.js：两座鱼眼雕塑共用的托盘旋转体、金龙扁带与龙首；
  * - north.js：毛主席像、四川科技馆（Task 7 按照片修正）；
  * - neighbors.js：成都博物馆、四川省图书馆（几何冻结，不再改）。
- * 调用顺序决定合批后的顶点顺序，也就决定几何哈希：地面 → 神鸟盘 → 西鱼眼 → 北侧组团 → 周边地标，
+ * 调用顺序决定合批后的顶点顺序，也就决定几何哈希：地面 → 神鸟盘 → 西鱼眼 → 东鱼眼 → 北侧组团 → 周边地标，
  * 不要随意调换。
  *
  * 后续任务在这里接入新文件：
- * - Task 5：eastEye.js，坑口同样进 cuts，并返回 groundHoles（下沉广场坑口，世界坐标，用 site.toWorldPts）；
  * - Task 6：北缘喷泉、图腾柱、路灯、构筑物与树；北缘喷泉水柱加进下面的 jets，自动成为第 2 个 Mesh；
  * - Task 8：步行路径重排（或拆出 walkways.js），替换下面的临时路径。
  * 预算：景点合计 ≤ 30,000 三角形、Mesh ≤ 3（设计第 5 节）。
@@ -27,6 +29,7 @@ import { PAVE, createSite } from "./site.js"
 import { SQUARE_OUTLINE, buildGround } from "./ground.js"
 import { SUNBIRD, buildSunbird } from "./sunbird.js"
 import { WEST_EYE_CUT, buildWestEye } from "./westEye.js"
+import { EAST_EYE_CUT, buildEastEye } from "./eastEye.js"
 import { buildNorth } from "./north.js"
 import { buildNeighbors } from "./neighbors.js"
 
@@ -101,17 +104,19 @@ export function build(ctx) {
   // 喷泉水柱（单独成动画 Mesh）：旧条形喷泉已删，Task 6 的北缘喷泉水柱加进来之前为空
   const jets = new ColorBuilder()
 
-  // 广场：地面（铺装、太极、草坪花带；铺装在西鱼眼深色盘处挖口）→ 太阳神鸟盘（返回盘顶北缘高度，
-  // 作定位针底座）→ 西鱼眼（返回绕池步行环）
-  buildGround(b, site, { cuts: [WEST_EYE_CUT] })
+  // 广场：地面（铺装、太极、草坪花带；铺装在西鱼眼深色盘、东鱼眼坑口处挖口）→ 太阳神鸟盘（返回盘顶北缘高度，
+  // 作定位针底座）→ 西鱼眼（返回绕池步行环）→ 东鱼眼下沉广场（返回坑底环、坑口外环与城市地面洞）
+  buildGround(b, site, { cuts: [WEST_EYE_CUT, EAST_EYE_CUT] })
   const sunbird = buildSunbird(b, site)
   const westEye = buildWestEye(b, site)
+  const eastEye = buildEastEye(b, site)
   // 北侧组团、周边地标：各自返回替换区与步行路径（世界坐标）
   const parts = [buildNorth(b, site), buildNeighbors(b, site)]
   const zones = [site.toWorldPts(SQUARE_ZONE), ...parts.flatMap((p) => p.zones)]
   const walkways = [
     ...squareWalkways(site),
     ...westEye.walkways,
+    ...eastEye.walkways,
     ...parts.flatMap((p) => p.walkways || [])
   ]
 
@@ -138,6 +143,8 @@ export function build(ctx) {
     // PAVE 1.5 + 盘心 1.25 + 7.25·tan 5° ≈ 3.38（sunbird.js 的 SUNBIRD_TOP）
     markerHeight: sunbird.top,
     walkways,
+    // 城市地面洞：下沉广场坑底（PAVE − 6 ≈ −4.5）低于城市地面（−0.5），坑口处挖空
+    groundHoles: eastEye.groundHoles,
     update(t) {
       if (jetMesh) jetMesh.scale.y = 1 + 0.18 * Math.sin(t * 2.2)
     }
