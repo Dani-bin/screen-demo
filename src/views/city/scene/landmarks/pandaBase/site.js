@@ -10,6 +10,7 @@ import { buildingsInZones, centroid, rectPolygon } from "../kit/footprint.js"
 import { createGrid } from "../kit/grid.js"
 import { extrudePolygon } from "../kit/shapes.js"
 import { GROUND_Y } from "../../terrain.js"
+import { stopPose } from "../../cameraTour.js"
 import { pointInPolygon, polygonBounds } from "../../utils.js"
 
 /* ---------------- 分层高度（米） ---------------- */
@@ -90,8 +91,12 @@ export const BAMBOO = ["#6FAE4C", "#86C05A", "#3F7F3A", "#5E9E44"]
 
 /* ---------------- 轮廓常量 ---------------- */
 
+// 园界、湖面、南门广场、南大门这几组经纬度只在本文件 createSite 里投影一次，各分区通过 site
+// （site.park、site.lakes、site.plaza、site.gate）取局部坐标，所以不导出；
+// 要被别的模块直接取用的常量（MOON_LL、WEST_POOLS）才导出
+
 // 园区 way 941885688，Douglas–Peucker 6 m，165 点（设计文档附录 A），[lon, lat]
-export const PARK_LL = [
+const PARK_LL = [
   [104.121953, 30.747433],
   [104.122977, 30.747256],
   [104.123025, 30.747405],
@@ -260,7 +265,7 @@ export const PARK_LL = [
 ]
 // 天鹅湖外环（32 点）、湖心岛（10 点）、东北小湖（14 点）、南门广场（25 点）、
 // 南大门（6 点），设计文档附录 B，[lon, lat]
-export const SWAN_LAKE_LL = [
+const SWAN_LAKE_LL = [
   [104.142889, 30.738024],
   [104.142988, 30.73813],
   [104.143113, 30.738204],
@@ -294,7 +299,7 @@ export const SWAN_LAKE_LL = [
   [104.143079, 30.737938],
   [104.142927, 30.737963]
 ]
-export const ISLAND_LL = [
+const ISLAND_LL = [
   [104.143849, 30.738642],
   [104.143863, 30.7386],
   [104.143946, 30.738558],
@@ -306,7 +311,7 @@ export const ISLAND_LL = [
   [104.143995, 30.73877],
   [104.143869, 30.738715]
 ]
-export const NE_LAKE_LL = [
+const NE_LAKE_LL = [
   [104.145108, 30.738962],
   [104.145152, 30.738894],
   [104.145274, 30.738819],
@@ -322,7 +327,7 @@ export const NE_LAKE_LL = [
   [104.145231, 30.739132],
   [104.14512, 30.739046]
 ]
-export const PLAZA_LL = [
+const PLAZA_LL = [
   [104.142829, 30.734529],
   [104.142955, 30.734528],
   [104.142959, 30.734507],
@@ -349,7 +354,7 @@ export const PLAZA_LL = [
   [104.1431, 30.734702],
   [104.142868, 30.734647]
 ]
-export const GATE_LL = [
+const GATE_LL = [
   [104.143452, 30.735114],
   [104.143559, 30.735166],
   [104.143615, 30.735081],
@@ -357,6 +362,13 @@ export const GATE_LL = [
   [104.1439, 30.735157],
   [104.14354, 30.734981]
 ]
+// 南大门首点 GATE_LL[0] 按当前 meta.origin（104.0657, 30.6574）与 projection.js 投影出的局部坐标（米）。
+// 本景点约 375 对坐标常量直接写成了局部坐标（ground.js 的 ROADS、本文件的 WEST_POOLS，
+// 以及 lake / halls / enclosures 里的摆放点），它们绑死了这个原点与投影公式；
+// createSite 用这一点做自检（见 ORIGIN_TOLERANCE），原点或投影一变就告警，提醒重算这些常量
+const GATE_LOCAL0 = [7445.6, -8590.5]
+// 自检容差（米）：常量本身保留 0.1 m，1 m 以内的差异只是取整，超过即原点或投影真的变了
+const ORIGIN_TOLERANCE = 1
 // 月亮产房外环（way 1229850749，31 点，设计文档附录 B），[lon, lat]：新月形环带，开口朝南。
 // 不用 footprintNear 取：环形楼的面积形心落在内院里，会被内环 1229850750 包含而取错楼
 export const MOON_LL = [
@@ -497,6 +509,21 @@ export function createSite(ctx) {
   const park = ll(PARK_LL)
   const plaza = ll(PLAZA_LL)
   const gate = ll(GATE_LL)
+  // 局部坐标常量自检：经纬度常量随投影走，局部坐标常量（ROADS、WEST_POOLS 等）不会。
+  // 南大门首点的投影结果偏离预期超过 1 m，说明 meta.origin 或投影公式变了，那些常量全部错位
+  // （路面、水池、熊猫场会整体偏到园界外）。只告警不改几何，构建照常进行；每次构建只告警这一条
+  const gateOff = Math.hypot(
+    gate[0][0] - GATE_LOCAL0[0],
+    gate[0][1] - GATE_LOCAL0[1]
+  )
+  if (gateOff > ORIGIN_TOLERANCE) {
+    console.warn(
+      `熊猫基地：南大门首点投影到 (${gate[0][0].toFixed(1)}, ${gate[0][1].toFixed(1)})，` +
+        `与预期 (${GATE_LOCAL0.join(", ")}) 相差 ${gateOff.toFixed(1)} m：` +
+        "meta.origin 或投影公式变了，ground.js 的 ROADS、site.js 的 WEST_POOLS 及 lake / halls / " +
+        "enclosures 里的局部坐标常量都需按新原点重算"
+    )
+  }
   // 南大门一带另设一个矩形替换区作保险：门的长轴 61°、进深 151°，沿长轴 u −24～36 m、
   // 进深 v −14～12 m，中心按形心沿两轴平移（u +6、v −1），盖住门体、门前空间与东端岗亭
   // 686460743 一带。现在这一带的 OSM 楼（门体、岗亭）形心都落在园界内，由 park 区替换；
@@ -603,7 +630,7 @@ export function createSite(ctx) {
       return best.p
     },
     /**
-     * 登记一块熊猫活动场（Task 10 用）：在林下草地上开洞、栅格打 F_YARD、把场地地面
+     * 登记一块熊猫活动场（enclosures.js、nurseries.js 建活动场时调用）：在林下草地上开洞、栅格打 F_YARD、把场地地面
      * 挤出到 YARD_Y（草绿色）进地面批。多边形须在园界内，且与其他洞、已铺园路 / 水面 /
      * 其他活动场都不重叠：洞互相重叠会让草地三角剖分悄悄出错，这里只做开发期自检，
      * 发现重叠或越界时 console.warn，不阻断构建。
@@ -644,8 +671,9 @@ export function createSite(ctx) {
      */
     markerHeight: undefined,
     /**
-     * 到站机位的相机位置 [x, y, z]（世界坐标），算法同 CityScene._initTour：
-     * 注视点 = 落点 (spot.x, spot.z) + cam.look，相机 = 注视点 + cam.offset，两者都抬高 markerHeight × 0.5。
+     * 到站机位的相机位置 [x, y, z]（世界坐标）：与 CityScene._initTour 调用同一个 cameraTour.js 的 stopPose
+     * （注视点 = 落点 + cam.look，相机 = 注视点 + cam.offset，两者都抬高 markerHeight × 0.5），
+     * 熊猫朝向、视线保护对准的就是线上真正的到站相机，改机位算法时两处自动一致。
      * 首次调用时算出并缓存；须在 markerHeight 写入之后调用，否则抛错（构建顺序不对）
      */
     cameraPos() {
@@ -655,11 +683,7 @@ export function createSite(ctx) {
           "熊猫基地：cameraPos 须在 buildGate 写入 markerHeight 之后调用"
         )
       }
-      const { spot } = ctx
-      const [lx, lz] = spot.cam.look || [0, 0]
-      const off = spot.cam.offset
-      const lift = this.markerHeight * 0.5
-      camera = [spot.x + lx + off[0], lift + off[1], spot.z + lz + off[2]]
+      camera = stopPose(ctx.spot, this.markerHeight).p
       return camera
     },
     /**
@@ -673,7 +697,7 @@ export function createSite(ctx) {
     // 受保护的熊猫视线起点（头部，世界坐标 { x, y, z }），由 yards.js 摆熊猫时登记
     viewTargets: [],
     /**
-     * 熊猫视线保护（Task 12 种树种竹时对每个树冠、竹丛调用）：球（球心 (cx, cy, cz)、半径 radius）
+     * 熊猫视线保护（vegetation.js 种树种竹时对每个树冠、竹丛调用）：球（球心 (cx, cy, cz)、半径 radius）
      * 是否压到某只熊猫望向到站机位的视线。视线 = viewTargets 各点指向 cameraPos() 的线段，
      * 只取头部前方 VIEW.start（1 m）到 VIEW.reach（150 m）一段（取舍见 VIEW 注释）；
      * 球心到线段的距离 < radius 即算挡住（逐条交给 sightBlocked 判）。

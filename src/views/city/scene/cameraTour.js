@@ -38,8 +38,32 @@ function lerp(a, b, k) {
 }
 
 /**
+ * 景点到站机位：注视点 = 落点 (spot.x, spot.z) + cam.look（[dx, dz] 米，缺省不平移），
+ * 相机 = 注视点 + cam.offset；两者一起抬高底座高度 base 的一半，高层地标（楼体 + 落点球）在画面里居中。
+ * CityScene._initTour（各站机位）与熊猫基地 site.cameraPos（熊猫朝向、视线保护按到站相机算）共用这一份，
+ * 改机位算法只改这里，两处不会算出不同的相机
+ * @param {{ x: number, z: number, cam: { offset: number[], look?: number[] } }} spot 景点（已含局部 x / z）
+ * @param {number} base 落点球底座高度（米，markers.bases[i]；熊猫基地即其 markerHeight）
+ * @returns {{ p: number[], t: number[] }} p 相机位置、t 注视点（世界坐标 [x, y, z]）
+ */
+export function stopPose(spot, base) {
+  const lift = base * 0.5
+  const off = spot.cam.offset
+  const [lx, lz] = spot.cam.look || [0, 0]
+  const tx = spot.x + lx
+  const tz = spot.z + lz
+  return {
+    p: [tx + off[0], off[1] + lift, tz + off[2]],
+    t: [tx, lift, tz]
+  }
+}
+
+/**
  * 找出矩形数组里离 (x, z) 最近的一块（点在某块内时距离为 0，多块都满足时取靠前的）。
  * 结果写进 out：index 为该块下标，(x, z) 为点夹到该块内的位置，gap 为点到该块的距离（米）。
+ * 与 utils.js 的 nearestRegion 算法相同，但有意分开：这里的矩形是各区域的 bbox（注视点可移动范围，
+ * 比数据实际铺到的 clip 每边内缩 300 m，镜头不停到数据边缘的空地上），且要夹取后的点与距离；
+ * nearestRegion 用 clip 给投影物、落点归区，是静态阴影的热路径，只返回下标（说明见其注释）
  * @param {Array<{x: number[], z: number[]}>} rects
  * @param {{index: number, x: number, z: number, gap: number}} [out] 复用的结果对象
  */
@@ -144,7 +168,8 @@ export class CameraTour {
     this.flyHop = 0 // 本次飞行半程的相机距离抬升量（米），只有跨区域飞行非 0（见 _flyTo）
     // 注视点允许暂时停在范围外多远（米）：人工打断跨区域飞行时，注视点可能正悬在两块区域之间的
     // 空白地面，直接硬夹会在一帧内把画面拽回几公里；改为以打断时的距离为初值、随时间衰减
-    // （见 _stopFlying 与 update），镜头平滑滑回数据区。飞行中与新飞行开始时为 0
+    // （见 _stopFlying 与 update），镜头平滑滑回数据区。以光标为锚的滚轮缩放把注视点带出范围时同理（见 zoom）。
+    // 飞行中与新飞行开始时为 0
     this.slack = 0
 
     // 初始机位：总览
@@ -288,19 +313,33 @@ export class CameraTour {
    * 传 anchor（滚轮时为光标落点，见 _pointerAnchor）则以它为不动点：相机与注视点一起按同一比例
    * 朝 anchor 收拢 / 远离，视线方向不变，anchor 在屏幕上的位置也就不变；
    * 不传（工具栏按钮）则以注视点即画面中心缩放。
-   * 比例按夹取后的距离算，距离已到上下限时注视点也不再移动
+   * 比例按夹取后的距离算，距离已到上下限时注视点也不再移动。
+   * 以 anchor 缩放可能把注视点带出全部范围矩形（如在主城区边缘拉到最远、光标指向两区之间的空白地面），
+   * 超出的距离计入 slack（同打断飞行，见 _stopFlying），由 update 衰减、画面平滑滑回，而不是当帧硬夹
    */
   zoom(factor, anchor) {
     const s = this.spherical
     const L = this.limits
     const from = s.radius
     s.radius = Math.max(L.radiusMin, Math.min(L.radiusMax, from * factor))
-    if (anchor && from > 0) {
+    const moved = anchor && from > 0
+    if (moved) {
       const k = s.radius / from
       this.target.x = anchor.x + (this.target.x - anchor.x) * k
       this.target.z = anchor.z + (this.target.z - anchor.z) * k
     }
     this._stopFlying()
+    if (moved) {
+      // 注视点被缩放带出全部范围矩形时，apply 按 slack 硬夹会在一帧内把画面拽进最近的矩形
+      // （主城区东北角拉到最远、光标指向 20 km 外时实测跳约 2.1 km）。令 slack 至少为超出的距离：
+      // 当帧 apply 不移动注视点，之后由 update 逐帧衰减 slack、画面滑进最近的矩形。
+      // 注视点仍在矩形内时 gap 为 0，slack 不变，矩形内的缩放与改动前逐位一致。
+      // 拖拽只改方位与俯仰、不移动注视点，工具栏缩放（不传 anchor）也不移动注视点，都不需要这样处理
+      this.slack = Math.max(
+        this.slack,
+        nearestRect(this.target.x, this.target.z, L.bounds, NEAR).gap
+      )
+    }
     this.pause()
     this.apply()
   }
@@ -456,7 +495,7 @@ export class CameraTour {
       return
     }
 
-    // 人工打断跨区域飞行后，注视点可能还停在两块区域之间的空白地面（见 _stopFlying）：
+    // 人工打断跨区域飞行、或滚轮缩放把注视点带出范围后，注视点可能还停在范围外的空白地面（见 _stopFlying、zoom）：
     // 容差按指数衰减（约 0.6 s 衰减 95%）并重新夹取，即使巡览已暂停，画面也会平滑滑回数据区；
     // 低于 1 m 时直接归零，收尾那一下夹取不到 1 m，看不出来
     if (this.slack > 0) {

@@ -5,8 +5,8 @@
  * { points: [[x, z], …], y, width, closed, density }，世界坐标，y 为路面顶。
  * 点列一律取 site.paths（即 ground.js 的 ROADS 原始点列，不另抄坐标）：渲染的路面两端已外延
  * 0.4 m、折点带斜接，原始端点不会落在路面边缘；高度取园路自己的 y（主路 PAVE_Y、步道 PATH_Y）。
- * 只做这 11 条：Task 6 / 10 补的短连接路（sunSouthLink、villasLink、lakeWestLink、sunEntry、
- * moonPlatformLink）不在规格表里，不进人流；月亮产房的吊桥也不接（moonLoop 止于西桥头）。
+ * 只做这 11 条：ground.js 的 ROADS 里补上的短连接路（OSM 断头路的补段 sunSouthLink、villasLink、
+ * lakeWestLink，产房入口与参观平台连接段 sunEntry、moonPlatformLink）不在规格表里，不进人流；月亮产房的吊桥也不接（moonLoop 止于西桥头）。
  * 每条路径在占用栅格上登记 F_WALK（可走带外扩 1.5 m，见 WALK_CLEAR），供后面的树、竹种植
  * （vegetation）避让。
  */
@@ -16,7 +16,7 @@ import { F_WALK } from "./site.js"
 
 /**
  * F_WALK 标记在可走带（width / 2）之外再外扩的距离（米）。
- * 这里只标「可走带 + 一小圈余量」，不是整条净空带：Task 12 种树时拿树冠的真实半径去测这块标记
+ * 这里只标「可走带 + 一小圈余量」，不是整条净空带：vegetation.js 种树时拿树冠的真实半径去测这块标记
  * （树冠离可走带边缘 ≥ 1.5 m，冠沿侵入可走带的情况另有步行路径校验兜底）；通用竹丛另用明确的距离
  * 检查，保证离可走带边缘 ≥ 4.5 m（同 wangjiang 的 BAMBOO_CLEAR 做法）；loop / villas 两侧的
  * 竹林甬道按路径偏移直接布置（竹根离中线 4.7 m，竹梢向路面上方探出，都在 4.35 m 头顶净空之上），
@@ -78,7 +78,7 @@ export function buildWalkways(site) {
   }
   const pts = (id) => pathById(site, id).pts
 
-  // 1 南门广场 → 闸口 → 南大门主拱（门洞中点，随 Task 7 的门洞实际位置）→ 入园主路 entry。
+  // 1 南门广场 → 闸口 → 南大门主拱（门洞中点，随 gate.js 的门洞实际位置）→ 入园主路 entry。
   // 规格里原来的 (7467, −8590) 一点就是门洞中点的草案位置，这里换成实际位置。
   // 广场段与门洞地面都在 PAVE_Y，entry 也是主路，整条路径同高
   add(

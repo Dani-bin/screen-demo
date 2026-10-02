@@ -31,7 +31,7 @@ import { createRivers, createRoads } from "./roads.js"
 import { createBuildings, createHighlight } from "./buildings.js"
 import { createTrees } from "./trees.js"
 import { LABEL_LEAD, createMarkers } from "./markers.js"
-import { CameraTour } from "./cameraTour.js"
+import { CameraTour, stopPose } from "./cameraTour.js"
 import { createPicker } from "./picking.js"
 import {
   REGION_MARGIN,
@@ -49,9 +49,13 @@ import {
 } from "./shadow.js"
 
 const DEG = Math.PI / 180
-// 相机距离超过总览距离（clipBaseDistance）的这个倍数才做标签之间的避让（见 _avoidLabels）：
-// 留 5% 余量，飞回总览到站时距离的浮点误差不会让互避时开时关
-const LABEL_SEPARATE_RATIO = 1.05
+// 标签之间的避让带回差开关（见 _avoidLabels），以总览距离（clipBaseDistance）为基准：
+// 相机距离超过 × LABEL_SEPARATE_ON 才打开，回到 × LABEL_SEPARATE_OFF 以内才关闭，两者之间保持上一帧的状态。
+// 只用一个门槛时，在门槛附近来回缩放（触控板的细小增量）会让互避逐帧开关、标签闪烁。
+// 关闭门槛就是总览距离本身，只多留百万分之一（约 8 mm）吸收浮点误差：飞回总览到站时的距离由插值得出，
+// 可能比总览距离大一两个 ulp，严格「小于 × 1.0」会让互避在总览画面上一直开着（成都 IFS 等贴边标签被隐藏）
+const LABEL_SEPARATE_ON = 1.05
+const LABEL_SEPARATE_OFF = 1.000001
 
 export class CityScene {
   /**
@@ -79,6 +83,9 @@ export class CityScene {
     this.onViewChange = options.onViewChange || (() => {})
     this.labelSafeTop = options.labelSafeTop || 0
     this.lastView = { heading: NaN, scaleMeters: NaN }
+    // 标签之间是否互相避让（带回差，见 LABEL_SEPARATE_ON / OFF 与 _avoidLabels）；
+    // 起始机位是总览，距离在关闭门槛以内，初值为关
+    this.labelSeparate = false
     // 减少动态：巡览跳过飞行动画、景点人群原地站立
     this.reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
@@ -207,6 +214,9 @@ export class CityScene {
       this.landmarks.occupancy
     )
     this.root.add(this.trees.group)
+    // 占用网格只在撒通用树时用（trees.js 不保留引用，场景里别处也不读它）。
+    // 加入熊猫基地后格数约 22 万（约 5 MB），建完树就断开引用，让它被回收，不随场景常驻内存
+    this.landmarks.occupancy = null
 
     // 景点模型给了底座高度（markerHeight > 0）就直接用；否则按楼栋估算：
     // 落点压在楼上时，落点球放到楼顶，避免被楼体吞没。
@@ -292,18 +302,10 @@ export class CityScene {
     // 注视点与相机一起抬高底座高度的一半，让地标（楼体 + 落点球）居中。
     // 注视点还可按 cam.look（[dx, dz] 米）水平平移：景点由相距较远的两处组成时
     // （人民公园的纪念碑与鹤鸣茶社、合江亭与安顺廊桥），对准两者之间才能同框。
+    // 公式在 cameraTour.js 的 stopPose 里，熊猫基地 site.cameraPos（熊猫朝向、视线保护按到站相机算）
+    // 也调用它，两处共用一份，改机位算法时不会只改一处。
     // 依赖 markers.bases，因此必须在 _buildCity 之后调用
-    const stops = this.spots.map((s, i) => {
-      const lift = this.markers.bases[i] * 0.5
-      const off = s.cam.offset
-      const [lx, lz] = s.cam.look || [0, 0]
-      const tx = s.x + lx
-      const tz = s.z + lz
-      return {
-        p: [tx + off[0], off[1] + lift, tz + off[2]],
-        t: [tx, lift, tz]
-      }
-    })
+    const stops = this.spots.map((s, i) => stopPose(s, this.markers.bases[i]))
     // 注视点可移动范围 = 各块拉数范围换成局部坐标的矩形：主城区 meta.bbox 与各飞地 meta.enclaves[].bbox
     // （[南, 西, 北, 东] 纬经度）。道路 / 河流按 bbox 外扩 300 m 裁剪（clip），楼栋落在 bbox 附近，
     // 注视点不出这些矩形，镜头就不会停在数据边缘外的空地上；
@@ -604,18 +606,25 @@ export class CityScene {
    * 保留带与引线长度是设计稿 px，构建时被 pxtorem 换成 rem、运行时 1rem = 视口宽 / 10，
    * 这里与比例尺同样按视口宽 / 1920 换算成屏幕 px。
    * 未设顶部保留带（labelSafeTop 为 0）时不避让顶部栏。
-   * 标签之间的避让只在拉到总览距离以外时做（LABEL_SEPARATE_RATIO）：总览及更近时标签只是彼此贴近，
-   * 互避反而会让贴边的标签（总览时的成都 IFS 与当前站春熙路·太古里）消失
+   * 标签之间的避让只在拉到总览距离以外时做：总览及更近时标签只是彼此贴近，
+   * 互避反而会让贴边的标签（总览时的成都 IFS 与当前站春熙路·太古里）消失。
+   * 开关带回差（LABEL_SEPARATE_ON / OFF）：拉远超过总览距离 × 1.05 才开，回到总览距离以内才关，
+   * 中间保持上一帧的状态（this.labelSeparate），在门槛附近来回缩放时标签不会闪烁
    */
   _avoidLabels() {
     const k = this.viewportWidth / 1920
+    const d = this.tour.getDistance()
+    if (d > this.clipBaseDistance * LABEL_SEPARATE_ON) this.labelSeparate = true
+    else if (d < this.clipBaseDistance * LABEL_SEPARATE_OFF) {
+      this.labelSeparate = false
+    }
     this.markers.avoidLabels(
       this.camera,
       this.width,
       this.height,
       this.labelSafeTop ? this.labelSafeTop * k : -Infinity,
       LABEL_LEAD * k,
-      this.tour.getDistance() > this.clipBaseDistance * LABEL_SEPARATE_RATIO
+      this.labelSeparate
     )
   }
 
