@@ -15,26 +15,26 @@
  * 这样通用树木正好长在草坪上，而不会戳进喷泉或下沉广场。
  */
 import { BackSide, Matrix4, Mesh, Quaternion, Vector3 } from "three"
-import { ColorBuilder, frame, landmarkMaterial, local } from "./kit/builder.js"
+import { ColorBuilder, frame, landmarkMaterial, local } from "../kit/builder.js"
 import {
   circlePolygon,
   findBuilding,
   minAreaRect,
   rectFrame,
   rectPolygon
-} from "./kit/footprint.js"
+} from "../kit/footprint.js"
 import {
   box,
   cylinder,
   extrudePolygon,
   sphere,
   sweepBar
-} from "./kit/shapes.js"
-import { addBalustrade, addPlatform } from "./kit/parts.js"
-import { addSunbirdDisc, addTotem } from "./kit/figures.js"
-import { THEME } from "../theme.js"
-import { polygonBounds } from "../utils.js"
-import { GROUND_Y } from "../terrain.js"
+} from "../kit/shapes.js"
+import { addBalustrade, addPlatform } from "../kit/parts.js"
+import { addSunbirdDisc, addTotem } from "../kit/figures.js"
+import { THEME } from "../../theme.js"
+import { polygonBounds } from "../../utils.js"
+import { GROUND_Y } from "../../terrain.js"
 
 const NEAR = 400 // 按名称查楼的搜索半径（米）
 const L = THEME.landmark
