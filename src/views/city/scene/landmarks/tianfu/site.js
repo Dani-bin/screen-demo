@@ -16,7 +16,7 @@
  * 后续任务：
  * - Task 4～6 按报告 6.9「主要颜色」往 C 里补新颜色（Task 4 已补鱼眼水池与雕塑一组，Task 5 补东鱼眼下沉广场一组，
  *   Task 6 补北缘喷泉与国旗台、凤鸟路灯、南侧构筑物、林带四组）。
- * - Task 7 修正北侧组团时改 C 里的毛主席像、科技馆颜色；成都博物馆、四川省图书馆的颜色
+ * - Task 7 已按照片改好 C 里的北侧组团（毛主席像、两者之间的广场、科技馆）一组；成都博物馆、四川省图书馆的颜色
  *   放在 neighbors.js 自己的表里，不受这里影响。
  */
 import { Matrix4, Quaternion, ShapeUtils, Vector2, Vector3 } from "three"
@@ -180,25 +180,33 @@ export const C = {
   forestFloor: "#5E9A48", // 林下草地：比广场草坪暗一档，衬出林带
   // 林带乔木树冠：取城市通用树（theme.tree.greens）里偏深的两种，再加两种更深的，林带读成一片深绿
   forest: ["#4FAE4A", "#5DA846", "#3F9443", "#6CC04A"],
-  // 北侧组团：毛主席像台基两侧的绿篱花坛（Task 7 重做时再定）
-  lawn: "#86C95A",
-  // 毛主席像
-  tier: "#E2DCCF",
-  pedestal: "#8C4A3C",
-  statue: "#F2EFE7",
-  // 四川科技馆
-  sciWall: "#E8D8A8", // 米黄墙
-  sciRed: "#B4553B", // 砖红线脚、塔顶
-  sciGlass: "#2E3A4A", // 中部通高深色玻璃
-  sciWindow: "#56606C",
-  sign: "#D8352A"
+  // 北侧组团（Task 7；报告 2.2、6.8、6.9，照片 c15、c21、c22，影像 e_statue、g_statue）
+  // 像与科技馆之间的广场：Google 影像里是浅色石材，比广场外板略灰；分格线暗一档
+  northPave: "#D3CBBE",
+  northGrid: "#B3AA9D",
+  // 毛主席像组团
+  pedestal: "#8A3F35", // 深红花岗岩台座（报告 6.9）；像两侧缺口里的斜面、斜坡边的挡墙同色
+  statueBase: "#9B4A3E", // 像的红色基座（OSM salmon；c15 里比台座亮一档）
+  statue: "#F2EFE7", // 白色大理石立像
+  slopeGrass: "#5E9447", // 两侧草坡（影像里是深绿色，比广场草坪暗）
+  // 阶梯花坡每级的立面：橙红。报告 6.9 的橙 #E8742A 在 1.2 m 高的立面上连成一道道亮条，
+  // 比照片 c15（整片红花）跳得多，取红、橙之间的 #D2512E，花坡整体读成红橙色（c21、用户航拍）
+  flowerRise: "#D2512E",
+  flowerWhite: "#F3EFE6", // 花坡台面上的白色图案（c15 红底白纹）
+  railing: "#C5C9C9", // 台座顶上一圈矮栏（c15：浅灰金属栏杆）
+  roofGrey: "#8E8C87", // SE 餐厅、科技馆屋面（Google 影像：灰色）
+  // 四川科技馆（报告 6.8、6.9）
+  sciWall: "#E6D6AA", // 米黄墙与塔身
+  sciRed: "#A9563E", // 塔顶 1.2 m 压顶、柱廊横梁、两翼腰线、檐口：赭红
+  sciColumn: "#B9705C", // 柱身：赭红
+  sciWhite: "#F1EEE6", // 柱头、柱础、楼顶招牌的白色框架与英文底板
+  sciGlass: "#2E3A4A", // 柱间深色玻璃、SE 餐厅北墙店面
+  sciWindow: "#56606C", // 立面窗
+  sciVault: "#6C7B83", // 内院大厅的拱顶（影像：深灰蓝的玻璃金属顶）
+  sign: "#D8352A" // 楼顶红字与英文条
 }
 
 /* ---------------- 通用小函数 ---------------- */
-
-/** 一组局部点 [x, z] 平移到世界：原点在 (ox, oz)、坐标轴不旋转（广场局部系、像中心系） */
-export const offsetPoints = (pts, ox, oz) =>
-  pts.map(([x, z]) => [ox + x, oz + z])
 
 /**
  * 由三角形列表建几何体：tris 为 [[p, q, r], ...]，每个点 [x, y, z]，法线按面计算（kit fromTriangles）。
