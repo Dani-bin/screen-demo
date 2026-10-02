@@ -29,6 +29,7 @@ export const F_TREE = 8 // 已种树 / 竹
 export const F_WALK = 16 // 步行路径可走带外扩：树冠、竹丛不进
 export const F_PARK = 32 // 园界以内
 export const F_YARD = 64 // 熊猫活动场：只留场内布置的树
+export const F_CANOPY = 128 // 林冠起伏面（vegetation）：乔木、竹丛离它留出余量，不穿插
 
 /* ---------------- 配色（设计文档 4.2） ---------------- */
 
@@ -448,6 +449,38 @@ export const WEST_POOLS = [
 const VIEW = { start: 1, reach: 150 }
 const DEG = Math.PI / 180
 
+/**
+ * 球（球心 (cx, cy, cz)、半径 radius）是否压到一条视线：视线自 from 点望向 to 点，
+ * 只取 from 前方 VIEW.start（1 m）到 VIEW.reach（150 m）一段；球心到这段线的距离 < radius 即算压到。
+ * site.blocksView（熊猫视线）与 vegetation.js（小熊猫区栖架、产房望向机位的线）共用。
+ * @param {{ x: number, y: number, z: number }} from 视线起点（世界坐标）
+ * @param {number[]} to 视线望向的点 [x, y, z]（到站机位相机）
+ * @returns {boolean}
+ */
+export function sightBlocked(from, to, cx, cy, cz, radius) {
+  let dx = to[0] - from.x
+  let dy = to[1] - from.y
+  let dz = to[2] - from.z
+  const len = Math.hypot(dx, dy, dz)
+  dx /= len
+  dy /= len
+  dz /= len
+  // 球心在视线上的投影位置（离起点的距离），夹到 [start, reach]
+  const s = Math.max(
+    VIEW.start,
+    Math.min(
+      VIEW.reach,
+      (cx - from.x) * dx + (cy - from.y) * dy + (cz - from.z) * dz
+    )
+  )
+  const d = Math.hypot(
+    cx - (from.x + dx * s),
+    cy - (from.y + dy * s),
+    cz - (from.z + dz * s)
+  )
+  return d < radius
+}
+
 /* ---------------- 场地对象 ---------------- */
 
 /**
@@ -638,34 +671,14 @@ export function createSite(ctx) {
      * 熊猫视线保护（Task 12 种树种竹时对每个树冠、竹丛调用）：球（球心 (cx, cy, cz)、半径 radius）
      * 是否压到某只熊猫望向到站机位的视线。视线 = viewTargets 各点指向 cameraPos() 的线段，
      * 只取头部前方 VIEW.start（1 m）到 VIEW.reach（150 m）一段（取舍见 VIEW 注释）；
-     * 球心到线段的距离 < radius 即算挡住。
+     * 球心到线段的距离 < radius 即算挡住（逐条交给 sightBlocked 判）。
      * 调用约定：树冠取冠心、半径约 1.15 r；竹丛取半高处为球心、半径约「丛半径 + 半高」。
      * @returns {boolean}
      */
     blocksView(cx, cy, cz, radius) {
-      const [px, py, pz] = this.cameraPos()
+      const cam = this.cameraPos()
       for (const t of this.viewTargets) {
-        let dx = px - t.x
-        let dy = py - t.y
-        let dz = pz - t.z
-        const len = Math.hypot(dx, dy, dz)
-        dx /= len
-        dy /= len
-        dz /= len
-        // 球心在视线上的投影位置（离头部的距离），夹到 [start, reach]
-        const s = Math.max(
-          VIEW.start,
-          Math.min(
-            VIEW.reach,
-            (cx - t.x) * dx + (cy - t.y) * dy + (cz - t.z) * dz
-          )
-        )
-        const d = Math.hypot(
-          cx - (t.x + dx * s),
-          cy - (t.y + dy * s),
-          cz - (t.z + dz * s)
-        )
-        if (d < radius) return true
+        if (sightBlocked(t, cam, cx, cy, cz, radius)) return true
       }
       return false
     }
