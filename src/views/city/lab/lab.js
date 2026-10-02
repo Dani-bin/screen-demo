@@ -99,7 +99,7 @@ const num = (key, fallback) => {
 
 /**
  * 构建预览对象。
- * @returns {{ meshes, zones, walkways, seed: number, target: number[], defaultDist: number,
+ * @returns {{ meshes, zones, walkways, groundHoles?, seed: number, target: number[], defaultDist: number,
  *   shadowRadius: number, context: boolean, center?: number[], stats?: object }}
  *   context 为 true 时额外画景点周围、替换区外的通用楼
  */
@@ -322,7 +322,10 @@ async function main() {
   )
 
   const materials = createMaterials(THEME)
-  scene.add(createTerrain(data, materials))
+  const terrain = createTerrain(data, materials)
+  scene.add(terrain)
+  // 与 CityScene 相同：按预览景点给的洞挖空城市地面（kit 样例与无洞景点不动，几何逐位不变）
+  terrain.setGroundHoles(subject.groundHoles || [])
   scene.add(createRivers(data.rivers, materials, THEME))
   scene.add(createRoads(data.roads, materials, THEME))
   if (subject.context) {

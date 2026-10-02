@@ -179,7 +179,8 @@ export class CityScene {
     this.root = new Group()
     this.scene.add(this.root)
 
-    this.root.add(createTerrain(d, this.materials))
+    const terrain = createTerrain(d, this.materials)
+    this.root.add(terrain)
     this.root.add(createRivers(d.rivers, this.materials, this.theme))
     this.root.add(createRoads(d.roads, this.materials, this.theme))
 
@@ -192,6 +193,9 @@ export class CityScene {
       project: this.project
     })
     this.root.add(this.landmarks.group)
+    // 景点要求挖空的城市地面（如天府广场东鱼眼下沉广场，坑底低于地面）：
+    // 地面与压在洞上的绿地、水面在洞内挖空。没有景点给洞时什么都不动，几何与加入挖洞前逐位一致
+    terrain.setGroundHoles(this.landmarks.groundHoles)
     this.elapsed = 0 // 景点动画用的累计秒数
 
     // 景点人流：全城一套实例网格，飞抵站点时在该站步行路径上生成，离站淡出。
