@@ -2,7 +2,9 @@
  * 天府广场 · 鱼眼雕塑共用件（西鱼眼「长江龙」、东鱼眼「黄河龙」）
  * ----------------------------------------------------------
  * 两座鱼眼雕塑是同一套做法（调研报告 4.2：底色青铜、云龙纹贴金箔；照片 c29、c00、c09）：
- * 柱身 + 旋转体托盘 + 白杆 + 绕柱盘升的金色扁带龙。这里放两处共用的几何函数：
+ * 柱身 + 旋转体托盘 + 白杆 + 绕柱盘升的金色扁带龙，脚下一圈水池。这里放两处共用的几何函数：
+ * - pushTri（与 sub / dot / cross）：按法线校正绕向写入三角形（托盘旋转体、东鱼眼坑壁共用）；
+ * - addPool：圆池（池壁两侧面、壁顶、水面），西鱼眼内外两圈池、东鱼眼圆池共用；
  * - revolveBand / addRevolved：剖面绕竖轴旋转的托盘（逐段配色）；
  * - hermite / dragonLine / addDragon：金龙飘带中线插值、扁带与龙首。
  * 水面、池壁顶面这类水平圆环面用 kit/shapes.js 的 annulus（与天府熊猫塔共用）。
@@ -12,10 +14,13 @@
  */
 import { BufferAttribute, BufferGeometry, Matrix4 } from "three"
 import { local } from "../kit/builder.js"
-import { box, sweepBar } from "../kit/shapes.js"
+import { annulus, box, cylinder, sweepBar } from "../kit/shapes.js"
 import { C } from "./site.js"
 
 const DEG = Math.PI / 180
+
+/** 池壁、水面相接处互相插进的深度（5 cm）：俯视时接缝处不露出缝隙 */
+export const TUCK = 0.05
 
 /*
  * 龙首：几个块体拼成，读成「金色龙首」即可（计划 Task 4）。
@@ -27,7 +32,8 @@ export const DRAGON_HEAD = [
   [1.5, 1.3, 0.8, 0.55, 0.1, 0, 0, 0], // 头颅：接住龙带末端（带高 1.8、颅高 1.3）
   [1.4, 0.45, 0.6, 1.75, 0.25, 0, 6, 0], // 上颚（长吻，略上扬）
   [1.2, 0.25, 0.5, 1.5, -0.35, 0, -15, 0], // 下颚（张口）
-  [0.6, 0.3, 0.95, 1.0, 0.75, 0, 0, 0], // 眉骨
+  // 眉骨：中心 x 0.98，前脸比头颅前脸（x = 1.3）退进 2 cm，两块不再共面重叠（Task 5 审查）
+  [0.6, 0.3, 0.95, 0.98, 0.75, 0, 0, 0],
   // 双角：从头顶向后上方斜掠（俯仰取负值，后端抬起），两角略向外张；后端顶面离中线 0.86
   [1.8, 0.16, 0.16, -0.35, 0.45, 0.25, -22, 12],
   [1.8, 0.16, 0.16, -0.35, 0.45, -0.25, -22, -12]
@@ -35,13 +41,76 @@ export const DRAGON_HEAD = [
 /** 龙首最高处（眉骨顶）离龙带末端中线的高度，见 DRAGON_HEAD */
 export const DRAGON_HEAD_TOP = 0.9
 
+/* ---------------- 小工具：按法线校正绕向 ---------------- */
+
+/** 三维向量相减 a − b */
+export const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+/** 三维向量点积 */
+export const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+/** 三维向量叉积 a × b */
+export const cross = (a, b) => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0]
+]
+
+/**
+ * 按法线校正绕向，把一个三角形写进平铺数组 pos / nor：三个顶点各为 [点, 法线]，
+ * 几何法线 (B − A) × (C − A) 与 A 处法线反向时交换 B、C。
+ * 双面材质靠绕向判断正反面来翻法线，阴影只画背光面：绕向与法线不一致时，底面不投影、背面发黑
+ */
+export function pushTri(pos, nor, A, B, Cc) {
+  const n = cross(sub(B[0], A[0]), sub(Cc[0], A[0]))
+  const list = dot(n, A[1]) >= 0 ? [A, B, Cc] : [A, Cc, B]
+  for (const [p, q] of list) {
+    pos.push(...p)
+    nor.push(...q)
+  }
+}
+
+/* ---------------- 水池 ---------------- */
+
+/**
+ * 圆池：池壁外侧面、内侧面、壁顶环面、池内水面（西鱼眼内外两圈池、东鱼眼圆池共用）。
+ * - 外侧面从池外地面起；池外也是水（西鱼眼内池泡在外环水里）时从池外水面下 TUCK 起；
+ * - 内侧面从池内水面下 TUCK 起到壁顶，水面从 inner − TUCK 铺到壁内侧 + TUCK，两头各插进壁里。
+ * 各项高度都是离基准 base 的高度，算式与 Task 4 西鱼眼的写法逐项相同，西鱼眼几何逐位不变。
+ * @param {Matrix4} f 鱼眼坐标系
+ * @param {{ r: number, t: number, h: number, water: number, inner: number, outside?: number,
+ *   seg: number, wall: string, top?: string }} pool
+ *   r 池壁外半径、t 壁厚、h 壁顶高、water 池内水面高、inner 水面内沿半径（柱身或里面一圈池壁的外半径）、
+ *   outside 池外水面高（池外是地面时不传）、seg 圆周分段、wall / top 池壁侧面 / 壁顶颜色
+ * @param {number} base 高度基准（西鱼眼是铺装顶面 PAVE，东鱼眼是坑底）
+ */
+export function addPool(b, f, pool, base) {
+  const { r, t, h, water, inner, outside, seg, wall, top = wall } = pool
+  const at = (y) => local(f, 0, y, 0)
+  const rIn = r - t
+  if (outside === undefined) {
+    b.add(cylinder(r, r, h, { segments: seg }), wall, at(base))
+  } else {
+    b.add(
+      cylinder(r, r, h - outside + TUCK, { segments: seg }),
+      wall,
+      at(base + outside - TUCK)
+    )
+  }
+  b.add(
+    cylinder(rIn, rIn, h - water + TUCK, { segments: seg }),
+    wall,
+    at(base + water - TUCK)
+  )
+  b.add(annulus(rIn, r, seg), top, at(base + h))
+  b.add(annulus(inner - TUCK, rIn + TUCK, seg), C.water, at(base + water))
+}
+
 /* ---------------- 旋转体 ---------------- */
 
 /**
  * 旋转体的一段：剖面线段 p0 → p1（[半径, 高]）绕竖轴转一圈，seg 段。
  * 法线沿圆周平滑、剖面折点处不平滑：本段法向取剖面方向 (dr, dy) 逆时针转 90° 得到的 (−dy, dr)。
  * 剖面按「盘面中心 → 盘沿 → 底面 → 柱子」走，这个法向朝外（盘面朝上、盘沿朝外、底面朝下）。
- * 三角形绕向按法向校正：双面材质靠绕向判断正反面来翻法线，阴影只画背光面，绕向错了底面就不投影。
+ * 三角形绕向按法向校正（pushTri）。
  * @returns {BufferGeometry} 带平滑法线的非索引几何体
  */
 export function revolveBand([r0, y0], [r1, y1], seg) {
@@ -52,21 +121,7 @@ export function revolveBand([r0, y0], [r1, y1], seg) {
   const nor = []
   const vert = (r, y, a) => [Math.cos(a) * r, y, Math.sin(a) * r]
   const norm = (a) => [Math.cos(a) * nr, ny, Math.sin(a) * nr]
-  // 三个顶点 [点, 法线]：几何法线 (B − A) × (C − A) 与 A 处法线反向时交换 B、C
-  const tri = (A, B, Cc) => {
-    const u = [0, 1, 2].map((i) => B[0][i] - A[0][i])
-    const w = [0, 1, 2].map((i) => Cc[0][i] - A[0][i])
-    const cx = u[1] * w[2] - u[2] * w[1]
-    const cy = u[2] * w[0] - u[0] * w[2]
-    const cz = u[0] * w[1] - u[1] * w[0]
-    const n = A[1]
-    const list =
-      cx * n[0] + cy * n[1] + cz * n[2] >= 0 ? [A, B, Cc] : [A, Cc, B]
-    for (const [p, q] of list) {
-      pos.push(...p)
-      nor.push(...q)
-    }
-  }
+  const tri = (A, B, Cc) => pushTri(pos, nor, A, B, Cc)
   for (let k = 0; k < seg; k++) {
     const a = (k / seg) * Math.PI * 2
     const c = ((k + 1) / seg) * Math.PI * 2
