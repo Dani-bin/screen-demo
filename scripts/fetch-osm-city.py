@@ -5,23 +5,32 @@
 用法（成都市中心，默认参数即可）：
     python3 scripts/fetch-osm-city.py
 
-换城市 / 换范围：
+换城市 / 换范围（不是成都时默认不带飞地，见下）：
     python3 scripts/fetch-osm-city.py --city 杭州 \
         --bbox 30.230,120.180,30.270,120.230 --origin 120.2050,30.2500 \
-        --no-enclave --out public/city/hangzhou.json
+        --out public/city/hangzhou.json
 
 飞地（主城区以外单独拉数的小块区域，元素追加在主城区之后，见 meta.enclaves）：
     python3 scripts/fetch-osm-city.py --enclave 熊猫基地:30.727,104.115,30.760,104.157
-    既不给 --enclave 也不给 --no-enclave 时用 DEFAULT_ENCLAVES（成都的熊猫基地），所以换城市要加
-    --no-enclave（与 --enclave 互斥，一块飞地都不要）；--enclave 可重复给出多块。
-    参数在解析时就校验（格式 名称:南,西,北,东，南 < 北、西 < 东），各区域的裁剪框也不能相互重叠
-    （楼栋 / 道路 / 河流不跨区域去重），否则报错退出。
+    既不给 --enclave 也不给 --no-enclave 时：城市名与原点都是成都默认值（成都、104.0657,30.6574，
+    城市名用 --keep-main 时取旧文件的 meta.city）才用 DEFAULT_ENCLAVES（成都的熊猫基地）；
+    其他城市默认不带飞地，要飞地须显式给 --enclave（可重复给出多块）。
+    --no-enclave 与 --enclave 互斥，成都也一块飞地都不要时用它。
+    参数在解析时就校验（格式 名称:南,西,北,东，南 < 北、西 < 东）；各区域的裁剪框不能相互重叠
+    （楼栋 / 道路 / 河流不跨区域去重），且两两相距不少于 MIN_REGION_GAP（1 km，前端按「离哪块
+    区域最近」给投影物与落点归区，假定区域相距数公里），否则报错退出。
 
 只拉飞地、主城区沿用已有文件（本地没有 Overpass 缓存时，避免主城区随 OSM 更新而变化）：
     python3 scripts/fetch-osm-city.py --keep-main public/city/chengdu.json
     重复运行：本脚本产出的文件带 meta.mainCounts，对它再跑 --keep-main 会保留其中的主城区、
     丢弃旧飞地并重新拉取飞地（可反复刷新飞地，不会重复追加）；若旧文件含飞地却没有 mainCounts，
     无法分出主城区，会报错退出，请改用不含飞地的旧文件（如 git show <提交>:public/city/chengdu.json）。
+
+刷新飞地数据之后（熊猫基地的模型依赖飞地里的 OSM 楼栋、水面与园路位置）：
+    重跑 node scripts/city-landmark-check.mjs stats 熊猫基地 与 node scripts/city-landmark-check.mjs walk 熊猫基地，
+    看几何哈希、三角形数与步行路径坏点有无变化；并核对 src/views/city/scene/landmarks/pandaBase 里
+    直接写成局部坐标的常量（lake.js 的湖岸摆放点、site.js 的 WEST_POOLS 水池、ground.js 的 ROADS 园路，
+    以及 gate / halls / enclosures / nurseries 里的摆放点）是否仍与新数据里的水面、道路、楼栋对得上。
 
 输出结构（坐标为以 origin 为原点的米制局部坐标，X 向东、Z 向南）：
     meta      城市名、原点经纬度、主城区范围 bbox 与 clip 裁剪矩形 [xmin, zmin, xmax, zmax]、
@@ -80,8 +89,17 @@ TYPE_HEIGHT = {
 # 默认飞地：成都大熊猫繁育研究基地（OSM way 941885688）在主城区数据东北角外约东 2.3 km、北 5.1 km，
 # 整体扩图楼栋会从约 1.9 万翻到 3.8 万，所以只把基地周边单独拉一块（约 333 栋楼），
 # 见 docs/superpowers/specs/2026-10-01-city-panda-base-design.md
-# 只在既不给 --enclave 也不给 --no-enclave 时生效；换城市时要用 --no-enclave 关掉，免得带上成都的飞地
+# 只在既不给 --enclave 也不给 --no-enclave、且城市名与原点都是成都默认值（DEFAULT_CITY、DEFAULT_ORIGIN）
+# 时生效：飞地范围是成都的经纬度，换了城市或原点还带上它，只会在新城市数据里凭空多出一块远处的数据
 DEFAULT_ENCLAVES = ["熊猫基地:30.727,104.115,30.760,104.157"]
+DEFAULT_CITY = "成都"
+DEFAULT_ORIGIN = "104.0657,30.6574"
+
+# 各区域（主城区与各飞地）裁剪框之间的最小间隔（米）。前端按「离哪块区域的 clip 最近」给投影物、落点、
+# 注视点归区（src/views/city/scene/utils.js 的 nearestRegion、cameraTour.js 的 nearestRect），
+# 假定区域相距数公里：靠得太近时，主城区公园面撒到 clip 外的通用树（最远约 170 m）等会被归到另一块区域，
+# 两区的静态阴影、镜头夹取都会出错。所以新飞地离主城区或其他飞地的裁剪框不足 1 km 就报错
+MIN_REGION_GAP = 1000
 
 # 输出的五类要素，主城区与飞地按这个顺序合并
 LAYERS = ("buildings", "roads", "water", "parks", "rivers")
@@ -363,19 +381,19 @@ def main():
     group = ap.add_mutually_exclusive_group()
     group.add_argument(
         "--enclave", action="append", type=parse_enclave, metavar="名称:南,西,北,东",
-        help="飞地（主城区以外单独拉数的小块区域），可重复；"
-        f"既不给 --enclave 也不给 --no-enclave 时默认 {'、'.join(DEFAULT_ENCLAVES)}",
+        help="飞地（主城区以外单独拉数的小块区域），可重复；既不给 --enclave 也不给 --no-enclave 时，"
+        f"城市与原点都是成都默认值才默认 {'、'.join(DEFAULT_ENCLAVES)}，其他城市默认不带飞地",
     )
     group.add_argument(
         "--no-enclave", action="store_true",
-        help="不要飞地（换城市时用，避免带上默认的成都飞地）",
+        help="不要飞地（成都默认会带上熊猫基地飞地，用它关掉；其他城市本来就默认不带）",
     )
     ap.add_argument(
         "--keep-main", metavar="旧JSON",
         help="主城区沿用该文件的数据（不重拉），只拉飞地并追加；"
         "文件由本脚本产出时（带 meta.mainCounts）只取其中的主城区部分，旧飞地丢弃重拉，可重复运行",
     )
-    ap.add_argument("--origin", default="104.0657,30.6574", help="lon,lat，作为局部坐标原点")
+    ap.add_argument("--origin", default=DEFAULT_ORIGIN, help="lon,lat，作为局部坐标原点")
     ap.add_argument("--out", default="public/city/chengdu.json")
     ap.add_argument("--cache-dir", default="scripts/osm-cache")
     ap.add_argument("--clip-margin", type=float, default=300, help="道路 / 河流裁剪矩形在范围外扩的米数")
@@ -470,14 +488,6 @@ def main():
                         (water if is_water else parks).append(p)
         return {"clip": clip, "buildings": buildings, "roads": roads, "water": water, "parks": parks, "rivers": rivers}
 
-    # ---- 要拉的飞地：--no-enclave 不要；--enclave 显式给出；都没给就用默认飞地 ----
-    if args.no_enclave:
-        enclave_specs = []
-    elif args.enclave is not None:
-        enclave_specs = args.enclave
-    else:
-        enclave_specs = [parse_enclave(s) for s in DEFAULT_ENCLAVES]
-
     # ---- 主城区：沿用旧文件，或按 --bbox 重新拉取（这里只定范围，真正拉数在重叠检查之后） ----
     old_meta = None
     if args.keep_main:
@@ -495,10 +505,28 @@ def main():
         main_bbox = [south, west, north, east]
         main_clip = region_clip(south, west, north, east)
         main_part = None
-    city = args.city if args.city is not None else (old_meta.get("city", "成都") if old_meta else "成都")
+    city = args.city if args.city is not None else (old_meta.get("city", DEFAULT_CITY) if old_meta else DEFAULT_CITY)
 
-    # ---- 重叠检查：各区域的裁剪框两两不能相交 ----
-    # 楼栋 / 道路 / 河流不跨区域去重，裁剪框一重叠，重叠处的元素会被两个区域各拉一遍而重复
+    # ---- 要拉的飞地：--no-enclave 不要；--enclave 显式给出；都没给时只有成都（城市名与原点都是默认值）用默认飞地 ----
+    # 城市名要等主城区定下来才知道（--keep-main 时取旧文件的 meta.city），所以放在主城区之后
+    default_origin = [float(v) for v in DEFAULT_ORIGIN.split(",")]
+    if args.no_enclave:
+        enclave_specs = []
+    elif args.enclave is not None:
+        enclave_specs = args.enclave
+    elif city == DEFAULT_CITY and [lon0, lat0] == default_origin:
+        enclave_specs = [parse_enclave(s) for s in DEFAULT_ENCLAVES]
+    else:
+        # 默认飞地是成都的经纬度，换了城市或原点就不带，免得新城市数据里凭空多出一块成都的数据
+        print(
+            f"提示：城市「{city}」/ 原点 {lon0},{lat0} 不是成都默认值，不带默认飞地；需要飞地请显式给 --enclave",
+            file=sys.stderr,
+        )
+        enclave_specs = []
+
+    # ---- 区域间隔检查：各区域的裁剪框两两不能相交，且至少相距 MIN_REGION_GAP ----
+    # 楼栋 / 道路 / 河流不跨区域去重，裁剪框一重叠，重叠处的元素会被两个区域各拉一遍而重复；
+    # 不重叠但靠得太近时，前端「离哪块区域最近」的归区会出错（见 MIN_REGION_GAP 的注释）
     regions = [("主城区", main_clip)] + [
         (f"飞地「{name}」", region_clip(*box)) for name, box in enclave_specs
     ]
@@ -508,6 +536,14 @@ def main():
                 raise SystemExit(
                     f"{name_a}的裁剪框 {a} 与{name_b}的裁剪框 {b} 重叠："
                     "楼栋、道路、河流不跨区域去重，重叠会重复；请调整飞地范围，或用 --clip-margin 缩小外扩"
+                )
+            # 两个矩形之间的最短距离：各轴上的空隙（重叠或相接为 0）合成欧氏距离，口径同前端 nearestRegion
+            gap = math.hypot(max(0, b[0] - a[2], a[0] - b[2]), max(0, b[1] - a[3], a[1] - b[3]))
+            if gap < MIN_REGION_GAP:
+                raise SystemExit(
+                    f"{name_a}的裁剪框 {a} 与{name_b}的裁剪框 {b} 只相距 {gap:.0f} m（至少 {MIN_REGION_GAP} m）："
+                    "前端按「离哪块区域最近」给投影物、落点与镜头注视点归区，假定区域相距数公里；"
+                    "请把飞地范围移远，或并入主城区范围（--bbox）"
                 )
 
     if main_part is None:
