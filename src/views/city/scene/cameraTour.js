@@ -314,8 +314,9 @@ export class CameraTour {
    * 朝 anchor 收拢 / 远离，视线方向不变，anchor 在屏幕上的位置也就不变；
    * 不传（工具栏按钮）则以注视点即画面中心缩放。
    * 比例按夹取后的距离算，距离已到上下限时注视点也不再移动。
-   * 以 anchor 缩放可能把注视点带出全部范围矩形（如在主城区边缘拉到最远、光标指向两区之间的空白地面），
-   * 超出的距离计入 slack（同打断飞行，见 _stopFlying），由 update 衰减、画面平滑滑回，而不是当帧硬夹
+   * 以 anchor 缩放把注视点带出范围、且最近的区域换成了另一块（在两区之间的空白处缩放）时，
+   * 超出的距离计入 slack（同打断飞行，见 _stopFlying），由 update 衰减、画面平滑滑进那块区域；
+   * 仍归同一块区域时照旧当帧硬夹回它的边缘
    */
   zoom(factor, anchor) {
     const s = this.spherical
@@ -323,6 +324,10 @@ export class CameraTour {
     const from = s.radius
     s.radius = Math.max(L.radiusMin, Math.min(L.radiusMax, from * factor))
     const moved = anchor && from > 0
+    // 缩放前注视点归哪块区域（最近的矩形），用来判断缩放后是否跨到了另一块
+    const fromIndex = moved
+      ? nearestRect(this.target.x, this.target.z, L.bounds, NEAR).index
+      : -1
     if (moved) {
       const k = s.radius / from
       this.target.x = anchor.x + (this.target.x - anchor.x) * k
@@ -330,15 +335,15 @@ export class CameraTour {
     }
     this._stopFlying()
     if (moved) {
-      // 注视点被缩放带出全部范围矩形时，apply 按 slack 硬夹会在一帧内把画面拽进最近的矩形
-      // （主城区东北角拉到最远、光标指向 20 km 外时实测跳约 2.1 km）。令 slack 至少为超出的距离：
-      // 当帧 apply 不移动注视点，之后由 update 逐帧衰减 slack、画面滑进最近的矩形。
-      // 注视点仍在矩形内时 gap 为 0，slack 不变，矩形内的缩放与改动前逐位一致。
+      // 跨区缩放：主城区东北角拉到最远、光标指向两区之间 20 km 外的空白处时，最近的矩形变成飞地，
+      // apply 按 slack 硬夹会在一帧内把画面拽进飞地（实测跳约 2.1 km）。此时令 slack 至少为超出的距离：
+      // 当帧 apply 不移动注视点，之后由 update 逐帧衰减 slack、画面滑进飞地。
+      // 只对跨区这样做：在同一区域的外缘（如主城区东缘拉远后光标指向画面上沿持续向内滚）照旧硬夹，
+      // 否则连续滚动时注视点会一路跑出数据范围数公里、松手才弹回；
+      // 注视点仍在矩形内时 gap 为 0，矩形内的缩放与改动前逐位一致。
       // 拖拽只改方位与俯仰、不移动注视点，工具栏缩放（不传 anchor）也不移动注视点，都不需要这样处理
-      this.slack = Math.max(
-        this.slack,
-        nearestRect(this.target.x, this.target.z, L.bounds, NEAR).gap
-      )
+      const near = nearestRect(this.target.x, this.target.z, L.bounds, NEAR)
+      if (near.index !== fromIndex) this.slack = Math.max(this.slack, near.gap)
     }
     this.pause()
     this.apply()
