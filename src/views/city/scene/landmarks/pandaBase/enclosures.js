@@ -276,9 +276,11 @@ const VILLA2 = {
  * 小熊猫 2 号活动场（way 686460724，tourism=attraction，11,698 ㎡，林下）：四周 1.2 m 矮墙即可（文档 4.11）。
  * 轮廓为 OSM 46 点按 Douglas–Peucker 2 m 抽稀的 26 点（面积误差 < 0.1%），局部坐标；
  * 场内不开草地洞、不打 F_YARD（林下，树竹分区照常往里种），只沿墙线打 F_SOLID。
- * 东北角离别墅—产房步道 sunToNo2 中线 ≥ 5.3 m。场内 3 座树杈栖架
+ * 东北角离别墅—产房步道 sunToNo2 中线 ≥ 5.3 m。场内 3 座树杈栖架。
+ * 轮廓、树杈栖架（FORK_PERCHES）与小熊猫产房（RED_PANDA_HOUSE）导出给 vegetation.js：
+ * 场内种林下乔木（树冠不挡住栖架与产房）、林冠面延伸时避开本场
  */
-const RED_PANDA_AREA = [
+export const RED_PANDA_AREA = [
   [6930.9, -9135.4],
   [6910.3, -9099.3],
   [6906.2, -9088.4],
@@ -307,7 +309,7 @@ const RED_PANDA_AREA = [
   [6929.4, -9144.3]
 ]
 const RED_PANDA_WALL = { h: 1.2, t: 0.4 }
-const FORK_PERCHES = [
+export const FORK_PERCHES = [
   [6960, -9050, 20],
   [7012, -9030, 70],
   [6948, -9118, 160]
@@ -316,7 +318,7 @@ const FORK_PERCHES = [
  * 小熊猫产房（node 11994568340 (6905.5, −9120.3)，照片 pb_redpanda_house：粉墙 + 塑石立面）：
  * 12 × 8 粉墙平顶小屋，长边顺着 2 号活动场西界（方位 30°），顶上 2 块塑石岩包，门朝活动场（东南）
  */
-const RED_PANDA_HOUSE = {
+export const RED_PANDA_HOUSE = {
   at: [6905.5, -9120.3],
   w: 12,
   d: 8,
