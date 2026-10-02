@@ -33,7 +33,12 @@ import { createTrees } from "./trees.js"
 import { LABEL_LEAD, createMarkers } from "./markers.js"
 import { CameraTour } from "./cameraTour.js"
 import { createPicker } from "./picking.js"
-import { nearestRegion, polygonCenter } from "./utils.js"
+import {
+  REGION_MARGIN,
+  nearestRegion,
+  polygonCenter,
+  regionClips
+} from "./utils.js"
 import { createLandmarks } from "./landmarks/index.js"
 import { createCrowd } from "./crowd.js"
 import {
@@ -225,11 +230,16 @@ export class CityScene {
     // 每块只拟合自己的投影物（主城区约 8.0 km，与加飞地前一致；熊猫基地飞地约 4 km）。
     // 投影物按「离哪块区域的 clip 最近」归类（nearestRegion）：主城区的公园面不按 clip 裁剪，
     // 树会撒到 clip 外约 170 m，严格按 clip 内筛选会丢掉它们的阴影。
+    // 离所有区域的 clip 都超过 REGION_MARGIN 的投影物不计入任何区域（nearestRegion 带 maxGap 时返回 -1）：
+    // 正常数据里没有这样的投影物，结果与不加这项筛选逐位一致；旧版 chengdu.json（缺 meta.enclaves）时，
+    // 熊猫基地的景点模型已在 createLandmarks 里跳过，但它的定位针仍立在主城区东北约 5 km 外，
+    // 不筛掉会把主城区阴影框撑大约一半（lab 预览页 cityShadowBox 同此规则）。
     // 初始为主城区的静态阴影；停靠站点时由 _fitShadow 收紧，离站 / 回总览 / 拉远时由
     // _resetShadow 恢复注视点所在区域的静态阴影
     const meta = d.meta
     const enclaves = meta.enclaves || []
-    this.regionClips = [meta.clip, ...enclaves.map((e) => e.clip)]
+    this.regionClips = regionClips(meta)
+    // 注视点归区：注视点不会离开数据区域太远，不带 maxGap，总能归到最近的一块
     this._regionOf = (x, z) => nearestRegion(x, z, this.regionClips)
     this.regionShadows = []
     this.regionClips.forEach((_, i) => {
@@ -239,7 +249,8 @@ export class CityScene {
             buildings: d.buildings,
             trees: this.trees.layout,
             objects: [this.landmarks.group, this.markers.group],
-            within: (x, z) => this._regionOf(x, z) === i
+            within: (x, z) =>
+              nearestRegion(x, z, this.regionClips, REGION_MARGIN) === i
           },
           this.theme.light
         )

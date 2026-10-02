@@ -110,21 +110,39 @@ export function polygonCenter(poly) {
 }
 
 /**
+ * 「落在数据区域内」的容差（米）：点离主城区与各飞地的 clip 都超过这么远，就算不在任何数据区域内。
+ * 用途：景点落点的有效性检查（landmarks/index.js 的 createLandmarks）、静态阴影的投影物筛选（CityScene）。
+ * 取 1 km：数据里离 clip 最远的正常元素是主城区公园面撒出的通用树（约 170 m），留足余量；
+ * 而旧版 chengdu.json（缺 meta.enclaves）里，熊猫基地落点离主城区 clip 约 6 km，能可靠地判为区域外
+ */
+export const REGION_MARGIN = 1000
+
+/**
  * 点 (x, z) 离哪块数据区域最近：返回 clips 中点到矩形距离最小的下标（点在矩形内距离为 0）。
  * clips 是各区域的裁剪矩形 [x0, z0, x1, z1]（meta.clip 与 meta.enclaves[].clip），
  * 下标 0 是主城区；距离并列时取下标小者，主城区优先。
+ * 给了 maxGap 时，最近的区域也离点超过 maxGap 米就返回 -1（不在任何区域内）；
+ * 缺省 maxGap 为 Infinity，总能返回某块区域（与加 maxGap 之前逐位一致）。
  *
  * 为什么按「最近」而不是「是否落在 clip 内」：
  * - 主城区的公园面不按 clip 裁剪，通用树会撒到 clip 外约 170 m（西北角最多）；
  * - 飞地的树同样会超出飞地 clip 约 30 m。
  * 若用「不在飞地 clip 内就归主城区」，这些树会被错归到另一块；严格按「在 clip 内」筛选又会把它们丢掉。
- * 最近归类让每个投影物恰好落进一块区域，且离哪块近就归哪块（区域之间相距数公里，不会有歧义）。
+ * 最近归类让每个投影物恰好落进一块区域，且离哪块近就归哪块（区域之间相距数公里，不会有歧义；
+ * 拉数脚本 fetch-osm-city.py 要求各区域 clip 至少相距 MIN_REGION_GAP = 1 km）。
+ *
+ * 与 cameraTour.js 的 nearestRect 算法相同（点到矩形的距离取最小、并列取靠前者），但有意分开：
+ * - 口径不同：这里是 clip（拉数范围 bbox 外扩 300 m，数据实际铺到的范围），用于给投影物、落点归区；
+ *   nearestRect 是 bbox 本身（比 clip 每边内缩 300 m），是注视点可移动的范围，镜头不该停到 clip 边缘的空地上；
+ * - 需要的结果不同：这里只要下标，nearestRect 还要夹进矩形后的点与距离；
+ * - 这里是热路径（静态阴影要对每栋楼、每棵树调用），矩形保持紧凑的数组形式、不分配结果对象
  * @param {number} x
  * @param {number} z
  * @param {number[][]} clips 各区域裁剪矩形 [[x0, z0, x1, z1], ...]
- * @returns {number} 最近区域的下标
+ * @param {number} [maxGap=Infinity] 最近区域的最大允许距离（米），超过返回 -1
+ * @returns {number} 最近区域的下标；超出 maxGap 时为 -1
  */
-export function nearestRegion(x, z, clips) {
+export function nearestRegion(x, z, clips, maxGap = Infinity) {
   let best = 0
   let bestDist = Infinity
   for (let i = 0; i < clips.length; i++) {
@@ -138,5 +156,17 @@ export function nearestRegion(x, z, clips) {
       best = i
     }
   }
-  return best
+  // maxGap 缺省为 Infinity 时恒成立（含 clips 为空、bestDist 仍为 Infinity 的情形），返回值同改动前
+  return bestDist <= maxGap ? best : -1
+}
+
+/**
+ * 各数据区域的裁剪矩形：下标 0 为主城区 meta.clip，其后依次为 meta.enclaves[].clip。
+ * 数据缺 meta.clip（极旧的数据格式）时返回空数组，调用方据此跳过区域相关的检查
+ * @param {object} meta chengdu.json 的 meta
+ * @returns {number[][]}
+ */
+export function regionClips(meta) {
+  if (!meta?.clip) return []
+  return [meta.clip, ...(meta.enclaves || []).map((e) => e.clip)]
 }

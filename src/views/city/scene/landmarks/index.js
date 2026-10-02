@@ -20,7 +20,12 @@
  */
 import { Group, Matrix4, Vector3 } from "three"
 import { buildingsInZones } from "./kit/footprint.js"
-import { polygonBounds } from "../utils.js"
+import {
+  REGION_MARGIN,
+  nearestRegion,
+  polygonBounds,
+  regionClips
+} from "../utils.js"
 import { treeShapeMax } from "../trees.js"
 import { build as tianfu } from "./tianfu.js"
 import { build as taikooli } from "./taikooli.js"
@@ -296,8 +301,10 @@ export function buildLandmark(name, ctx) {
 
 /**
  * 构建全部景点。
+ * 落点不在任何数据区域内（离主城区与各飞地的 clip 都超过 REGION_MARGIN）的景点不构建、按空结果处理，
+ * 整页只告警一次：见函数内「旧数据兜底」的注释。
  * @param {object} options
- * @param {object} options.geometry 城市几何数据（用到 geometry.buildings）
+ * @param {object} options.geometry 城市几何数据（用到 geometry.buildings 与 geometry.meta 的 clip / enclaves）
  * @param {Array} options.spots 景点数组（已含局部 x / z）
  * @param {object} options.theme THEME
  * @param {object} options.project 投影（toLocal 等）
@@ -321,11 +328,26 @@ export function createLandmarks({ geometry, spots, theme, project }) {
   const walkwaysBySpot = []
   const zones = []
   const updaters = [] // { name, fn, broken? }
+  // 旧数据兜底：public/ 下的 chengdu.json 文件名不带哈希，上线当天浏览器可能拿到新 JS + 旧 JSON
+  // （启发式缓存；index.vue 已改为每次带条件请求重新验证，这里再兜一层）。旧 JSON 没有 meta.enclaves，
+  // 熊猫基地仍会建在主城区东北约 5 km 外的空地上：既被算进主城区静态阴影、把阴影框从约 8 km 撑到约 12 km
+  // （每像素约 2.0 → 2.9 m），又因找不到园内 OSM 楼而刷出二十多条「未找到 OSM 轮廓」告警。
+  // 所以落点离所有数据区域的 clip 都超过 REGION_MARGIN 的景点直接按空结果处理（同构建失败的兜底），
+  // 站点下标不变：定位针（底座按楼栋估算）、到站机位、行人（无步行路径即不生成）照常工作，只是没有模型。
+  // 数据缺 meta.clip 时 clips 为空，不做这项检查
+  const clips = regionClips(geometry.meta)
+  const outside = [] // 落点不在任何数据区域内、已跳过的景点名
 
   spots.forEach((spot, i) => {
     let r = emptyResult()
     const build = LANDMARK_MODULES[spot.name]
-    if (build) {
+    if (
+      build &&
+      clips.length &&
+      nearestRegion(spot.x, spot.z, clips, REGION_MARGIN) < 0
+    ) {
+      outside.push(spot.name)
+    } else if (build) {
       // 失败隔离：单个景点抛错时打印错误并视为空结果，城市其余部分照常构建
       try {
         r = normalize(build({ project, buildings, theme, spot }))
@@ -347,6 +369,13 @@ export function createLandmarks({ geometry, spots, theme, project }) {
     }
     if (r.update) updaters.push({ name: spot.name, fn: r.update })
   })
+  // 跳过的景点合成一条告警（整页只一条），说明多半是数据文件版本旧
+  if (outside.length) {
+    console.warn(
+      `景点「${outside.join("」「")}」的落点离所有数据区域都超过 ${REGION_MARGIN} m，已跳过模型构建：` +
+        "多半是 chengdu.json 版本旧（缺少 meta.enclaves 飞地数据），刷新缓存后再试"
+    )
+  }
 
   const excluded = buildingsInZones(buildings, zones)
   // 步行路径走廊：半径 = 路宽一半 + 通用树最大树冠水平半径 + 余量（树外形见 trees.js 的 treeShape），

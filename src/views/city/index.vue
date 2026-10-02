@@ -152,9 +152,16 @@
   /** 几何数据路径：生产环境 base 为 /bi/，必须经 BASE_URL 拼接 */
   const GEOMETRY_URL = `${import.meta.env.BASE_URL}city/chengdu.json`
 
-  /** 拉取预处理好的几何数据 */
+  /**
+   * 拉取预处理好的几何数据。
+   * public/ 下的文件不经构建、文件名不带内容哈希，响应若没有明确的缓存头，浏览器会按启发式缓存直接复用旧文件：
+   * 上线当天可能出现「新 JS + 旧 JSON」（如旧 JSON 缺 meta.enclaves，熊猫基地会建在空地上）。
+   * cache: "no-cache" 让浏览器每次都带条件请求（If-None-Match / If-Modified-Since）向服务器重新验证，
+   * 文件没变时服务器回 304、仍用本地缓存，只多一次往返，不必改 vite 配置给文件名加哈希。
+   * 万一仍拿到旧数据，场景里另有兜底（landmarks/index.js 的 createLandmarks 跳过落点不在数据区域内的景点）
+   */
   async function fetchGeometry() {
-    const res = await fetch(GEOMETRY_URL)
+    const res = await fetch(GEOMETRY_URL, { cache: "no-cache" })
     if (!res.ok) throw new Error(`几何数据请求失败：HTTP ${res.status}`)
     return res.json()
   }
