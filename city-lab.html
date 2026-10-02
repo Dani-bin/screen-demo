@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- 开发用单景点预览页：vite 开发服务器可访问 /city-lab.html，生产构建只打包 index.html -->
+    <title>城市景点预览</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #f6f3ec;
+      }
+      #lab {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+      #info {
+        position: fixed;
+        left: 12px;
+        bottom: 10px;
+        font: 12px/1.4 monospace;
+        color: #555;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="lab"></canvas>
+    <div id="info"></div>
+    <script type="module" src="/src/views/city/lab/lab.js"></script>
+  </body>
+</html>
