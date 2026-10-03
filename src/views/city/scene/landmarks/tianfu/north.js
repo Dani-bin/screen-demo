@@ -16,26 +16,28 @@
  */
 import { Vector3 } from "three"
 import { frame } from "../kit/builder.js"
-import { fromTriangles, sideWalls } from "../kit/shapes.js"
+import { sideWalls } from "../kit/shapes.js"
 import { GROUND_Y } from "../../terrain.js"
-import { C, NORTH_Y, addSurface, pushUp, rectUV, triangulate } from "./site.js"
-import { STATUE, buildStatue } from "./statue.js"
+import { C, NORTH_Y, addInlay, addSurface, rectUV } from "./site.js"
+import { CLUSTER, RESTAURANT, STATUE, buildStatue } from "./statue.js"
 import { SCIENCE, buildScience } from "./science.js"
 
 /* ---------------- 像与科技馆之间的广场（像组团系 S） ---------------- */
 
 // 广场铺装：南沿贴组团后缘（中部凹进去贴 SE 餐厅北墙），北沿一直铺到科技馆柱廊后墙（M 系 z −5.2，
 // 换到 S 系约 −88.5～−89.0）以内 0.2～0.7 m，正门前的柱廊地面也由它提供；
-// 伸进科技馆墙内的部分被楼体盖住。东西宽 92 m（OSM 步行区约 97 m，两侧各让开 2～3 m 的楼）
+// 伸进科技馆墙内的部分被楼体盖住。东西半宽 46 m（OSM 步行区约 97 m 宽，两侧各让开 2～3 m 的楼）
+const PLAZA_HW = 46
+const PLAZA_N = -89.2
 const PLAZA = [
-  [-46, -24.5],
-  [-17.3, -24.5],
-  [-17.3, -19.5],
-  [18.7, -19.5],
-  [18.7, -24.5],
-  [46, -24.5],
-  [46, -89.2],
-  [-46, -89.2]
+  [-PLAZA_HW, CLUSTER.z0],
+  [RESTAURANT.x0, CLUSTER.z0],
+  [RESTAURANT.x0, RESTAURANT.z0],
+  [RESTAURANT.x1, RESTAURANT.z0],
+  [RESTAURANT.x1, CLUSTER.z0],
+  [PLAZA_HW, CLUSTER.z0],
+  [PLAZA_HW, PLAZA_N],
+  [-PLAZA_HW, PLAZA_N]
 ]
 // 分格线（Google 影像）：南北向 7 道、东西向 4 道，间距 10 m、宽 1.2，中线 x = 1.2 对着科技馆正门
 const GRID = {
@@ -45,15 +47,29 @@ const GRID = {
 }
 
 // 科技馆前南北轴线：沿分格中线，南端离 SE 餐厅北墙 7 m，北端离柱廊前沿约 5.5 m
-const AXIS = { x: 1.2, z0: -26.5, z1: -78, width: 8, density: 1.5 }
+const AXIS = {
+  x: GRID.xs[3],
+  z0: RESTAURANT.z0 - 7,
+  z1: -78,
+  width: 8,
+  density: 1.5
+}
 
 /* ---------------- 替换区 ---------------- */
 
-// 像组团：组团外轮廓（w1532678567）向外 1.5 m，盖住几何数据里像下那座无名楼（h 15.1）（S 系）
-const CLUSTER_ZONE = rectUV(-38.5, 39.5, -26, 34)
-// 门前广场（S 系）
-const PLAZA_ZONE = rectUV(-47, 47, -89.2, -24.5)
-// 科技馆：轮廓（含 OSM 博物馆面背后那块 5 m 的凸出）外扩 1.5 m（M 系）
+// 外扩余量（米）
+const ZONE_PAD = 1.5
+// 像组团：组团外轮廓（w1532678567）四边外扩，盖住几何数据里像下那座无名楼（h 15.1）（S 系）
+const CLUSTER_ZONE = rectUV(
+  CLUSTER.x0 - ZONE_PAD,
+  CLUSTER.x1 + ZONE_PAD,
+  CLUSTER.z0 - ZONE_PAD,
+  CLUSTER.z1 + ZONE_PAD
+)
+// 门前广场：东西各宽出 1 m，南北与铺装同（南沿接像组团的区）（S 系）
+const PLAZA_ZONE = rectUV(-PLAZA_HW - 1, PLAZA_HW + 1, PLAZA_N, CLUSTER.z0)
+// 科技馆：楼体轮廓（东西 −70.9～70.7、北墙 −101.3、塔前沿 2.0）外扩约 1.5～1.8 m（M 系）。
+// OSM 博物馆面（tourism=museum）在北墙中段还有一块凸出到 z −106.5，那不是楼体、没有建模，不必替换
 const SCI_ZONE = rectUV(-72.5, 72.5, -103, 3.5)
 
 /* ---------------- 通用小函数 ---------------- */
@@ -80,9 +96,8 @@ function buildPlaza(b, f) {
   const gz0 = GRID.zs[0] - hw
   const gz1 = GRID.zs[GRID.zs.length - 1] + hw
   const gridRect = rectUV(gx0, gx1, gz0, gz1)
-  const flat = () => NORTH_Y
   b.add(sideWalls(PLAZA, GROUND_Y, NORTH_Y), C.northPave, f)
-  addSurface(b, f, PLAZA, [gridRect], flat, C.northPave)
+  addSurface(b, f, PLAZA, [gridRect], () => NORTH_Y, C.northPave)
   // 格心：相邻两道线之间（线宽以外）
   const cells = []
   for (let i = 0; i + 1 < GRID.xs.length; i++) {
@@ -97,12 +112,8 @@ function buildPlaza(b, f) {
       )
     }
   }
-  addSurface(b, f, gridRect, cells, flat, C.northGrid)
-  const pos = []
-  for (const cell of cells) {
-    for (const tri of triangulate(cell)) pushUp(pos, tri, flat)
-  }
-  b.add(fromTriangles(pos), C.northPave, f)
+  // 深色格框把格心当洞，格心再铺回浅色
+  addInlay(b, f, gridRect, cells, NORTH_Y, C.northGrid, C.northPave)
 }
 
 /* ---------------- 入口 ---------------- */

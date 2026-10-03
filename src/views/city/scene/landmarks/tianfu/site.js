@@ -269,7 +269,7 @@ export function strut(
   )
 }
 
-/* ---------------- 平面三角化（地面、神鸟盘、西鱼眼共用） ---------------- */
+/* ---------------- 平面三角化与铺面（地面、神鸟盘、西鱼眼、北侧组团共用） ---------------- */
 
 /**
  * 去掉相邻的重复点（含末点与首点重合）：几段弧线首尾拼接时接点会出现两次，
@@ -322,11 +322,36 @@ export function pushUp(pos, [a, b, c], yAt) {
   for (const [x, z] of [a, p, q]) pos.push(x, yAt(x, z), z)
 }
 
-/** 平面多边形（可带洞）铺成朝上的面，高度由 yAt(x, z) 给出（常数函数即水平面，平面方程即斜面） */
-export function addSurface(b, f, outer, holes, yAt, color) {
+/**
+ * 一组平面三角形（[x, z] 点，即 triangulate 的结果）写成法线朝上的几何体，高度由 yAt(x, z) 给出：
+ * 常数函数即水平面，平面方程即斜面（北侧组团的斜坡、后部台阶）。ground.js 的 flatTris 是它的水平特例
+ */
+export function surfaceTris(tris, yAt) {
   const pos = []
-  for (const t of triangulate(outer, holes)) pushUp(pos, t, yAt)
-  b.add(fromTriangles(pos), color, f)
+  for (const t of tris) pushUp(pos, t, yAt)
+  return fromTriangles(pos)
+}
+
+/** 平面多边形（可带洞）铺成朝上的面，高度由 yAt(x, z) 给出（见 surfaceTris） */
+export function addSurface(b, f, outer, holes, yAt, color) {
+  b.add(surfaceTris(triangulate(outer, holes), yAt), color, f)
+}
+
+/**
+ * 「挖洞铺回」：outer 先把 inlays 当洞三角化、铺 baseColor，每块 inlay 再用同一组顶点逐块铺回。
+ * 两层同在水平面 y 上、边界顶点逐个相同，既不浮起也不闪；抬高 0.15 m 再铺图案（kit/figures.js 的
+ * PATTERN_LIFT）在人走的面上会破坏步行校验的支撑判定，所以图案一律用这个。
+ * 用在：草坪花带里的草地与祥云块（ground.js）、阶梯花坡的菱形（statue.js）、门前广场的分格（north.js）。
+ * @param {number} y 水平面高度
+ * @param {string|((i: number) => string)} inlayColor 铺回的颜色；给函数时按块序号 i 取色
+ */
+export function addInlay(b, f, outer, inlays, y, baseColor, inlayColor) {
+  const yAt = () => y
+  addSurface(b, f, outer, inlays, yAt, baseColor)
+  inlays.forEach((p, i) => {
+    const color = typeof inlayColor === "function" ? inlayColor(i) : inlayColor
+    b.add(surfaceTris(triangulate(p), yAt), color, f)
+  })
 }
 
 /** 实心棱柱：竖直侧墙一种颜色、顶面另一种颜色（extrudePolygon 只有一种颜色；屋面与墙面分色时用这个） */

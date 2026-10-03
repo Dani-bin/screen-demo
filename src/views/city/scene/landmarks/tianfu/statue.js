@@ -30,10 +30,9 @@ import {
   NORTH_Y,
   addPrism,
   addSurface,
-  pushUp,
+  addInlay,
   rectUV,
-  strut,
-  triangulate
+  strut
 } from "./site.js"
 
 /* ---------------- 尺寸与定位（像组团系 S） ---------------- */
@@ -41,59 +40,82 @@ import {
 // 原点：立像中心（OSM w1532678570 的中心点）；方位角取 OSM 轮廓的实际朝向
 export const STATUE = { lon: 104.0633079, lat: 30.6612661, bearing: -0.92 }
 
-// 深红台座（w1303862402，高 8.1）：前段 46.4 × 10.4、中段 26.4 × 8.6（像立在中段）、
-// 后段 36 × 4.9，中段与后段之间两道斜边
+// 组团外轮廓（w1532678567）：东西 x −37～38，南北从后缘 z −24.5 到南沿 z 32.4（贴道路）；
+// 后缘中部凹进去的一段是 SE 餐厅北墙
+export const CLUSTER = { x0: -37.0, x1: 38.0, z0: -24.5, z1: 32.4 }
+// SE 餐厅（w1062135760）：台座后面 36 × 9，顶面与台座齐平（8.1）；北墙临广场
+export const RESTAURANT = { x0: -17.3, x1: 18.7, z0: -19.5, z1: -10.5 }
+
+// 深红台座（w1303862402，高 8.1）是前宽后窄的「工」字形：
+// 前段 x −22.7～23.7、z 7.5～17.9（46.4 × 10.4）；中段 x −12.9～13.5、z −1.1～7.5（26.4 × 8.6，像立在这里）；
+// 后段与餐厅同宽（36 m），从餐厅南墙 z −10.5 到 z −5.6，中段与后段之间两道斜边
+const PED = {
+  front: [-22.7, 23.7],
+  mid: [-12.9, 13.5],
+  zFront: [7.5, 17.9],
+  zMid: -1.1
+}
+// 台座后段两道斜边的南端：也是后部台阶的高端、斜坡与台阶分界斜边的起点
+const CHAMFER_Z = -5.6
 const PEDESTAL = [
-  [-12.9, -1.1],
-  [-12.9, 7.5],
-  [-22.7, 7.5],
-  [-22.7, 17.9],
-  [23.7, 17.9],
-  [23.7, 7.5],
-  [13.5, 7.5],
-  [13.5, -1.1],
-  [18.7, -5.6],
-  [18.7, -10.5],
-  [-17.3, -10.5],
-  [-17.3, -5.6]
+  [PED.mid[0], PED.zMid],
+  [PED.mid[0], PED.zFront[0]],
+  [PED.front[0], PED.zFront[0]],
+  [PED.front[0], PED.zFront[1]],
+  [PED.front[1], PED.zFront[1]],
+  [PED.front[1], PED.zFront[0]],
+  [PED.mid[1], PED.zFront[0]],
+  [PED.mid[1], PED.zMid],
+  [RESTAURANT.x1, CHAMFER_Z],
+  [RESTAURANT.x1, RESTAURANT.z1],
+  [RESTAURANT.x0, RESTAURANT.z1],
+  [RESTAURANT.x0, CHAMFER_Z]
 ]
 const PEDESTAL_H = 8.1
 // 矮栏：沿台座边内收 0.25 m、高 0.9（c15：台座顶上一圈浅灰栏杆）；
 // 后沿（与 SE 餐厅屋面相接的一段）不设，所以从后沿西端开始、绕一圈到后沿东端
 const RAIL = { inset: 0.25, h: 0.9 }
 
-// SE 餐厅（w1062135760）：台座后面 36 × 9，顶面与台座齐平（8.1）；北墙临广场
-const RESTAURANT = { x0: -17.3, x1: 18.7, z0: -19.5, z1: -10.5 }
-
 // 两侧斜坡（OSM roof:shape=skillion）：一个平面从内侧高边（8.1）斜到外侧低边（0）。
-// 内侧高边在台座中段两侧缺口的内沿 x = 13.5 / −12.9，外侧低边在组团轮廓 x = 38 / −37。
+// 内侧高边在台座中段两侧缺口的内沿（中段东西边），外侧低边在组团轮廓东西边。
 // 缺口里那一段（台座前段以北）在 Google 影像里是红褐色斜面，前段北墙在上面投下三角形影子；
-// 前段以外到外沿才是草坡（影像里深绿色）。两段同一个平面，按 x = ±前段边线分成两块上色
+// 前段以外到外沿才是草坡（影像里深绿色）。两段同一个平面，按台座前段东西边分成两块上色
 const SLOPES = [
-  { high: 13.5, low: 38.0, front: 23.7 }, // 东坡
-  { high: -12.9, low: -37.0, front: -22.7 } // 西坡
+  { high: PED.mid[1], low: CLUSTER.x1, front: PED.front[1] }, // 东坡
+  { high: PED.mid[0], low: CLUSTER.x0, front: PED.front[0] } // 西坡
 ]
-// 后部台阶（w1532678573 / 74，坡向北）：组团后缘（z −24.5）的 0 升到台座后段斜边端点（z −5.6）的 7
-const BACK = { z0: -24.5, z1: -5.6, h: 7 }
-// 斜坡与后部台阶的分界（报告 2.2 轮廓里的斜边）：从台座后段斜边端点到组团后角
+// 后部台阶（w1532678573 / 74，坡向北）：组团后缘的 0 升到台座后段斜边南端的 7
+const BACK = { z0: CLUSTER.z0, z1: CHAMFER_Z, h: 7 }
+// 斜坡与后部台阶的分界（报告 2.2 轮廓里的斜边）：从台座后段斜边南端到组团后角
 const BACK_HIPS = [
   [
-    [18.7, -5.6],
-    [38.0, -24.5]
+    [RESTAURANT.x1, CHAMFER_Z],
+    [CLUSTER.x1, CLUSTER.z0]
   ],
   [
-    [-17.3, -5.6],
-    [-37.0, -24.5]
+    [RESTAURANT.x0, CHAMFER_Z],
+    [CLUSTER.x0, CLUSTER.z0]
   ]
 ]
 
-// 正面阶梯花坡（w1532678571）：梯形，北沿贴台座前段（z 17.9，x −22.7～23.7）、
-// 南沿贴道路（z 32.4，x −37～38），从 6 m 分 5 级降到路面，每级高 1.2、进深 2.9
-const FLOWER = { z0: 17.9, z1: 32.4, wN: [-22.7, 23.7], wS: [-37.0, 38.0] }
+// 西缘矮台：OSM 绿地 #137（像组团下面那块）的西边比组团轮廓宽出约 1 m（S 系 x ≈ −38.0），
+// 不盖住就会在西坡脚外露出一条 0.2 m 高的亮绿边（48 m²）。沿西沿铺一条 1.3 m 宽、顶面 NORTH_Y 的矮台，
+// 顶面同门前广场的浅色铺装（Esri 影像上这里是浅灰人行道），超出 OSM 轮廓 1.3 m，在轮廓误差以内。
+// 东沿外没有绿地露出，仍用挡墙
+const WEST_KERB = { w: 1.3 }
+
+// 正面阶梯花坡（w1532678571）：梯形，北沿贴台座前段南墙、南沿贴道路（组团南沿），
+// 从 6 m 分 5 级降到路面，每级高 1.2、进深 2.9
+const FLOWER = {
+  z0: PED.zFront[1],
+  z1: CLUSTER.z1,
+  wN: PED.front,
+  wS: [CLUSTER.x0, CLUSTER.x1]
+}
 const FLOWER_TOP = 6
 const FLOWER_TIERS = 5
-// 花坡图案：每级台面中线上一排菱形（白、黄两色逐级交替，奇数级错开半格）。
-// 菱形当作台面的洞三角化，再用同一组顶点铺回去，共面共边不闪（做法同 ground.js 的祥云块）
+// 花坡图案：每级台面中线上一排菱形（白、黄两色逐级交替，奇数级错开半格），
+// 用 site.js 的 addInlay 挖洞铺回，与台面共面共边不闪
 const DIAMOND = { spacing: 5.2, hx: 1.3, hz: 0.95, margin: 2 }
 
 // 像的基座（w1532678569，5.4 见方，8.1 → 15.2）与白色立像（w1532678570，15.2 → 27.46，立像高 12.26）
@@ -101,10 +123,25 @@ const STATUE_BASE = { w: 5.4, top: 15.2, cap: 0.5 }
 
 /* ---------------- 小工具 ---------------- */
 
-/** 竖直墙条：沿 a → c 立一块四边形，底在 y0，顶高取两端点各自的 y（斜面边上的挡墙），写进 pos */
+/**
+ * 竖直墙条：沿 a → c 立一块四边形，底在 y0，顶高取两端点各自的 y（斜面边上的挡墙、矮栏），写进 pos。
+ * 法线约定：三角形按（a 底、c 底、c 顶）（a 底、c 顶、a 顶）绕，法线水平朝 a → c 方向的 (−dz, dx)，
+ * 即沿 a → c 走时的右手边（俯视、北在上）：a → c 朝东时法线朝南（+Z），朝北时法线朝东（+X）。
+ * 东西两侧镜像的墙若端点顺序照抄，有一侧会朝反，所以挡墙一律用 pushWallToward 按可见一侧定向
+ */
 function pushWall(pos, [ax, az, ay], [cx, cz, cy], y0 = GROUND_Y) {
-  pos.push(ax, y0, az, cx, y0, cz, cx, cy, cz)
-  pos.push(ax, y0, az, cx, cy, cz, ax, ay, az)
+  // 一端顶高等于墙底时那一半是零面积三角形，不写（墙就成了三角形）
+  if (cy > y0) pos.push(ax, y0, az, cx, y0, cz, cx, cy, cz)
+  if (ay > y0) pos.push(ax, y0, az, cx, cy, cz, ax, ay, az)
+}
+
+/** 同 pushWall，但按可见一侧定向：必要时对调两端，让法线指向 toward 点 [x, z] 那一侧 */
+function pushWallToward(pos, a, c, toward, y0 = GROUND_Y) {
+  // 法线 (−dz, dx) 与「a → toward」同向时保持端点顺序，否则对调
+  const side =
+    -(c[1] - a[1]) * (toward[0] - a[0]) + (c[0] - a[0]) * (toward[1] - a[1])
+  if (side >= 0) pushWall(pos, a, c, y0)
+  else pushWall(pos, c, a, y0)
 }
 
 /** 斜坡平面高度：内侧高边 high 处 8.1、外侧低边 low 处 0（相对 NORTH_Y） */
@@ -121,10 +158,10 @@ const zOnLine = ([a, c], x) =>
 /* ---------------- 斜坡、花坡、立像 ---------------- */
 
 /**
- * 两侧斜坡、后部台阶及其边上的挡墙。
+ * 两侧斜坡、后部台阶、边上的挡墙与西缘矮台。
  * 斜坡按 OSM 的单坡屋面（skillion）理解：内侧高边 8.1 → 外沿 0 一个平面，
  * 台座前段两侧的竖墙在坡上露出 0～3.4 m（c21：草坡后面露出红墙）；
- * 后部台阶比相邻斜坡高 0～0.6 m，分界斜边上补一道挡墙
+ * 后部台阶比相邻斜坡高 0～0.6 m，分界斜边上补一道挡墙。挡墙都按露出的一侧定向（pushWallToward）
  */
 function buildSlopes(b, f) {
   const walls = []
@@ -135,9 +172,9 @@ function buildSlopes(b, f) {
     const zc = zOnLine(hip, s.front)
     // 缺口段：台座中段侧边、前段北墙、前段边线、后部斜边、台座后段斜边围成（红褐色斜面）
     const notch = [
-      [s.high, -1.1],
-      [s.high, 7.5],
-      [s.front, 7.5],
+      [s.high, PED.zMid],
+      [s.high, PED.zFront[0]],
+      [s.front, PED.zFront[0]],
       [s.front, zc],
       hip[0]
     ]
@@ -153,21 +190,46 @@ function buildSlopes(b, f) {
     // 后部台阶：台座后段斜边端点、组团后角、餐厅侧墙脚围成的三角形，坡向北
     const back = [hip[0], [hip[0][0], BACK.z0], hip[1]]
     addSurface(b, f, back, [], (x, z) => backAt(z), C.stairStone)
-    // 挡墙：组团外沿（坡脚 NORTH_Y）、斜坡与台阶的分界（台阶一侧更高，墙顶随台阶）、
-    // 台阶临广场凹口的一侧（台阶西 / 东边在餐厅北墙以北露出来的一段）
-    pushWall(walls, [s.low, BACK.z0, NORTH_Y], [s.low, FLOWER.z1, NORTH_Y])
-    pushWall(
+    // 挡墙（法线朝露出的一侧）：
+    // - 组团外沿坡脚（顶 NORTH_Y），朝外；西沿外有矮台 WEST_KERB 顶着，不用挡墙（见下）
+    if (s.low > 0) {
+      pushWallToward(
+        walls,
+        [s.low, BACK.z0, NORTH_Y],
+        [s.low, FLOWER.z1, NORTH_Y],
+        [s.low + 1, 0]
+      )
+    }
+    // - 斜坡与台阶的分界：台阶一侧更高，墙顶随台阶，露在斜坡一侧（取坡脚外沿上的一点）
+    pushWallToward(
       walls,
       [hip[0][0], hip[0][1], backAt(hip[0][1])],
-      [hip[1][0], hip[1][1], NORTH_Y]
+      [hip[1][0], hip[1][1], NORTH_Y],
+      [s.low, 0]
     )
-    pushWall(
+    // - 台阶临广场凹口的一侧（台阶西 / 东边在餐厅北墙以北露出来的一段）：露向凹口；
+    //   墙底从 NORTH_Y 起，下面是门前广场的侧墙，不重复
+    pushWallToward(
       walls,
       [hip[0][0], BACK.z0, NORTH_Y],
-      [hip[0][0], RESTAURANT.z0, backAt(RESTAURANT.z0)]
+      [hip[0][0], RESTAURANT.z0, backAt(RESTAURANT.z0)],
+      [0, (BACK.z0 + RESTAURANT.z0) / 2],
+      NORTH_Y
     )
   })
   b.add(fromTriangles(walls), C.pedestal, f)
+  // 西缘矮台：外沿侧墙代替西坡脚的挡墙，顶面盖住坡脚外那条城市绿地
+  const k = WEST_KERB
+  addPrism(
+    b,
+    f,
+    rectUV(CLUSTER.x0 - k.w, CLUSTER.x0, CLUSTER.z0, CLUSTER.z1),
+    [],
+    GROUND_Y,
+    NORTH_Y,
+    C.pedestal,
+    C.northPave
+  )
 }
 
 /**
@@ -209,15 +271,10 @@ function buildFlowerSlope(b, f) {
         [x, zm + DIAMOND.hz]
       ])
     }
-    const flat = () => top
     b.add(sideWalls(tier, GROUND_Y, top), C.flowerRise, f)
-    addSurface(b, f, tier, diamonds, flat, C.flowerRed)
+    // 红色台面把菱形当洞，菱形再铺回去（偶数级白、奇数级黄）
     const pattern = k % 2 ? C.flowerYellow : C.flowerWhite
-    const pos = []
-    for (const dm of diamonds) {
-      for (const tri of triangulate(dm)) pushUp(pos, tri, flat)
-    }
-    if (pos.length) b.add(fromTriangles(pos), pattern, f)
+    addInlay(b, f, tier, diamonds, top, C.flowerRed, pattern)
   }
 }
 
@@ -266,7 +323,10 @@ export function buildStatue(b, f) {
   b.add(extrudePolygon(PEDESTAL, [], GROUND_Y, top), C.pedestal, f)
   // 矮栏：台座轮廓内收后从后沿西端起、绕到后沿东端（去掉与餐厅相接的后沿）
   const ring = insetPolygon(PEDESTAL, RAIL.inset)
-  const start = PEDESTAL.findIndex(([x, z]) => x === -17.3 && z === -10.5)
+  const start = PEDESTAL.findIndex(
+    ([x, z]) => x === RESTAURANT.x0 && z === RESTAURANT.z1
+  )
+  if (start < 0) throw new Error("台座轮廓里找不到后沿西端（餐厅西南角）")
   const line = [...ring.slice(start), ...ring.slice(0, start)]
   const rail = []
   for (let i = 0; i + 1 < line.length; i++) {
