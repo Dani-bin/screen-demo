@@ -22,21 +22,22 @@
  * 浅色阳鱼与外板同色，所以外板只在「阴鱼 + 地灯带」处挖一个洞，阳鱼不单独建。
  * 地灯带宽 0.45 m，沿 S 线两段半圆铺，两端在大圆的切点附近收成尖角（推导见 taijiRings）。
  *
- * 给后续任务的挖洞接口（buildGround 的 cuts 参数，运算见 polygon.js 的 cutTriangles）：
+ * 挖口接口（buildGround 的 cuts 参数，运算见 polygon.js 的 cutTriangles）：
  * - cuts 为设计系下的凸多边形数组（如 circlePolygon(48.7, −0.7, 27.5, 48)），彼此不重叠；凹的或自交的
  *   cut 直接抛错。从外板、阴鱼、地灯带三层铺装的顶面里减掉：整块落在某一层里（且不贴边）的直接当洞三角化；
  *   跨过阴阳分界、大圆边，与某层边界共边、共点或顶点落在边上（如 0.5 m 网格上的矩形），
  *   或把某一层整块包在里面的，逐个三角形做「三角形 − 凸多边形」（判定见 polygon.js 的 cutRelation）。
  *   只减顶面、不补洞壁：洞里的坑壁、深色盘、池子由调用方自己建。草坪不受 cuts 影响。
- * - Task 4 西鱼眼深色盘：cuts 加 westEye.js 的 WEST_EYE_CUT（circlePolygon(−44.9, −0.75, 27, 48)），
- *   盘面由 westEye.js 用同一组顶点在 PAVE 上铺（整块在浅色阳鱼与外板里，不碰地灯带，只多 50 个三角形）。
- * - Task 5 东鱼眼下沉坑口：cuts 加 eastEye.js 的 EAST_EYE_CUT（circlePolygon(48.7, −0.7, 27.5, 48)），
- *   坑壁、雨棚、台阶在坑口上的顶点用同一组点；坑口栏杆立在挖口外 0.25 m 的铺装上。坑口跨过阴鱼、
- *   东段地灯带并伸出大圆约 1.5 m，由逐三角形相减处理：与西鱼眼盘同时挖时实测多 720 个三角形，
- *   坑口一带有约 140 个 T 形接点（见 polygon.js）。城市地面另由 index.js 的 groundHoles 挖洞。
- * - Task 6 北侧两池（|u| 24.5～101.5、v −76.5～−66）：水面高 PAVE + 0.45，整块压在铺装上，不挖
- *   （northEdge.js）；北侧花带、绿篱也在那里。东入口下沉楼梯口的矩形口子进 cuts
- *   （structures.js 的 EAST_ENTRY_CUT，只落在浅色外板里）。
+ * - cuts 当前包括 WEST_EYE_CUT、EAST_EYE_CUT、EAST_ENTRY_CUT（index.js 传入）：
+ *   - WEST_EYE_CUT：西鱼眼深色盘（westEye.js，circlePolygon(−44.9, −0.75, 27, 48)），盘面由 westEye.js
+ *     用同一组顶点在 PAVE 上铺（整块在浅色阳鱼与外板里，不碰地灯带，只多 50 个三角形）；
+ *   - EAST_EYE_CUT：东鱼眼下沉坑口（eastEye.js，circlePolygon(48.7, −0.7, 27.5, 48)），坑壁、雨棚、台阶
+ *     在坑口上的顶点用同一组点；坑口栏杆立在挖口外 0.25 m 的铺装上。坑口跨过阴鱼、东段地灯带并伸出
+ *     大圆约 1.5 m，由逐三角形相减处理：与西鱼眼盘同时挖时实测多 720 个三角形，坑口一带有 128 个
+ *     T 形接点（见 polygon.js）。城市地面另由 index.js 的 groundHoles 挖洞；
+ *   - EAST_ENTRY_CUT：东入口下沉楼梯口的矩形口子（structures.js，只落在浅色外板里）。
+ * - 北侧两池（|u| 24.5～101.5、v −76.5～−66，northEdge.js）不进 cuts：水面高 PAVE + 0.45，整块压在
+ *   铺装上；北侧花带、绿篱也在那里。
  */
 import { distToSegment, ringsCross } from "../kit/footprint.js"
 import { extrudePolygon, sideWalls } from "../kit/shapes.js"
@@ -125,7 +126,7 @@ export const SQUARE_OUTLINE = [
  *   （角度取两端点的方位角），再回到 pts[0]。OSM 弧上的中间点不用，统一换成同心圆弧；
  * - tail：弧之后、回到 pts[0] 之前再补的点（只有东南细草带用）；
  * - band：外圈 4 m 红底黄祥云花带（叠图与照片里看得到花带的才加）。
- * 东南草坪 w1395271432 是一条绕着「东南构筑物」（Task 6）的细草带加南端一块矩形，
+ * 东南草坪 w1395271432 是一条绕着「东南构筑物」（structures.js）的细草带加南端一块矩形，
  * 这里在 (57, 57.5)–(65, 57.5) 处切成两块：南端矩形加花带，细草带只铺草（太窄，放不下 4 m 花带）。
  * 东侧小草坪、南侧两条草带在影像上没有花带，只铺草。
  */
@@ -215,7 +216,7 @@ const LAWNS = [
     band: true
   },
   {
-    // 东南草坪 w1395271432 的细草带：沿内凹弧绕在东南构筑物（u 61～99、v 17～52，Task 6）西南两侧
+    // 东南草坪 w1395271432 的细草带：沿内凹弧绕在东南构筑物（u 61～99、v 17～52，structures.js）西南两侧
     pts: [
       [65, 57.5],
       [63.5, 51.5],

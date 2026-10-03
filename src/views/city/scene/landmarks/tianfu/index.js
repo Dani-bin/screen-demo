@@ -7,20 +7,20 @@
  * 分区按文件拆开：
  * - site.js：坐标系（广场局部系、设计系 designFrame / toWorld）与布局常量（PAVE、NORTH_Y、BELT_PATH）；
  *   colors.js：颜色表 C；surface.js：平面三角化、铺面、棱柱、斜杆、三维向量等通用几何小函数；
- * - ground.js：浅色外板、太极阴鱼与 S 线地灯带、草坪与花带（Task 3）；
- * - sunbird.js：太阳神鸟盘（Task 3），定位针挂在盘顶；
- * - westEye.js：西鱼眼「长江龙」（Task 4），深色盘的口子经 buildGround 的 cuts 挖（WEST_EYE_CUT）；
- * - eastEye.js：东鱼眼「黄河龙」下沉广场（Task 5），坑口同样进 cuts（EAST_EYE_CUT），
+ * - ground.js：浅色外板、太极阴鱼与 S 线地灯带、草坪与花带；
+ * - sunbird.js：太阳神鸟盘，定位针挂在盘顶；
+ * - westEye.js：西鱼眼「长江龙」，深色盘的口子经 buildGround 的 cuts 挖（WEST_EYE_CUT）；
+ * - eastEye.js：东鱼眼「黄河龙」下沉广场，坑口同样进 cuts（EAST_EYE_CUT），
  *   并返回城市地面洞 groundHoles（坑口外扩 0.5 m，世界坐标）；
  * - sculpture.js：两座鱼眼雕塑共用的托盘旋转体、金龙扁带与龙首；
- * - northEdge.js：北缘两条喷泉池（水柱进 jets，成第 2 个 Mesh）、池北花带与绿篱、国旗台（Task 6）；
- * - furniture.js：图腾柱 4 根、凤鸟路灯 12 盏（Task 6）；
- * - structures.js：「天书」雨棚、东入口下沉楼梯口（铺装挖口 EAST_ENTRY_CUT）、东南构筑物（Task 6）；
- * - trees.js：东西林带与南缘行道树，返回林带内侧两条南北步道（Task 6）；
- * - north.js：北侧组团入口（Task 7）——门前广场、替换区、科技馆前轴线；
+ * - northEdge.js：北缘两条喷泉池（水柱进 jets，成第 2 个 Mesh）、池北花带与绿篱、国旗台；
+ * - furniture.js：图腾柱 4 根、凤鸟路灯 12 盏；
+ * - structures.js：「天书」雨棚、东入口下沉楼梯口（铺装挖口 EAST_ENTRY_CUT）、东南构筑物；
+ * - trees.js：东西林带与南缘行道树，返回林带内侧两条南北步道；
+ * - north.js：北侧组团入口——门前广场、替换区、科技馆前轴线；
  *   statue.js：毛主席像组团（台座、斜坡、花坡、立像）；science.js：四川科技馆（体块、柱廊、窗、线脚、招牌）；
  * - neighbors.js：成都博物馆、四川省图书馆（几何冻结，不再改）；
- * - walkways.js：广场中部的步行路径（Task 8）——绕神鸟盘环、南北中轴、东西两条横线；文件头有全部 11 条路径的
+ * - walkways.js：广场中部的步行路径——绕神鸟盘环、南北中轴、东西两条横线；文件头有全部 11 条路径的
  *   人数表（约 78 人）。只出路径、不出几何，改它不影响几何哈希。
  * 调用顺序决定合批后的顶点顺序，也就决定几何哈希：地面 → 神鸟盘 → 西鱼眼 → 东鱼眼 → 北缘 → 图腾柱与路灯
  * → 构筑物 → 林带 → 北侧组团 → 周边地标，不要随意调换。
