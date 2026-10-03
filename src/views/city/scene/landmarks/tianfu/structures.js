@@ -42,17 +42,21 @@ import { Matrix4 } from "three"
 import { local } from "../kit/builder.js"
 import { box, fromTriangles, sideWalls } from "../kit/shapes.js"
 import { LAWN_TOP, flatTris } from "./ground.js"
-import { C, PAVE, pushUp, rectUV, triMesh, triangulate } from "./site.js"
+import { C } from "./colors.js"
+import { PAVE } from "./site.js"
+import {
+  cross,
+  dot,
+  pushUp,
+  rectUV,
+  sub,
+  triMesh,
+  triangulate
+} from "./surface.js"
 
 /* ---------------- 小工具 ---------------- */
 
-const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
-const cross = (a, b) => [
-  a[1] * b[2] - a[2] * b[1],
-  a[2] * b[0] - a[0] * b[2],
-  a[0] * b[1] - a[1] * b[0]
-]
-const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+// 三维向量 sub / cross / dot 在 surface.js；mean 取一组点的平均点
 const mean = (ps) =>
   [0, 1, 2].map((k) => ps.reduce((s, p) => s + p[k], 0) / ps.length)
 
@@ -200,7 +204,7 @@ function buildCanopies(b, f) {
 /* ---------------- 东入口下沉楼梯口 ---------------- */
 
 /** 东入口挖口矩形（设计系）：u 91～97、v −25.5～−13.5，只落在浅色外板里（位置理由见文件头） */
-export const EAST_ENTRY = { u0: 91, u1: 97, v0: -25.5, v1: -13.5 }
+const EAST_ENTRY = { u0: 91, u1: 97, v0: -25.5, v1: -13.5 }
 /** 交给 buildGround 的 cuts：铺装在这里挖口，凹里的墙、台阶、坑底由本文件建 */
 export const EAST_ENTRY_CUT = rectUV(
   EAST_ENTRY.u0,

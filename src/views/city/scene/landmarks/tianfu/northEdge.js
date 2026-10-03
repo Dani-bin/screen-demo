@@ -32,14 +32,16 @@ import { Matrix4 } from "three"
 import { local } from "../kit/builder.js"
 import { box, cylinder, extrudePolygon, fromTriangles } from "../kit/shapes.js"
 import { LAWN_TOP, flatTris } from "./ground.js"
-import { C, PAVE, rectUV, triangulate } from "./site.js"
+import { C } from "./colors.js"
+import { PAVE } from "./site.js"
+import { rectUV, triangulate } from "./surface.js"
 
 const DEG = Math.PI / 180
 
 /* ---------------- 尺寸 ---------------- */
 
 /** 北侧东池（西池取 u 的负区间）：u 24.5～101.5、v −76.5～−66（报告 3.2） */
-export const POOL = { u0: 24.5, u1: 101.5, v0: -76.5, v1: -66 }
+const POOL = { u0: 24.5, u1: 101.5, v0: -76.5, v1: -66 }
 // 池沿宽 0.6、高 0.6（报告 6.5）
 const RIM_W = 0.6
 const RIM_H = 0.6
@@ -68,9 +70,9 @@ const BAND = { v0: -80.5, v1: POOL.v0 }
 const HEDGE = { v0: -80.3, v1: -78.9, h: 0.9, inset: 1 }
 
 /** 国旗台下级（报告 3.2）：u −4.3～5.2、v −78.5～−70.3，高 0.45 */
-export const FLAG_STAGE = { u0: -4.3, u1: 5.2, v0: -78.5, v1: -70.3, h: 0.45 }
+const FLAG_STAGE = { u0: -4.3, u1: 5.2, v0: -78.5, v1: -70.3, h: 0.45 }
 /** 旗杆位置（附录 B 的 flag_platform.pole） */
-export const FLAG_POLE = { u: 1.0, v: -74.3 }
+const FLAG_POLE = { u: 1.0, v: -74.3 }
 // 国旗台上级：5 × 4.2 × 0.3，以旗杆为中心
 const STAGE_TOP = { w: 5, d: 4.2, h: 0.3 }
 // 旗杆：杆顶离铺装 20 m（估计值）；底半径 0.16、顶 0.09，8 段；杆顶金色尖顶高 0.5

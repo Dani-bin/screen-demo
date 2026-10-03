@@ -35,7 +35,9 @@ import { addTree } from "../kit/figures.js"
 import { extrudePolygon } from "../kit/shapes.js"
 import { LAWN_TOP } from "./ground.js"
 import { mulberry32 } from "../../utils.js"
-import { BELT_PATH, C, PAVE, rectUV } from "./site.js"
+import { C } from "./colors.js"
+import { BELT_PATH, PAVE } from "./site.js"
+import { rectUV } from "./surface.js"
 import { CANOPY_US } from "./structures.js"
 
 /* ---------------- 布局 ---------------- */

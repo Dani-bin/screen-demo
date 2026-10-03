@@ -3,7 +3,8 @@
  * ----------------------------------------------------------
  * - cutTriangles：铺装（可带洞）三角化后减去一组凸多边形 cut（西鱼眼深色盘、下沉坑口等的挖口）；
  * - robustInset：草坪轮廓内收（花带内沿、花带中线），处理 kit insetPolygon 在短边处收过头的情况。
- * 点一律为设计系 [u, v]（不重复首点，绕向任意）。通用的线段相交、自交判断在 kit/footprint.js。
+ * 点一律为设计系 [u, v]（不重复首点，绕向任意）。轮廓相交用 kit/footprint.js 的 ringsCross，
+ * 自交判断用 utils.js 的 selfIntersects。
  *
  * cuts 的约定：
  * - 每个 cut 必须是凸多边形（入口检查，凹的或自交的直接抛错：逐三角形相减只对凸 cut 成立）；
@@ -18,11 +19,10 @@ import {
   insetPolygon,
   polygonArea,
   ringsCross,
-  selfIntersects,
   signedArea2
 } from "../kit/footprint.js"
-import { pointInPolygon } from "../../utils.js"
-import { cleanRing, triangulate } from "./site.js"
+import { pointInPolygon, selfIntersects } from "../../utils.js"
+import { cleanRing, triangulate } from "./surface.js"
 
 /* ---------------- 挖口 ---------------- */
 

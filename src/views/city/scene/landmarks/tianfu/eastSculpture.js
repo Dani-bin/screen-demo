@@ -20,7 +20,7 @@
  */
 import { local } from "../kit/builder.js"
 import { box, cylinder } from "../kit/shapes.js"
-import { C } from "./site.js"
+import { C } from "./colors.js"
 import {
   DRAGON_HEAD_TOP,
   TUCK,

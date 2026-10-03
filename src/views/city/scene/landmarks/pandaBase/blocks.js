@@ -23,14 +23,13 @@ import {
   Vector3
 } from "three"
 import { GROUND_Y } from "../../terrain.js"
-import { pointInPolygon } from "../../utils.js"
+import { pointInPolygon, selfIntersects } from "../../utils.js"
 import { local } from "../kit/builder.js"
 import {
   bearingDiff,
   insetPolygon,
   polygonArea,
   rectPolygon,
-  selfIntersects,
   signedArea2
 } from "../kit/footprint.js"
 import { sideWalls } from "../kit/shapes.js"

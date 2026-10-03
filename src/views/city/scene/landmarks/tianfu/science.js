@@ -15,7 +15,9 @@ import { Matrix4 } from "three"
 import { local } from "../kit/builder.js"
 import { box, fromTriangles, sideWalls } from "../kit/shapes.js"
 import { GROUND_Y } from "../../terrain.js"
-import { C, NORTH_Y, addPrism, addSurface, rectUV } from "./site.js"
+import { C } from "./colors.js"
+import { NORTH_Y } from "./site.js"
+import { addPrism, addSurface, rectUV } from "./surface.js"
 
 /* ---------------- 尺寸与定位（科技馆系 M） ---------------- */
 

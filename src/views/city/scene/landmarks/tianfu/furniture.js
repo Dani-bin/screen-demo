@@ -24,7 +24,7 @@
  * - 布置 12 盏：北缘 6 盏（v −83，在绿篱与广场北沿之间；u ±27、±62、±97，对齐影像上北沿那排长杆阴影），
  *   每盏在 3.5～4.55 m 处挂一面 1.6 × 1.05 的小红旗（「用户航拍要点」）；东西步道内侧各 3 盏
  *   （u ±100.8，在草坪花带外沿 |u| 99.5 与林带内侧步道 BELT_PATH 内沿 |u| 103 之间；v −45、0、45）。
- * - 灯臂用 site.js 的 strut（3 段、不封顶，每只 6 个三角形），灯罩是上长下短的三棱双锥（6 个三角形）。
+ * - 灯臂用 surface.js 的 strut（3 段、不封顶，每只 6 个三角形），灯罩是上长下短的三棱双锥（6 个三角形）。
  *
  * 三角形（实测）：图腾柱 4 × (158 + 卷耳 2 × 8) = 696；路灯 12 × 64 + 小红旗 6 × 2 = 780；
  * 共 1,476（设计第 5 节「图腾柱 4 根、凤鸟路灯约 12 盏」上限 1,500）。
@@ -32,7 +32,9 @@
 import { local } from "../kit/builder.js"
 import { TOTEM_GREEN, addTotem } from "../kit/figures.js"
 import { cylinder, fromTriangles } from "../kit/shapes.js"
-import { BELT_PATH, C, PAVE, strut, triMesh, triangulate } from "./site.js"
+import { C } from "./colors.js"
+import { BELT_PATH, PAVE } from "./site.js"
+import { strut, triMesh, triangulate } from "./surface.js"
 
 /* ---------------- 图腾柱 ---------------- */
 

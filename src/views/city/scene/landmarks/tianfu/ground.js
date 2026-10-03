@@ -42,13 +42,15 @@ import { distToSegment, ringsCross } from "../kit/footprint.js"
 import { extrudePolygon, sideWalls } from "../kit/shapes.js"
 import { GROUND_Y } from "../../terrain.js"
 import { pointInPolygon } from "../../utils.js"
-import { C, PAVE, addInlay, cleanRing, surfaceTris } from "./site.js"
+import { C } from "./colors.js"
+import { PAVE } from "./site.js"
+import { addInlay, cleanRing, surfaceTris } from "./surface.js"
 import { cutTriangles, robustInset } from "./polygon.js"
 
 /* ---------------- 尺寸 ---------------- */
 
 /** 太极大圆半径（报告 3.2：Esri 拟合残差 0.33 m） */
-export const TAIJI_R = 74.7
+const TAIJI_R = 74.7
 // S 线两个小圆的半径（= 大圆半径的一半），圆心 (∓FISH_R, 0)
 const FISH_R = TAIJI_R / 2
 // 地灯带半宽：带宽 0.45（设计第 3 节、照片 c16）
@@ -281,7 +283,7 @@ function arcPoints(cu, cv, rad, a0, a1, step) {
   })
 }
 
-/** 一组三角形写成朝上的水平面几何体（北缘水面、东入口坑底等也用）：site.js 的 surfaceTris 取常数高度 */
+/** 一组三角形写成朝上的水平面几何体（北缘水面、东入口坑底等也用）：surface.js 的 surfaceTris 取常数高度 */
 export const flatTris = (tris, y) => surfaceTris(tris, () => y)
 
 /* ---------------- 太极 ---------------- */
@@ -448,7 +450,7 @@ function buildLawn(b, f, lawn) {
   // 黄色祥云块：沿花带中线（内收 2 m）排开
   const mid = robustInset(outer, BAND_W / 2)
   const clouds = mid ? placeClouds(mid, outer, inner) : []
-  // 红色花带把草地与云块都当洞，草地、云块再各自铺回去（site.js 的 addInlay；有草地时它排在第一块）
+  // 红色花带把草地与云块都当洞，草地、云块再各自铺回去（surface.js 的 addInlay；有草地时它排在第一块）
   const holes = inner ? [inner, ...clouds] : clouds
   addInlay(b, f, outer, holes, LAWN_TOP, C.flowerRed, (i) =>
     inner && i === 0 ? C.grass : C.flowerYellow
