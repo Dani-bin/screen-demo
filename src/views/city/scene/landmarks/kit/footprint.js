@@ -5,7 +5,12 @@
  * 按名称找到楼 → 最小面积外接矩形 → 得到中心、长宽与长边方位角。
  * 点坐标均为 [x, z]（X 向东、Z 向南）；方位角为相对正北的顺时针角度（度）。
  */
-import { pointInPolygon, polygonBounds, polygonCenter } from "../../utils.js"
+import {
+  pointInPolygon,
+  polygonBounds,
+  polygonCenter,
+  segmentsCross
+} from "../../utils.js"
 import { frame } from "./builder.js"
 
 const DEG = Math.PI / 180
@@ -63,6 +68,24 @@ export function polygonArea(points) {
     a += points[j][0] * points[i][1] - points[i][0] * points[j][1]
   }
   return Math.abs(a) / 2
+}
+
+/**
+ * 带符号面积的两倍（鞋带公式，不取绝对值）：> 0 为 x→z 逆时针（俯视、北在上时为顺时针，Z 向南）。
+ * 判断绕向用（insetPolygon、shapes.js 的 sideWalls、天府广场的挖口与熊猫基地的楼块都靠它）；
+ * 要面积请用 polygonArea。逐项累加的顺序固定（第 i 点到第 i + 1 点），各处调用结果逐位相同
+ * @param {Array<[number, number]>} poly 轮廓 [x, z]，不重复首点
+ * @returns {number}
+ */
+export function signedArea2(poly) {
+  const n = poly.length
+  let a2 = 0
+  for (let i = 0; i < n; i++) {
+    const [x0, z0] = poly[i]
+    const [x1, z1] = poly[(i + 1) % n]
+    a2 += x0 * z1 - x1 * z0
+  }
+  return a2
 }
 
 /**
@@ -274,6 +297,25 @@ export function distToSegment(px, pz, a, b) {
 }
 
 /**
+ * 两个闭合轮廓是否有边严格相交（端点相接、共线重叠都不算，同 utils.js 的 segmentsCross）。
+ * 逐对比较两边的每条边，只适合几十个点的小轮廓（挖口、草坪、云块）
+ * @param {Array<[number, number]>} a 轮廓 [x, z]，不重复首点
+ * @param {Array<[number, number]>} b 同上
+ */
+export function ringsCross(a, b) {
+  for (let i = 0; i < a.length; i++) {
+    for (let j = 0; j < b.length; j++) {
+      if (
+        segmentsCross(a[i], a[(i + 1) % a.length], b[j], b[(j + 1) % b.length])
+      ) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
  * 两个方位角之差的绝对值（度）。
  * period = 360（默认）时按方向比较，结果 0～180；
  * period = 180 时按轴线比较（长边方位 0～180 循环），结果 0～90。
@@ -295,13 +337,7 @@ export function bearingDiff(a, b, period = 360) {
 export function insetPolygon(poly, d) {
   const n = poly.length
   // 带符号面积的两倍：> 0 为 x→z 逆时针（俯视、北在上时为顺时针，Z 向南）
-  let area2 = 0
-  for (let i = 0; i < n; i++) {
-    const [x0, z0] = poly[i]
-    const [x1, z1] = poly[(i + 1) % n]
-    area2 += x0 * z1 - x1 * z0
-  }
-  const s = area2 > 0 ? 1 : -1
+  const s = signedArea2(poly) > 0 ? 1 : -1
   // 各边的单位内法向：逆时针取左手法向 (−dz, dx)，顺时针取反
   const nor = poly.map((p, i) => {
     const q = poly[(i + 1) % n]

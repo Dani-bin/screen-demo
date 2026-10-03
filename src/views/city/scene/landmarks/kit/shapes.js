@@ -16,10 +16,12 @@ import {
   CylinderGeometry,
   ExtrudeGeometry,
   Path,
+  RingGeometry,
   Shape,
   SphereGeometry,
   Vector2
 } from "three"
+import { signedArea2 } from "./footprint.js"
 
 /**
  * 正 n 边形第 k 个顶点 [x, z]（外接圆半径 r，朝向见文件头约定）
@@ -92,6 +94,28 @@ export function extrudePolygon(outer, holes, y0, y1) {
 }
 
 /**
+ * 竖直侧墙：沿闭合轮廓每条边一块 y0～y1 的竖直四边形（每边 2 个三角形，无顶面、底面）。
+ * 先按带符号面积统一绕向（> 0 即 x→z 逆时针时反转），使每条边 a→b 的左手法向 (−dz, dx) 朝外，
+ * 法线朝外；inward 为真时再整体反转，法线朝里（女儿墙内侧、围合院落的内墙）。
+ * @param {Array<[number, number]>} poly 轮廓 [x, z]，不重复首点，绕向任意
+ * @param {number} y0 墙底高度
+ * @param {number} y1 墙顶高度
+ * @param {boolean} [inward=false] 法线朝里
+ */
+export function sideWalls(poly, y0, y1, inward = false) {
+  const p = signedArea2(poly) > 0 ? poly.slice().reverse() : poly.slice()
+  if (inward) p.reverse()
+  const pos = []
+  for (let i = 0; i < p.length; i++) {
+    const [ax, az] = p[i]
+    const [bx, bz] = p[(i + 1) % p.length]
+    pos.push(ax, y0, az, bx, y0, bz, bx, y1, bz)
+    pos.push(ax, y0, az, bx, y1, bz, ax, y1, az)
+  }
+  return fromTriangles(pos)
+}
+
+/**
  * 长方体：X 向宽 w、高 h、Z 向深 d，底在 y = 0。
  * @param {{ bottom?: boolean }} [opts] bottom 为 false（默认）时去掉底面
  */
@@ -136,6 +160,19 @@ export function cylinder(rBottom, rTop, h, opts = {}) {
 }
 
 /**
+ * 水平圆环面，y = 0。down 为假时法线朝上（顶面、水面），为真时朝下（悬空环板的底面）。
+ * 景点主体的阴影一般只画背光面，悬在空中的底面必须朝下，否则挡不住阳光。
+ * 顶点方位角：RingGeometry 第 k 个点转到水平后在 (r cos θ, −r sin θ)，θ = 2πk / n，与 footprint.js 的
+ * circlePolygon 是同一组方位角；本文件的 cylinder 第 k 个点在 (r sin θ, r cos θ)，方位角差 π/2，
+ * 只有段数 n 是 4 的倍数时三者才落在同一组方位角上（池壁、水面、挖口逐点重合要靠这一点）
+ */
+export function annulus(rIn, rOut, segments = 32, down = false) {
+  const g = new RingGeometry(rIn, rOut, segments, 1)
+  g.rotateX(down ? Math.PI / 2 : -Math.PI / 2)
+  return g
+}
+
+/**
  * 球（平滑法线），底在 y = 0，球心在 (0, r, 0)。
  * 配合 local() 的缩放参数可做椭球（灯笼、莲花瓣等）。
  */
@@ -148,12 +185,14 @@ export function sphere(r, widthSegments = 10, heightSegments = 7) {
 }
 
 /**
- * 沿三维折线扫出一根方截面的细条（屋脊、扶手等）：顶面 + 两个侧面，无底面。
+ * 沿三维折线扫出一根方截面的细条（屋脊、扶手等）：顶面 + 两个侧面，默认无底面。
  * 截面宽 w、高 h，条身从折线向上长出 h（底边贴着折线）。
  * @param {Array<[number, number, number]>} points 折线顶点 [x, y, z]，至少 2 个
- * @param {{ sink?: number }} [opts] sink 为底边下沉量（嵌进屋面，避免悬空缝隙）
+ * @param {{ sink?: number, bottom?: boolean }} [opts] sink 为底边下沉量（嵌进屋面，避免悬空缝隙）；
+ *   bottom 为真时补底面（悬空的细条，如鱼眼雕塑的金龙飘带，低机位看得到下沿）。
+ *   不传 bottom 时几何与加这个选项之前逐位相同
  */
-export function sweepBar(points, w, h, { sink = 0 } = {}) {
+export function sweepBar(points, w, h, { sink = 0, bottom = false } = {}) {
   const pos = []
   const n = points.length
   // 每个折点的水平侧向量（取相邻段水平方向的平均，保证转折处连续）
@@ -195,6 +234,15 @@ export function sweepBar(points, w, h, { sink = 0 } = {}) {
       corner(i + 1, -1, 0),
       corner(i, -1, 0)
     )
+    // 底面（可选）：与顶面反向的绕序，法线朝下
+    if (bottom) {
+      quad(
+        corner(i, -1, 0),
+        corner(i + 1, -1, 0),
+        corner(i + 1, 1, 0),
+        corner(i, 1, 0)
+      )
+    }
   }
   // 两端封口
   const cap = (i) =>
