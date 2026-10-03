@@ -18,20 +18,18 @@
  * - trees.js：东西林带与南缘行道树，返回林带内侧两条南北步道（Task 6）；
  * - north.js：北侧组团入口（Task 7）——门前广场、替换区、科技馆前轴线；
  *   statue.js：毛主席像组团（台座、斜坡、花坡、立像）；science.js：四川科技馆（体块、柱廊、窗、线脚、招牌）；
- * - neighbors.js：成都博物馆、四川省图书馆（几何冻结，不再改）。
+ * - neighbors.js：成都博物馆、四川省图书馆（几何冻结，不再改）；
+ * - walkways.js：广场中部的步行路径（Task 8）——绕神鸟盘环、南北中轴、东西两条横线；文件头有全部 11 条路径的
+ *   人数表（约 78 人）。只出路径、不出几何，改它不影响几何哈希。
  * 调用顺序决定合批后的顶点顺序，也就决定几何哈希：地面 → 神鸟盘 → 西鱼眼 → 东鱼眼 → 北缘 → 图腾柱与路灯
  * → 构筑物 → 林带 → 北侧组团 → 周边地标，不要随意调换。
- *
- * 后续任务在这里接入新文件：
- * - Task 8：步行路径重排（或拆出 walkways.js），替换下面的临时路径。
  * 预算：景点合计 ≤ 30,000 三角形、Mesh ≤ 3（设计第 5 节）。Mesh 现为 2：静态件 + 北缘水柱动画件。
  */
 import { BackSide, Mesh } from "three"
 import { ColorBuilder, landmarkMaterial } from "../kit/builder.js"
-import { circlePolygon } from "../kit/footprint.js"
-import { PAVE, createSite, rectUV } from "./site.js"
+import { createSite, rectUV } from "./site.js"
 import { SQUARE_OUTLINE, buildGround } from "./ground.js"
-import { SUNBIRD, buildSunbird } from "./sunbird.js"
+import { buildSunbird } from "./sunbird.js"
 import { WEST_EYE_CUT, buildWestEye } from "./westEye.js"
 import { EAST_EYE_CUT, buildEastEye } from "./eastEye.js"
 import { POOL_WATER, buildNorthEdge } from "./northEdge.js"
@@ -40,6 +38,7 @@ import { EAST_ENTRY_CUT, buildStructures } from "./structures.js"
 import { buildTrees } from "./trees.js"
 import { buildNorth } from "./north.js"
 import { buildNeighbors } from "./neighbors.js"
+import { squareWalkways } from "./walkways.js"
 
 // 喷泉水柱动画 Mesh 的底面高度：北缘喷泉池水面（northEdge.js 的 POOL_WATER = PAVE + 0.45）
 const JET_BASE = POOL_WATER
@@ -59,48 +58,6 @@ const SQUARE_ZONE = (() => {
     Math.max(...vs) + ZONE_PAD
   )
 })()
-
-/*
- * 临时步行路径（设计系；Task 8 按设计第 6 节重排）。都走在铺装顶面 PAVE 上：
- * 外板、阴鱼、地灯带三者共面，横穿 S 线不起伏。
- * - 绕神鸟盘一圈：半径 12、宽 3（内沿 10.5，离盘外深色环 9.15 有 1.35 m，深色环只高 0.15，
- *   不算障碍；离鼓座侧面 ≥ 3.25 m）；
- * - 南北中轴，在神鸟盘处断开：北段 v −62 → −12.3（北端离 Task 6 的旗台 v −70.3 还有 8 m），
- *   南段 v 11.7 → 98（南端离广场南沿 v 104 有 6 m）；两段内端正好落在绕盘环的中线上。
- *   中轴宽 6（|u| ≤ 3），两侧最近的草坪在 |u| ≥ 24。
- */
-const RING = { r: 12, width: 3, density: 2 }
-const AXIS = { width: 6, density: 1.5 }
-const AXIS_SEGMENTS = [
-  [
-    [0, -62],
-    [0, SUNBIRD.v - RING.r]
-  ],
-  [
-    [0, SUNBIRD.v + RING.r],
-    [0, 98]
-  ]
-]
-
-/** 临时步行路径：设计系 → 世界坐标 */
-function squareWalkways(site) {
-  return [
-    {
-      points: site.toWorldPts(circlePolygon(SUNBIRD.u, SUNBIRD.v, RING.r, 32)),
-      y: PAVE,
-      width: RING.width,
-      closed: true,
-      density: RING.density
-    },
-    ...AXIS_SEGMENTS.map((pts) => ({
-      points: site.toWorldPts(pts),
-      y: PAVE,
-      width: AXIS.width,
-      closed: false,
-      density: AXIS.density
-    }))
-  ]
-}
 
 export function build(ctx) {
   const site = createSite(ctx)
