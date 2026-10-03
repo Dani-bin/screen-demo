@@ -9,7 +9,8 @@
  * 例如天府广场东鱼眼的下沉广场，坑底比城市地面还低。景点建完后调用方把全部洞交给
  * createTerrain 返回对象的 setGroundHoles：地面平面换成带洞的 Shape，
  * 压在洞上的绿地、水面多边形也一并处理（规则见 planCuts），否则它们会像盖子一样挡住坑。
- * 洞先查自交，带洞的三角化再做面积自检（selfIntersects、triangulateChecked），坏洞不会悄悄弄坏全城地面。
+ * 洞先查自交（utils.js 的 selfIntersects），带洞的三角化再做面积自检（triangulateChecked），
+ * 坏洞不会悄悄弄坏全城地面。
  * 没有洞时什么都不动，几何与加入挖洞前逐位一致。
  */
 import {
@@ -23,7 +24,12 @@ import {
   Vector2
 } from "three"
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js"
-import { pointInPolygon, polygonBounds } from "./utils.js"
+import {
+  pointInPolygon,
+  polygonBounds,
+  segmentsCross,
+  selfIntersects
+} from "./utils.js"
 
 // 地面平面边长（米，以原点为中心）：远大于城市数据范围（约 6.2 × 7.5 km，见 meta.clip），
 // 数据扩范围时无需跟着改。
@@ -111,11 +117,6 @@ const TOUCH_EPS = 0.01
 const AREA_TOL = 1
 const AREA_REL_TOL = 1e-6
 
-/** 有向面积的两倍：点 c 在有向线段 a→b 的哪一侧（0 为共线） */
-function orient(a, b, c) {
-  return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
-}
-
 /** 点 p 到线段 a-b 的距离 */
 function pointSegmentDistance(p, a, b) {
   const dx = b[0] - a[0]
@@ -129,41 +130,13 @@ function pointSegmentDistance(p, a, b) {
 
 /** 线段 a-b 与 c-d 的最近距离：严格交叉时为 0，否则必在某个端点到另一条线段之间取得 */
 function segmentGap(a, b, c, d) {
-  const d1 = orient(c, d, a)
-  const d2 = orient(c, d, b)
-  const d3 = orient(a, b, c)
-  const d4 = orient(a, b, d)
-  if (d1 * d2 < 0 && d3 * d4 < 0) return 0
+  if (segmentsCross(a, b, c, d)) return 0
   return Math.min(
     pointSegmentDistance(a, c, d),
     pointSegmentDistance(b, c, d),
     pointSegmentDistance(c, a, b),
     pointSegmentDistance(d, a, b)
   )
-}
-
-/**
- * 多边形是否自交：有不相邻的两条边严格交叉。首尾重复点、共线点不算。
- * 自交的洞面积自检查不出来（8 字形两瓣的有向面积正负抵消，三角化面积照样对得上，
- * 实际却一瓣没挖、一瓣重叠成两层），所以单独查；洞只有几十个点，逐对比较的开销可以忽略
- */
-function selfIntersects(poly) {
-  const n = poly.length
-  for (let i = 0; i < n; i++) {
-    const a = poly[i]
-    const b = poly[(i + 1) % n]
-    for (let j = i + 2; j < n; j++) {
-      if (i === 0 && j === n - 1) continue // 末边与首边相邻
-      const c = poly[j]
-      const d = poly[(j + 1) % n]
-      if (
-        orient(c, d, a) * orient(c, d, b) < 0 &&
-        orient(a, b, c) * orient(a, b, d) < 0
-      )
-        return true
-    }
-  }
-  return false
 }
 
 /** 两个包围盒是否重叠（含相接，并各向外放宽 pad） */
@@ -409,7 +382,9 @@ export function createTerrain(data, materials) {
     for (const layer of layers) report[layer.key] = { cut: [], skipped: [] }
     let holedGeo = null
     if (list.length) {
-      // 先查自交（面积自检查不出来，见 selfIntersects），再三角化并做面积自检
+      // 先查自交（utils.js 的 selfIntersects），再三角化并做面积自检。自交的洞面积自检查不出来：
+      // 8 字形两瓣的有向面积正负抵消，三角化面积照样对得上，实际却一瓣没挖、一瓣重叠成两层。
+      // 洞只有几十个点，逐对比较的开销可以忽略
       const crossed = list.findIndex(selfIntersects)
       let reason = ""
       if (crossed >= 0) reason = `第 ${crossed + 1} 个洞自交`

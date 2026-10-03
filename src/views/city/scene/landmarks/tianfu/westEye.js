@@ -41,7 +41,9 @@
 import { local } from "../kit/builder.js"
 import { circlePolygon } from "../kit/footprint.js"
 import { cylinder, fromTriangles } from "../kit/shapes.js"
-import { C, PAVE, pushUp, triangulate } from "./site.js"
+import { C } from "./colors.js"
+import { PAVE } from "./site.js"
+import { pushUp, triangulate } from "./surface.js"
 import { TUCK, addDragon, addPool, addRevolved } from "./sculpture.js"
 
 const DEG = Math.PI / 180
@@ -49,7 +51,7 @@ const DEG = Math.PI / 180
 /* ---------------- 尺寸 ---------------- */
 
 /** 西鱼眼中心（设计系，报告 3.2：Esri 拟合残差 0.11 m） */
-export const WEST_EYE = { u: -44.9, v: -0.75 }
+const WEST_EYE = { u: -44.9, v: -0.75 }
 // 深色石盘、外池壁、外环水面的圆周分段：48 段（7.5° 一段，半径 27 时弦长 3.5 m）
 const SEG = 48
 // 深色石盘半径（报告 3.2）

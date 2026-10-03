@@ -25,15 +25,9 @@ import {
   sphere
 } from "../kit/shapes.js"
 import { GROUND_Y } from "../../terrain.js"
-import {
-  C,
-  NORTH_Y,
-  addPrism,
-  addSurface,
-  addInlay,
-  rectUV,
-  strut
-} from "./site.js"
+import { C } from "./colors.js"
+import { NORTH_Y } from "./site.js"
+import { addInlay, addPrism, addSurface, rectUV, strut } from "./surface.js"
 
 /* ---------------- 尺寸与定位（像组团系 S） ---------------- */
 
@@ -115,7 +109,7 @@ const FLOWER = {
 const FLOWER_TOP = 6
 const FLOWER_TIERS = 5
 // 花坡图案：每级台面中线上一排菱形（白、黄两色逐级交替，奇数级错开半格），
-// 用 site.js 的 addInlay 挖洞铺回，与台面共面共边不闪
+// 用 surface.js 的 addInlay 挖洞铺回，与台面共面共边不闪
 const DIAMOND = { spacing: 5.2, hx: 1.3, hz: 0.95, margin: 2 }
 
 // 像的基座（w1532678569，5.4 见方，8.1 → 15.2）与白色立像（w1532678570，15.2 → 27.46，立像高 12.26）

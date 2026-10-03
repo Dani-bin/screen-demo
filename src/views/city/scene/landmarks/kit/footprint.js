@@ -5,7 +5,12 @@
  * 按名称找到楼 → 最小面积外接矩形 → 得到中心、长宽与长边方位角。
  * 点坐标均为 [x, z]（X 向东、Z 向南）；方位角为相对正北的顺时针角度（度）。
  */
-import { pointInPolygon, polygonBounds, polygonCenter } from "../../utils.js"
+import {
+  pointInPolygon,
+  polygonBounds,
+  polygonCenter,
+  segmentsCross
+} from "../../utils.js"
 import { frame } from "./builder.js"
 
 const DEG = Math.PI / 180
@@ -291,17 +296,8 @@ export function distToSegment(px, pz, a, b) {
   return Math.hypot(px - a[0] - t * dx, pz - a[1] - t * dz)
 }
 
-/** 两条线段 p-q、r-s 是否严格相交（端点相接、共线重叠都不算） */
-export function segmentsCross(p, q, r, s) {
-  const cross = (o, a, b) =>
-    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
-  return (
-    cross(r, s, p) * cross(r, s, q) < 0 && cross(p, q, r) * cross(p, q, s) < 0
-  )
-}
-
 /**
- * 两个闭合轮廓是否有边严格相交（端点相接、共线重叠都不算，同 segmentsCross）。
+ * 两个闭合轮廓是否有边严格相交（端点相接、共线重叠都不算，同 utils.js 的 segmentsCross）。
  * 逐对比较两边的每条边，只适合几十个点的小轮廓（挖口、草坪、云块）
  * @param {Array<[number, number]>} a 轮廓 [x, z]，不重复首点
  * @param {Array<[number, number]>} b 同上
@@ -311,22 +307,6 @@ export function ringsCross(a, b) {
     for (let j = 0; j < b.length; j++) {
       if (
         segmentsCross(a[i], a[(i + 1) % a.length], b[j], b[(j + 1) % b.length])
-      ) {
-        return true
-      }
-    }
-  }
-  return false
-}
-
-/** 多边形是否自交：任意两条不相邻的边严格相交（首尾两边相邻，不比） */
-export function selfIntersects(poly) {
-  const n = poly.length
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 2; j < n; j++) {
-      if (i === 0 && j === n - 1) continue
-      if (
-        segmentsCross(poly[i], poly[(i + 1) % n], poly[j], poly[(j + 1) % n])
       ) {
         return true
       }

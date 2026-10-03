@@ -5,7 +5,8 @@
  * 实施计划：docs/superpowers/plans/2026-10-02-city-tianfu-redo.md。
  * 本文件只做组装：建场地对象、依次调用各分区、汇总替换区与步行路径、烘焙材质与 Mesh、水柱动画。
  * 分区按文件拆开：
- * - site.js：坐标系（广场局部系、设计系 designFrame / toWorld）、PAVE、颜色表、通用小函数；
+ * - site.js：坐标系（广场局部系、设计系 designFrame / toWorld）与布局常量（PAVE、NORTH_Y、BELT_PATH）；
+ *   colors.js：颜色表 C；surface.js：平面三角化、铺面、棱柱、斜杆、三维向量等通用几何小函数；
  * - ground.js：浅色外板、太极阴鱼与 S 线地灯带、草坪与花带（Task 3）；
  * - sunbird.js：太阳神鸟盘（Task 3），定位针挂在盘顶；
  * - westEye.js：西鱼眼「长江龙」（Task 4），深色盘的口子经 buildGround 的 cuts 挖（WEST_EYE_CUT）；
@@ -27,7 +28,8 @@
  */
 import { BackSide, Mesh } from "three"
 import { ColorBuilder, landmarkMaterial } from "../kit/builder.js"
-import { createSite, rectUV } from "./site.js"
+import { createSite } from "./site.js"
+import { rectUV } from "./surface.js"
 import { SQUARE_OUTLINE, buildGround } from "./ground.js"
 import { buildSunbird } from "./sunbird.js"
 import { WEST_EYE_CUT, buildWestEye } from "./westEye.js"

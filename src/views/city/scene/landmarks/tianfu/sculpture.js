@@ -3,11 +3,11 @@
  * ----------------------------------------------------------
  * 两座鱼眼雕塑是同一套做法（调研报告 4.2：底色青铜、云龙纹贴金箔；照片 c29、c00、c09）：
  * 柱身 + 旋转体托盘 + 白杆 + 绕柱盘升的金色扁带龙，脚下一圈水池。这里放两处共用的几何函数：
- * - pushTri（与 sub / dot / cross）：按法线校正绕向写入三角形（托盘旋转体、东鱼眼坑壁共用）；
  * - addPool：圆池（池壁两侧面、壁顶、水面），西鱼眼内外两圈池、东鱼眼圆池共用；
  * - revolveBand / addRevolved：剖面绕竖轴旋转的托盘（逐段配色）；
  * - hermite / dragonLine / addDragon：金龙飘带中线插值、扁带与龙首。
- * 水面、池壁顶面这类水平圆环面用 kit/shapes.js 的 annulus（与天府熊猫塔共用）。
+ * 水面、池壁顶面这类水平圆环面用 kit/shapes.js 的 annulus（与天府熊猫塔共用）；
+ * 托盘旋转体按法线校正绕向用 surface.js 的 pushTri（东鱼眼坑壁也用它）。
  * 坐标一律在「鱼眼坐标系」里：原点在鱼眼中心（y 仍从地面算），x 沿设计系 u（东）、z 沿 v（南）。
  * 方位角从东（+x）起向南（+z）转，即俯视顺时针，360° 以上表示第二圈。
  * 从 westEye.js 原样抽出（Task 5）。
@@ -15,7 +15,8 @@
 import { BufferAttribute, BufferGeometry, Matrix4 } from "three"
 import { local } from "../kit/builder.js"
 import { annulus, box, cylinder, sweepBar } from "../kit/shapes.js"
-import { C } from "./site.js"
+import { C } from "./colors.js"
+import { pushTri } from "./surface.js"
 
 const DEG = Math.PI / 180
 
@@ -28,7 +29,7 @@ export const TUCK = 0.05
  * 每块 [长, 高, 宽, 中心 x, y, z, 俯仰°, 偏航°]：长沿 +x；俯仰正值抬头，偏航绕竖轴转。
  * 最高处是眉骨顶，离龙带中线 0.9：龙带末端中线高 h 时，雕塑顶 = h + 0.9。
  */
-export const DRAGON_HEAD = [
+const DRAGON_HEAD = [
   [1.5, 1.3, 0.8, 0.55, 0.1, 0, 0, 0], // 头颅：接住龙带末端（带高 1.8、颅高 1.3）
   [1.4, 0.45, 0.6, 1.75, 0.25, 0, 6, 0], // 上颚（长吻，略上扬）
   [1.2, 0.25, 0.5, 1.5, -0.35, 0, -15, 0], // 下颚（张口）
@@ -40,33 +41,6 @@ export const DRAGON_HEAD = [
 ]
 /** 龙首最高处（眉骨顶）离龙带末端中线的高度，见 DRAGON_HEAD */
 export const DRAGON_HEAD_TOP = 0.9
-
-/* ---------------- 小工具：按法线校正绕向 ---------------- */
-
-/** 三维向量相减 a − b */
-export const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
-/** 三维向量点积 */
-export const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-/** 三维向量叉积 a × b */
-export const cross = (a, b) => [
-  a[1] * b[2] - a[2] * b[1],
-  a[2] * b[0] - a[0] * b[2],
-  a[0] * b[1] - a[1] * b[0]
-]
-
-/**
- * 按法线校正绕向，把一个三角形写进平铺数组 pos / nor：三个顶点各为 [点, 法线]，
- * 几何法线 (B − A) × (C − A) 与 A 处法线反向时交换 B、C。
- * 双面材质靠绕向判断正反面来翻法线，阴影只画背光面：绕向与法线不一致时，底面不投影、背面发黑
- */
-export function pushTri(pos, nor, A, B, Cc) {
-  const n = cross(sub(B[0], A[0]), sub(Cc[0], A[0]))
-  const list = dot(n, A[1]) >= 0 ? [A, B, Cc] : [A, Cc, B]
-  for (const [p, q] of list) {
-    pos.push(...p)
-    nor.push(...q)
-  }
-}
 
 /* ---------------- 水池 ---------------- */
 
@@ -113,7 +87,7 @@ export function addPool(b, f, pool, base) {
  * 三角形绕向按法向校正（pushTri）。
  * @returns {BufferGeometry} 带平滑法线的非索引几何体
  */
-export function revolveBand([r0, y0], [r1, y1], seg) {
+function revolveBand([r0, y0], [r1, y1], seg) {
   const l = Math.hypot(r1 - r0, y1 - y0)
   const nr = -(y1 - y0) / l
   const ny = (r1 - r0) / l
@@ -166,7 +140,7 @@ export function addRevolved(b, f, profile, seg, base) {
  * @param {number[]} ys 对应的值
  * @returns {(x: number) => number}
  */
-export function hermite(xs, ys) {
+function hermite(xs, ys) {
   const n = xs.length
   const m = xs.map((_, i) => {
     const a = Math.max(0, i - 1)
@@ -196,7 +170,7 @@ export function hermite(xs, ys) {
  *   keys 为 [方位角°, 半径, 中线离基准高度]
  * @param {number} base 高度基准
  */
-export function dragonLine(dragon, base) {
+function dragonLine(dragon, base) {
   const ks = dragon.keys
   const as = ks.map((k) => k[0] * DEG)
   const rAt = hermite(
@@ -226,7 +200,7 @@ export function dragonLine(dragon, base) {
  * @param {Matrix4} f 鱼眼坐标系
  * @param {number[][]} line 龙带中线（取末两点定前进方向）
  */
-export function addDragonHead(b, f, line) {
+function addDragonHead(b, f, line) {
   const [px, py, pz] = line[line.length - 1]
   const [qx, , qz] = line[line.length - 2]
   // local() 的偏航把局部 +x 转到 (cos θ, 0, −sin θ)，要对准前进方向 (dx, dz) 就取 θ = atan2(−dz, dx)

@@ -21,7 +21,9 @@
  */
 import { local } from "../kit/builder.js"
 import { fromTriangles } from "../kit/shapes.js"
-import { C, PAVE, pushUp, triangulate } from "./site.js"
+import { C } from "./colors.js"
+import { PAVE } from "./site.js"
+import { pushUp, triangulate } from "./surface.js"
 
 const DEG = Math.PI / 180
 
@@ -32,7 +34,7 @@ const TILT = Math.tan(5 * DEG)
 // 盘心高度取南北两缘的平均：(0.6 + 1.9) / 2 = 1.25（报告 6.2「南缘约 0.6、北缘约 1.9」）
 const MID_H = (0.6 + 1.9) / 2
 /** 盘顶最高处（北缘）离铺装顶面的高度 ≈ 1.88 */
-export const SUNBIRD_TOP = MID_H + SUNBIRD.r * TILT
+const SUNBIRD_TOP = MID_H + SUNBIRD.r * TILT
 // 顶面各圈半径
 const R_CORE = 0.9 // 中心金色小圆
 const R_SUN = 2.8 // 太阳（光芒尖）外半径：直径 5.6 m（报告 6.2「直径约 5 m」，g21 俯视略大）

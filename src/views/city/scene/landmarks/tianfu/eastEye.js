@@ -64,8 +64,9 @@ import {
   sideWalls,
   sweepBar
 } from "../kit/shapes.js"
-import { C, PAVE, pushUp, triangulate } from "./site.js"
-import { cross, dot, pushTri, sub } from "./sculpture.js"
+import { C } from "./colors.js"
+import { PAVE } from "./site.js"
+import { cross, dot, pushTri, pushUp, sub, triangulate } from "./surface.js"
 import { buildEastSculpture } from "./eastSculpture.js"
 
 const DEG = Math.PI / 180
@@ -73,15 +74,15 @@ const DEG = Math.PI / 180
 /* ---------------- 坑 ---------------- */
 
 /** 东鱼眼中心（设计系，报告 3.2） */
-export const EAST_EYE = { u: 48.7, v: -0.7 }
+const EAST_EYE = { u: 48.7, v: -0.7 }
 // 坑深 6.0（报告 6.4，估计值）
 const DEPTH = 6
 /** 坑底高度：PAVE − 6 ≈ −4.5，比城市地面 GROUND_Y（−0.5）低 4 m */
-export const PIT_FLOOR = PAVE - DEPTH
+const PIT_FLOOR = PAVE - DEPTH
 // 坑口圆周分段：48 段（7.5° 一段，弦长 3.6 m）。坑壁、栏杆、雨棚、台阶都按这组方位角分段
 const SEG = 48
 /** 坑口半径（报告 3.2：两套影像 27.38 / 27.82） */
-export const RIM_R = 27.5
+const RIM_R = 27.5
 /**
  * 铺装挖口：坑口 48 边形（设计系）。index.js 把它交给 buildGround 的 cuts，
  * 坑壁、雨棚、台阶的坑口顶点都取这同一组点，挖口与坑沿逐点重合，没有缝
@@ -260,7 +261,7 @@ const DOWN = [0, -1, 0]
  * 三角形集：一种颜色一份，最后转成带法线的几何体。
  * - smooth(A, B, C)：三点各带法线 [点, 法线]（坑壁这类曲面，法线沿圆周平滑）；
  * - flat(a, b, c, hint)：只给点，法线取面法线、朝 hint 一侧。
- * 两者都按法线校正绕向（sculpture.js 的 pushTri，与托盘旋转体同一个工具）。
+ * 两者都按法线校正绕向（surface.js 的 pushTri，与托盘旋转体同一个工具）。
  */
 class Tris {
   constructor() {
@@ -711,7 +712,7 @@ function buildPavilions(b, site) {
  * 城市地面洞：坑口圆外扩 0.5 m（世界坐标，64 边形）。洞口边缘在铺装下面、坑壁以外，
  * 坑壁从铺装顶一直落到坑底，城市地面的洞边从坑里、坑外都看不见
  */
-export function eastEyeGroundHole(site) {
+function eastEyeGroundHole(site) {
   return site.toWorldPts(
     circlePolygon(EAST_EYE.u, EAST_EYE.v, RIM_R + HOLE_PAD, HOLE_SEG)
   )
