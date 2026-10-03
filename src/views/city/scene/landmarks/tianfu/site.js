@@ -1,14 +1,14 @@
 /*
  * 天府广场 · 场地公共部分
  * ----------------------------------------------------------
- * 职责：两套坐标系（广场局部系、设计系）、铺装高度 PAVE、广场与北侧组团共用的颜色表 C、
- * 通用小函数（平面三角化等；竖直侧墙用 kit/shapes.js 的 sideWalls，
+ * 职责：两套坐标系（广场局部系、设计系）、铺装高度 PAVE、北侧组团地坪 NORTH_Y、广场与北侧组团共用的颜色表 C、
+ * 通用小函数（平面三角化、铺面、分色棱柱等；竖直侧墙用 kit/shapes.js 的 sideWalls，
  * 圆周点用 kit/footprint.js 的 circlePolygon）。各分区模块（ground / sunbird / westEye / eastEye /
- * north / neighbors 等）都从这里取坐标与颜色，不各自换算。
+ * north / statue / science / neighbors 等）都从这里取坐标与颜色，不各自换算。
  *
  * 两套坐标（设计文档第 1 节、调研报告第 1 节；世界 X 东、Z 南、Y 上，单位米）：
  * - 广场局部系：原点在 OSM「天府广场」面的包围盒中心（SQUARE.lon / lat）、铺装顶面以下的地面，
- *   X 向东、Z 向南、正南北不旋转。只剩设计系原点换算还用它（north.js 用自己的 OSM 点位）。
+ *   X 向东、Z 向南、正南北不旋转。只剩设计系原点换算还用它（北侧组团用自己的 OSM 点位，见 north.js）。
  * - 设计系 (u, v)：原点在太极大圆圆心，u 沿广场东西轴向东、v 沿南北轴向南，方位角 −1.5°
  *   （东端偏北）。原点在广场局部系的 (2.3, −10.0)。后续任务的广场构件一律在设计系里写，
  *   用 designFrame 换到世界；路径、替换区、地面洞等世界坐标点用 site.toWorld(u, v)。
@@ -21,7 +21,7 @@
  */
 import { Matrix4, Quaternion, ShapeUtils, Vector2, Vector3 } from "three"
 import { frame } from "../kit/builder.js"
-import { cylinder, fromTriangles } from "../kit/shapes.js"
+import { cylinder, fromTriangles, sideWalls } from "../kit/shapes.js"
 
 const DEG = Math.PI / 180
 
@@ -119,6 +119,14 @@ export function createSite(ctx) {
  * 东带伸到 u 111、西带到 u −113）以北 4.5 m
  */
 export const BELT_PATH = { u: 105, width: 4, v0: -78, v1: 73, density: 1 }
+
+/**
+ * 北侧组团地坪（north.js、statue.js、science.js 共用）：像与科技馆之间广场铺装的顶面，也是 OSM 高度的起算面。
+ * 比城市地面（GROUND_Y −0.5）高 1.5 m、比道路面最高处（0.9）略高，免得哪段路面压上来；
+ * 广场南侧的天府广场铺装是 PAVE 1.5，这里低 0.5 m，中间隔着一条道路，看不出高差。
+ * 放在这里而不放 north.js：statue.js、science.js 都要用，north.js 又要导入它们，放 north.js 会循环导入
+ */
+export const NORTH_Y = 1.0
 
 /* ---------------- 颜色表（广场与北侧组团） ---------------- */
 
@@ -312,4 +320,18 @@ export function pushUp(pos, [a, b, c], yAt) {
   const cr = (b[1] - a[1]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[1] - a[1])
   const [p, q] = cr >= 0 ? [b, c] : [c, b]
   for (const [x, z] of [a, p, q]) pos.push(x, yAt(x, z), z)
+}
+
+/** 平面多边形（可带洞）铺成朝上的面，高度由 yAt(x, z) 给出（常数函数即水平面，平面方程即斜面） */
+export function addSurface(b, f, outer, holes, yAt, color) {
+  const pos = []
+  for (const t of triangulate(outer, holes)) pushUp(pos, t, yAt)
+  b.add(fromTriangles(pos), color, f)
+}
+
+/** 实心棱柱：竖直侧墙一种颜色、顶面另一种颜色（extrudePolygon 只有一种颜色；屋面与墙面分色时用这个） */
+export function addPrism(b, f, outer, holes, y0, y1, wallColor, topColor) {
+  b.add(sideWalls(outer, y0, y1), wallColor, f)
+  for (const h of holes) b.add(sideWalls(h, y0, y1, true), wallColor, f)
+  addSurface(b, f, outer, holes, () => y1, topColor)
 }
