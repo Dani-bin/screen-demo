@@ -115,7 +115,7 @@ export function createSite(ctx) {
 /**
  * 东西林带内侧的南北步道（设计系，报告 3.2：步道 u ±99～±111、约 11 m 宽；6.7：路径 u ≈ ±105）：
  * 人流走中间 4 m，v −78 → 73，每米人数系数 density 1。trees.js 据此建步行路径并让开树冠，
- * furniture.js 据此摆两侧路灯。北端离北缘灯杆（v −83）5 m；南端停在南侧两条草带（v 77.5 起，
+ * furniture.js 据此摆两侧路灯，walkways.js 的东西两条横线两端接在 u ±105、南线就在 v1 上。北端离北缘灯杆（v −83）5 m；南端停在南侧两条草带（v 77.5 起，
  * 东带伸到 u 111、西带到 u −113）以北 4.5 m
  */
 export const BELT_PATH = { u: 105, width: 4, v0: -78, v1: 73, density: 1 }
