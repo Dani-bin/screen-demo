@@ -10,7 +10,7 @@
  * - 广场局部系：原点在 OSM「天府广场」面的包围盒中心（SQUARE.lon / lat）、铺装顶面以下的地面，
  *   X 向东、Z 向南、正南北不旋转。只剩设计系原点换算还用它（北侧组团用自己的 OSM 点位，见 north.js）。
  * - 设计系 (u, v)：原点在太极大圆圆心，u 沿广场东西轴向东、v 沿南北轴向南，方位角 −1.5°
- *   （东端偏北）。原点在广场局部系的 (2.3, −10.0)。后续任务的广场构件一律在设计系里写，
+ *   （东端偏北）。原点在广场局部系的 (2.3, −10.0)。广场构件一律在设计系里写，
  *   用 designFrame 换到世界；路径、替换区、地面洞等世界坐标点用 site.toWorld(u, v)。
  */
 import { frame } from "../kit/builder.js"
@@ -53,20 +53,6 @@ function designFrame(qx, qz) {
   return frame(qx + DESIGN_ORIGIN.x, 0, qz + DESIGN_ORIGIN.z, DESIGN_BEARING)
 }
 
-/**
- * 设计系点 → 广场局部系 [x, z]（相对广场局部原点）：
- *   x =  2.3 + 0.99966·u + 0.02618·v
- *   z = −10.0 − 0.02618·u + 0.99966·v
- * 旋转方向与 designFrame（即 frame 的 makeRotationY）一致：+u 向东略偏北（z 减小），
- * +v 向南略偏东（x 增大）。系数取精确的 cos 1.5°、sin 1.5°，上式里的五位小数只是示意。
- */
-export function designToSquare(u, v) {
-  return [
-    COS * u + SIN * v + DESIGN_ORIGIN.x,
-    -SIN * u + COS * v + DESIGN_ORIGIN.z
-  ]
-}
-
 /* ---------------- 场地对象 ---------------- */
 
 /**
@@ -74,17 +60,19 @@ export function designToSquare(u, v) {
  * @param {object} ctx 景点构建上下文 { project, buildings, spot, … }
  * @returns {{
  *   project, buildings, spot,
- *   qx: number, qz: number,   广场局部系原点的世界坐标
- *   square: Matrix4,          广场局部系（旧件用）：frame(qx, 0, qz, 0)
- *   design: Matrix4,          设计系（新件用）：designFrame(qx, qz)
+ *   design: Matrix4,                设计系：designFrame(qx, qz)，构件 b.add 时乘它
  *   toWorld: (u, v) => [x, z],      设计系点 → 世界 [x, z]，供 walkways、zones、groundHoles
  *   toWorldPts: (pts) => [x, z][]   同上，批量换一组 [u, v]
  * }}
  */
 export function createSite(ctx) {
   const { project, buildings, spot } = ctx
+  // 广场局部系原点的世界坐标
   const [qx, qz] = project.toLocal(SQUARE.lon, SQUARE.lat)
-  // 世界 = 广场局部原点 + 设计系换到广场局部系的偏移。乘加顺序照 Vector3.applyMatrix4（先旋转、后平移），
+  // 世界 = 广场局部原点 + 设计系换到广场局部系的偏移（cos 1.5° ≈ 0.99966、sin 1.5° ≈ 0.02618）：
+  //   x = qx + 2.3 + cos·u + sin·v，z = qz − 10.0 − sin·u + cos·v
+  // 即 +u 向东略偏北（z 减小）、+v 向南略偏东（x 增大），与 designFrame（frame 的 makeRotationY）同向。
+  // 乘加顺序照 Vector3.applyMatrix4（先旋转、后平移），
   // 结果与 designFrame 矩阵作用于 (u, 0, v)、或 local(site.design, u, y, v) 的平移量逐位相同
   const tx = qx + DESIGN_ORIGIN.x
   const tz = qz + DESIGN_ORIGIN.z
@@ -93,9 +81,6 @@ export function createSite(ctx) {
     project,
     buildings,
     spot,
-    qx,
-    qz,
-    square: frame(qx, 0, qz, 0),
     design: designFrame(qx, qz),
     toWorld,
     toWorldPts: (pts) => pts.map(([u, v]) => toWorld(u, v))
