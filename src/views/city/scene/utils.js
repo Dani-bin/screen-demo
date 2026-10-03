@@ -1,5 +1,5 @@
 /*
- * 场景通用工具：确定性随机、稳定哈希种子、几何判断
+ * 场景通用工具：确定性随机、稳定哈希种子、几何判断（点在多边形内、包围盒、线段交叉与多边形自交等）
  */
 
 /**
@@ -107,6 +107,43 @@ export function polygonCenter(poly) {
     sz += z
   }
   return [sx / poly.length, sz / poly.length]
+}
+
+/** 有向面积的两倍：点 c 在有向线段 a→b 的哪一侧（正负各在一侧，0 为共线）。点为 [x, z] */
+function orient(a, b, c) {
+  return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+}
+
+/**
+ * 两条线段 p-q、r-s 是否严格交叉（端点相接、共线重叠都不算）。点为 [x, z]。
+ * 城市地面挖洞（terrain.js 的 segmentGap）与景点轮廓工具（kit/footprint.js 的 ringsCross）共用
+ */
+export function segmentsCross(p, q, r, s) {
+  return (
+    orient(r, s, p) * orient(r, s, q) < 0 &&
+    orient(p, q, r) * orient(p, q, s) < 0
+  )
+}
+
+/**
+ * 多边形是否自交：有不相邻的两条边严格交叉（首尾两边相邻，不比；端点相接、共线重叠不算）。
+ * 逐对比较，只适合几十个点的小轮廓：城市地面洞（terrain.js）、天府广场的挖口与草坪内收（tianfu/polygon.js）、
+ * 熊猫基地的楼块内收轮廓（pandaBase/blocks.js）
+ * @param {Array<[number, number]>} poly 轮廓 [x, z]，不重复首点
+ */
+export function selfIntersects(poly) {
+  const n = poly.length
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue // 末边与首边相邻
+      if (
+        segmentsCross(poly[i], poly[(i + 1) % n], poly[j], poly[(j + 1) % n])
+      ) {
+        return true
+      }
+    }
+  }
+  return false
 }
 
 /**
