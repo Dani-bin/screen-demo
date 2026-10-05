@@ -8,9 +8,15 @@
         {{ String(total).padStart(2, "0") }}</span
       >
     </h2>
-    <!-- 有实景图时铺满图位；没有时显示渐变占位块 -->
+    <!-- 有实景图时铺满图位；没有、或加载失败（路径写错、文件缺失）时显示渐变占位块 -->
     <div class="spot-pic">
-      <img v-if="spot.image" :src="spot.image" :alt="spot.name" />
+      <img
+        v-if="spot.image && !broken"
+        :src="imageUrl"
+        :alt="spot.name"
+        :style="{ objectPosition: spot.imagePosition || 'center' }"
+        @error="broken = true"
+      />
       <span v-else>实景图位</span>
     </div>
     <div class="spot-name">{{ spot.name }}</div>
@@ -27,10 +33,27 @@
 </template>
 
 <script setup>
-  defineProps({
+  const props = defineProps({
     spot: { type: Object, required: true },
     index: { type: Number, default: 0 },
     total: { type: Number, default: 0 }
+  })
+
+  /**
+   * 实景图地址：cityData 里写相对 public/ 的路径，这里拼上 BASE_URL
+   * （开发环境为 /，生产环境部署在 /bi/ 下，直接写死 / 开头会 404）；
+   * 以 / 或 http(s) 开头的地址视为已是完整地址，原样使用
+   */
+  const imageUrl = computed(() => {
+    const src = props.spot.image
+    if (!src || /^(\/|https?:)/.test(src)) return src
+    return `${import.meta.env.BASE_URL}${src}`
+  })
+
+  // 当前图片是否加载失败；换站（地址变了）时清掉，让新图重新尝试加载
+  const broken = ref(false)
+  watch(imageUrl, () => {
+    broken.value = false
   })
 </script>
 

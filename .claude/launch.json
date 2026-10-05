@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "bi-demo",
-      "runtimeExecutable": "env",
-      "runtimeArgs": ["DEV_HTTP=1", "yarn", "dev"],
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/dev-http.mjs"],
       "port": 8893,
       "autoPort": true
     }
