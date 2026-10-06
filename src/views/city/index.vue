@@ -4,8 +4,7 @@
   页面只负责布局、取数与事件转接；三维逻辑全部在 ./scene 下，
   不含任何 Vue 依赖，可独立调试。
 
-  与应急指挥各页面完全独立：不加载百度地图、不使用 useSharedMap、
-  不复用 Head.vue。
+  与应急指挥各页面完全独立：不复用 Head.vue。
 -->
 <template>
   <div ref="pageRef" class="city-page">
