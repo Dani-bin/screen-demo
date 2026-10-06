@@ -92,14 +92,6 @@
                 {{ item.createTime || "-" }}
               </span>
               <div class="footer-actions">
-                <!-- 显示/隐藏调度路线：点击在地图上绘制（或清除）起点、终点和箭头 -->
-                <button type="button" class="route-btn" :class="{ active: shownIds.includes(item.id) }" v-if="item.endName"
-                  @click="toggleRoute(item)">
-                  <el-icon class="route-btn-icon">
-                    <Position />
-                  </el-icon>
-                  {{ shownIds.includes(item.id) ? "隐藏路线" : "显示路线" }}
-                </button>
                 <!-- 未完成时展示"标记完成"按钮，点击后调接口把状态置为已完成 -->
                 <button v-if="Number(item.status) !== 2" type="button" class="complete-btn"
                   :disabled="completingId === item.id" @click="handleComplete(item)">
@@ -117,36 +109,18 @@
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted } from "vue"
-import { Close, DArrowLeft, Right, Clock, Position } from "@element-plus/icons-vue"
+import { ref } from "vue"
+import { Close, DArrowLeft, Right, Clock } from "@element-plus/icons-vue"
 import { ElMessage } from "element-plus"
 import { getResponseTaskList, completeResponseTask } from "@/api/commandDispatch"
-import {
-  drawDispatchRoute,
-  clearDispatchRoute,
-  recomputeRouteArrow
-} from "@/utils/dispatchRouteDraw"
 
 const props = defineProps({
   // 预案 ID：指挥调度 281 / 专项指挥 280
   planId: {
     type: [Number, String],
     default: null
-  },
-  // 地图实例（BMapGL.Map）：由父页面传入，用于按需绘制调度路线
-  map: {
-    type: Object,
-    default: null
   }
 })
-
-/**
- * 路线显隐变化事件：
- *  - route-shown   首次有路线在地图上展示（用于父级隐藏其它图层避免干扰）
- *  - route-hidden  所有路线都被清掉（用于父级恢复之前激活的分类图层）
- * 用 watch shownIds 长度从 0/非 0 切换来触发，单条切换不会重复 emit
- */
-const emit = defineEmits(["route-shown", "route-hidden"])
 
 /** 是否处于展开态 */
 const expanded = ref(false)
@@ -154,15 +128,6 @@ const loading = ref(false)
 const list = ref([])
 /** 正在标记完成的任务 ID，用于按钮 loading / 防重复点击 */
 const completingId = ref(null)
-
-/* ===== 调度路线按需绘制 ===== */
-/** 当前已在地图上展示路线的任务 ID 列表（驱动按钮"显示/隐藏"文案） */
-const shownIds = ref([])
-/**
- * 已绘制路线的 overlay 句柄表：taskId → drawDispatchRoute 返回的句柄对象
- * 非响应式（存放 BMapGL 原生对象），随组件生命周期保留，切换 / 卸载时清理
- */
-const routeOverlays = new Map()
 
 /** 任务状态 → 文案 */
 const statusText = status => {
@@ -210,117 +175,12 @@ const handleComplete = async item => {
   }
 }
 
-/* ===== 调度路线：显示 / 隐藏切换 ===== */
-
-/**
- * 点击列表项按钮：在地图上切换该条调度路线（起点、终点、箭头）的显隐
- * 已展示 → 清除；未展示 → 绘制
- */
-const toggleRoute = item => {
-  if (shownIds.value.includes(item.id)) {
-    hideRoute(item.id)
-  } else {
-    // 切换到另一条调度任务时，先清空其它已显示的路线，保证同一时刻只展示一条
-    clearAllRoutes()
-    showRoute(item)
-  }
-}
-
-/** 绘制单条调度路线（起点 marker + 终点 marker + 箭头折线 + 任务标签） */
-const showRoute = item => {
-  const map = props.map
-  if (!map) {
-    ElMessage.warning("地图未就绪，无法展示路线")
-    return
-  }
-  const handle = drawDispatchRoute(map, {
-    startLng: item.startLng,
-    startLat: item.startLat,
-    endLng: item.endLng,
-    endLat: item.endLat,
-    startName: item.startName,
-    type: item.type,
-    // 单条展示场景：绘制后自动 setViewport 框到本条路线
-    fitView: true
-  })
-  if (!handle) {
-    ElMessage.warning("该应急响应缺少有效的起止坐标")
-    return
-  }
-  routeOverlays.set(item.id, handle)
-  shownIds.value.push(item.id)
-}
-
-/** 清除单条调度路线的所有 overlay */
-const hideRoute = id => {
-  const map = props.map
-  const overlay = routeOverlays.get(id)
-  if (overlay) clearDispatchRoute(map, overlay)
-  routeOverlays.delete(id)
-  shownIds.value = shownIds.value.filter(sid => sid !== id)
-}
-
-/** 清除所有已绘制路线 */
-const clearAllRoutes = () => {
-  shownIds.value.slice().forEach(id => hideRoute(id))
-}
-
-/**
- * 地图缩放后按当前像素重算各条已展示箭头的几何，
- * 避免高缩放级别下箭头端点偏离图标
- */
-const recomputeArrows = () => {
-  const map = props.map
-  if (!map) return
-  routeOverlays.forEach(handle => recomputeRouteArrow(map, handle))
-}
-
-// 地图实例就绪后绑定 zoomend，用于路线箭头的几何重算
-watch(
-  () => props.map,
-  (newMap, oldMap) => {
-    if (oldMap) oldMap.removeEventListener("zoomend", recomputeArrows)
-    if (newMap) newMap.addEventListener("zoomend", recomputeArrows)
-  },
-  { immediate: true }
-)
-
-/**
- * 监听"是否有路线在展示"切换：
- *   false → true   通知父级隐藏其它图层（独占视觉，避免点位与路线相互干扰）
- *   true  → false  通知父级恢复之前激活的分类图层
- * 用 length>0 的布尔派生避免单条切换里 push/filter 触发多次 emit
- */
-watch(
-  () => shownIds.value.length > 0,
-  shown => emit(shown ? "route-shown" : "route-hidden")
-)
-
-onUnmounted(() => {
-  if (props.map) props.map.removeEventListener("zoomend", recomputeArrows)
-  clearAllRoutes()
-})
-
-/**
- * 收起面板
- * 同时清空地图上已绘制的所有调度路线：触发 watch → emit route-hidden →
- * 父级恢复路线展示前的分类点位，避免"关闭弹窗后路线仍残留 + 点位不回来"的不一致状态
- */
+/** 收起面板 */
 const close = () => {
   expanded.value = false
-  clearAllRoutes()
 }
 
-/**
- * 收起面板并清空地图上已绘制的所有调度路线
- * 与 close 行为一致；保留独立命名供父页面在进入队伍/物资调度模式时调用，语义更清晰
- */
-const hideAndClearRoutes = () => {
-  expanded.value = false
-  clearAllRoutes()
-}
-
-defineExpose({ open, close, clearRoutes: clearAllRoutes, hideAndClearRoutes })
+defineExpose({ open, close })
 </script>
 
 <style lang="scss" scoped>
@@ -609,39 +469,6 @@ $panel-border: rgba(0, 206, 234, 0.32);
     display: flex;
     align-items: center;
     gap: 8px;
-  }
-}
-
-/* 显示/隐藏路线按钮 */
-.route-btn {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 4px 12px;
-  border: 1px solid rgba(0, 206, 234, 0.5);
-  border-radius: 4px;
-  background: rgba(0, 206, 234, 0.12);
-  color: $accent;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  .route-btn-icon {
-    font-size: 13px;
-  }
-
-  &:hover {
-    background: rgba(0, 206, 234, 0.25);
-    color: #ffffff;
-  }
-
-  /* 已显示态：高亮填充，提示再次点击可隐藏 */
-  &.active {
-    background: $accent;
-    color: #06283d;
-    box-shadow: 0 0 10px rgba(0, 206, 234, 0.45);
   }
 }
 

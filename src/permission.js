@@ -9,17 +9,17 @@ import "nprogress/nprogress.css"
 import { getToken, setToken, setRefreshToken } from "@/utils/auth"
 import useUserStore from "@/store/modules/user"
 import request from "@/utils/request"
-import { BMPGL } from "./bmpgl"
 import useDictStore from "@/store/modules/dict"
 
-let hasInitScript = false
+/** 字典数据是否已拉取：整个会话只拉一次 */
+let dictLoaded = false
 
 NProgress.configure({ showSpinner: false })
 
 /**
  * 无需登录态的独立展示页。
- * 这类页面不调用业务接口、也不使用百度地图，若走下面的通用流程，
- * 会因为没有 token 被重定向到后端登录页，或空等字典接口与地图脚本。
+ * 这类页面不调用业务接口，若走下面的通用流程，
+ * 会因为没有 token 被重定向到后端登录页，或空等字典接口。
  */
 const PUBLIC_PATHS = ["/home", "/school", "/city"]
 
@@ -36,12 +36,6 @@ router.beforeEach((to, from, next) => {
   //   refreshToken: "47894483e5cc4ffb876c554c27b691c2"
   // }
   // sessionStorage.setItem("thyj-bi-token", JSON.stringify(obj))
-
-  // BMPGL('dMhcSw600divYNOLFin9KlfSk7oertPX').then(async () => {
-  //   hasInitScript = true
-  //   next()
-  // })
-  // return
 
   console.log(to.query)
   to.query.token &&
@@ -63,19 +57,15 @@ router.beforeEach((to, from, next) => {
   }
 
   if (getToken()) {
-    if (!hasInitScript) {
+    if (!dictLoaded) {
+      // 首次进入业务页时拉一次全量字典，存入 dict store 供各组件取用
       request({
         url: "/admin-api/system/dict-data/list-all-simple",
         method: "get"
       }).then((res) => {
-        let data = res.data.find((val) => val.dictType === "BaiduMapKey")
         useDictStore().setDateList(res.data)
-        if (data) {
-          BMPGL(data.value).then(async () => {
-            hasInitScript = true
-            next()
-          })
-        }
+        dictLoaded = true
+        next()
       })
     } else {
       next()

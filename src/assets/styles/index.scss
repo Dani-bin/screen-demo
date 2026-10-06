@@ -337,17 +337,3 @@ div:focus {
     transform: scale(2);
   }
 }
-
-// 百度地图 InfoWindow 样式 - 隐藏阴影图片 (iws3.png)
-.BMap_pop,
-.BMapGL_pop {
-  // 隐藏所有 InfoWindow 相关的图片（阴影、关闭按钮等）
-  div img {
-    display: none !important;
-  }
-}
-// 更精确的选择器：只隐藏 iws3 阴影图片
-img[src*="iws3"],
-img[src*="webmap0.bdimg.com/image/api/iws3"] {
-  display: none !important;
-}
