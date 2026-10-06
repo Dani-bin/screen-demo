@@ -21,7 +21,7 @@ NProgress.configure({ showSpinner: false })
  * 这类页面不调用业务接口、也不使用百度地图，若走下面的通用流程，
  * 会因为没有 token 被重定向到后端登录页，或空等字典接口与地图脚本。
  */
-const PUBLIC_PATHS = ["/school", "/city"]
+const PUBLIC_PATHS = ["/home", "/school", "/city"]
 
 router.beforeEach((to, from, next) => {
   NProgress.start()
