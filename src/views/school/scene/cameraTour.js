@@ -88,7 +88,7 @@ export class CameraTour {
       this.dragging = false
       try {
         this.dom.releasePointerCapture(e.pointerId)
-      } catch (err) {
+      } catch {
         // 指针已释放，忽略
       }
     }

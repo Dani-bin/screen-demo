@@ -1,39 +1,21 @@
 /*
- * @Author:
- * @Date: 2024-06-11 11:04:25
- * @Description:
+ * 应用入口
+ * ----------------------------------------------------------
+ * 各演示页都是自带外壳的独立页面，入口只负责全局样式、根字号适配与路由。
  */
-
 import { createApp } from "vue"
-import ElementPlus from "element-plus"
-import "element-plus/dist/index.css"
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
+// Tailwind 基础样式（preflight）：各页面依赖它统一的元素默认样式，删掉会改变页面外观
 import "@/assets/styles/tailwind.css"
+// 按视口宽度设置根字号，配合 postcss-pxtorem 让整屏按 1920 设计稿等比缩放
 import "amfe-flexible"
+// 字体注册与全局基础样式
 import "@/assets/styles/index.scss"
 import App from "./App.vue"
-import store from "./store"
 import router from "@/router"
-const app = createApp(App)
-import "./permission"
-import './assets/qweather-icons/font/qweather-icons.css'
-import Viewer from 'v-viewer'
-import 'viewerjs/dist/viewer.css'
-app.use(Viewer)
-Viewer.setDefaults({
-  title: false,
-  toolbar: false,
-  navbar: false,
-  button: false,
-  zIndex: 9999
-})
 
-app.use(store)
+const app = createApp(App)
 app.use(router)
-app.use(ElementPlus, {
-  locale: zhCn,
-})
 
 // 挂载实例
 app.mount("#app")
