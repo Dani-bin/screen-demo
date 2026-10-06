@@ -11,9 +11,9 @@
 <script setup></script>
 
 <style scoped>
-.app-content {
-  height: 100%;
-  font-family: Noto Sans S Chinese;
-  font-size: 16px;
-}
+  .app-content {
+    height: 100%;
+    font-family: Noto Sans S Chinese;
+    font-size: 16px;
+  }
 </style>

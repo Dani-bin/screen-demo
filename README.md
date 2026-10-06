@@ -3,7 +3,7 @@
 基于 Vue 3 + Vite + three.js 的大屏演示项目，面向展厅 / 指挥中心的 1920 × 1080 整屏展示。
 首页集中介绍各个演示，无人操作时自动轮播；每个演示都是可自动巡览、也可随时接管操作的三维场景。
 
-所有演示都使用静态数据，不需要登录，不依赖地图 SDK 或后端接口。
+所有演示都使用静态数据，不需要登录，不依赖地图 SDK、UI 组件库或后端接口。
 
 ## 演示一览
 
@@ -44,8 +44,8 @@ src/
     school/      智慧校园三维导览（scene/ 为纯 three.js 场景，不依赖 Vue）
     city/        城市三维总览（scene/ 三维场景，scene/landmarks/ 各地标模型，lab/ 单地标调试页）
   router/        路由（hash 模式）
-  permission.js  路由守卫：首页与演示页免登录
-  assets/        字体、全局样式
+  assets/        字体（标题、正文、数字三款）与全局基础样式
+  main.js        入口：全局样式、根字号适配、路由
 public/
   home/          首页预览图（脚本生成）
   city/          城市几何数据 chengdu.json（脚本生成）与景点实景图
@@ -56,8 +56,8 @@ city-lab.html    单地标调试页入口（仅开发环境）
 
 ## 新增一个演示
 
-1. 在 `src/views/<名称>/` 下实现页面，在 `src/router/index.js` 注册路由；
-   免登录的演示还要加进 `src/permission.js` 的 `PUBLIC_PATHS`。
+1. 在 `src/views/<名称>/` 下实现页面（页面之间不共享组件，按现有演示的结构放 `components/`、`scene/`、`data/`），
+   在 `src/router/index.js` 注册路由。
 2. 在 `src/views/home/data/demos.js` 的 `DEMOS` 末尾追加一项（名称、介绍、标签、3 个指标、主题色、预览图路径）。
    首页的页面和组件都不用改。
 3. 启动开发服务器后生成预览图（见下）。
@@ -79,9 +79,10 @@ city-lab.html    单地标调试页入口（仅开发环境）
 - **尺寸一律写 px**：构建时由 `postcss-pxtorem`（`rootValue: 192`）转成 rem，运行时 `amfe-flexible` 按视口宽度设置根字号，
   整屏按 1920 设计稿等比缩放。不需要转换的样式放进名为 `no-convert.css` 的文件。
 - **自动导入**：`ref`、`computed`、`onMounted`、`useRouter` 等 Vue / Vue Router API 无需手动 import；
-  `src/components` 下的组件全局自动注册。`auto-imports.d.ts`、`components.d.ts`、`.eslintrc-auto-import.json` 为生成文件，不要手改。
-- **代码风格**：Prettier（无分号、双引号、2 空格缩进、80 列）+ ESLint。只检查改动的目录，避免 `--fix` 改到无关旧文件：
-  `npx eslint --max-warnings 0 "src/views/<目录>/**/*.{vue,js}"`。
+  子组件需要显式 import。`auto-imports.d.ts`、`.eslintrc-auto-import.json` 为生成文件，不要手改。
+- **样式基础**：页面样式都是手写 SCSS；`src/main.js` 引入 Tailwind 只为它的基础重置样式（preflight），各页面依赖它，不要删。
+- **代码风格**：Prettier（无分号、双引号、2 空格缩进、80 列）+ ESLint，`src` 目前可全量通过：
+  `npx eslint --max-warnings 0 "src/**/*.{vue,js}"`。
 - **注释与界面文字使用中文**；非显而易见的业务逻辑、算法与结构要写清楚注释。
 - 项目没有单元测试框架，改动通过浏览器实际效果与上面的校验脚本验证。
 
@@ -97,8 +98,8 @@ city-lab.html    单地标调试页入口（仅开发环境）
 - 城市景点实景图由项目方提供，存放在 `public/city/spots/`。
 - 页面中的城市客流等数值为示意值。
 
-## 遗留代码说明
+## 项目沿革
 
-项目由应急指挥大屏演变而来，`src/components`、`src/api`、`src/utils`、`src/store` 中仍保留部分原有业务代码
-（ECharts 面板、视频播放、AI 对话、登录与字典等），目前没有任何路由使用它们。
-百度地图相关代码已于 2026-10-06 全部移除。
+项目由应急指挥大屏演变而来。2026-10-06 已移除全部原有业务代码（百度地图、ECharts 面板、视频播放、AI 对话、
+登录与字典流程、Pinia、Element Plus 及共享组件），只保留三个演示所需的代码与依赖；
+`docs/superpowers` 中此前的文档可能仍会提到这些内容。

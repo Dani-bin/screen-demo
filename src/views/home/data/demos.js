@@ -3,7 +3,7 @@
  * ----------------------------------------------------------
  * 首页的全部内容都来自这里。新增演示的步骤：
  *   1. 在 DEMOS 末尾追加一项；
- *   2. 在 src/router/index.js 注册该演示的路由（免登录演示还要加进 permission.js 的 PUBLIC_PATHS）；
+ *   2. 在 src/router/index.js 注册该演示的路由；
  *   3. 启动开发服务器后运行 scripts/capture-home-previews.mjs 生成预览图。
  * 页面与组件都不用改。
  *

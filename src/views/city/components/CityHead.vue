@@ -1,4 +1,4 @@
-<!-- 城市大屏顶部标题栏：与应急指挥的 Head.vue 完全独立 -->
+<!-- 城市大屏顶部标题栏 -->
 <template>
   <header class="city-head">
     <div v-if="info.tag" class="head-tag">{{ info.tag }}</div>

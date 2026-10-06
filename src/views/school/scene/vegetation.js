@@ -191,7 +191,6 @@ export function createVegetation(materials) {
   const coniferItems = []
   const trunkItems = []
 
-  const noRotation = new Quaternion()
   const tone = new Color()
 
   spots.forEach(([x, z], i) => {
