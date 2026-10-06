@@ -14,7 +14,6 @@ declare module 'vue' {
     EmergencyResponsePanel: typeof import('./src/components/EmergencyResponsePanel.vue')['default']
     Head: typeof import('./src/components/Head.vue')['default']
     Loading: typeof import('./src/components/Loading.vue')['default']
-    MapDrawToolbar: typeof import('./src/components/MapDrawToolbar.vue')['default']
     MapSearch: typeof import('./src/components/MapSearch.vue')['default']
     MenuTabs: typeof import('./src/components/MenuTabs.vue')['default']
     Popup: typeof import('./src/components/Popup.vue')['default']

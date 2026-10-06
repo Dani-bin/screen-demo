@@ -17,19 +17,19 @@ const routes = [
     redirect: "/home"
   },
   {
-    // 演示中心首页：展示各演示的介绍与预览图，点击进入；独立页面，不加载百度地图
+    // 演示中心首页：展示各演示的介绍与预览图，点击进入；独立页面，免登录
     path: "/home",
     name: "Home",
     component: () => import("@/views/home/index.vue")
   },
   {
-    // 小学三维可视化介绍：独立页面，自带外壳，不加载百度地图
+    // 小学三维可视化介绍：独立页面，自带外壳，免登录
     path: "/school",
     name: "School",
     component: () => import("@/views/school/index.vue")
   },
   {
-    // 城市三维总览：独立页面，自带外壳，不加载百度地图
+    // 城市三维总览：独立页面，自带外壳，免登录
     path: "/city",
     name: "City",
     component: () => import("@/views/city/index.vue")
