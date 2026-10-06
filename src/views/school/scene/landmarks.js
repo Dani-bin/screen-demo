@@ -12,8 +12,6 @@ import {
   Euler,
   ExtrudeGeometry,
   Group,
-  InstancedMesh,
-  Matrix4,
   Mesh,
   Path,
   PlaneGeometry,
