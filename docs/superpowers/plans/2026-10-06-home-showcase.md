@@ -1171,6 +1171,11 @@ git commit -m "feat(home): 演示中心首页外壳，根路径改指首页"
 
 ### Task 5: 预览图截图脚本与预览图
 
+> **执行时修订**：下面 Step 1 的固定等待（`WAIT`）实测不可靠——12 s 时校园已离开首站、面板切到第 2 站而镜头还在飞。
+> 两个演示的巡览按帧计时（校园 dt 上限 0.05 s），加载与帧率快慢都会让固定等待漂移。
+> 实际脚本改为：轮询页面直到 `.scene-loading` 消失（上限 60 s），再按 `SETTLE`（校园 5 s、城市 6 s，默认 5 s）
+> 等到首站停留中段截图。以 `scripts/capture-home-previews.mjs` 为准。
+
 **Files:**
 - Create: `scripts/capture-home-previews.mjs`
 - Create: `public/home/school.webp`、`public/home/city.webp`（脚本产物）

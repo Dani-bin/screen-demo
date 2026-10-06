@@ -95,7 +95,8 @@
 - 生成：`node scripts/capture-home-previews.mjs [devServerUrl]`。用本机 Chrome 无头模式 + 调试协议，
   依次打开每个演示，等场景稳定后截图存为 webp；演示列表从 `demos.js` 读取，新增演示后重跑即可
   - Chrome 路径默认 macOS 安装位置，可用 `CHROME_PATH` 覆盖
-  - 每个演示的等待时长可在脚本里按 key 配置（城市场景加载较慢）
+  - 截图时机：轮询到场景加载遮罩 `.scene-loading` 消失，再按 key 配置的秒数等到首站停留中段
+    （执行时修订：原定固定等待，实测巡览按帧计时、固定等待会落到第二站）
 - 页面加载时预加载全部预览图，切换时不闪白
 
 ## 文件结构
