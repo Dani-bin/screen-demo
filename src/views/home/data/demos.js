@@ -60,5 +60,23 @@ export const DEMOS = [
     // 与城市页界面强调色一致
     accent: "#2f8f96",
     preview: "home/city.webp"
+  },
+  {
+    key: "charging",
+    path: "/charging",
+    name: "智慧充电站",
+    en: "SMART CHARGING STATION",
+    subTitle: "光储充一体化超充站 · 数字孪生",
+    desc: "Blender 建模还原大型光储充超充站，悬浮沙盘呈现超充、快充、储能与服务楼；仿真驱动车辆进出、充放电与告警，四角能量节点实时联动。",
+    tags: ["Blender 建模", "光储充能量流", "运行仿真"],
+    // 依据：charging/data/station.js 的 PILES（快充 30 + 超充 4）与 STATION.pvKwp、essKwh
+    stats: [
+      { value: "34", unit: "根", key: "充电桩" },
+      { value: "600", unit: "kWp", key: "光伏装机" },
+      { value: "2", unit: "MWh", key: "储能容量" }
+    ],
+    // 取自大屏的能源蓝
+    accent: "#1f7fd6",
+    preview: "home/charging.webp"
   }
 ]

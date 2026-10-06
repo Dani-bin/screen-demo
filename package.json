@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "amfe-flexible": "^2.2.1",
+    "echarts": "^6.1.0",
+    "lucide-vue-next": "^1.0.0",
     "postcss-pxtorem": "^6.1.0",
     "sass": "^1.77.4",
     "screenfull": "^6.0.2",
