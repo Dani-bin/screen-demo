@@ -454,9 +454,9 @@ export function getPointDetail(params) {
 
 /**
  * 根据 ID 获取风险点位详情
- * 用途：专项指挥页面进入时拉一个固定 ID 的风险点，按 lng/lat（起点）+
- *      attributesJson 中的 endLng/endLat（终点）+ imageUrl 在地图上铺一张
- *      自定义图片覆盖物（BMapGL.GroundOverlay）。
+ * 用途：专项指挥页面进入时拉一个固定 ID 的风险点；返回 lng/lat（起点）+
+ *      attributesJson 中的 endLng/endLat（终点）+ imageUrl，
+ *      描述一张按经纬度范围铺放的风险图片。
  *
  * Query 参数：id（风险点位ID，字符串雪花ID，需以字符串透传）
  * 关键返回字段：

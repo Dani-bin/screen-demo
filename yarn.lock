@@ -861,11 +861,6 @@ binary-extensions@^2.0.0:
   resolved "https://registry.npmmirror.com/binary-extensions/-/binary-extensions-2.3.0.tgz#f6e14a97858d327252200242d4ccfe522c445522"
   integrity sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==
 
-bmap-draw@^1.0.40:
-  version "1.0.40"
-  resolved "https://registry.npmmirror.com/bmap-draw/-/bmap-draw-1.0.40.tgz#e83146e1edf68cad7eb297e562afd0146b12f7d6"
-  integrity sha512-ZoCt3DfPjg6gItON7UoMsuyj2gK37BP5sTPfI5rahTHsHqyrr3MWg/2R05GDSamYamExK4HzDZWLZG75Guj+vQ==
-
 boolbase@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmmirror.com/boolbase/-/boolbase-1.0.0.tgz#68dff5fbe60c51eb37725ea9e3ed310dcc1e776e"

@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Vue 3 + Vite **large-screen data-visualization dashboard** (大屏 / BI) for an emergency-management system (应急). It renders full-screen, fixed-layout panels combining ECharts charts, Baidu Map (BMapGL) layers, video feeds, and an AI chat assistant. It is display-oriented: meant to run fullscreen on a wall/monitor, not a conventional CRUD admin app.
+A Vue 3 + Vite **large-screen 3D visualization demo collection** (大屏 demo 合集). The routed pages are the `/home` showcase plus two three.js demos (`/school`, `/city`); all three use static data and need no login. It is display-oriented: meant to run fullscreen on a wall/monitor, not a conventional CRUD admin app.
+
+Legacy code from the original emergency-management (应急) dashboard is still in `src/components`, `src/api`, `src/utils` and `src/store` (ECharts panels, video feeds, AI chat), but no registered route uses it. Baidu Map (BMapGL) support was removed entirely on 2026-10-06; the docs under `docs/superpowers` from before that date may still describe it.
 
 ## Commands
 
@@ -47,10 +49,9 @@ The screen scales via rem, not media queries. **Author all sizes in `px`** — t
     The lab page logs the hole report to the console and exposes it as `window.__labGroundHoles`.
     After re-fetching OSM data, rerun `stats 天府广场` and check that `parks.skipped` and `water.skipped` in the lab page's hole report are empty.
 - **Views**: `src/views/<section>/index.vue` is the section shell; each builds its panels from `./components/*.vue`. The shared chrome lives in `src/components` (`Head.vue`, `MenuTabs.vue`, `Popup.vue`, `EchartItem.vue`, `EchartTitle.vue`, `MapSearch.vue`, `Loading.vue`, `Progress.vue`).
-- **State**: Pinia. `src/store/modules/user.js` (token, userInfo, village/community selection) and `src/store/modules/dict.js` (dictionary data, incl. the Baidu Map key).
+- **State**: Pinia. `src/store/modules/user.js` (token, userInfo, village/community selection) and `src/store/modules/dict.js` (dictionary data, fetched once by `permission.js` for non-public routes).
 - **HTTP**: `src/utils/request.js` is the main axios instance — RuoYi-style: `baseURL` from `VITE_APP_BASE_API`, `Bearer` token injection, GET param serialization via `tansParams`, and **automatic access-token refresh** (queues concurrent requests on 401/4011-4016, retries after refresh). Pass `notError: true` in a request config to suppress error toasts. `src/utils/aiRequest.js` is a **separate** axios instance for the AI backend with advanced-query param building.
 - **AI chat**: streamed via `@microsoft/fetch-event-source` (SSE); API wrappers in `src/api/ai/aiChat.js`. AI backend base URL comes from `VUE_APP_BASE_AI_API`.
-- **Maps**: Baidu Map GL is loaded dynamically by `src/bmpgl.js` (`BMPGL(ak)` injects the `BMapGL` script + DrawingManager). `src/utils/renderBoundaries.js` draws administrative boundaries.
 
 ## Auto-imports — do not hand-import these
 
@@ -63,14 +64,14 @@ The screen scales via rem, not media queries. **Author all sizes in `px`** — t
 
 ## Auth flow
 
-`src/permission.js` has a `PUBLIC_PATHS` whitelist (`/home`, `/school`, `/city`): these standalone pages skip auth, the dict fetch and Baidu Map loading entirely.
+`src/permission.js` has a `PUBLIC_PATHS` whitelist (`/home`, `/school`, `/city`): these standalone pages skip auth and the dict fetch entirely.
 
-All other routes go through the normal flow: a `token`/`refreshToken` arrives via query string or `sessionStorage["thyj-bi-token"]`, is stored through `src/utils/auth.js` (no token → redirect to the backend login page), then the Baidu Map key is fetched from the dict API and `BMapGL` is loaded before `next()`. The old hard-coded dev token/key bypass is left commented out.
+All other routes go through the normal flow: a `token`/`refreshToken` arrives via query string or `sessionStorage["thyj-bi-token"]`, is stored through `src/utils/auth.js` (no token → redirect to the backend login page), then the full dictionary is fetched once from `/admin-api/system/dict-data/list-all-simple` into the dict store before `next()`. The old hard-coded dev token bypass is left commented out.
 
 ## Environments & proxy
 
-- `.env.development`: `VITE_APP_BASE_API=/dev-api`; the dev server proxies `/dev-api` → `http://116.62.5.38:8888` (`vite.config.js`, rewrite strips the prefix).
-- `.env.production`: `VITE_APP_BASE_API` points directly at the backend; `VITE_APP_ENV=production` switches the build `base` to `/bi/` and enables gzip.
+- `.env.development`: `VITE_APP_BASE_API=/dev-api`; the dev server proxies `/dev-api` → `https://36.213.184.229:8889/prod-api`, plus `/video-api`, `/sensevoice` and `/chat-api` for the legacy video / speech / AI features (`vite.config.js`, each rewrite strips its prefix).
+- `.env.production`: `VITE_APP_BASE_API` points directly at the backend; `VITE_APP_ENV=production` switches the build `base` to `/bi/`. `VITE_BUILD_COMPRESS=gzip` is set but no compression plugin is wired into `vite.config.js`.
 
 ## Code style
 
