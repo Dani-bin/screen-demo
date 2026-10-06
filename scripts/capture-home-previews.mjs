@@ -39,10 +39,11 @@ const READY_TIMEOUT = 60
  * 截图要落在首站停留期间的中段，太早镜头还在飞，太晚已经离站：
  *   - 校园：飞行 2.6 s + 停留 6.4 s（school/scene/cameraTour.js），取 5 s
  *   - 城市：飞行 2 s + 停留 8 s（city/scene/theme.js 的 tour），取 6 s，此时到站人流也已走起来
+ *   - 充电站：无巡览，模型加载后等 6 s，让辉光、告警波纹与能量节点连线稳定
  * 新演示未配置时取 DEFAULT_SETTLE。
  */
 const DEFAULT_SETTLE = 5
-const SETTLE = { school: 5, city: 6 }
+const SETTLE = { school: 5, city: 6, charging: 6 }
 
 /**
  * 页面就绪条件（在页面里求值）：整页加载完、路由组件已渲染、
