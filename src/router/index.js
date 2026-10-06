@@ -11,11 +11,16 @@ import {
 
 const routes = [
   {
-    // 注意：原默认重定向指向 /typhoon，但当前工作区中 typhoon 系列页面
-    // 处于「已删除未提交」状态、对应路由也已移除，直接进根路径会白屏。
-    // 因此暂时改指学校页；若恢复 typhoon 页面，把这里改回 "/typhoon" 即可。
+    // 根路径进入演示中心首页（各演示的统一入口）。
+    // 原默认重定向指向 /typhoon，该系列页面已不在仓库中。
     path: "",
-    redirect: "/school"
+    redirect: "/home"
+  },
+  {
+    // 演示中心首页：展示各演示的介绍与预览图，点击进入；独立页面，不加载百度地图
+    path: "/home",
+    name: "Home",
+    component: () => import("@/views/home/index.vue")
   },
   {
     // 小学三维可视化介绍：独立页面，自带外壳，不加载百度地图
