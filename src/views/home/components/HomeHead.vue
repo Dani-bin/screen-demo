@@ -1,6 +1,6 @@
 <!--
   首页顶栏：品牌标题 + 时钟
-  与各演示页的顶栏相互独立，不复用 Head.vue / SchoolHead.vue。
+  与各演示页的顶栏相互独立，不复用 SchoolHead.vue / CityHead.vue。
 -->
 <template>
   <header class="home-head">

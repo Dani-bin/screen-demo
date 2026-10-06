@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Vue 3 + Vite **large-screen 3D visualization demo collection** (大屏 demo 合集). The routed pages are the `/home` showcase plus two three.js demos (`/school`, `/city`); all three use static data and need no login. It is display-oriented: meant to run fullscreen on a wall/monitor, not a conventional CRUD admin app.
+A Vue 3 + Vite **large-screen 3D visualization demo collection** (大屏 demo 合集). The routed pages are the `/home` showcase plus two three.js demos (`/school`, `/city`); all three use static data, call no backend and need no login (there is no auth layer). It is display-oriented: meant to run fullscreen on a wall/monitor, not a conventional CRUD admin app.
 
-Legacy code from the original emergency-management (应急) dashboard is still in `src/components`, `src/api`, `src/utils` and `src/store` (ECharts panels, video feeds, AI chat), but no registered route uses it. Baidu Map (BMapGL) support was removed entirely on 2026-10-06; the docs under `docs/superpowers` from before that date may still describe it.
+The project grew out of an emergency-management (应急) dashboard. On 2026-10-06 all of that code was removed (Baidu Map, ECharts panels, video, AI chat, login / dict flow, Pinia, Element Plus, shared components); docs under `docs/superpowers` from before that date may still mention it.
 
 ## Commands
 
@@ -16,8 +16,8 @@ This project uses **yarn** (see `yarn.lock`).
   - `DEV_HTTP=1` serves plain http instead and `PORT` overrides the port; `.claude/launch.json` uses both so the Claude in-app preview (which rejects self-signed certs) gets its own http server on an auto-assigned port
 - `yarn build` — production build (output base path is `/bi/`)
 - `yarn preview` — preview the production build
-- `yarn lint:eslint` — ESLint with `--fix` over `{src,mock}/**/*.{vue,ts,tsx}`, max 0 warnings
-  - Because of `--fix` it will also reformat unrelated legacy files; for city work lint only that folder: `npx eslint --max-warnings 0 "src/views/city/**/*.{vue,js}"`
+- `yarn lint:eslint` — ESLint with `--fix` over `{src,mock}/**/*.{vue,ts,tsx}`, max 0 warnings (it skips `.js` files)
+  - To check everything without rewriting files: `npx eslint --max-warnings 0 "src/**/*.{vue,js}"` (clean as of 2026-10-06)
 - `yarn format` — Prettier over the whole repo
 - `node scripts/capture-home-previews.mjs [devServerUrl] [key…]` — regenerates the homepage preview images `public/home/<key>.webp` with headless Chrome (dev server must be running; default URL `https://localhost:8892`; Node 22+; `CHROME_PATH` overrides the Chrome location). It waits for the scene to finish loading, then captures mid-way through the first tour stop (per-demo `SETTLE` seconds in the script)
 
@@ -32,14 +32,15 @@ The screen scales via rem, not media queries. **Author all sizes in `px`** — t
 
 - `postcss-pxtorem` with `rootValue: 192` converts every `px` to `rem` (see `vite.config.js`).
 - `amfe-flexible` sets the root font-size at runtime so the layout scales to the viewport.
-- To opt a stylesheet out of conversion, name it `no-convert.css` (see `src/assets/styles/no-convert.css`).
-- Tailwind is enabled but plays a minor role alongside hand-written SCSS.
+- To opt a stylesheet out of conversion, name it `no-convert.css` (the `exclude` rule in `vite.config.js`; no such file exists today).
+- Tailwind is imported for its preflight base styles; the pages are styled with hand-written SCSS, not Tailwind utility classes, but they rely on the reset, so keep the import in `src/main.js`.
+- `src/assets/styles/index.scss` registers the three fonts in use (`Alimama ShuHeiTi` titles, `Source Han Sans CN` body, `DIN` numbers) and the base `html` / `body` / `#app` styles.
 
 ## Architecture
 
-- **Entry**: `src/main.js` → mounts `App.vue`, registers Pinia (`src/store`), router, Element Plus (zh-cn locale), v-viewer, and imports `src/permission.js`.
-- **Routing**: `src/router/index.js`, **hash history**. Top-level pages are lazy-loaded views; the registered routes are `/home`, `/school` and `/city`. Default redirect is `/home` (the former `/typhoon` section and its views are no longer in the repo).
-  - `/home` is the demo showcase homepage (focus carousel: intro + preview of one demo at a time, auto-rotates every 8 s, pauses on hover, ←/→/Enter keys). Its content comes only from `src/views/home/data/demos.js`; to add a demo, append an entry there, register the route (plus `PUBLIC_PATHS` if it needs no login), then run the preview capture script (see Commands).
+- **Entry**: `src/main.js` → imports Tailwind base, `amfe-flexible` and `index.scss`, registers the router and mounts `App.vue`. There is no store, UI library or route guard.
+- **Routing**: `src/router/index.js`, **hash history**. Top-level pages are lazy-loaded views; the registered routes are `/home`, `/school` and `/city`. Default redirect is `/home`.
+  - `/home` is the demo showcase homepage (focus carousel: intro + preview of one demo at a time, auto-rotates every 8 s, pauses on hover, ←/→/Enter keys). Its content comes only from `src/views/home/data/demos.js`; to add a demo, append an entry there, register the route, then run the preview capture script (see Commands).
   - `/city` is the city 3D overview page (three.js + static OSM data, no login); its geometry is generated by `scripts/fetch-osm-city.py` into `public/city/`.
     The panda base stop (index 11) lives in an "enclave" — a separately fetched OSM patch ~5 km NE of the main data (meta.enclaves in chengdu.json; fetch-osm-city.py --enclave / --keep-main, `--no-enclave` to fetch the main city only).
     The panda base model hard-codes local coordinates derived from `meta.origin`; after re-fetching the enclave, rerun `stats` / `walk 熊猫基地` (see Commands).
@@ -48,30 +49,20 @@ The screen scales via rem, not media queries. **Author all sizes in `px`** — t
   - Besides `walkways`, a landmark may return `groundHoles` (world-space polygons; contract in the header of `landmarks/index.js` and in `setGroundHoles` of `terrain.js`) to cut holes in the city ground, e.g. the 天府广场 sunken plaza.
     The lab page logs the hole report to the console and exposes it as `window.__labGroundHoles`.
     After re-fetching OSM data, rerun `stats 天府广场` and check that `parks.skipped` and `water.skipped` in the lab page's hole report are empty.
-- **Views**: `src/views/<section>/index.vue` is the section shell; each builds its panels from `./components/*.vue`. The shared chrome lives in `src/components` (`Head.vue`, `MenuTabs.vue`, `Popup.vue`, `EchartItem.vue`, `EchartTitle.vue`, `MapSearch.vue`, `Loading.vue`, `Progress.vue`).
-- **State**: Pinia. `src/store/modules/user.js` (token, userInfo, village/community selection) and `src/store/modules/dict.js` (dictionary data, fetched once by `permission.js` for non-public routes).
-- **HTTP**: `src/utils/request.js` is the main axios instance — RuoYi-style: `baseURL` from `VITE_APP_BASE_API`, `Bearer` token injection, GET param serialization via `tansParams`, and **automatic access-token refresh** (queues concurrent requests on 401/4011-4016, retries after refresh). Pass `notError: true` in a request config to suppress error toasts. `src/utils/aiRequest.js` is a **separate** axios instance for the AI backend with advanced-query param building.
-- **AI chat**: streamed via `@microsoft/fetch-event-source` (SSE); API wrappers in `src/api/ai/aiChat.js`. AI backend base URL comes from `VUE_APP_BASE_AI_API`.
+- **Views**: `src/views/<page>/index.vue` is the page shell; it builds its panels from `./components/*.vue`, keeps three.js code under `./scene` (no Vue dependency) and static content under `./data`. Pages share nothing with each other — each has its own header, palette and helpers.
 
 ## Auto-imports — do not hand-import these
 
-`unplugin-auto-import` and `unplugin-vue-components` are active (`vite.config.js`):
+`unplugin-auto-import` is active (`vite.config.js`):
 
 - Vue and Vue Router APIs (`ref`, `computed`, `onMounted`, `useRoute`, …) are **globally auto-imported** — no `import` needed. Declarations live in `auto-imports.d.ts`.
-- Any `.vue` file under `src/components` is **auto-registered globally** — use it in templates without importing. Declarations live in `components.d.ts`.
-- These two `.d.ts` files are generated; do not edit them by hand.
+- Components are **not** auto-registered: import child components explicitly.
+- `auto-imports.d.ts` is generated; do not edit it by hand.
 - `.eslintrc-auto-import.json` (the auto-import globals for ESLint) is also generated by `unplugin-auto-import` during dev/build; do not edit it by hand.
 
-## Auth flow
+## Environments
 
-`src/permission.js` has a `PUBLIC_PATHS` whitelist (`/home`, `/school`, `/city`): these standalone pages skip auth and the dict fetch entirely.
-
-All other routes go through the normal flow: a `token`/`refreshToken` arrives via query string or `sessionStorage["thyj-bi-token"]`, is stored through `src/utils/auth.js` (no token → redirect to the backend login page), then the full dictionary is fetched once from `/admin-api/system/dict-data/list-all-simple` into the dict store before `next()`. The old hard-coded dev token bypass is left commented out.
-
-## Environments & proxy
-
-- `.env.development`: `VITE_APP_BASE_API=/dev-api`; the dev server proxies `/dev-api` → `https://36.213.184.229:8889/prod-api`, plus `/video-api`, `/sensevoice` and `/chat-api` for the legacy video / speech / AI features (`vite.config.js`, each rewrite strips its prefix).
-- `.env.production`: `VITE_APP_BASE_API` points directly at the backend; `VITE_APP_ENV=production` switches the build `base` to `/bi/`. `VITE_BUILD_COMPRESS=gzip` is set but no compression plugin is wired into `vite.config.js`.
+- `.env.development` / `.env.production` only set `VITE_APP_ENV`; `production` switches the build `base` to `/bi/`. There is no dev proxy and no backend.
 
 ## Code style
 
