@@ -27,3 +27,8 @@ scripts/osm-cache/
 
 .eslintcache
 scripts/__pycache__/
+
+# Blender 自动备份
+*.blend1
+# Sketchfab 下载的原始压缩包（已解压到同名目录，压缩包不入库）
+models/charging/vendor/*.zip
