@@ -40,6 +40,11 @@ export default defineConfig(({ mode }) => {
       }
     },
     css: {
+      // Vite 5 默认走 Sass 旧版 JS API，sass 1.79+ 会报 legacy-js-api 弃用警告；
+      // 改用新版编译器 API（更快，且 Dart Sass 2.0 之后旧 API 会被移除）
+      preprocessorOptions: {
+        scss: { api: "modern-compiler" }
+      },
       postcss: {
         plugins: [
           postCssPxToRem({

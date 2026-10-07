@@ -28,6 +28,12 @@ const routes = [
     path: "/city",
     name: "City",
     component: () => import("@/views/city/index.vue")
+  },
+  {
+    // 智慧充电站：光储充一体化超充站数字孪生，Blender 建模 + three.js 展示
+    path: "/charging",
+    name: "Charging",
+    component: () => import("@/views/charging/index.vue")
   }
 ]
 

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>抖音封面</title>
+    <style>
+      /* 字体直接引用仓库里的字体文件 */
+      @font-face {
+        font-family: "ShuHei";
+        src: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/assets/fonts/AlimamaShuHeiTi-Bold.ttf");
+      }
+      @font-face {
+        font-family: "HanSans";
+        src: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/assets/fonts/SourceHanSansCN-Regular.otf");
+      }
+      @font-face {
+        font-family: "DIN";
+        src: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/assets/fonts/DIN-Bold.otf");
+      }
+      :root {
+        --cyan: #2de2e6;
+        --blue: #2a7fff;
+        --green: #3ddc97;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: var(--h, 1440px);
+        overflow: hidden;
+        background: #040a15;
+      }
+      .cover {
+        position: relative;
+        width: 1080px;
+        height: var(--h, 1440px);
+        overflow: hidden;
+        font-family: "HanSans", sans-serif;
+        color: #fff;
+        background:
+          radial-gradient(ellipse 80% 45% at 50% 58%, rgba(42, 127, 255, 0.28), transparent 70%),
+          radial-gradient(ellipse 60% 30% at 50% 0%, rgba(45, 226, 230, 0.16), transparent 70%),
+          #040a15;
+      }
+      /* 背景网格 */
+      .grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(64, 140, 255, 0.07) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(64, 140, 255, 0.07) 1px, transparent 1px);
+        background-size: 54px 54px;
+        mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%);
+      }
+      /* 场站主视觉：大图，四周羽化融进背景 */
+      .station {
+        position: absolute;
+        left: 50%;
+        top: var(--station-top, 360px);
+        width: 1240px;
+        transform: translateX(-50%);
+        mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 62%, transparent 100%);
+      }
+      .station img {
+        display: block;
+        width: 100%;
+      }
+
+      /* 顶部标题区 */
+      .head {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: var(--head-top, 86px);
+        text-align: center;
+        z-index: 3;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 28px;
+        border: 2px solid rgba(45, 226, 230, 0.6);
+        border-radius: 40px;
+        background: rgba(45, 226, 230, 0.1);
+        font-size: 32px;
+        letter-spacing: 4px;
+        color: var(--cyan);
+      }
+      .badge i {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--cyan);
+        box-shadow: 0 0 12px var(--cyan);
+      }
+      .t1 {
+        margin-top: 34px;
+        font-family: "ShuHei";
+        font-size: 92px;
+        line-height: 1.1;
+        letter-spacing: 4px;
+        text-shadow: 0 6px 24px rgba(0, 0, 0, 0.8);
+      }
+      .t2 {
+        margin-top: 14px;
+        font-family: "ShuHei";
+        font-size: 158px;
+        line-height: 1.05;
+        letter-spacing: 6px;
+        background: linear-gradient(180deg, #ffffff 0%, #8ff4ff 38%, #2de2e6 62%, #2a7fff 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 0 26px rgba(45, 226, 230, 0.55)) drop-shadow(0 8px 18px rgba(0, 0, 0, 0.7));
+      }
+
+      /* 以前 / 现在 对比条 */
+      .vs {
+        position: absolute;
+        left: 50%;
+        bottom: var(--vs-bottom, 250px);
+        transform: translateX(-50%);
+        z-index: 3;
+        display: flex;
+        align-items: baseline;
+        gap: 26px;
+        padding: 14px 44px 18px;
+        border-radius: 22px;
+        background: rgba(6, 16, 34, 0.82);
+        border: 2px solid rgba(64, 150, 255, 0.45);
+        box-shadow: 0 0 40px rgba(42, 127, 255, 0.35);
+        white-space: nowrap;
+      }
+      .vs .old {
+        font-size: 40px;
+        color: #8aa0bd;
+      }
+      .vs .old b {
+        font-family: "DIN";
+        font-size: 56px;
+        color: #aab6c6;
+        text-decoration: line-through;
+        text-decoration-color: #ff3b47;
+        text-decoration-thickness: 5px;
+      }
+      .vs .arrow {
+        font-size: 48px;
+        color: var(--cyan);
+      }
+      .vs .new {
+        font-size: 40px;
+        color: #fff;
+      }
+      .vs .new b {
+        font-family: "DIN";
+        font-size: 76px;
+        color: var(--green);
+        text-shadow: 0 0 18px rgba(61, 220, 151, 0.7);
+      }
+
+      /* 底部技术栈标签 */
+      .tags {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: var(--tags-bottom, 120px);
+        z-index: 3;
+        display: flex;
+        justify-content: center;
+        gap: 18px;
+      }
+      .tags span {
+        padding: 10px 22px;
+        border-radius: 10px;
+        font-size: 30px;
+        color: #cfe3ff;
+        background: rgba(42, 127, 255, 0.16);
+        border: 1px solid rgba(64, 150, 255, 0.45);
+      }
+      .foot {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: var(--foot-bottom, 56px);
+        z-index: 3;
+        text-align: center;
+        font-size: 28px;
+        letter-spacing: 8px;
+        color: rgba(160, 190, 230, 0.75);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="cover">
+      <div class="grid"></div>
+      <div class="station"><img src="station.png" /></div>
+
+      <div class="head">
+        <div class="badge"><i></i>光储充超充站 · 3D 数字孪生大屏</div>
+        <div class="t1">老板要的炫酷大屏</div>
+        <div class="t2">AI 一天搞定</div>
+      </div>
+
+      <div class="vs">
+        <span class="old">以前 <b>3</b> 天</span>
+        <span class="arrow">➜</span>
+        <span class="new">现在 <b>1</b> 天</span>
+      </div>
+
+      <div class="tags">
+        <span>AI 出设计稿</span>
+        <span>Blender 建模</span>
+        <span>Three.js</span>
+        <span>Vue 3</span>
+      </div>
+      <div class="foot">技术实现全流程 · 看到最后</div>
+    </div>
+    <script>
+      // ?h=1920 时输出 9:16 版本，各区块位置随之调整
+      const h = +(new URLSearchParams(location.search).get("h") || 1440)
+      const s = document.documentElement.style
+      s.setProperty("--h", h + "px")
+      if (h > 1600) {
+        s.setProperty("--head-top", "190px")
+        s.setProperty("--station-top", "560px")
+        s.setProperty("--vs-bottom", "400px")
+        s.setProperty("--tags-bottom", "250px")
+        s.setProperty("--foot-bottom", "170px")
+      }
+      // 字体与图片都加载完再截图
+      Promise.all([document.fonts.ready, ...[...document.images].map((i) => i.decode())]).then(() => {
+        window.__ready = true
+      })
+    </script>
+  </body>
+</html>
