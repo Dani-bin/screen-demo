@@ -76,3 +76,17 @@ Prettier (`.prettierrc`): **no semicolons**, double quotes, 2-space indent, 80 c
 
 - **注释要求**：生成的所有代码必须带有清晰、易懂的中文注释，用以解释非显而易见的业务逻辑、关键算法或代码结构。
 - **回复语言**：在所有沟通中，必须始终使用简体中文进行回复。
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as local markdown files under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), recorded as a `Status:` line in each issue file. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one root `GLOSSARY.md` plus `docs/adr/` (neither exists yet; created lazily). See `docs/agents/domain.md`.
