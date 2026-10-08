@@ -2,12 +2,13 @@
  * 楼宇级三维场景：成都金融城双子塔（南塔 / 北塔）全息剖切
  * ----------------------------------------------------------
  * 设计稿：docs/design/building/02-ai-building.png、12-draft-building.png
- * 与园区级不同，这一级是「X 光」示意图而不是写实夜景，全部程序化生成（不需要 Blender / GLB）：
- *   - 塔身：真实椭圆平面（OSM，data/parkData.js 的 PARK_TOWERS）+ 向上收分 + 斜切屋顶，透明蓝玻璃外壳能看穿
- *   - 楼板：58 层一圈圈发光层板；中央核心筒青色光柱，电梯轿厢光点在井道里跑
- *   - 裙楼 1～4F：暖金色大堂玻璃，屋顶花园一圈树
+ * 设计稿是写实剖切模型，全部程序化生成（不需要 Blender / GLB），楼层构件见 floorKit.js：
+ *   - 塔身：真实椭圆平面（OSM，data/parkData.js 的 PARK_TOWERS）+ 向上收分 + 斜切屋顶；整栋一张物理材质蓝玻璃幕墙
+ *     （夜空环境反射 + 轮廓菲涅尔），玻璃后每层是混凝土楼板、铝合金竖梃、吊顶灯盘、办公桌椅与亮着的屏幕，亮灯区按入驻率分布
+ *   - 核心筒：青色电梯井光柱（不做深度测试，透出整栋楼），轿厢光点上下跑
+ *   - 裙楼 1～4F：暖金色大堂玻璃 + 大堂家具，屋顶与广场各一圈树
  *   - 地下 B1～B3：石材圆台基座正面挖一个方形剖口（从广场一直切到底），露出车库、配电房、水泵房；告警设备红色波纹
- *   - 选中楼层像抽屉一样向画面右侧抽出（金色），外壳在该层挖空
+ *   - 选中楼层像抽屉一样向画面右侧抽出（金色围合，层高撑高、家具正常尺寸），塔身里该层隐藏、玻璃挖空
  * 竖向比例：真实塔高 218 m、平面约 52 × 44 m，细高比 4.2，按真实比例放进画面中部会像一根针；
  * 设计稿塔身高宽比约 2.7，所以标准层层高按 2.2 m 示意（真实 3.76 m），裙楼、地下层另给层高（见下方常量）。
  *
@@ -27,23 +28,19 @@ import {
 import { createNightEnvironment } from "../park/env"
 import {
   clipHalfPlane,
-  flatPolyPositions,
-  inPoly,
   insetPoly,
   loftGeometry,
   loopSegments,
   majorAxisAngle,
   prismGeometry
 } from "./geometry"
+import { coreMaterial, drawerGlassMaterial, riserMaterial } from "./shaders"
 import {
-  FLOOR_TEX_OFFSET,
-  coreMaterial,
-  drawerGlassMaterial,
-  riserMaterial,
-  shellMaterial,
-  slabEdgeMaterial,
-  slabMaterial
-} from "./shaders"
+  buildFloor,
+  glassMaterial,
+  lightsMaterial,
+  solidMaterial
+} from "./floorKit"
 
 const DEG = Math.PI / 180
 
@@ -60,54 +57,63 @@ const ROOM_D = 20 // 剖口往里能看到的机房进深（米）
 
 /** 各模式下的亮度参数（切换时逐帧插值过去） */
 const MODES = {
+  // glass 玻璃不透明度、edge 玻璃轮廓光、self 室内家具自发光、light 灯盘亮度、core 核心筒光柱、riser 立管、heat 热力着色、plant 设备层着色
   section: {
-    alpha: 0.2,
-    mullion: 0.8,
-    window: 0.25,
-    slab: 0.06,
-    edge: 0.85,
-    core: 1,
+    glass: 0.3,
+    edge: 1.2,
+    self: 0.25,
+    light: 1,
+    core: 1.15,
     riser: 0,
     heat: 0,
-    plant: 0,
-    desk: 1
+    plant: 0
   },
   facade: {
-    alpha: 0.5,
-    mullion: 1.5,
-    window: 1.1,
-    slab: 0.02,
-    edge: 0.3,
-    core: 0.25,
-    riser: 0,
-    heat: 0,
-    plant: 0,
-    desk: 0.35
-  },
-  mep: {
-    alpha: 0.05,
-    mullion: 0.3,
-    window: 0.05,
-    slab: 0.04,
-    edge: 0.3,
-    core: 1.35,
-    riser: 1,
-    heat: 0,
-    plant: 1,
-    desk: 0.15
-  },
-  heat: {
-    alpha: 0.06,
-    mullion: 0.3,
-    window: 0.2,
-    slab: 0.55,
-    edge: 0.75,
+    glass: 0.7,
+    edge: 0.6,
+    self: 0.18,
+    light: 0.75,
     core: 0.3,
     riser: 0,
+    heat: 0,
+    plant: 0
+  },
+  mep: {
+    glass: 0.15,
+    edge: 0.25,
+    self: 0.06,
+    light: 0.12,
+    core: 1.3,
+    riser: 1,
+    heat: 0,
+    plant: 1
+  },
+  heat: {
+    glass: 0.18,
+    edge: 0.25,
+    self: 0.08,
+    light: 1,
+    core: 0.25,
+    riser: 0,
     heat: 1,
-    plant: 0,
-    desk: 0.25
+    plant: 0
   }
+}
+
+/** 热力色带：蓝 → 青 → 黄 → 红（与楼层导航面板的热力图例一致） */
+const HEAT_STOPS = [
+  [0, new THREE.Color(0.1, 0.35, 1.0)],
+  [0.4, new THREE.Color(0.1, 0.9, 0.95)],
+  [0.75, new THREE.Color(1.0, 0.85, 0.25)],
+  [1, new THREE.Color(1.0, 0.25, 0.2)]
+]
+function heatColor(t, out) {
+  for (let i = 1; i < HEAT_STOPS.length; i++) {
+    const [t1, c1] = HEAT_STOPS[i]
+    const [t0, c0] = HEAT_STOPS[i - 1]
+    if (t <= t1) return out.copy(c0).lerp(c1, (t - t0) / (t1 - t0))
+  }
+  return out.copy(HEAT_STOPS[HEAT_STOPS.length - 1][1])
 }
 
 /** 机电立管：给水（蓝）、强电（紫）、新风（绿）、消防（红） */
@@ -282,9 +288,13 @@ export class BuildingScene {
     // 抽屉方向：画面右侧（与相机前向垂直）
     this.drawerDir = new THREE.Vector3(-this.viewDir.z, 0, this.viewDir.x)
 
-    this.floorTex = this._floorTexture()
     this.root = new THREE.Group()
     this.scene.add(this.root)
+    // 楼层构件共用：核心筒尺寸、实体材质（顶点色 + 自发光）、每层的组
+    const cd = this._coreDims()
+    this.coreRect = { w: cd.w, d: cd.d, axis: this.axis }
+    this.solidMat = solidMaterial()
+    this.floorGroups = new Map()
     this._buildBase()
     this._buildBasement()
     this._buildPodium()
@@ -292,34 +302,6 @@ export class BuildingScene {
     this._buildCore()
     this._buildRoof()
     this._buildLabels()
-  }
-
-  /** 楼层数据贴图（见 shaders.js 文件头） */
-  _floorTexture() {
-    const w = this.levels + FLOOR_TEX_OFFSET + 2
-    const data = new Uint8Array(w * 4)
-    // 热力按办公层在岗人数的最小～最大值归一，颜色才拉得开（直接除以最大值大多数层都偏红）
-    const staffed = this.floors.filter((f) => f.occupancy != null)
-    const minStaff = Math.min(...staffed.map((f) => f.staff))
-    const maxStaff = Math.max(...staffed.map((f) => f.staff), minStaff + 1)
-    for (const f of this.floors) {
-      const i = (f.index + FLOOR_TEX_OFFSET) * 4
-      data[i] = Math.round(((f.occupancy ?? 30) / 100) * 255)
-      data[i + 1] = f.alarm ? 255 : 0
-      data[i + 2] = f.kind === "plant" ? 255 : 0
-      data[i + 3] =
-        f.occupancy == null
-          ? 0
-          : Math.round(
-              (Math.max(0, f.staff - minStaff) / (maxStaff - minStaff)) * 250 +
-                5
-            )
-    }
-    const tex = new THREE.DataTexture(data, w, 1)
-    tex.magFilter = THREE.NearestFilter
-    tex.minFilter = THREE.NearestFilter
-    tex.needsUpdate = true
-    return tex
   }
 
   /**
@@ -806,36 +788,41 @@ export class BuildingScene {
   _buildPodium() {
     const poly = this.foot.map(([x, z]) => [x * PODIUM_SCALE, z * PODIUM_SCALE])
     this.podiumPoly = poly
+    // 玻璃幕墙（暖色室内透出来，设计稿裙楼是一圈金黄的大堂玻璃）
     const rings = [0, this.podiumH].map((y) => poly.map(([x, z]) => [x, y, z]))
-    const shell = new THREE.Mesh(
-      loftGeometry(rings),
-      shellMaterial({
-        floorTex: this.floorTex,
-        baseY: 0,
-        floorH: PODIUM_FLOOR,
-        floorBase: 1,
-        maxFloor: 4,
-        glass: new THREE.Vector3(0.9, 0.55, 0.18),
-        winColor: new THREE.Vector3(1.0, 0.8, 0.45),
-        edge: new THREE.Vector3(1.0, 0.75, 0.35),
-        alpha: 0.32,
-        mullion: 0.8,
-        window: 1.4
-      })
-    )
+    this.podiumGlass = glassMaterial(0x2a1806, [0.95, 0.58, 0.18])
+    this.podiumGlass.opacity = 0.16
+    const shell = new THREE.Mesh(loftGeometry(rings), this.podiumGlass)
+    shell.renderOrder = 2
     this.root.add(shell)
     this.podiumShell = shell
     this.hitTargets.push(shell)
-    // 大堂暖光：照亮屋顶花园和广场
-    const warm = new THREE.PointLight(0xffb060, 700, this.baseR * 1.2, 1.6)
-    warm.position.set(0, this.podiumH * 0.5, 0)
+    // 1～4F 楼层
+    for (let f = 1; f <= 4; f++) this._addFloor(f, poly, PODIUM_FLOOR)
+    // 大堂暖光：照亮屋顶花园、广场和底座
+    const warm = new THREE.PointLight(0xffb060, 900, this.baseR * 1.3, 1.5)
+    warm.position.set(0, this.podiumH * 0.4, 0)
     this.root.add(warm)
-    // 屋顶：深色屋面 + 一圈花池与树（在塔身与裙楼外沿之间）
+    // 屋面：深色混凝土 + 一圈银色檐口
     const roof = new THREE.Mesh(
-      prismGeometry(poly, this.podiumH - 0.1, this.podiumH + 0.3),
-      new THREE.MeshStandardMaterial({ color: 0x27303b, roughness: 0.8 })
+      prismGeometry(poly, this.podiumH - 0.1, this.podiumH + 0.5),
+      new THREE.MeshStandardMaterial({ color: 0x3a434f, roughness: 0.8 })
     )
     this.root.add(roof)
+    const rim = new THREE.Mesh(
+      loftGeometry(
+        [this.podiumH + 0.1, this.podiumH + 0.9].map((y) =>
+          insetPoly(poly, -0.3).map(([x, z]) => [x, y, z])
+        )
+      ),
+      new THREE.MeshStandardMaterial({
+        color: 0xc8ced6,
+        roughness: 0.4,
+        metalness: 0.5,
+        side: THREE.DoubleSide
+      })
+    )
+    this.root.add(rim)
     const ringPts = this.foot.map(([x, z]) => [
       x * (1 + PODIUM_SCALE) * 0.5,
       z * (1 + PODIUM_SCALE) * 0.5
@@ -853,16 +840,15 @@ export class BuildingScene {
     for (let i = 0; i < ringPts.length; i++) {
       const a = ringPts[i]
       const b = ringPts[(i + 1) % ringPts.length]
-      const len = Math.hypot(b[0] - a[0], b[1] - a[1])
-      acc += len
+      acc += Math.hypot(b[0] - a[0], b[1] - a[1])
       if (acc < 7) continue
       acc = 0
       const t = new THREE.Mesh(crown, leaf)
-      t.position.set(a[0], this.podiumH + 2.3, a[1])
+      t.position.set(a[0], this.podiumH + 2.6, a[1])
       t.scale.setScalar(0.8 + ((i * 37) % 10) / 20)
-      const s = new THREE.Mesh(stem, trunk)
-      s.position.set(a[0], this.podiumH + 1.1, a[1])
-      this.root.add(t, s)
+      const st = new THREE.Mesh(stem, trunk)
+      st.position.set(a[0], this.podiumH + 1.4, a[1])
+      this.root.add(t, st)
     }
     // 广场上的树（设计稿裙楼外围广场有一圈树）：裙楼外沿与底座边缘之间，剖口上方空着
     const { R, c, half } = this.room
@@ -888,23 +874,72 @@ export class BuildingScene {
       st.scale.setScalar(k)
       this.root.add(t, st)
     }
-    // 裙楼楼板边线（金色）
-    const pos = []
-    const fl = []
-    for (let f = 2; f <= 4; f++) {
-      const seg = loopSegments(poly, this.floorBottom(f))
-      pos.push(...seg)
-      for (let i = 0; i < seg.length / 3; i++) fl.push(f)
-    }
-    const g = new THREE.BufferGeometry()
-    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3))
-    g.setAttribute("aFloor", new THREE.Float32BufferAttribute(fl, 1))
-    const edgeMat = slabEdgeMaterial(this.floorTex)
-    this.podiumEdges = new THREE.LineSegments(g, edgeMat)
-    this.root.add(this.podiumEdges)
   }
 
-  /** 塔身：玻璃外壳 + 58 层楼板与边线 */
+  /**
+   * 一层楼（solid + lights）挂到 this.floorGroups，供抽屉隐藏、模式着色
+   * @param {number} index 楼层号
+   * @param {Array} poly 平面
+   * @param {number} height 层高
+   */
+  /** 在岗密度 0..1：按办公层在岗人数的最小～最大值归一（热力着色用） */
+  _heatOf(f) {
+    if (!this._staffRange) {
+      const st = this.floors
+        .filter((x) => x.occupancy != null)
+        .map((x) => x.staff)
+      this._staffRange = [Math.min(...st), Math.max(...st)]
+    }
+    const [lo, hi] = this._staffRange
+    return f.occupancy == null ? 0 : (f.staff - lo) / Math.max(1, hi - lo)
+  }
+
+  _addFloor(index, poly, height) {
+    const f = this.floorMap.get(`${index}F`)
+    if (!f || poly.length < 3) return
+    const { solid, lights } = buildFloor({
+      poly,
+      height,
+      core: this.coreRect,
+      floor: f,
+      seed: index * 97 + (this.tower.levels || 0),
+      // 塔身隔层一条亮层线；裙楼每层都亮
+      edgeK: index <= 4 || index % 2 === 1 ? 1 : 0.25
+    })
+    const g = new THREE.Group()
+    g.position.y = this.floorBottom(index)
+    g.add(new THREE.Mesh(solid, this.solidMat))
+    const lm = lightsMaterial()
+    g.add(new THREE.Mesh(lights, lm))
+    // 人员热力：楼板上一层按在岗密度着色的半透明光面（灯盘在天花上，从斜上方看不见，热力要画在地面）
+    let heatMat = null
+    if (f.occupancy != null) {
+      heatMat = new THREE.MeshBasicMaterial({
+        color: heatColor(this._heatOf(f), new THREE.Color()),
+        transparent: true,
+        opacity: 0,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      })
+      const plate = new THREE.Mesh(
+        prismGeometry(insetPoly(poly, 0.4), 0.03, 0.06),
+        heatMat
+      )
+      plate.visible = false
+      heatMat.userData.mesh = plate
+      g.add(plate)
+    }
+    this.root.add(g)
+    this.floorGroups.set(index, {
+      group: g,
+      lightsMat: lm,
+      heatMat,
+      floor: f,
+      heat: this._heatOf(f)
+    })
+  }
+
+  /** 塔身：整栋一张玻璃幕墙 + 每层写实楼层 + 外立面传感器光点 */
   _buildTower() {
     const y0 = this.podiumH
     const n = 40
@@ -924,50 +959,28 @@ export class BuildingScene {
         })
       )
     }
-    this.towerShell = new THREE.Mesh(
-      loftGeometry(rings),
-      shellMaterial({
-        floorTex: this.floorTex,
-        baseY: y0,
-        floorH: FLOOR,
-        floorBase: 5,
-        maxFloor: this.levels,
-        glass: new THREE.Vector3(0.1, 0.42, 0.95),
-        winColor: new THREE.Vector3(1.0, 0.86, 0.6),
-        edge: new THREE.Vector3(0.14, 0.52, 1.0)
-      })
-    )
+    this.towerGlass = glassMaterial()
+    this.towerShell = new THREE.Mesh(loftGeometry(rings), this.towerGlass)
+    this.towerShell.renderOrder = 2
     this.root.add(this.towerShell)
     this.hitTargets.push(this.towerShell)
     this.roofTops = { rings: rings[n] }
-
-    // 楼板：每层一块（略内收），全部合成一个网格；顶点属性 aFloor 记楼层号
-    const pos = []
-    const fl = []
-    const ePos = []
-    const eFl = []
+    // 告警楼层（最多两层）：玻璃红色呼吸
+    const alarms = this.floors
+      .filter((f) => f.alarm && f.index >= 5)
+      .slice(0, 2)
+    alarms.forEach((f, i) => {
+      const y = this.floorBottom(f.index)
+      this.towerGlass.userData.u.uAlarm.value[i].set(y, y + FLOOR, 1)
+    })
     for (let f = 5; f <= this.levels; f++) {
       const y = this.floorBottom(f)
-      const poly = this.towerPolyAt(y + 0.01)
-      if (poly.length < 3) continue
-      const inner = insetPoly(poly, 0.35)
-      const p = flatPolyPositions(inner, y)
-      pos.push(...p)
-      for (let i = 0; i < p.length / 3; i++) fl.push(f)
-      const e = loopSegments(poly, y)
-      ePos.push(...e)
-      for (let i = 0; i < e.length / 3; i++) eFl.push(f)
+      this._addFloor(
+        f,
+        insetPoly(this.towerPolyAt(y + FLOOR * 0.5), 0.35),
+        FLOOR
+      )
     }
-    const g = new THREE.BufferGeometry()
-    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3))
-    g.setAttribute("aFloor", new THREE.Float32BufferAttribute(fl, 1))
-    this.slabs = new THREE.Mesh(g, slabMaterial(this.floorTex))
-    this.root.add(this.slabs)
-    const eg = new THREE.BufferGeometry()
-    eg.setAttribute("position", new THREE.Float32BufferAttribute(ePos, 3))
-    eg.setAttribute("aFloor", new THREE.Float32BufferAttribute(eFl, 1))
-    this.slabEdges = new THREE.LineSegments(eg, slabEdgeMaterial(this.floorTex))
-    this.root.add(this.slabEdges)
 
     // 外立面上零星的传感器光点（设计稿塔身上几颗蓝 / 绿光点）
     const dots = []
@@ -979,7 +992,7 @@ export class BuildingScene {
       const p = poly[Math.floor(rnd() * poly.length)]
       dots.push(p[0] * 1.01, y, p[1] * 1.01)
       const green = i === 2
-      cols.push(green ? 0.2 : 0.2, green ? 1 : 0.6, green ? 0.4 : 1)
+      cols.push(0.2, green ? 1 : 0.6, green ? 0.4 : 1)
     }
     const dg = new THREE.BufferGeometry()
     dg.setAttribute("position", new THREE.Float32BufferAttribute(dots, 3))
@@ -997,75 +1010,6 @@ export class BuildingScene {
       })
     )
     this.root.add(this.sensorDots)
-    this._buildDesks()
-  }
-
-  /**
-   * 各办公层的工位（设计稿每层玻璃里都能看到家具）：所有楼层合成一个 InstancedMesh，
-   * 亮灯的工位暖白、空置的深灰蓝，比例按该层入驻率；记下每层的实例区间，抽屉抽出时把该层隐藏
-   */
-  _buildDesks() {
-    const { w, d, ca, sa } = this._coreDims()
-    const cells = []
-    this.deskRanges = new Map()
-    // 工位颜色压得很暗：几十层叠在一起看，亮一点整栋楼就糊成一片白（也不能超过辉光阈值）
-    const warm = new THREE.Color(0.3, 0.24, 0.15)
-    const dark = new THREE.Color(0.05, 0.08, 0.12)
-    for (const f of this.floors) {
-      if (f.index < 5 || f.kind === "plant") continue
-      const y = this.floorBottom(f.index)
-      const poly = insetPoly(this.towerPolyAt(y + FLOOR * 0.5), 2.2)
-      if (poly.length < 3) continue
-      const start = cells.length
-      const rnd = mulberry(f.index * 31 + 7)
-      for (let a = -40; a <= 40; a += 4.2)
-        for (let b = -40; b <= 40; b += 3.4) {
-          // 工位网格沿平面主轴排；核心筒周围留走道
-          if (Math.abs(a) < w / 2 + 2.6 && Math.abs(b) < d / 2 + 2.2) continue
-          const x = a * ca - b * sa
-          const z = a * sa + b * ca
-          if (!inPoly(x, z, poly)) continue
-          const lit = rnd() < (f.occupancy ?? 60) / 100
-          const k = 0.55 + 0.45 * rnd()
-          // 空置工位不画：深色小块在玻璃后面会读成一层灰色噪点
-          if (!lit) continue
-          cells.push({
-            x,
-            z,
-            y: y + 0.4,
-            color: (lit ? warm : dark).clone().multiplyScalar(lit ? k : 1)
-          })
-        }
-      this.deskRanges.set(f.index, [start, cells.length - start])
-    }
-    const mesh = new THREE.InstancedMesh(
-      new THREE.BoxGeometry(1.1, 0.45, 0.6),
-      new THREE.MeshBasicMaterial({ color: 0xffffff }),
-      cells.length
-    )
-    const m4 = new THREE.Matrix4()
-    const q = new THREE.Quaternion().setFromAxisAngle(
-      new THREE.Vector3(0, 1, 0),
-      -this.axis
-    )
-    const one = new THREE.Vector3(1, 1, 1)
-    cells.forEach((c, i) => {
-      m4.compose(new THREE.Vector3(c.x, c.y, c.z), q, one)
-      mesh.setMatrixAt(i, m4)
-      mesh.setColorAt(i, c.color)
-    })
-    this.deskMatrices = mesh.instanceMatrix.array.slice()
-    this.desks = mesh
-    this.root.add(mesh)
-  }
-
-  /** 隐藏 / 恢复某层的工位（该层被抽出时塔身里不能再留一份） */
-  _hideDesks(index) {
-    const arr = this.desks.instanceMatrix.array
-    arr.set(this.deskMatrices)
-    const r = this.deskRanges.get(index)
-    if (r) arr.fill(0, r[0] * 16, (r[0] + r[1]) * 16)
-    this.desks.instanceMatrix.needsUpdate = true
   }
 
   /** 核心筒尺寸：沿平面主轴放置的矩形，约占平面长、短轴的 16%（设计稿里是细细一道光柱） */
@@ -1085,7 +1029,8 @@ export class BuildingScene {
   _buildCore() {
     const { w, d, ca, sa } = this._coreDims()
     // 核心筒从地面起（地下剖切面里不出现光柱，免得把机房照成一片白）
-    const y0 = -0.5
+    // 从裙楼顶起（不做深度测试，往下伸会压在裙楼和地下机房前面）
+    const y0 = this.podiumH
     const y1 = this.H - this.roofRise - 2
     const size = new THREE.Vector3(w, y1 - y0, d)
     const core = new THREE.Mesh(
@@ -1094,6 +1039,9 @@ export class BuildingScene {
     )
     core.position.y = (y0 + y1) / 2
     core.rotation.y = -this.axis
+    // 每层楼板都是实心的，会把核心筒切成一段段；核心筒光柱不做深度测试、最后画（设计稿里它是透出整栋楼的一道光）
+    core.material.depthTest = false
+    core.renderOrder = 5
     this.root.add(core)
     this.core = core
     this.coreRect = { w, d, axis: this.axis }
@@ -1118,14 +1066,13 @@ export class BuildingScene {
     const ys = top.map((p) => p[1])
     const cap = new THREE.Mesh(
       prismGeometry(poly, Math.min(...ys) - 0.6, ys),
-      new THREE.MeshStandardMaterial({
-        color: 0x1d4f86,
-        emissive: 0x0b2a55,
-        emissiveIntensity: 0.6,
-        roughness: 0.3,
-        metalness: 0.4,
+      new THREE.MeshPhysicalMaterial({
+        color: 0x3f7fc8,
+        roughness: 0.08,
+        metalness: 0.2,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.45,
+        envMapIntensity: 1.8,
         depthWrite: false
       })
     )
@@ -1264,7 +1211,6 @@ export class BuildingScene {
     }
     this.drawerT = 0
     this._setGap(-99, 0)
-    this._hideDesks(-99)
     if (!f) {
       this.selLabel.visible = false
       return
@@ -1285,95 +1231,58 @@ export class BuildingScene {
     this.drawer = this._makeDrawer(f)
     this.root.add(this.drawer)
     this.drawerFloor = f.index
-    this._hideDesks(f.index)
   }
 
   _makeDrawer(f) {
     const y = this.floorBottom(f.index)
     const realH = this.floorHeight(f.index)
-    // 抽屉按 3.8 倍层高显示（以该层为中心上下撑开）：真实层高在整栋楼的画面里只有十来个像素，看不清室内
-    const h = realH * 3.8
+    // 抽屉层高撑到 2.6 倍（以该层为中心上下撑开），家具保持正常尺寸：整栋楼的画面里真实层高只有十来个像素
+    const h = Math.max(realH * 2.6, 6)
     const poly =
-      f.index <= 4 ? this.podiumPoly : this.towerPolyAt(y + realH * 0.5)
+      f.index <= 4
+        ? this.podiumPoly
+        : insetPoly(this.towerPolyAt(y + realH * 0.5), 0.35)
     const g = new THREE.Group()
     g.position.y = y - (h - realH) / 2
-    // 楼板
-    const plate = new THREE.Mesh(
-      prismGeometry(poly, -0.25, 0.05),
-      new THREE.MeshStandardMaterial({
-        color: 0x3a2a10,
-        emissive: 0xffa630,
-        emissiveIntensity: 0.35,
-        roughness: 0.5
-      })
+    const { solid, lights } = buildFloor({
+      poly,
+      height: h,
+      core: this.coreRect,
+      floor: f,
+      seed: f.index * 97 + 1,
+      ceiling: true
+    })
+    g.add(new THREE.Mesh(solid, this.solidMat))
+    g.add(
+      new THREE.Mesh(
+        lights,
+        new THREE.MeshBasicMaterial({ vertexColors: true })
+      )
     )
-    g.add(plate)
     // 金色玻璃围合
-    const wallRings = [0.05, h * 0.92].map((yy) =>
-      poly.map(([x, z]) => [x, yy, z])
+    const wallRings = [0, h].map((yy) =>
+      insetPoly(poly, -0.25).map(([x, z]) => [x, yy, z])
     )
     this.drawerGlass = drawerGlassMaterial()
     g.add(new THREE.Mesh(loftGeometry(wallRings), this.drawerGlass))
     // 上下金边
     const edge = new THREE.LineBasicMaterial({
-      color: new THREE.Color(1.6, 1.15, 0.45),
-      transparent: true
+      color: new THREE.Color(1.6, 1.15, 0.45)
     })
-    for (const yy of [0.06, h * 0.92]) {
+    for (const yy of [0.02, h - 0.02]) {
       const lg = new THREE.BufferGeometry()
       lg.setAttribute(
         "position",
-        new THREE.Float32BufferAttribute(loopSegments(poly, yy), 3)
+        new THREE.Float32BufferAttribute(
+          loopSegments(insetPoly(poly, -0.3), yy),
+          3
+        )
       )
       g.add(new THREE.LineSegments(lg, edge))
     }
-    // 室内：核心筒（深色块）+ 工位（暖白小块，按网格摆在核心筒以外）
-    const { w, d, axis } = this.coreRect
-    const core = new THREE.Mesh(
-      new THREE.BoxGeometry(w, h * 0.85, d),
-      new THREE.MeshStandardMaterial({
-        color: 0x16304a,
-        emissive: 0x1a6aa0,
-        emissiveIntensity: 0.4
-      })
-    )
-    core.position.y = h * 0.43
-    core.rotation.y = -axis
-    g.add(core)
-    const inner = insetPoly(poly, 2.4)
-    const desks = []
-    const ca = Math.cos(axis)
-    const sa = Math.sin(axis)
-    for (let a = -40; a <= 40; a += 3.2)
-      for (let b = -40; b <= 40; b += 2.6) {
-        const x = a * ca - b * sa
-        const z = a * sa + b * ca
-        if (!inPoly(x, z, inner)) continue
-        if (Math.abs(a) < w / 2 + 2 && Math.abs(b) < d / 2 + 2) continue
-        desks.push([x, z])
-      }
-    const desk = new THREE.InstancedMesh(
-      new THREE.BoxGeometry(1.5, 0.75, 0.8),
-      new THREE.MeshStandardMaterial({
-        color: 0xd8c7a8,
-        emissive: 0xffc070,
-        emissiveIntensity: 0.25
-      }),
-      desks.length
-    )
-    const m4 = new THREE.Matrix4()
-    const q = new THREE.Quaternion().setFromAxisAngle(
-      new THREE.Vector3(0, 1, 0),
-      -axis
-    )
-    desks.forEach(([x, z], i) => {
-      m4.compose(new THREE.Vector3(x, 0.45, z), q, new THREE.Vector3(1, 1, 1))
-      desk.setMatrixAt(i, m4)
-    })
-    g.add(desk)
-    // 暖光照亮室内
-    const light = new THREE.PointLight(0xffc070, 600, this.radius * 2.2, 1.5)
-    light.position.y = h * 0.8
+    // 暖光照亮室内与下方塔身
+    const light = new THREE.PointLight(0xffc070, 500, this.radius * 2.4, 1.5)
+    light.position.y = h * 0.75
     g.add(light)
     // 标签锚点：抽屉外端（抽出方向上最远的轮廓点）
     let far = poly[0]
@@ -1387,17 +1296,16 @@ export class BuildingScene {
     return g
   }
 
+  /** 抽出的楼层：塔身里那层的玻璃挖空、楼层组隐藏 */
   _setGap(floor, amt) {
-    for (const m of [
-      this.towerShell,
-      this.podiumShell,
-      this.slabs,
-      this.slabEdges,
-      this.podiumEdges
-    ]) {
-      m.material.uniforms.uGap.value = floor
-      m.material.uniforms.uGapAmt.value = amt
-    }
+    const on = amt > 0.02 && floor > -99
+    const y = on ? this.floorBottom(floor) : 0
+    const h = on ? this.floorHeight(floor) : 0
+    for (const m of [this.towerGlass, this.podiumGlass])
+      m.userData.u.uGap.value.set(y - 0.05, y + h + 0.05, on ? 1 : 0)
+    this.floorGroups.forEach(
+      (fg, idx) => (fg.group.visible = !(on && idx === floor))
+    )
   }
 
   // ================================================================ 模式 / 交互
@@ -1410,15 +1318,12 @@ export class BuildingScene {
     if (key === this.hovered) return
     this.hovered = key
     const f = key ? this.floorMap.get(key) : null
-    const idx = f ? f.index : -99
-    for (const m of [
-      this.towerShell,
-      this.podiumShell,
-      this.slabs,
-      this.slabEdges,
-      this.podiumEdges
-    ])
-      m.material.uniforms.uHover.value = idx
+    for (const m of [this.towerGlass, this.podiumGlass]) {
+      if (f && f.index > 0) {
+        const y = this.floorBottom(f.index)
+        m.userData.u.uHover.value.set(y, y + this.floorHeight(f.index), 1)
+      } else m.userData.u.uHover.value.set(0, -1, 0)
+    }
     this.baseArcs.forEach((arc, k) => {
       if (k === this.selected) return
       arc.material.opacity = k === key ? 0.9 : 0.35
@@ -1520,21 +1425,29 @@ export class BuildingScene {
     const k = 1 - Math.exp(-dt * 5)
     for (const key in goal) this.cur[key] += (goal[key] - this.cur[key]) * k
     const c = this.cur
-    const tu = this.towerShell.material.uniforms
-    tu.uAlpha.value = c.alpha
-    tu.uMullion.value = c.mullion
-    tu.uWindow.value = c.window
-    this.desks.material.color.setScalar(c.desk)
-    tu.uHeat.value = c.heat
-    tu.uPlant.value = c.plant
-    const pu = this.podiumShell.material.uniforms
-    pu.uAlpha.value = 0.32 * (0.4 + 0.6 * (1 - c.heat - c.plant * 0.5))
-    pu.uHeat.value = c.heat
-    this.slabs.material.uniforms.uSlab.value = c.slab
-    this.slabs.material.uniforms.uHeat.value = c.heat
-    this.slabEdges.material.uniforms.uEdge.value = c.edge
-    this.slabEdges.material.uniforms.uHeat.value = c.heat
-    this.podiumEdges.material.uniforms.uHeat.value = c.heat
+    for (const m of [this.towerGlass, this.podiumGlass]) {
+      m.userData.u.uTime.value = t
+      m.userData.u.uEdgeK.value = c.edge
+    }
+    this.towerGlass.opacity = c.glass
+    this.podiumGlass.opacity = c.glass * 0.8
+    this.solidMat.userData.self.value = c.self
+    // 每层灯盘颜色：白光 → 热力色（按在岗密度）→ 设备层绿，乘灯盘亮度
+    const white = this._tmpWhite || (this._tmpWhite = new THREE.Color(1, 1, 1))
+    const hc = this._tmpHeat || (this._tmpHeat = new THREE.Color())
+    this.floorGroups.forEach((fg) => {
+      const col = fg.lightsMat.color
+      col.copy(white).lerp(heatColor(fg.heat, hc), c.heat)
+      if (fg.floor.kind === "plant")
+        col.lerp(hc.setRGB(0.25, 1.0, 0.55), c.plant)
+      col.multiplyScalar(
+        c.light + (fg.floor.kind === "plant" ? c.plant * 0.9 : 0)
+      )
+      if (fg.heatMat) {
+        fg.heatMat.opacity = c.heat * 0.55
+        fg.heatMat.userData.mesh.visible = c.heat > 0.02
+      }
+    })
     this.core.material.uniforms.uCore.value = c.core
     this.core.material.uniforms.uTime.value = t
     for (const r of this.risers) {
@@ -1542,8 +1455,6 @@ export class BuildingScene {
       r.material.uniforms.uTime.value = t
       r.visible = c.riser > 0.02
     }
-    for (const m of [this.towerShell, this.podiumShell, this.slabs])
-      m.material.uniforms.uTime.value = t
     // 抽屉：0 → 1 缓动抽出
     if (this.drawer) {
       this.drawerT = Math.min(1, this.drawerT + dt * 1.6)
@@ -1583,7 +1494,6 @@ export class BuildingScene {
     disposeTree(this.scene)
     // CSS2D 标签的 DOM 不随场景释放，手动移除
     this.labelRenderer.domElement.innerHTML = ""
-    this.floorTex.dispose()
     this.envRT.dispose()
     this.composer.dispose()
     this.renderer.dispose()
