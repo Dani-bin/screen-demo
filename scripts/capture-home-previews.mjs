@@ -40,10 +40,11 @@ const READY_TIMEOUT = 60
  *   - 校园：飞行 2.6 s + 停留 6.4 s（school/scene/cameraTour.js），取 5 s
  *   - 城市：飞行 2 s + 停留 8 s（city/scene/theme.js 的 tour），取 6 s，此时到站人流也已走起来
  *   - 充电站：无巡览，模型加载后等 6 s，让辉光、告警波纹与能量节点连线稳定
+ *   - 数字楼宇：地图资源加载后播放约 5 s 的入场动画（相机推近、街道弹起、光柱与园区卡片），取 8 s
  * 新演示未配置时取 DEFAULT_SETTLE。
  */
 const DEFAULT_SETTLE = 5
-const SETTLE = { school: 5, city: 6, charging: 6 }
+const SETTLE = { school: 5, city: 6, charging: 6, building: 8 }
 
 /**
  * 页面就绪条件（在页面里求值）：整页加载完、路由组件已渲染、
