@@ -34,6 +34,12 @@ const routes = [
     path: "/charging",
     name: "Charging",
     component: () => import("@/views/charging/index.vue")
+  },
+  {
+    // 数字楼宇：城市（成都高新区）→ 园区 → 楼宇 → 楼层 → 房间 五级钻取
+    path: "/building",
+    name: "Building",
+    component: () => import("@/views/building/index.vue")
   }
 ]
 

@@ -34,3 +34,6 @@ scripts/__pycache__/
 *.blend1
 # Sketchfab 下载的原始压缩包（已解压到同名目录，压缩包不入库）
 models/charging/vendor/*.zip
+
+# Blender 脚本运行时生成的 Python 字节码
+__pycache__/

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>数字楼宇设计稿</title>
+<style>
+  @font-face { font-family: "Alimama ShuHeiTi"; src: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/assets/fonts/AlimamaShuHeiTi-Bold.ttf"); }
+  @font-face { font-family: "Source Han Sans CN"; src: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/assets/fonts/SourceHanSansCN-Regular.otf"); }
+  @font-face { font-family: "DIN"; src: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/assets/fonts/DIN-Bold.otf"); }
+  :root { --A: file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000b27; }
+  body { position: relative; color: #e2ecf8; font: 14px "Source Han Sans CN", sans-serif;
+    background: #000b27 url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/content-bg.png") no-repeat center / 100% 100%; }
+  .num { font-family: "DIN", sans-serif; font-variant-numeric: tabular-nums; }
+
+  /* ---------- 顶栏（与城市级 BuildingHead 一致） ---------- */
+  .head { position: absolute; left: 0; top: 0; width: 1920px; height: 80px; z-index: 20; }
+  .head img { position: absolute; }
+  .head .outer { inset: 0; width: 1920px; height: 81px; }
+  .head .fill, .head .border { left: 594px; top: 0; width: 731px; height: 78px; }
+  .head .deco { left: 754px; top: 23px; width: 408px; height: 56px; object-fit: contain; object-position: bottom; opacity: .8; }
+  .head h1 { position: absolute; left: 50%; top: 16px; margin: 0; transform: translateX(-50%); font: bold 36px "Alimama ShuHeiTi"; letter-spacing: 6px; white-space: nowrap;
+    background: linear-gradient(#fff, #b1cfff); -webkit-background-clip: text; color: transparent; filter: drop-shadow(0 0 10px #222c3b); }
+  .head .left { position: absolute; left: 20px; top: 26px; display: flex; gap: 10px; align-items: center; color: #def; }
+  .head .left .t { font-size: 17px; } .head .left .w { font-size: 14px; }
+  .head .back { margin-left: 14px; padding: 3px 12px; border: 1px solid rgba(74,144,226,.45); background: rgba(10,40,90,.5); font-size: 13px; color: #9cc8ff; }
+  .levels { position: absolute; right: 22px; top: 24px; display: flex; align-items: center; gap: 6px; font-size: 14px; color: rgba(170,200,235,.55); }
+  .levels .sep { color: rgba(120,170,230,.5); }
+  .levels .lv { display: flex; align-items: center; gap: 5px; padding: 3px 10px 3px 4px; border: 1px solid transparent; }
+  .levels .lv i { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: rgba(60,110,180,.35); font: 12px "DIN"; font-style: normal; }
+  .levels .lv.done { color: #9cc8ff; }
+  .levels .lv.active { border-color: rgba(64,196,255,.7); background: linear-gradient(rgba(20,110,220,.55), rgba(10,50,120,.55)); color: #fff; box-shadow: 0 0 12px rgba(40,160,255,.35); }
+  .levels .lv.active i { background: #2de2e6; color: #04203a; }
+
+  /* ---------- 面包屑 + 返回（地图下方工具条） ---------- */
+  .crumb { position: absolute; left: 471px; top: 92px; width: 977px; display: flex; justify-content: center; gap: 8px; z-index: 6; font-size: 14px; color: #8fb4dc; }
+  .crumb span b { color: #fff; font-weight: normal; }
+  .crumb .up { padding: 2px 12px; border: 1px solid rgba(74,170,255,.5); background: rgba(8,40,90,.6); color: #9cd2ff; margin-right: 10px; }
+
+  /* ---------- 两侧栏 ---------- */
+  .side { position: absolute; top: 96px; bottom: 40px; width: 400px; z-index: 3; display: flex; flex-direction: column; justify-content: space-between; }
+  .side::before { content: ""; position: absolute; top: -96px; width: 550px; height: 1080px; z-index: -1; background-size: 550px 1080px; }
+  .side.l { left: 46px; } .side.l::before { left: -46px; background-image: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/left-bg.svg"); }
+  .side.r { right: 46px; } .side.r::before { right: -46px; background-image: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/right-bg.svg"); }
+
+  /* 面板标题（与 PanelTitle.vue 一致） */
+  .pt { position: relative; width: 400px; height: 30px; }
+  .pt .frame { position: absolute; left: -40px; top: -35px; width: 190px; height: 78px; }
+  .pt .lf { position: absolute; left: 0; top: 2px; width: 126px; height: 17px; }
+  .pt .lb { position: absolute; left: 0; top: 1.8px; width: 126.5px; height: 17.7px; }
+  .pt .line { position: absolute; left: 142px; top: 2px; width: 258px; height: 14px; background: linear-gradient(90deg, rgba(32,60,105,0) 3%, rgba(0,58,153,.5) 50%, rgba(32,60,105,0) 96%); }
+  .pt .tl { position: absolute; left: 142px; top: 1px; width: 258px; height: 1px; }
+  .pt .txt { position: absolute; left: 7px; top: -3px; display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 500; background: linear-gradient(#f2f8ff 60%, #cfe6ff); -webkit-background-clip: text; color: transparent; }
+  .pt .txt::before { content: ""; width: 9px; height: 9px; background: linear-gradient(#cfe6ff, rgba(242,248,255,.2)); box-shadow: -2px -2px 0 rgba(232,243,255,.35); }
+  .pt .ex { position: absolute; right: 0; top: -4px; font-size: 12px; color: #8aa0bd; }
+  .sec { display: flex; flex-direction: column; }
+  .body { padding: 12px 4px 0; }
+
+  /* 通用小部件 */
+  .kv { display: grid; gap: 8px; }
+  .cells { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .cells.c4 { grid-template-columns: repeat(4, 1fr); }
+  .cells.c2 { grid-template-columns: repeat(2, 1fr); }
+  .cell { padding: 8px 0 6px; border-bottom: 2px solid rgba(47,155,255,.5); background: linear-gradient(rgba(20,70,140,0), rgba(20,70,140,.35)); text-align: center; }
+  .cell b { font: 22px "DIN"; color: #fff; } .cell small { margin-left: 2px; font-size: 11px; color: #8aa0bd; }
+  .cell span { display: block; margin-top: 2px; font-size: 12px; color: #8aa0bd; }
+  .cell.gold { border-color: rgba(255,198,90,.7); background: linear-gradient(rgba(120,80,10,0), rgba(120,80,10,.35)); } .cell.gold b { color: #ffd27a; }
+  .cell.green b { color: #3ddc97; } .cell.red b { color: #ff5a64; } .cell.cyan b { color: #2de2e6; }
+  .row { display: grid; align-items: center; gap: 8px; height: 28px; font-size: 13px; color: #cfe0f5; }
+  .bar { height: 6px; background: rgba(60,110,180,.25); } .bar i { display: block; height: 100%; background: linear-gradient(90deg, rgba(47,155,255,.3), #2de2e6); }
+  .bar.g i { background: linear-gradient(90deg, rgba(255,178,62,.3), #ffc65a); }
+  .muted { color: #8aa0bd; } .gold { color: #ffd27a; } .green { color: #3ddc97; } .red { color: #ff5a64; } .cyan { color: #2de2e6; } .orange { color: #ff9f43; }
+  .tag { display: inline-block; padding: 1px 6px; border-radius: 2px; font-size: 12px; }
+  .tag.ok { background: rgba(61,220,151,.15); color: #3ddc97; } .tag.warn { background: rgba(255,159,67,.18); color: #ff9f43; } .tag.err { background: rgba(255,77,90,.2); color: #ff4d5a; } .tag.off { background: rgba(140,150,170,.18); color: #9aa5b8; } .tag.info { background: rgba(47,155,255,.2); color: #59b2ff; }
+  .alarm li { display: flex; align-items: center; gap: 10px; padding: 6px 4px; border-bottom: 1px dashed rgba(74,144,226,.2); }
+  ul { margin: 0; padding: 0; list-style: none; }
+  .alarm .tx { flex: 1; min-width: 0; } .alarm p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .alarm .t { font-size: 13px; } .alarm .p { font-size: 11px; color: #7f93ad; } .alarm .tm { font: 14px "DIN"; color: #8aa0bd; }
+  .card { padding: 12px 14px; border: 1px solid rgba(74,144,226,.35); background: linear-gradient(135deg, rgba(10,40,90,.5), rgba(6,22,50,.4)); }
+  .card.g { border-color: rgba(255,198,90,.45); background: linear-gradient(135deg, rgba(70,46,8,.5), rgba(10,30,64,.35)); }
+  svg text { font-family: "DIN"; }
+
+  /* ---------- 中间场景 ---------- */
+  .stage { position: absolute; left: 430px; top: 120px; width: 1060px; height: 880px; z-index: 2; }
+  .stage img.scene { position: absolute; left: 0; width: 1060px; height: auto;
+    -webkit-mask-image: radial-gradient(ellipse 52% 54% at 50% 50%, #000 70%, transparent 100%); }
+  .pin { position: absolute; z-index: 4; transform: translate(-50%, -100%); white-space: nowrap; }
+  .pin .lab { position: relative; padding: 4px 10px; border: 1px solid rgba(74,170,255,.7); background: rgba(5,25,60,.85); font-size: 13px; color: #fff; box-shadow: 0 0 10px rgba(30,140,255,.35); }
+  .pin .lab small { margin-left: 6px; color: #8fc3ff; font: 12px "DIN"; }
+  .pin .stem { width: 1px; height: 26px; margin: 0 auto; background: linear-gradient(rgba(74,170,255,.9), rgba(74,170,255,0)); }
+  .pin.g .lab { border-color: #ffc65a; background: rgba(50,32,4,.88); color: #ffe6b0; box-shadow: 0 0 14px rgba(255,190,70,.45); } .pin.g .stem { background: linear-gradient(#ffc65a, rgba(255,198,90,0)); } .pin.g small { color: #ffd27a; }
+  .pin.r .lab { border-color: #ff4d5a; background: rgba(60,8,14,.88); color: #ffd0d3; box-shadow: 0 0 14px rgba(255,60,70,.45); } .pin.r .stem { background: linear-gradient(#ff4d5a, rgba(255,77,90,0)); } .pin.r small { color: #ff9aa1; }
+
+  /* 场景内的浮动工具条 / 信息卡 */
+  .float { position: absolute; z-index: 5; }
+  .seg { display: flex; gap: 0; border: 1px solid rgba(74,144,226,.5); }
+  .seg span { padding: 5px 14px; font-size: 13px; color: #9cc0e6; background: rgba(6,26,60,.7); }
+  .seg span + span { border-left: 1px solid rgba(74,144,226,.35); }
+  .seg span.on { background: rgba(30,120,230,.55); color: #fff; }
+
+  .tip { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; font-size: 12px; letter-spacing: 1px; color: rgba(138,160,189,.7); z-index: 4; }
+  .draft { position: absolute; right: 470px; bottom: 34px; z-index: 6; font: 12px "DIN"; color: rgba(255,198,90,.6); letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div class="head">
+  <img class="outer" src="file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/head-outer.svg" />
+  <img class="fill" src="file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/head-inner-fill.svg" />
+  <img class="border" src="file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/head-inner-border.svg" />
+  <img class="deco" src="file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/title-deco.png" />
+  <h1>高新区数字楼宇</h1>
+  <div class="left"><span class="t num">2026-10-07 16:30</span><span class="w">星期三</span><span class="back">返回演示中心</span></div>
+  <div class="levels" id="levels"></div>
+</div>
+<div class="crumb" id="crumb"></div>
+<div class="side l" id="L"></div>
+<div class="stage" id="S"></div>
+<div class="side r" id="R"></div>
+<div class="tip" id="tip"></div>
+<div class="draft">DESIGN DRAFT v1</div>
+
+<script>
+const A = "file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/"
+const D = "file:///Users/zhangjiabin/Desktop/Company/bi-demo/docs/design/building/"
+const level = new URLSearchParams(location.search).get("level") || "park"
+const LV = [["city","城市"],["park","园区"],["building","楼宇"],["floor","楼层"],["room","房间"]]
+const cur = LV.findIndex(l => l[0] === level)
+document.getElementById("levels").innerHTML = LV.map((l, i) =>
+  (i ? '<span class="sep">›</span>' : "") + `<span class="lv ${i === cur ? "active" : i < cur ? "done" : ""}"><i>${i + 1}</i>${l[1]}</span>`).join("")
+
+/** 面板：标题 + 内容 */
+const P = (title, html, ex = "") => `<section class="sec"><div class="pt">
+  <img class="frame" src="${A}panel-title-frame.svg"><img class="lf" src="${A}panel-title-left.svg"><img class="lb" src="${A}panel-title-left-border.svg">
+  <div class="line"></div><img class="tl" src="${A}panel-title-top-line.svg"><div class="txt">${title}</div><div class="ex">${ex}</div></div>
+  <div class="body">${html}</div></section>`
+const cells = (arr, cls = "") => `<div class="cells ${cls}">${arr.map(c => `<div class="cell ${c[3] || ""}"><b>${c[1]}</b><small>${c[2]}</small><span>${c[0]}</span></div>`).join("")}</div>`
+const alarms = (arr) => `<ul class="alarm">${arr.map(a => `<li><span class="tag ${a[0] === "紧急" ? "err" : a[0] === "重要" ? "warn" : "info"}">${a[0]}</span><div class="tx"><p class="t">${a[1]}</p><p class="p">${a[2]}</p></div><span class="tm">${a[3]}</span></li>`).join("")}</ul>`
+/** 折线面积图（24 点） */
+function spark(vals, w, h, color, opts = {}) {
+  const max = opts.max ?? Math.max(...vals) * 1.15, min = opts.min ?? 0
+  const pts = vals.map((v, i) => [i / (vals.length - 1) * w, h - (v - min) / (max - min) * h])
+  const d = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ")
+  const grid = [0.25, .5, .75].map(t => `<line x1="0" x2="${w}" y1="${h * t}" y2="${h * t}" stroke="rgba(74,144,226,.15)" stroke-dasharray="3 4"/>`).join("")
+  const now = opts.now != null ? `<line x1="${pts[opts.now][0]}" x2="${pts[opts.now][0]}" y1="0" y2="${h}" stroke="#ffc65a" stroke-dasharray="2 3"/><circle cx="${pts[opts.now][0]}" cy="${pts[opts.now][1]}" r="4" fill="#ffc65a"/>` : ""
+  return `<svg width="${w}" height="${h + 18}" style="display:block;overflow:visible">${grid}
+    <defs><linearGradient id="g${color.slice(1)}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".45"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    <path d="${d} L${w} ${h} L0 ${h} Z" fill="url(#g${color.slice(1)})"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2"/>${now}
+    ${(opts.xl || []).map((t, i, a) => `<text x="${i / (a.length - 1) * w}" y="${h + 15}" fill="#7f93ad" font-size="11" text-anchor="${i ? i === a.length - 1 ? "end" : "middle" : "start"}">${t}</text>`).join("")}</svg>`
+}
+/** 环形图 */
+function ring(items, size, center, label) {
+  const r = size / 2 - 14, c = size / 2, C = 2 * Math.PI * r, sum = items.reduce((s, i) => s + i[1], 0); let off = 0
+  return `<svg width="${size}" height="${size}"><circle cx="${c}" cy="${c}" r="${r + 9}" fill="none" stroke="rgba(74,144,226,.35)" stroke-dasharray="2 4"/>
+  <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="rgba(60,110,180,.18)" stroke-width="10"/>
+  ${items.map(it => { const len = it[1] / sum * C; const s = `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${it[2]}" stroke-width="10" stroke-dasharray="${len - 2.5} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 ${c} ${c})"/>`; off += len; return s }).join("")}
+  <text x="${c}" y="${c + 4}" fill="#fff" font-size="22" text-anchor="middle">${center}</text><text x="${c}" y="${c + 22}" fill="#8aa0bd" font-size="11" text-anchor="middle" font-family="Source Han Sans CN">${label}</text></svg>`
+}
+const legend = (items, unit = "") => `<ul style="flex:1">${items.map(it => `<li class="row" style="grid-template-columns:10px 1fr auto;height:24px"><i style="width:8px;height:8px;background:${it[2]}"></i><span>${it[0]}</span><b class="num" style="font-weight:normal;font-size:15px;color:#fff">${it[1].toLocaleString("en-US")}<small class="muted" style="font-size:11px;margin-left:2px">${unit}</small></b></li>`).join("")}</ul>`
+const pins = (arr, img) => arr.map(p => `<div class="pin ${p[3] || ""}" style="left:${p[0] / 1536 * 1060}px;top:${p[1] / 1024 * 707 + img}px"><div class="lab">${p[2]}</div><div class="stem"></div></div>`).join("")
+const H = (n) => Array.from({ length: 24 }, (_, i) => n(i))
+
+const L = document.getElementById("L"), R = document.getElementById("R"), S = document.getElementById("S")
+const crumb = (arr) => document.getElementById("crumb").innerHTML = `<span class="up">‹ 返回上一级</span>` + arr.map((t, i) => `<span>${i ? "› " : ""}${i === arr.length - 1 ? `<b>${t}</b>` : t}</span>`).join(" ")
+const scene = (file, top, pinsHtml, extra = "") => S.innerHTML = `<img class="scene" src="${D}${file}" style="top:${top}px">${pinsHtml}${extra}`
+
+/* =================================================================== 园区 */
+if (level === "park") {
+  crumb(["成都高新区", "桂溪街道", "成都金融城双子塔园区"])
+  L.innerHTML =
+    P("园区概况", `<div class="card g" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:18px;font-weight:bold;color:#ffe6b0">成都金融城双子塔园区</span><span class="tag ok">运行正常</span></div>
+        <div class="muted" style="font-size:12px;margin-top:4px">高新区交子大道 · 天府大道北段 · 金融城片区</div></div>` +
+      cells([["楼栋", 12, "栋", "gold"], ["建筑面积", 38.6, "万m²"], ["入驻率", 92.4, "%", "cyan"], ["入驻企业", 216, "家"], ["在岗人数", "1.58", "万"], ["车位", 2860, "个"]])) +
+    P("楼栋一览", `<ul>${[["双子塔 · 南塔", "218m · 58F", 96, 1], ["双子塔 · 北塔", "218m · 58F", 94, 1], ["会议中心", "4F", 71], ["1 号楼", "12F", 92], ["2 号楼", "9F", 88], ["3 号楼", "9F", 85], ["4 号楼", "12F", 90]]
+      .map(r => `<li class="row" style="grid-template-columns:110px 84px 1fr 44px"><span class="${r[3] ? "gold" : ""}">${r[0]}</span><span class="muted num">${r[1]}</span><span class="bar ${r[3] ? "g" : ""}"><i style="width:${r[2]}%"></i></span><b class="num" style="font-weight:normal;text-align:right">${r[2]}%</b></li>`).join("")}</ul>`, "入驻率") +
+    P("今日能耗", `<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span class="muted">累计 <b class="num" style="font-size:20px;color:#fff;font-weight:normal">41.2</b> MWh</span><span class="muted">同比 <b class="green num" style="font-weight:normal">-6.8%</b></span></div>` +
+      spark(H(i => 900 + 1400 * Math.exp(-((i - 14) ** 2) / 30) + (i > 8 && i < 19 ? 600 : 0)), 392, 110, "#2de2e6", { now: 16, xl: ["00:00", "06:00", "12:00", "18:00", "24:00"] }), "kWh / 时")
+  R.innerHTML =
+    P("园区安防", cells([["摄像头在线", "1,284", "/1,302", "green"], ["门禁通行", "18,640", "人次"], ["访客预约", 326, "人"], ["车辆进出", "3,912", "辆"], ["巡更完成", 96, "%", "cyan"], ["周界告警", 0, "起", "green"]])) +
+    P("设备运行", `<div style="display:flex;align-items:center;gap:12px">${ring([["暖通空调", 4120, "#2f9bff"], ["电梯扶梯", 86, "#ffc65a"], ["给排水", 1960, "#3ddc97"], ["消防设施", 9830, "#ff6b5b"], ["照明配电", 7410, "#a77bff"]], 132, "2.34万", "园区设备")}${legend([["暖通空调", 4120, "#2f9bff"], ["电梯扶梯", 86, "#ffc65a"], ["给排水", 1960, "#3ddc97"], ["消防设施", 9830, "#ff6b5b"], ["照明配电", 7410, "#a77bff"]], "台")}</div>`, "在线率 98.2%") +
+    P("告警事件", alarms([["紧急", "低压柜 3# 出线温度过高", "北塔 B2 配电房", "16:21"], ["重要", "冷却塔 2# 风机振动偏大", "会议中心 屋面", "16:05"], ["一般", "烟感探测器电量低", "南塔 27F", "15:48"], ["一般", "地下车库 CO 浓度偏高", "南塔 B1 车库", "15:30"]]), "今日 4 起")
+  scene("01-ai-park.png", 70, pins([[290, 70, "北塔 <small>218m · 58F</small>", "g"], [520, 105, "南塔 <small>218m · 58F</small>", "g"], [840, 330, "会议中心 <small>4F</small>"], [778, 230, "2 号楼"], [995, 280, "1 号楼"], [630, 262, "3 号楼"], [1006, 515, "冷却塔振动 <small>16:05</small>", "r"], [1213, 335, "5 号楼"], [1110, 585, "6 号楼"]], 70),
+    `<div class="float" style="left:330px;top:4px"><div class="seg"><span class="on">全景</span><span>安防</span><span>能耗</span><span>设备</span><span>停车</span></div></div>`)
+  document.getElementById("tip").textContent = "点击楼栋进入楼宇 · 点击告警定位设备 · 拖动旋转、滚轮缩放 | 设计稿：中央场景为 AI 概念图，指标为演示数据"
+}
+
+/* =================================================================== 楼宇 */
+if (level === "building") {
+  crumb(["成都高新区", "金融城双子塔园区", "南塔"])
+  const floors = [58, 57, 50, 45, 40, 36, 32, 28, 24, 20, 16, 12, 8, 5, 1, "B1", "B2", "B3"]
+  L.innerHTML =
+    P("楼宇档案", `<div class="card g" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px">
+      ${[["楼宇名称", "成都金融城双子塔 · 南塔"], ["建筑高度", "218 m"], ["楼层", "地上 58 层 · 地下 3 层"], ["平面形态", "椭圆平面 · 斜切屋顶"], ["建筑面积", "16.8 万 m²"], ["主要业态", "甲级写字楼"], ["电梯", "客梯 24 · 货梯 4"], ["数据接入", "BA · 安防 · 能耗 · 消防"]]
+        .map(k => `<div><span class="muted" style="font-size:12px">${k[0]}</span><div style="color:#fff;margin-top:1px">${k[1]}</div></div>`).join("")}</div>`) +
+    P("楼层导航", `<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px">${floors.map(f => {
+      const sel = f === 32, alarm = f === "B2", warn = f === 27 || f === 36, occ = typeof f === "number" ? 60 + (f * 37) % 40 : 0
+      return `<div style="height:30px;display:flex;align-items:center;justify-content:center;font:13px DIN;border:1px solid ${sel ? "#ffc65a" : alarm ? "#ff4d5a" : "rgba(74,144,226,.35)"};background:${sel ? "rgba(255,198,90,.25)" : alarm ? "rgba(255,77,90,.2)" : `rgba(30,120,230,${occ / 300})`};color:${sel ? "#ffd27a" : alarm ? "#ff8089" : "#cfe0f5"}">${typeof f === "number" ? f + "F" : f}</div>`}).join("")}</div>
+      <div style="display:flex;gap:14px;margin-top:8px;font-size:12px" class="muted"><span>颜色深浅 = 入驻率</span><span class="gold">■ 已选 32F</span><span class="red">■ 告警楼层</span></div>`, "共 61 层") +
+    P("入驻与人员", cells([["入驻率", 96.1, "%", "cyan"], ["入驻企业", 118, "家"], ["在岗人数", "8,420", "人"]]) + `<div style="margin-top:10px">` +
+      spark(H(i => 300 + 7800 * Math.max(0, Math.sin((i - 7) / 12 * Math.PI)) ** .6), 392, 70, "#59b2ff", { now: 16, xl: ["00:00", "12:00", "24:00"] }) + `</div>`, "实时在岗曲线")
+  R.innerHTML =
+    P("楼宇资产", `${[["暖通空调", 2140, "#2f9bff"], ["安防监控", 1980, "#2de2e6"], ["消防设施", 5120, "#ff6b5b"], ["电梯扶梯", 28, "#ffc65a"], ["给排水", 860, "#3ddc97"], ["照明配电", 3940, "#a77bff"]]
+      .map(r => `<div class="row" style="grid-template-columns:70px 1fr 56px"><span>${r[0]}</span><span class="bar"><i style="width:${Math.max(4, r[1] / 51.2)}%;background:${r[2]}"></i></span><b class="num" style="font-weight:normal;text-align:right;color:#fff">${r[1].toLocaleString()}</b></div>`).join("")}`, "合计 14,068 件") +
+    P("电梯运行", `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">${Array.from({ length: 28 }, (_, i) => {
+      const st = i === 9 ? ["检修", "#ff9f43"] : i === 21 ? ["故障", "#ff4d5a"] : i % 5 === 3 ? ["待机", "#7f93ad"] : ["运行", "#3ddc97"]
+      return `<div style="text-align:center;padding:4px 0;border:1px solid rgba(74,144,226,.25);background:rgba(10,40,90,.35)"><div style="font:14px DIN;color:#fff">${i < 24 ? "P" : "F"}${String(i < 24 ? i + 1 : i - 23).padStart(2, "0")}</div><div style="font-size:11px;color:${st[1]}">${st[0]}</div></div>`}).join("")}</div>`, "客梯 24 · 货梯 4") +
+    P("分项能耗", `<div style="display:flex;align-items:center;gap:12px">${ring([["空调", 8.6, "#2f9bff"], ["照明插座", 5.1, "#ffc65a"], ["动力", 3.2, "#3ddc97"], ["特殊用电", 1.4, "#a77bff"]], 128, "18.3", "今日 MWh")}${legend([["空调", 8.6, "#2f9bff"], ["照明插座", 5.1, "#ffc65a"], ["动力", 3.2, "#3ddc97"], ["特殊用电", 1.4, "#a77bff"]], "MWh")}</div>`)
+  scene("02-ai-building.png", 90, pins([[870, 228, "32F · 金融科技中心 <small>入驻率 98%</small>", "g"], [860, 905, "B2 配电房 · 低压柜过温", "r"], [665, 570, "18F 新风机组"], [780, 30, "屋顶 · 冷却塔 / 擦窗机"], [770, 735, "1–4F 大堂 · 商业裙楼"]], 90),
+    `<div class="float" style="left:20px;top:10px"><div class="seg"><span class="on">楼层剖切</span><span>透视外立面</span><span>机电系统</span><span>人员热力</span></div></div>`)
+  document.getElementById("tip").textContent = "点击楼层进入平面 · 楼层导航与模型联动高亮 · 地下机房可单独剖切 | 设计稿：中央场景为 AI 概念图，指标为演示数据"
+}
+
+/* =================================================================== 楼层 */
+if (level === "floor") {
+  crumb(["金融城双子塔园区", "南塔", "32F"])
+  const rooms = [["3201", "开放办公区 A", "办公", "86/96", "ok"], ["3202", "开放办公区 B", "办公", "72/88", "ok"], ["3205", "大会议室", "会议", "使用中", "gold"], ["3206", "洽谈室", "会议", "空闲", "off"], ["3208", "弱电机房", "机房", "告警", "err"], ["3210", "总经理室", "办公", "1/1", "ok"], ["3212", "茶水间", "配套", "—", "off"]]
+  L.innerHTML =
+    P("楼层信息", cells([["使用面积", "1,520", "m²"], ["房间", 14, "间"], ["工位", 184, "个"], ["在岗", 158, "人", "cyan"], ["工位使用", 85.9, "%", "green"], ["温度均值", 24.6, "℃"]])) +
+    P("房间列表", `<ul>${rooms.map(r => `<li class="row" style="grid-template-columns:42px 1fr 42px 70px;${r[4] === "gold" ? "background:rgba(255,198,90,.12);border-left:2px solid #ffc65a;padding-left:6px" : "padding-left:8px"}"><span class="num muted">${r[0]}</span><span class="${r[4] === "gold" ? "gold" : ""}">${r[1]}</span><span class="muted" style="font-size:12px">${r[2]}</span><span class="tag ${r[4] === "gold" ? "warn" : r[4]}" style="text-align:center">${r[3]}</span></li>`).join("")}</ul>`, "共 14 间") +
+    P("工位占用", spark(H(i => Math.max(4, 160 * Math.max(0, Math.sin((i - 7.5) / 11 * Math.PI)) ** .5 + (i === 12 ? -40 : 0))), 392, 90, "#3ddc97", { now: 16, xl: ["00:00", "08:00", "16:00", "24:00"] }), "人")
+  R.innerHTML =
+    P("环境监测", cells([["温度", 24.6, "℃"], ["湿度", 48, "%RH"], ["CO₂", 612, "ppm", "green"], ["PM2.5", 9, "μg/m³", "green"], ["TVOC", 0.21, "mg/m³"], ["照度", 486, "lx"]]) +
+      `<div style="margin-top:8px;font-size:12px" class="muted">分区温度：<span class="cyan">办公 A 24.2℃</span> · <span class="cyan">办公 B 24.8℃</span> · <span class="orange">机房 27.9℃</span></div>`) +
+    P("设备分布", `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${[["空调内机", 46, "#2f9bff"], ["摄像头", 18, "#2de2e6"], ["烟感", 64, "#ff6b5b"], ["喷淋", 212, "#ff9aa1"], ["温湿度", 22, "#3ddc97"], ["门禁", 9, "#ffc65a"], ["照明回路", 38, "#a77bff"], ["AP", 16, "#59b2ff"]]
+      .map(d => `<div style="padding:6px 0;text-align:center;background:rgba(10,40,90,.4);border-top:2px solid ${d[2]}"><b class="num" style="font-size:20px;font-weight:normal;color:#fff">${d[1]}</b><div class="muted" style="font-size:12px">${d[0]}</div></div>`).join("")}</div>`, "单位：台") +
+    P("楼层告警", alarms([["紧急", "机柜 R03 进风温度 31.2℃", "3208 弱电机房", "16:18"], ["一般", "门禁读卡器离线", "3206 洽谈室", "15:02"], ["一般", "照明回路 L-07 电流偏高", "3202 开放办公区 B", "14:41"]]), "3 起")
+  scene("03-ai-floor.png", 80, pins([[760, 165, "3205 大会议室 <small>使用中 · 12 人</small>", "g"], [1165, 410, "3208 弱电机房 · 过温", "r"], [255, 320, "3201 开放办公区 A <small>86/96</small>"], [500, 225, "3206 洽谈室"], [1190, 265, "3212 茶水间"], [760, 560, "核心筒 · 电梯 6 部"], [1030, 640, "3202 开放办公区 B <small>72/88</small>"]], 80),
+    `<div class="float" style="left:20px;top:10px"><div class="seg"><span class="on">房间</span><span>设备</span><span>温度热力</span><span>工位</span></div></div>
+     <div class="float" style="right:18px;top:200px;display:flex;flex-direction:column;gap:4px">${[36, 35, 34, 33, 32, 31, 30, 29].map(f => `<div style="width:48px;padding:3px 0;text-align:center;font:13px DIN;border:1px solid ${f === 32 ? "#ffc65a" : "rgba(74,144,226,.35)"};background:${f === 32 ? "rgba(255,198,90,.25)" : "rgba(6,26,60,.7)"};color:${f === 32 ? "#ffd27a" : "#9cc0e6"}">${f}F</div>`).join("")}</div>`)
+  document.getElementById("tip").textContent = "上下层自动剥离 · 点击房间进入 · 右侧楼层条切换楼层 | 设计稿：中央场景为 AI 概念图，指标为演示数据"
+}
+
+/* =================================================================== 房间 */
+if (level === "room") {
+  crumb(["南塔", "32F", "3205 大会议室"])
+  const assets = [["空调内机", "AC-3205-01", "运行", "ok", 1], ["空调内机", "AC-3205-02", "运行", "ok"], ["半球摄像机", "CAM-3205-01", "在线", "ok"], ["感烟探测器", "SD-3205-01", "电量低", "warn"], ["喷淋头", "SP-3205-01~04", "正常", "ok"], ["温湿度传感器", "TH-3205-01", "在线", "ok"], ["门禁读卡器", "AC-R-3205", "在线", "ok"], ["会议大屏", "DS-3205-01", "使用中", "info"], ["无线 AP", "AP-3205-01", "在线", "ok"]]
+  L.innerHTML =
+    P("房间信息", `<div class="card g" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+      ${[["使用面积", "86", "m²"], ["容纳", "12", "人"], ["当前人数", "9", "人"]].map(k => `<div><b class="num" style="font-size:22px;font-weight:normal;color:#ffd27a">${k[1]}</b><small class="muted"> ${k[2]}</small><div class="muted" style="font-size:12px">${k[0]}</div></div>`).join("")}</div>
+      <div style="margin-top:10px;font-size:12px" class="muted">今日预约</div>
+      <div style="position:relative;height:34px;margin-top:6px;background:rgba(60,110,180,.18)">
+        ${[[9, 10.5, "晨会"], [14, 15.5, "季度复盘"], [16, 17.5, "客户路演 · 进行中"]].map(b => `<div style="position:absolute;top:4px;bottom:4px;left:${(b[0] - 8) / 11 * 100}%;width:${(b[1] - b[0]) / 11 * 100}%;background:${b[2].includes("进行") ? "rgba(255,198,90,.6)" : "rgba(47,155,255,.45)"};font-size:11px;color:#fff;padding:5px 4px;white-space:nowrap;overflow:hidden">${b[2]}</div>`).join("")}
+        <div style="position:absolute;top:-2px;bottom:-2px;left:${(16.5 - 8) / 11 * 100}%;width:2px;background:#ffc65a"></div></div>
+      <div style="display:flex;justify-content:space-between;font:11px DIN;color:#7f93ad;margin-top:3px"><span>08:00</span><span>13:30</span><span>19:00</span></div>`) +
+    P("环境实时", cells([["温度", 24.6, "℃"], ["湿度", 48, "%RH"], ["CO₂", 735, "ppm", "green"], ["PM2.5", 8, "μg/m³", "green"], ["照度", 520, "lx"], ["噪声", 41, "dB"]]) +
+      `<div style="margin-top:8px;font-size:12px" class="muted">联动策略：<span class="cyan">会议开始前 15 分钟预冷</span> · <span class="cyan">无人 10 分钟自动关灯</span></div>`) +
+    P("资产清单", `<ul>${assets.map(a => `<li class="row" style="grid-template-columns:96px 1fr 58px;${a[4] ? "background:rgba(255,198,90,.12);border-left:2px solid #ffc65a;padding-left:6px" : "padding-left:8px"}"><span class="${a[4] ? "gold" : ""}">${a[0]}</span><span class="num muted" style="font-size:13px">${a[1]}</span><span class="tag ${a[3]}" style="text-align:center">${a[2]}</span></li>`).join("")}</ul>`, "共 14 件")
+  R.innerHTML =
+    P("资产详情", `<div class="card g">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:17px;font-weight:bold;color:#ffe6b0">空调内机 · AC-3205-01</span><span class="tag ok">运行中</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;margin-top:10px;font-size:13px">
+      ${[["资产类别", "暖通空调 / 四面出风嵌入机"], ["品牌型号", "演示品牌 FXZP-71"], ["安装位置", "南塔 32F · 3205 吊顶"], ["额定功率", "2.2 kW（制冷 7.1 kW）"], ["启用日期", "2023-04-18"], ["维保到期", "2027-04-17"], ["资产编号", "GX-JRC-S-32-0517"], ["责任人", "物业工程部 · 张工"]]
+        .map(k => `<div><span class="muted" style="font-size:12px">${k[0]}</span><div style="color:#fff">${k[1]}</div></div>`).join("")}</div></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px">${[["设定温度", "24.0", "℃"], ["回风温度", "24.7", "℃"], ["运行时长", "1,286", "h"]].map(k => `<div class="cell"><b>${k[1]}</b><small>${k[2]}</small><span>${k[0]}</span></div>`).join("")}</div>`) +
+    P("实时曲线", spark(H(i => 26.5 - 2.4 * Math.min(1, Math.max(0, (i - 8) / 2)) + (i > 18 ? (i - 18) * 0.35 : 0) + Math.sin(i) * 0.15), 392, 84, "#ffc65a", { now: 16, min: 22, max: 28, xl: ["00:00", "08:00", "16:00", "24:00"] }), "回风温度 ℃") +
+    P("运维记录", `<ul>${[["2026-09-12", "季度保养：清洗滤网、检查冷凝水排水", "完成", "ok"], ["2026-06-03", "更换出风口导风板电机", "完成", "ok"], ["2026-10-20", "下次保养计划", "待办", "info"]]
+      .map(r => `<li class="row" style="grid-template-columns:84px 1fr 44px;height:30px"><span class="num muted" style="font-size:13px">${r[0]}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r[1]}</span><span class="tag ${r[3]}">${r[2]}</span></li>`).join("")}</ul>`)
+  scene("04-ai-room.png", 100, pins([[488, 50, "空调内机 AC-01 <small>24.7℃</small>", "g"], [975, 50, "空调内机 AC-02"], [1415, 120, "半球摄像机"], [705, 40, "感烟探测器 · 电量低", "r"], [1215, 100, "无线 AP"], [1175, 380, "温湿度 <small>24.6℃ 48%</small>"], [1445, 490, "门禁读卡器"], [930, 330, "会议大屏 <small>使用中</small>"]], 100),
+    `<div class="float" style="left:20px;top:10px"><div class="seg"><span class="on">全部资产</span><span>暖通</span><span>安防</span><span>消防</span><span>照明</span></div></div>`)
+  document.getElementById("tip").textContent = "点击设备查看资产卡片 · 悬停查看实时读数 · 可切换第一人称漫游 | 设计稿：中央场景为 AI 概念图，指标与品牌型号为演示数据"
+}
+</script>
+</body>
+</html>
