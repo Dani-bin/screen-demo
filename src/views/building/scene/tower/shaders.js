@@ -101,7 +101,7 @@ export function shellMaterial(o) {
         float mull = 1.0 - smoothstep(0.05, 0.16, mu);
         float my = abs(fract(fl + 0.5) - 0.5) * uFloorH;
         float line = 1.0 - smoothstep(0.03, 0.12, my);
-        col += uEdge * (mull * 0.1 + line * 0.38) * uMullion;
+        col += uEdge * (mull * 0.16 + line * 0.34) * uMullion;
 
         // 窗灯：1.6 m 一格，按本层入驻率决定亮灯比例，亮度各不相同
         // 一格 3.2 m（与竖梃对齐），亮的格子连成一段段灯带；吊顶处最亮、往下渐暗（室内灯从天花往下照）
@@ -200,7 +200,7 @@ export function slabEdgeMaterial(floorTex) {
       void main() {
         if (uGapAmt > 0.02 && abs(vFloor - uGap) < 0.5) discard;
         vec4 fd = floorData(vFloor);
-        vec3 col = mix(vec3(0.25, 0.75, 1.0), heatColor(fd.a), uHeat * step(0.001, fd.a + fd.r));
+        vec3 col = mix(vec3(0.32, 0.68, 1.0), heatColor(fd.a), uHeat * step(0.001, fd.a + fd.r));
         float k = uEdge;
         if (fd.g > 0.5) col = vec3(1.0, 0.3, 0.32);
         if (abs(vFloor - uHover) < 0.5) k = 1.4;
@@ -254,10 +254,10 @@ export function coreMaterial(size, yRange) {
         float ph = fract(uTime * (0.02 + 0.03 * hash11(id)) + hash11(id + 3.1));
         float yb = abs(ph * 2.0 - 1.0) * hgt;
         float car = exp(-pow((y - yb) / 1.6, 2.0)) * inShaft;
-        float base = 0.05 + 0.2 * inShaft;
+        float base = 0.06 + 0.32 * inShaft;
         // 顶部、底部渐隐
         float fade = smoothstep(0.0, 14.0, y) * (1.0 - smoothstep(hgt - 10.0, hgt, y));
-        vec3 col = vec3(0.12, 0.7, 1.0) * base + vec3(0.7, 0.95, 1.0) * car * 1.1;
+        vec3 col = vec3(0.08, 0.62, 1.0) * base + vec3(0.45, 0.9, 1.0) * car * 0.9;
         gl_FragColor = vec4(col * fade * uCore, 1.0);
       }`
   })

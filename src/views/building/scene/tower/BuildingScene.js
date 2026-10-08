@@ -6,10 +6,10 @@
  *   - 塔身：真实椭圆平面（OSM，data/parkData.js 的 PARK_TOWERS）+ 向上收分 + 斜切屋顶，透明蓝玻璃外壳能看穿
  *   - 楼板：58 层一圈圈发光层板；中央核心筒青色光柱，电梯轿厢光点在井道里跑
  *   - 裙楼 1～4F：暖金色大堂玻璃，屋顶花园一圈树
- *   - 地下 B1～B3：圆形基座朝相机一侧剖开一个扇区，露出车库、配电房、水泵房；告警设备红色波纹
+ *   - 地下 B1～B3：石材圆台基座正面挖一个方形剖口（从广场一直切到底），露出车库、配电房、水泵房；告警设备红色波纹
  *   - 选中楼层像抽屉一样向画面右侧抽出（金色），外壳在该层挖空
  * 竖向比例：真实塔高 218 m、平面约 52 × 44 m，细高比 4.2，按真实比例放进画面中部会像一根针；
- * 设计稿里约 3:1，所以标准层层高按 2.5 m 示意（真实 3.76 m），裙楼、地下层另给层高。
+ * 设计稿塔身高宽比约 2.7，所以标准层层高按 2.2 m 示意（真实 3.76 m），裙楼、地下层另给层高（见下方常量）。
  *
  * 模式（setMode）：section 楼层剖切 / facade 透视外立面 / mep 机电系统 / heat 人员热力，切换时各项亮度平滑过渡。
  * 交互：悬浮楼层 → onHover({ key, x, y })；点击 → onPick(key)；select(key) 抽出该层。
@@ -48,59 +48,65 @@ import {
 const DEG = Math.PI / 180
 
 /** 竖向尺度（米，示意比例，见文件头） */
-const FLOOR = 2.5 // 塔楼标准层
-const PODIUM_FLOOR = 3.4 // 裙楼
-const BASE_FLOOR = 7.5 // 地下层（比真实层高大，剖切面里的机房才看得清）
+const FLOOR = 2.2 // 塔楼标准层（设计稿塔身高宽比约 2.7）
+const PODIUM_FLOOR = 4.6 // 裙楼（设计稿裙楼约为塔身高度的 15%）
+const BASE_FLOOR = 13 // 地下层（比真实层高大，剖口里的机房才看得清）
 const TAPER = 0.14 // 塔顶相对底部收分
-const PODIUM_SCALE = 1.32 // 裙楼平面相对塔楼放大
-const CUT = 0.36 // 地下剖切面：离轴心 CUT × 基座半径、正对相机的竖直平面，平面外侧的部分切掉
-const ROOM_D = 18 // 剖切面往里能看到的机房进深（米）
+const PODIUM_SCALE = 1.42 // 裙楼平面相对塔楼放大
+const BASE_SCALE = 2.25 // 底座半径 = 塔楼平面最大半径 × BASE_SCALE（设计稿底座直径约为塔身宽 2.3 倍）
+const NOTCH_HALF = 0.68 // 地下剖口半宽（× 底座半径）
+const NOTCH_FRONT = 0.26 // 剖口正面离轴心的距离（× 底座半径），正对相机
+const ROOM_D = 20 // 剖口往里能看到的机房进深（米）
 
 /** 各模式下的亮度参数（切换时逐帧插值过去） */
 const MODES = {
   section: {
-    alpha: 0.16,
-    mullion: 0.5,
-    window: 0.9,
-    slab: 0.1,
-    edge: 0.55,
+    alpha: 0.2,
+    mullion: 0.8,
+    window: 0.25,
+    slab: 0.06,
+    edge: 0.85,
     core: 1,
     riser: 0,
     heat: 0,
-    plant: 0
+    plant: 0,
+    desk: 1
   },
   facade: {
-    alpha: 0.6,
-    mullion: 1.3,
-    window: 1.6,
+    alpha: 0.5,
+    mullion: 1.5,
+    window: 1.1,
     slab: 0.02,
-    edge: 0.12,
-    core: 0.2,
+    edge: 0.3,
+    core: 0.25,
     riser: 0,
     heat: 0,
-    plant: 0
+    plant: 0,
+    desk: 0.35
   },
   mep: {
-    alpha: 0.06,
-    mullion: 0.22,
-    window: 0.12,
+    alpha: 0.05,
+    mullion: 0.3,
+    window: 0.05,
     slab: 0.04,
-    edge: 0.28,
+    edge: 0.3,
     core: 1.35,
     riser: 1,
     heat: 0,
-    plant: 1
+    plant: 1,
+    desk: 0.15
   },
   heat: {
-    alpha: 0.07,
-    mullion: 0.2,
-    window: 0.3,
+    alpha: 0.06,
+    mullion: 0.3,
+    window: 0.2,
     slab: 0.55,
     edge: 0.75,
     core: 0.3,
     riser: 0,
     heat: 1,
-    plant: 0
+    plant: 0,
+    desk: 0.25
   }
 }
 
@@ -181,7 +187,7 @@ export class BuildingScene {
     this.composer.addPass(new RenderPass(this.scene, this.camera))
     this.bloom = new UnrealBloomPass(
       new THREE.Vector2(256, 256),
-      0.45,
+      0.35,
       0.4,
       0.8
     )
@@ -316,108 +322,137 @@ export class BuildingScene {
     return tex
   }
 
-  /** 底座：深色圆台 + 底部发光圆盘与两圈青色光环 */
+  /**
+   * 底座（设计稿 02-ai-building.png）：直径约为塔身 2.3 倍的深色石材圆台，正面挖出一个方形剖口露出地下机房；
+   * 下面一块略大的深色镜面圆盘，外缘一圈细青光
+   */
   _buildBase() {
-    const R = (this.baseR = this.radius * PODIUM_SCALE + 12)
+    const R = (this.baseR = this.radius * BASE_SCALE)
     const depth = (this.baseDepth = 3 * BASE_FLOOR)
     const yBot = -depth
-    // 圆台外墙：剖切面外侧（朝相机）那一段弧留空
+    // 剖口：|l| < half 且 f > c 的部分挖掉（l 沿画面横向、f 朝相机，见 _lf）
+    const half = NOTCH_HALF * R
+    const c = NOTCH_FRONT * R
+    this.room = { R, c, back: c - ROOM_D, half }
     const camAng = Math.atan2(-this.viewDir.x, -this.viewDir.z)
     this.camAng = camAng
-    this.wedge = 2 * Math.acos(CUT)
-    const WEDGE = this.wedge
+    const gap = 2 * Math.asin(NOTCH_HALF)
+    // 外墙：石材贴图（横向砌缝 + 错缝竖缝），剖口那段弧留空
     const wall = new THREE.Mesh(
       new THREE.CylinderGeometry(
         R,
         R,
         depth,
-        128,
+        160,
         1,
         true,
-        camAng + WEDGE / 2,
-        Math.PI * 2 - WEDGE
+        camAng + gap / 2,
+        Math.PI * 2 - gap
       ),
       new THREE.MeshStandardMaterial({
-        color: 0x2c3644,
+        color: 0xffffff,
+        map: stoneTexture(),
+        // 石块贴图同时当自发光：夜景里背光那一侧也能读出砌块
+        emissive: 0xffffff,
+        emissiveIntensity: 0.22,
         roughness: 0.85,
-        metalness: 0.2,
+        metalness: 0.1,
         side: THREE.DoubleSide
       })
     )
+    wall.material.map.repeat.set(18, 1)
+    wall.material.emissiveMap = wall.material.map
     wall.position.y = yBot / 2
     this.root.add(wall)
-    // 地面广场：同样沿剖切面切掉外侧（剖面模型的效果，俯视时才看得见下面的机房）
-    const circle = []
-    for (let i = 0; i < 128; i++) {
-      const a = (i / 128) * Math.PI * 2
-      circle.push([Math.cos(a) * R, Math.sin(a) * R])
-    }
-    const deck = new THREE.Mesh(
-      prismGeometry(
-        clipHalfPlane(
-          circle,
-          [-this.viewDir.x, -this.viewDir.z],
-          CUT * (R - 0.3)
-        ),
-        -0.8,
-        0
-      ),
-      new THREE.MeshStandardMaterial({
-        color: 0x1f2834,
-        roughness: 0.7,
-        metalness: 0.3
-      })
-    )
-    this.root.add(deck)
-    // 拾取目标：只有外墙（地面广场顶面在 y≈0，会被误判成 1F）
     this.hitTargets = [wall]
-
-    // 底部平台：比圆台大一圈的深色镜面圆盘 + 外缘亮青光环
-    const R2 = R + 16
+    // 地面广场：剖口上方同样挖开（设计稿的剖口从广场一直切到底），由三块拼成：
+    // 剖口正面以内的部分 + 剖口左右两侧伸到前缘的两块
+    const circle = []
+    for (let i = 0; i < 160; i++) {
+      const a = (i / 160) * Math.PI * 2
+      circle.push([Math.cos(a) * (R + 0.3), Math.sin(a) * (R + 0.3)])
+    }
+    const F = [-this.viewDir.x, -this.viewDir.z]
+    const L = [this.drawerDir.x, this.drawerDir.z]
+    const front = clipHalfPlane(circle, [-F[0], -F[1]], -c)
+    const pieces = [
+      clipHalfPlane(circle, F, c),
+      clipHalfPlane(front, [-L[0], -L[1]], -half),
+      clipHalfPlane(front, L, -half)
+    ]
+    const deckMat = new THREE.MeshStandardMaterial({
+      color: 0x3a4452,
+      roughness: 0.75,
+      metalness: 0.2
+    })
+    for (const poly of pieces)
+      if (poly.length >= 3)
+        this.root.add(new THREE.Mesh(prismGeometry(poly, -1.0, 0), deckMat))
+    // 广场边缘一圈暖色小地灯
+    const lampPts = []
+    for (let i = 0; i < 72; i++) {
+      const a = (i / 72) * Math.PI * 2
+      lampPts.push(Math.sin(a) * (R - 1.2), 0.15, Math.cos(a) * (R - 1.2))
+    }
+    const lg = new THREE.BufferGeometry()
+    lg.setAttribute("position", new THREE.Float32BufferAttribute(lampPts, 3))
+    this.root.add(
+      new THREE.Points(
+        lg,
+        new THREE.PointsMaterial({
+          size: 3,
+          sizeAttenuation: false,
+          color: new THREE.Color(1.4, 1.0, 0.6),
+          map: dotTexture(),
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+      )
+    )
+    // 底部平台：比圆台大一圈的深色镜面圆盘 + 外缘细青光环
+    const R2 = R + 7
     const plate = new THREE.Mesh(
-      new THREE.CylinderGeometry(R2, R2 + 1, 1.4, 128),
+      new THREE.CylinderGeometry(R2, R2 + 0.6, 1.6, 160),
       new THREE.MeshStandardMaterial({
-        color: 0x07111f,
-        roughness: 0.7,
-        metalness: 0.3
+        color: 0x0a1424,
+        roughness: 0.8,
+        metalness: 0.2
       })
     )
-    plate.position.y = yBot - 0.7
+    plate.position.y = yBot - 0.8
     this.root.add(plate)
-    const ringMat = (c, k) =>
-      new THREE.MeshBasicMaterial({
-        color: new THREE.Color(c).multiplyScalar(k)
-      })
     const ring = (rad, tube, y, c, k) => {
       const m = new THREE.Mesh(
-        new THREE.TorusGeometry(rad, tube, 8, 160),
-        ringMat(c, k)
+        new THREE.TorusGeometry(rad, tube, 8, 200),
+        new THREE.MeshBasicMaterial({
+          color: new THREE.Color(c).multiplyScalar(k)
+        })
       )
       m.rotation.x = Math.PI / 2
       m.position.y = y
       this.root.add(m)
     }
-    ring(R2 + 0.4, 0.45, yBot - 0.2, 0x2fd6ff, 2.4)
-    ring(R + 5, 0.18, yBot + 0.05, 0x2f9bff, 1.2)
-    ring(R + 0.1, 0.22, 0.05, 0x2de2e6, 1.6)
-    // 平台下方的蓝色辉光（加法混合的径向渐变面）
+    ring(R2 + 0.35, 0.28, yBot - 0.05, 0x3fc8ff, 1.5)
+    ring(R2 + 0.8, 0.12, yBot - 1.4, 0x2f7dff, 0.9)
+    // 平台下方淡淡的蓝色辉光
     const glow = new THREE.Mesh(
-      new THREE.CircleGeometry(R2 + 40, 64),
+      new THREE.CircleGeometry(R2 + 30, 64),
       new THREE.ShaderMaterial({
         transparent: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
         uniforms: { uR: { value: R2 } },
         vertexShader: `varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);} `,
-        fragmentShader: `uniform float uR; varying vec2 vP; void main(){ float d = length(vP) - uR; float a = d < 0.0 ? 0.07 : exp(-d / 12.0) * 0.07; gl_FragColor = vec4(vec3(0.12,0.45,1.0) * a, 1.0);} `
+        fragmentShader: `uniform float uR; varying vec2 vP; void main(){ float d = length(vP) - uR; float a = d < 0.0 ? 0.0 : exp(-d / 9.0) * 0.06; gl_FragColor = vec4(vec3(0.12,0.45,1.0) * a, 1.0);} `
       })
     )
     glow.rotation.x = -Math.PI / 2
-    glow.position.y = yBot - 1.5
+    glow.position.y = yBot - 1.7
     this.root.add(glow)
   }
 
-  /** 剖切坐标 → 世界 xz：l 沿画面横向（右为正），f 朝相机（剖切面在 f = CUT × R） */
+  /** 剖切坐标 → 世界 xz：l 沿画面横向（右为正），f 朝相机 */
   _lf(l, f) {
     return [
       this.drawerDir.x * l - this.viewDir.x * f,
@@ -425,122 +460,128 @@ export class BuildingScene {
     ]
   }
 
+  /** 竖直四边形（两端点为剖切坐标），双面 */
+  _quad(l0, f0, l1, f1, y0, y1, mat) {
+    const [x0, z0] = this._lf(l0, f0)
+    const [x1, z1] = this._lf(l1, f1)
+    const g = new THREE.BufferGeometry()
+    g.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(
+        [
+          x0,
+          y0,
+          z0,
+          x1,
+          y0,
+          z1,
+          x1,
+          y1,
+          z1,
+          x0,
+          y0,
+          z0,
+          x1,
+          y1,
+          z1,
+          x0,
+          y1,
+          z0
+        ],
+        3
+      )
+    )
+    g.computeVertexNormals()
+    const m = new THREE.Mesh(g, mat)
+    this.root.add(m)
+    return m
+  }
+
   /**
-   * 地下 B1～B3 剖切（设计稿：基座正面被竖直剖开，像剖面模型一样露出一排机房）：
-   * 剖切面在 f = c，往里 ROOM_D 米是机房后墙；每层楼板在剖切面上露出厚边，房间之间有隔墙，顶上一条灯带
+   * 地下 B1～B3 剖口：剖口两侧是石材的剖切面，里面每层一排机房（地面、顶灯、隔墙、后墙），
+   * 剖切面上每层一圈描边（选中 / 悬浮 / 告警时变色）
    */
   _buildBasement() {
-    const R = this.baseR - 0.3
-    const c = CUT * R
-    const back = c - ROOM_D
+    const { R, c, back, half } = this.room
     const depth = this.baseDepth
-    // 机房平面 = 圆 ∩ { back ≤ f ≤ c }
-    const circle = []
-    for (let i = 0; i < 128; i++) {
-      const a = (i / 128) * Math.PI * 2
-      circle.push([Math.cos(a) * R, Math.sin(a) * R])
-    }
     const F = [-this.viewDir.x, -this.viewDir.z]
-    const roomPoly = clipHalfPlane(
-      clipHalfPlane(circle, F, c),
-      [-F[0], -F[1]],
-      -back
-    )
-    this.room = { R, c, back, half: Math.sqrt(R * R - c * c) }
-    const concrete = new THREE.MeshStandardMaterial({
-      color: 0x4a5462,
+    const L = [this.drawerDir.x, this.drawerDir.z]
+    // 机房平面 = 圆 ∩ { back ≤ f ≤ c, |l| ≤ half }
+    const circle = []
+    for (let i = 0; i < 160; i++) {
+      const a = (i / 160) * Math.PI * 2
+      circle.push([Math.cos(a) * (R - 0.4), Math.sin(a) * (R - 0.4)])
+    }
+    let roomPoly = clipHalfPlane(circle, F, c)
+    roomPoly = clipHalfPlane(roomPoly, [-F[0], -F[1]], -back)
+    roomPoly = clipHalfPlane(roomPoly, L, half)
+    roomPoly = clipHalfPlane(roomPoly, [-L[0], -L[1]], half)
+    const cutMat = new THREE.MeshStandardMaterial({
+      color: 0x55606e,
       roughness: 0.9,
       side: THREE.DoubleSide
     })
     const wallMat = new THREE.MeshStandardMaterial({
-      color: 0x353e4b,
+      color: 0x8a95a3,
       roughness: 0.85,
       side: THREE.DoubleSide
     })
-    const quad = (l0, l1, f0, f1, y0, y1, mat) => {
-      const [x0, z0] = this._lf(l0, f0)
-      const [x1, z1] = this._lf(l1, f1)
-      const g = new THREE.BufferGeometry()
-      g.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(
-          [
-            x0,
-            y0,
-            z0,
-            x1,
-            y0,
-            z1,
-            x1,
-            y1,
-            z1,
-            x0,
-            y0,
-            z0,
-            x1,
-            y1,
-            z1,
-            x0,
-            y1,
-            z0
-          ],
-          3
-        )
-      )
-      g.computeVertexNormals()
-      const m = new THREE.Mesh(g, mat)
-      this.root.add(m)
-      return m
-    }
-    // 后墙（整个地下深度）
-    const backHalf = Math.sqrt(R * R - back * back)
-    quad(-backHalf, backHalf, back, back, -depth, 0, wallMat)
-    // 隔墙：把每层分成左中右三间（垂直于剖切面）
-    for (const k of [-0.34, 0.3]) {
-      const l = k * this.room.half
-      quad(l, l, back, c, -depth, 0, wallMat)
-    }
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: 0x6b7684,
+      roughness: 0.7,
+      side: THREE.DoubleSide
+    })
+    // 剖口两侧的剖切面（从剖口正面到圆柱外表面）与后墙
+    const fOut = Math.sqrt(R * R - half * half)
+    for (const l of [-half, half])
+      this._quad(l, c, l, fOut, -depth, -0.01, cutMat)
+    this._quad(-half, back, half, back, -depth, 0, wallMat)
+    // 隔墙：每层分左中右三间
+    for (const k of [-0.36, 0.3])
+      this._quad(k * half, back, k * half, c, -depth, 0, wallMat)
     this.baseArcs = new Map()
     for (let b = 1; b <= 3; b++) {
       const yb = -b * BASE_FLOOR
-      // 本层地面（0.6 厚，剖切面上露出厚边）
+      // 本层地面（0.8 厚，剖口上露出楼板厚边）
       this.root.add(
-        new THREE.Mesh(prismGeometry(roomPoly, yb - 0.6, yb), concrete)
+        new THREE.Mesh(prismGeometry(roomPoly, yb - 0.8, yb), floorMat)
       )
-      // 顶灯带：天花下方沿剖切面方向的一条冷白灯管（每间一条）
+      // 吊顶灯盘：每间两排冷白灯
       for (const [l0, l1] of [
-        [-0.95, -0.38],
-        [-0.3, 0.26],
-        [0.34, 0.95]
-      ]) {
-        const lamp = new THREE.Mesh(
-          new THREE.BoxGeometry(1, 0.12, 0.5),
-          new THREE.MeshBasicMaterial({
-            color: new THREE.Color(1.1, 1.2, 1.35)
-          })
-        )
-        const lm = (l0 + l1) / 2
-        const [x, z] = this._lf(lm * this.room.half * 0.8, (c + back) / 2)
-        lamp.position.set(x, yb + BASE_FLOOR - 0.75, z)
-        lamp.scale.x = (l1 - l0) * this.room.half * 0.7
-        lamp.rotation.y = Math.atan2(-this.drawerDir.z, this.drawerDir.x)
-        this.root.add(lamp)
-      }
-      // 每层两盏点光源照亮设备
-      for (const l of [-0.5, 0.5]) {
-        const light = new THREE.PointLight(0xdfe8ff, 380, 26, 1.7)
-        const [x, z] = this._lf(l * this.room.half, (c + back) / 2 + 3)
-        light.position.set(x, yb + BASE_FLOOR - 1.4, z)
+        [-0.96, -0.4],
+        [-0.32, 0.26],
+        [0.34, 0.96]
+      ])
+        for (const ff of [0.3, 0.7]) {
+          const lamp = new THREE.Mesh(
+            new THREE.BoxGeometry(1, 0.15, 0.7),
+            new THREE.MeshBasicMaterial({
+              color: new THREE.Color(0.62, 0.68, 0.76) // 低于辉光阈值，灯盘不泛光
+            })
+          )
+          const [x, z] = this._lf(
+            ((l0 + l1) / 2) * half,
+            back + (c - back) * ff
+          )
+          lamp.position.set(x, yb + BASE_FLOOR - 0.95, z)
+          lamp.scale.x = (l1 - l0) * half * 0.85
+          lamp.rotation.y = Math.atan2(-this.drawerDir.z, this.drawerDir.x)
+          this.root.add(lamp)
+        }
+      // 每间一盏点光源
+      for (const l of [-0.68, -0.03, 0.65]) {
+        const light = new THREE.PointLight(0xe6eeff, 150, 26, 1.8)
+        const [x, z] = this._lf(l * half, (c + back) / 2 + 2)
+        light.position.set(x, yb + BASE_FLOOR - 1.6, z)
         this.root.add(light)
       }
-      // 本层剖切面上的描边（选中 / 悬浮 / 告警时变色）
+      // 剖口正面的楼层描边
       const pts = []
-      const h = this.room.half
       for (const [l0, y0, l1, y1] of [
-        [-h, yb, h, yb],
-        [-h, yb + BASE_FLOOR - 0.05, h, yb + BASE_FLOOR - 0.05],
-        [-h, yb, -h, yb + BASE_FLOOR],
-        [h, yb, h, yb + BASE_FLOOR]
+        [-half, yb, half, yb],
+        [-half, yb + BASE_FLOOR - 0.05, half, yb + BASE_FLOOR - 0.05],
+        [-half, yb, -half, yb + BASE_FLOOR],
+        [half, yb, half, yb + BASE_FLOOR]
       ]) {
         const [xa, za] = this._lf(l0, c + 0.05)
         const [xb, zb] = this._lf(l1, c + 0.05)
@@ -560,7 +601,7 @@ export class BuildingScene {
       this.root.add(arc)
       this.baseArcs.set(`B${b}`, arc)
     }
-    // 拾取用的不可见体：鼠标指向剖开的机房时能选中 B1～B3
+    // 拾取用的不可见体：鼠标指向剖口里的机房时能选中 B1～B3
     const roomHit = new THREE.Mesh(
       prismGeometry(roomPoly, -depth, -0.05),
       new THREE.MeshBasicMaterial({ visible: false })
@@ -570,109 +611,173 @@ export class BuildingScene {
     this._buildEquipment()
   }
 
-  /** 地下设备：B1 车辆、B2 冷水机组 + 配电柜（告警柜红色波纹）、B3 水泵与水箱 */
+  /**
+   * 地下设备（设计稿：蓝色机组 + 管道 + 一排带绿灯的配电柜）：
+   * B1 车库（左中两间停车、右间新风机组）、B2 冷水机组 + 配电柜（告警柜红色波纹）、B3 水泵房 + 水箱
+   */
   _buildEquipment() {
     const { c, back, half } = this.room
     const mid = (c + back) / 2
-    const box = (w, h, d, color, emissive = 0x000000, ei = 0) =>
-      new THREE.Mesh(
-        new THREE.BoxGeometry(w, h, d),
-        new THREE.MeshStandardMaterial({
-          color,
-          roughness: 0.45,
-          metalness: 0.5,
-          emissive,
-          emissiveIntensity: ei
-        })
-      )
-    // l、f 为剖切坐标；物体本地 x 轴沿画面横向
+    const mat = (color, emissive = 0x000000, ei = 0, metal = 0.5) =>
+      new THREE.MeshStandardMaterial({
+        color,
+        roughness: 0.4,
+        metalness: metal,
+        emissive,
+        emissiveIntensity: ei
+      })
+    const box = (w, h, d, m) =>
+      new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m)
     const rotY = Math.atan2(-this.drawerDir.z, this.drawerDir.x)
-    const place = (obj, l, f, y) => {
+    // 设备尺寸随层高放大（层高按 10 m 设计的摆放，层高加大后设备同比放大，机房不显空）
+    const K = BASE_FLOOR / 10
+    const place = (obj, l, f, y, scaled = true) => {
       const [x, z] = this._lf(l, f)
       obj.position.set(x, y, z)
+      if (scaled) obj.scale.setScalar(K)
       obj.rotation.y += rotY
       this.root.add(obj)
       return obj
     }
-    // B1 车库：两排车（车头朝剖切面）
+    const blue = mat(0x2f6fd6, 0x0d3aa0, 0.35)
+    const steel = mat(0xa9b8cc, 0x000000, 0, 0.75)
+    const cabinet = mat(0xc9d0d8, 0x000000, 0, 0.3)
+    const green = mat(0x000000, 0x30ff90, 4)
+    /** 冷水机组：蓝色机身 + 两个筒体 + 顶上一根管道 */
+    const chiller = (l, f, y) => {
+      place(box(6.2, 2.6, 3.4, blue), l, f, y + 1.3 * K)
+      for (const dz of [-0.9, 0.9]) {
+        const t = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.75, 0.75, 6.4, 16),
+          blue
+        )
+        t.rotation.z = Math.PI / 2
+        place(t, l, f + dz, y + 3.1 * K)
+      }
+    }
+    /** 配电柜：浅灰柜体 + 柜门上的指示灯 */
+    const cab = (l, f, y, alarm) => {
+      const m = alarm ? mat(0x7a2a30, 0xff2030, 0.6) : cabinet
+      const o = place(box(1.6, 3.6, 1.2, m), l, f, y + 1.8 * K)
+      place(
+        box(0.9, 0.14, 0.06, alarm ? mat(0x000000, 0xff3040, 4) : green),
+        l,
+        f + 0.63 * K,
+        y + 2.9 * K
+      )
+      place(
+        box(0.9, 0.14, 0.06, alarm ? mat(0x000000, 0xff3040, 4) : green),
+        l,
+        f + 0.63 * K,
+        y + 2.4 * K
+      )
+      return o
+    }
+    /** 顶棚管道（沿画面横向） */
+    const pipe = (l0, l1, f, y, r, m) => {
+      const t = new THREE.Mesh(
+        new THREE.CylinderGeometry(r, r, Math.abs(l1 - l0), 12),
+        m
+      )
+      t.rotation.z = Math.PI / 2
+      place(t, (l0 + l1) / 2, f, y, false)
+    }
+    // ---- B1：左、中两间车库，右间新风机组
+    const y1 = -BASE_FLOOR
     const carColors = [
       0x8a96a8, 0x3b4a63, 0xb8c0cc, 0x7a2e2e, 0x2d3a4a, 0xd0d4da
     ]
-    for (let i = 0; i < 14; i++) {
-      const l = -half * 0.88 + (i / 13) * half * 1.76
+    for (let i = 0; i < 12; i++) {
+      const l = -half * 0.92 + (i / 11) * half * 1.12
       for (const [f, k] of [
         [mid + 4, 0],
         [mid - 4.5, 1]
       ]) {
         if ((i + k * 2) % 5 === 4) continue
-        const car = box(
-          2.0,
-          1.4,
-          4.4,
-          carColors[(i * 5 + k * 3) % carColors.length]
+        place(
+          box(
+            2.0,
+            1.4,
+            4.4,
+            mat(carColors[(i * 5 + k * 3) % carColors.length], 0, 0, 0.6)
+          ),
+          l,
+          f,
+          y1 + 0.7 * K
         )
-        place(car, l, f, -BASE_FLOOR + 0.7)
       }
     }
-    // B2：左间两台蓝色冷水机组 + 管道；中、右间一排配电柜，中间一台低压柜告警
-    const yb2 = -2 * BASE_FLOOR
-    for (const l of [-0.82, -0.55]) {
-      const chiller = box(5.2, 2.4, 3.4, 0x2f6fd6, 0x1040a0, 0.3)
-      place(chiller, l * half, mid, yb2 + 1.2)
-    }
-    const pipe = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.35, 0.35, half * 0.6, 12),
-      new THREE.MeshStandardMaterial({
-        color: 0x9fb4cf,
-        metalness: 0.7,
-        roughness: 0.3
-      })
+    chiller(0.55 * half, mid - 2, y1)
+    chiller(0.82 * half, mid - 2, y1)
+    pipe(0.38 * half, 0.98 * half, mid + 4, y1 + BASE_FLOOR - 1.6, 0.4, steel)
+    // ---- B2：左间三台冷水机组 + 管道，中、右间一排配电柜（中间一台告警）
+    const y2 = -2 * BASE_FLOOR
+    for (const l of [-0.88, -0.66, -0.44]) chiller(l * half, mid, y2)
+    pipe(
+      -0.98 * half,
+      -0.38 * half,
+      mid - 4.5,
+      y2 + BASE_FLOOR - 1.8,
+      0.45,
+      steel
     )
-    pipe.rotation.z = Math.PI / 2
-    place(pipe, -0.68 * half, mid - 3, yb2 + 3.6)
+    pipe(
+      -0.98 * half,
+      -0.38 * half,
+      mid + 4.5,
+      y2 + BASE_FLOOR - 1.4,
+      0.3,
+      mat(0x3ddc97, 0x0a5030, 0.4)
+    )
     const alarmOn = !!this.floorMap.get("B2")?.alarm
-    for (let i = 0; i < 11; i++) {
-      const l = (-0.24 + i * 0.105) * half
-      if (Math.abs(l - 0.3 * half) < 1.4) continue
-      const alarm = alarmOn && i === 4
-      const cab = box(
-        1.5,
-        3.2,
-        1.2,
-        alarm ? 0x7a2a30 : 0xc3cbd4,
-        alarm ? 0xff2030 : 0x000000,
-        alarm ? 0.6 : 0
-      )
-      place(cab, l, back + 2.2, yb2 + 1.6)
-      // 柜门上的指示灯
-      const led = box(0.9, 0.12, 0.06, 0x000000, alarm ? 0xff3040 : 0x30ff90, 4)
-      place(led, l, back + 2.85, yb2 + 2.5)
+    for (let i = 0; i < 14; i++) {
+      const l = (-0.26 + i * 0.085) * half
+      if (Math.abs(l - 0.3 * half) < 1.6) continue
+      const alarm = alarmOn && i === 5
+      const o = cab(l, back + 2.2, y2, alarm)
       if (alarm)
         this._alarmAt(
-          new THREE.Vector3(cab.position.x, yb2 + 0.08, cab.position.z),
+          new THREE.Vector3(o.position.x, y2 + 0.08, o.position.z),
           "B2"
         )
+      if (i % 3 === 0 && i > 6) cab(l, mid + 3, y2, false)
     }
-    // B3：一排卧式水泵 + 两个水箱
-    const yb3 = -3 * BASE_FLOOR
-    for (let i = 0; i < 6; i++) {
+    // ---- B3：一排卧式水泵 + 管道 + 两个水箱
+    const y3 = -3 * BASE_FLOOR
+    for (let i = 0; i < 8; i++) {
       const pump = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.75, 0.75, 2.4, 16),
-        new THREE.MeshStandardMaterial({
-          color: 0x2a64c8,
-          metalness: 0.5,
-          roughness: 0.4,
-          emissive: 0x0a2a80,
-          emissiveIntensity: 0.35
-        })
+        new THREE.CylinderGeometry(0.8, 0.8, 2.6, 16),
+        blue
       )
       pump.rotation.z = Math.PI / 2
-      place(pump, (-0.85 + i * 0.13) * half, mid, yb3 + 0.9)
+      place(pump, (-0.9 + i * 0.13) * half, mid, y3 + 1.0 * K)
+      const riser = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.25, 0.25, BASE_FLOOR - 2.5, 8),
+        steel
+      )
+      place(
+        riser,
+        (-0.9 + i * 0.13) * half,
+        mid - 1.2,
+        y3 + (BASE_FLOOR - 2.5) / 2 + 1,
+        false
+      )
     }
-    for (const l of [0.48, 0.78]) {
-      const tank = box(5.5, 4.0, 5, 0x7d8a99)
-      place(tank, l * half, mid - 1, yb3 + 2)
-    }
+    pipe(
+      -0.95 * half,
+      0.1 * half,
+      mid - 1.2,
+      y3 + BASE_FLOOR - 1.4,
+      0.45,
+      steel
+    )
+    for (const l of [0.5, 0.8])
+      place(
+        box(6, 4.6, 6, mat(0x7d8a99, 0, 0, 0.3)),
+        l * half,
+        mid - 1,
+        y3 + 2.3 * K
+      )
   }
 
   /** 告警波纹：设备脚下一圈向外扩散的红环 + 红色点光源 */
@@ -759,6 +864,30 @@ export class BuildingScene {
       s.position.set(a[0], this.podiumH + 1.1, a[1])
       this.root.add(t, s)
     }
+    // 广场上的树（设计稿裙楼外围广场有一圈树）：裙楼外沿与底座边缘之间，剖口上方空着
+    const { R, c, half } = this.room
+    const rnd = mulberry(23)
+    for (let i = 0; i < 40; i++) {
+      const ang = (i / 40) * Math.PI * 2 + rnd() * 0.08
+      const rad =
+        this.radius * PODIUM_SCALE +
+        4 +
+        rnd() * (R - this.radius * PODIUM_SCALE - 7)
+      const x = Math.sin(ang) * rad
+      const z = Math.cos(ang) * rad
+      // 换到剖切坐标判断是否落在剖口上方
+      const l = x * this.drawerDir.x + z * this.drawerDir.z
+      const fc = -(x * this.viewDir.x + z * this.viewDir.z)
+      if (fc > c - 2 && Math.abs(l) < half + 2) continue
+      const k = 0.75 + rnd() * 0.5
+      const t = new THREE.Mesh(crown, leaf)
+      t.position.set(x, 2.2 * k, z)
+      t.scale.setScalar(k)
+      const st = new THREE.Mesh(stem, trunk)
+      st.position.set(x, 0.8 * k, z)
+      st.scale.setScalar(k)
+      this.root.add(t, st)
+    }
     // 裙楼楼板边线（金色）
     const pos = []
     const fl = []
@@ -805,7 +934,7 @@ export class BuildingScene {
         maxFloor: this.levels,
         glass: new THREE.Vector3(0.1, 0.42, 0.95),
         winColor: new THREE.Vector3(1.0, 0.86, 0.6),
-        edge: new THREE.Vector3(0.3, 0.8, 1.0)
+        edge: new THREE.Vector3(0.14, 0.52, 1.0)
       })
     )
     this.root.add(this.towerShell)
@@ -868,11 +997,79 @@ export class BuildingScene {
       })
     )
     this.root.add(this.sensorDots)
+    this._buildDesks()
   }
 
-  /** 核心筒光柱 + 机电立管 */
-  _buildCore() {
-    // 核心筒：沿平面主轴放置的矩形，约占平面的 30% × 24%
+  /**
+   * 各办公层的工位（设计稿每层玻璃里都能看到家具）：所有楼层合成一个 InstancedMesh，
+   * 亮灯的工位暖白、空置的深灰蓝，比例按该层入驻率；记下每层的实例区间，抽屉抽出时把该层隐藏
+   */
+  _buildDesks() {
+    const { w, d, ca, sa } = this._coreDims()
+    const cells = []
+    this.deskRanges = new Map()
+    // 工位颜色压得很暗：几十层叠在一起看，亮一点整栋楼就糊成一片白（也不能超过辉光阈值）
+    const warm = new THREE.Color(0.3, 0.24, 0.15)
+    const dark = new THREE.Color(0.05, 0.08, 0.12)
+    for (const f of this.floors) {
+      if (f.index < 5 || f.kind === "plant") continue
+      const y = this.floorBottom(f.index)
+      const poly = insetPoly(this.towerPolyAt(y + FLOOR * 0.5), 2.2)
+      if (poly.length < 3) continue
+      const start = cells.length
+      const rnd = mulberry(f.index * 31 + 7)
+      for (let a = -40; a <= 40; a += 4.2)
+        for (let b = -40; b <= 40; b += 3.4) {
+          // 工位网格沿平面主轴排；核心筒周围留走道
+          if (Math.abs(a) < w / 2 + 2.6 && Math.abs(b) < d / 2 + 2.2) continue
+          const x = a * ca - b * sa
+          const z = a * sa + b * ca
+          if (!inPoly(x, z, poly)) continue
+          const lit = rnd() < (f.occupancy ?? 60) / 100
+          const k = 0.55 + 0.45 * rnd()
+          // 空置工位不画：深色小块在玻璃后面会读成一层灰色噪点
+          if (!lit) continue
+          cells.push({
+            x,
+            z,
+            y: y + 0.4,
+            color: (lit ? warm : dark).clone().multiplyScalar(lit ? k : 1)
+          })
+        }
+      this.deskRanges.set(f.index, [start, cells.length - start])
+    }
+    const mesh = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1.1, 0.45, 0.6),
+      new THREE.MeshBasicMaterial({ color: 0xffffff }),
+      cells.length
+    )
+    const m4 = new THREE.Matrix4()
+    const q = new THREE.Quaternion().setFromAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      -this.axis
+    )
+    const one = new THREE.Vector3(1, 1, 1)
+    cells.forEach((c, i) => {
+      m4.compose(new THREE.Vector3(c.x, c.y, c.z), q, one)
+      mesh.setMatrixAt(i, m4)
+      mesh.setColorAt(i, c.color)
+    })
+    this.deskMatrices = mesh.instanceMatrix.array.slice()
+    this.desks = mesh
+    this.root.add(mesh)
+  }
+
+  /** 隐藏 / 恢复某层的工位（该层被抽出时塔身里不能再留一份） */
+  _hideDesks(index) {
+    const arr = this.desks.instanceMatrix.array
+    arr.set(this.deskMatrices)
+    const r = this.deskRanges.get(index)
+    if (r) arr.fill(0, r[0] * 16, (r[0] + r[1]) * 16)
+    this.desks.instanceMatrix.needsUpdate = true
+  }
+
+  /** 核心筒尺寸：沿平面主轴放置的矩形，约占平面长、短轴的 16%（设计稿里是细细一道光柱） */
+  _coreDims() {
     let maxA = 0
     let maxB = 0
     const ca = Math.cos(this.axis)
@@ -881,8 +1078,12 @@ export class BuildingScene {
       maxA = Math.max(maxA, Math.abs(x * ca + z * sa))
       maxB = Math.max(maxB, Math.abs(-x * sa + z * ca))
     }
-    const w = maxA * 2 * 0.2
-    const d = maxB * 2 * 0.2
+    return { w: maxA * 2 * 0.16, d: maxB * 2 * 0.17, ca, sa }
+  }
+
+  /** 核心筒光柱 + 机电立管 */
+  _buildCore() {
+    const { w, d, ca, sa } = this._coreDims()
     // 核心筒从地面起（地下剖切面里不出现光柱，免得把机房照成一片白）
     const y0 = -0.5
     const y1 = this.H - this.roofRise - 2
@@ -918,11 +1119,14 @@ export class BuildingScene {
     const cap = new THREE.Mesh(
       prismGeometry(poly, Math.min(...ys) - 0.6, ys),
       new THREE.MeshStandardMaterial({
-        color: 0x0c1626,
-        roughness: 0.6,
+        color: 0x1d4f86,
+        emissive: 0x0b2a55,
+        emissiveIntensity: 0.6,
+        roughness: 0.3,
         metalness: 0.4,
         transparent: true,
-        opacity: 0.85
+        opacity: 0.55,
+        depthWrite: false
       })
     )
     this.root.add(cap)
@@ -1060,6 +1264,7 @@ export class BuildingScene {
     }
     this.drawerT = 0
     this._setGap(-99, 0)
+    this._hideDesks(-99)
     if (!f) {
       this.selLabel.visible = false
       return
@@ -1080,13 +1285,14 @@ export class BuildingScene {
     this.drawer = this._makeDrawer(f)
     this.root.add(this.drawer)
     this.drawerFloor = f.index
+    this._hideDesks(f.index)
   }
 
   _makeDrawer(f) {
     const y = this.floorBottom(f.index)
     const realH = this.floorHeight(f.index)
-    // 抽屉按 2.6 倍层高显示（以该层为中心上下撑开）：真实层高在整栋楼的画面里只有十来个像素，看不清室内
-    const h = realH * 2.6
+    // 抽屉按 3.8 倍层高显示（以该层为中心上下撑开）：真实层高在整栋楼的画面里只有十来个像素，看不清室内
+    const h = realH * 3.8
     const poly =
       f.index <= 4 ? this.podiumPoly : this.towerPolyAt(y + realH * 0.5)
     const g = new THREE.Group()
@@ -1270,7 +1476,7 @@ export class BuildingScene {
     const fov = this.camera.fov * DEG
     // 整栋楼（含基座）占画面高度约 74%；视点略高于楼的中点，让楼整体下移、塔顶避开顶栏与视图切换
     const dist = (hgt * 0.5) / Math.tan(fov / 2) / 0.7
-    const elev = 6 * DEG
+    const elev = 10 * DEG
     const target = new THREE.Vector3(0, bottom + hgt * 0.53, 0)
     const pos = target
       .clone()
@@ -1318,6 +1524,7 @@ export class BuildingScene {
     tu.uAlpha.value = c.alpha
     tu.uMullion.value = c.mullion
     tu.uWindow.value = c.window
+    this.desks.material.color.setScalar(c.desk)
     tu.uHeat.value = c.heat
     tu.uPlant.value = c.plant
     const pu = this.podiumShell.material.uniforms
@@ -1341,7 +1548,7 @@ export class BuildingScene {
     if (this.drawer) {
       this.drawerT = Math.min(1, this.drawerT + dt * 1.6)
       const e = 1 - Math.pow(1 - this.drawerT, 3)
-      const out = this.radius * 0.95 * e
+      const out = this.radius * 1.1 * e
       this.drawer.position.x = this.drawerDir.x * out
       this.drawer.position.z = this.drawerDir.z * out
       this.drawerGlass.uniforms.uTime.value = t
@@ -1422,4 +1629,28 @@ function dotTexture() {
   g.fillStyle = grd
   g.fillRect(0, 0, 64, 64)
   return new THREE.CanvasTexture(c)
+}
+
+/** 底座石材贴图：深灰石块，横向砌缝 + 上下错缝的竖缝，每块明暗略有差别 */
+function stoneTexture() {
+  const c = document.createElement("canvas")
+  c.width = 256
+  c.height = 256
+  const g = c.getContext("2d")
+  const rows = 4
+  const cols = 3
+  const rnd = mulberry(11)
+  g.fillStyle = "#1c222b" // 砌缝
+  g.fillRect(0, 0, 256, 256)
+  for (let r = 0; r < rows; r++)
+    for (let k = -1; k < cols; k++) {
+      const x = (k + (r % 2) * 0.5) * (256 / cols)
+      const v = 84 + rnd() * 30
+      g.fillStyle = `rgb(${v},${v + 4},${v + 10})`
+      g.fillRect(x + 2, r * 64 + 2, 256 / cols - 4, 60)
+    }
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.wrapS = THREE.RepeatWrapping
+  return tex
 }
