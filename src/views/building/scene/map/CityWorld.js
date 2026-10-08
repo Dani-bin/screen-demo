@@ -433,9 +433,11 @@ export class CityWorld extends Mini3d {
     map.setParent(focusMapGroup)
     mapTop.setParent(focusMapGroup)
     mapLine.setParent(focusMapGroup)
-    // 入场前压扁在地面上，时间线里再弹起来
+    // 入场前压扁在地面上，时间线里再弹起来。
+    // 不能压到 0：挤出体的顶面、底面和上面那层可悬浮顶面会重合在同一平面上互相抢深度（z-fighting），
+    // 相机飞入时整块地图闪烁、出现黑色裂片；保留 6% 的厚度，各层之间就有足够的深度差
     focusMapGroup.position.set(0, 0, -0.01)
-    focusMapGroup.scale.set(1, 1, 0)
+    focusMapGroup.scale.set(1, 1, 0.06)
     mapGroup.add(focusMapGroup)
     mapGroup.rotation.x = -Math.PI / 2
     mapGroup.position.set(0, 0.2, 0)
@@ -501,10 +503,14 @@ export class CityWorld extends Mini3d {
       renderOrder: 9
     })
     // 顶面：沿 x 方向青色渐变的半透明面，悬浮时整块换成高亮材质
+    // 可悬浮顶面：盖在挤出体顶面上方，往相机方向偏一点深度（polygonOffset），压扁时也不会和挤出体顶面打架
     const faceMaterial = new MeshStandardMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 0.5
+      opacity: 0.5,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -4
     })
     new GradientShader(faceMaterial, {
       uColor1: 0x12bbe0,
