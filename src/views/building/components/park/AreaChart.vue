@@ -59,17 +59,23 @@
     ticks: {
       type: Array,
       default: () => ["00:00", "06:00", "12:00", "18:00", "24:00"]
-    }
+    },
+    /** 纵轴从 0 起（人数、能耗）；false 时按数据最小、最大值上下留白（温度、压力这类变化幅度小的读数） */
+    zero: { type: Boolean, default: true }
   })
 
   const W = 392
   const H = 100
   const gid = `ac${Math.random().toString(36).slice(2, 8)}`
   const pts = computed(() => {
-    const max = Math.max(...props.values) * 1.15 || 1
+    const hi = Math.max(...props.values)
+    const lo = props.zero ? 0 : Math.min(...props.values)
+    const pad = props.zero ? hi * 0.15 : (hi - lo) * 0.35 || 1
+    const top = hi + pad
+    const bot = props.zero ? 0 : lo - pad
     return props.values.map((v, i) => [
       (i / (props.values.length - 1)) * W,
-      H - (v / max) * H
+      H - ((v - bot) / (top - bot || 1)) * H
     ])
   })
   const line = computed(() =>

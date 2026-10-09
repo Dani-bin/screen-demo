@@ -6,9 +6,9 @@
     - 园区级 ParkLevel：成都金融城双子塔园区（Blender 建模 + 烘焙，three.js 展示，见 scene/park/）
     - 楼宇级 BuildingLevel：双子塔南塔 / 北塔全息剖切（烘焙楼层 + three.js，见 scene/tower/）
     - 楼层级 FloorLevel：标准办公层去顶俯视（Blender 精细楼层 + 烘焙，见 scene/floor/）
-  房间级尚未实现，设计稿见 docs/design/building/。
+    - 房间级 RoomLevel：大会议室剖切近景与资产（Blender 房间模型 + 烘焙，设备实时光照，见 scene/room/）
   当前级别同步到路由参数 ?level=（楼宇级 / 楼层级另有 ?b=tower_S|tower_N，楼层级再加 ?f=32F），
-  便于直接打开某一级（如 #/building?level=floor&b=tower_N&f=32F）。
+  便于直接打开某一级（如 #/building?level=floor&b=tower_N&f=32F）；房间级目前只有各层的大会议室（#/building?level=room&b=tower_S&f=32F）。
 -->
 <template>
   <div class="building-page">
@@ -42,6 +42,15 @@
         :floor-key="floorKey"
         @back="go('building')"
         @switch-floor="(f) => go('floor', { f })"
+        @enter-room="go('room')"
+      />
+      <!-- 大会议室：换塔 / 换楼层都整级重建 -->
+      <RoomLevel
+        v-else-if="level === 'room'"
+        :key="`${tower}-${floorKey}`"
+        :tower-key="tower"
+        :floor-key="floorKey"
+        @back="go('floor')"
       />
     </Transition>
   </div>
@@ -53,6 +62,7 @@
   import ParkLevel from "./components/levels/ParkLevel.vue"
   import BuildingLevel from "./components/levels/BuildingLevel.vue"
   import FloorLevel from "./components/levels/FloorLevel.vue"
+  import RoomLevel from "./components/levels/RoomLevel.vue"
   import { towerFloors } from "./data/building"
   import { hasFloorModel } from "./data/floor"
 
@@ -62,7 +72,7 @@
     { key: "park", name: "园区", label: "成都金融城双子塔", ready: true },
     { key: "building", name: "楼宇", label: "南塔 / 北塔", ready: true },
     { key: "floor", name: "楼层", label: "楼层平面", ready: true },
-    { key: "room", name: "房间", label: "房间与资产" }
+    { key: "room", name: "房间", label: "房间与资产", ready: true }
   ]
 
   const route = useRoute()
