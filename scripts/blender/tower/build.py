@@ -2,7 +2,8 @@
 楼层模型 · 入口
 ----------------------------------------------------------
 run()  清空场景，按 scripts/blender/park/layout.json 的双子塔轮廓，为南塔 / 北塔各生成 floors.VARIANTS 里的全部楼层变体，
-       另为斜屋顶下的几层各建一个 <塔>_top_<层号>（楼板与家具按屋面裁剪），以及地下机房 <塔>_basement（basement.py）。
+       另为斜屋顶下的几层各建一个 <塔>_top_<层号>（楼板与家具按屋面裁剪）、顶层之上的屋顶机房 <塔>_roof（roof.py），
+       以及地下机房 <塔>_basement（basement.py）。
        每个变体两个对象 <塔>_<变体>（如 S_off_85，楼板 + 核心筒墙，自动展开烘焙用 UV）与 <塔>_<变体>_v（家具等，烘焙到顶点色），
        保存 models/tower/tower.blend。
        变体在场景里相互错开 220 m 摆放：烘焙时只渲染当前对象，其它对象隐藏，互不照亮。
@@ -71,10 +72,12 @@ def run(only=None, keep=False):
     only：只生成这些对象名（如 {"S_basement"}）；keep=True 时不清空场景、只替换这些对象（已烘焙的其它对象保留）
     """
     from . import basement
+    from . import roof as roof_room
 
     importlib.reload(lib)
     importlib.reload(floors)
     importlib.reload(basement)
+    importlib.reload(roof_room)
     if not keep:
         lib.clear_scene()
     with open(LAYOUT, encoding="utf-8") as f:
@@ -111,6 +114,9 @@ def run(only=None, keep=False):
             nm = f"{tag}_top_{i}"
             make(nm, lambda loc, var=var, roof=roof, nm=nm: floors.build(nm, foot, var, M, col, loc, roof), slot)
             slot += 1
+        # 屋顶机房：58F 顶板到斜屋面之间的楔形空腔
+        make(f"{tag}_roof", lambda loc: roof_room.build(f"{tag}_roof", foot, b, M, col, loc), slot)
+        slot += 1
         radius = max(math.hypot(x, y) for x, y in foot)
         make(f"{tag}_basement", lambda loc: basement.build(f"{tag}_basement", radius, M, col, loc), slot)
     # 夜空：深蓝弱光，从敞开的楼层四周照进来，熄灯区读成冷蓝

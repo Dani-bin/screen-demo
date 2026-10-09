@@ -4,6 +4,7 @@
 逐个变体用 Cycles 烘焙「漫反射直接光 + 间接光 + 自发光」（不含高光，视角相关的高光烘不进贴图）：
 楼板对象写到 models/tower/bake/<对象名>.png，家具对象写进顶点色 Bake；export.py 再按这两者导出。
 灯盘是自发光网格（光树采样），夜空从楼层四周照进来；烘焙当前对象时其它对象全部不参与渲染。
+烘完的贴图再用 OIDN 降噪（denoise）。
 M2 GPU 上 2048² / 128 采样每个对象约一两分钟，18 个对象合计二三十分钟（MCP 调用会超时，Blender 会继续跑完）。
 """
 
@@ -44,9 +45,11 @@ def bake(names=None, size=2048, samples=128):
         # 只渲染这一对对象：家具、灯盘既是光源也是遮挡物
         for o in bpy.data.objects:
             o.hide_render = o not in (ob, ov)
-        # 地下机房几乎全靠灯光的间接反射照亮，噪点多：采样翻倍
-        bpy.context.scene.cycles.samples = samples * 2 if "basement" in ob.name else samples
+        # 地下机房、屋顶机房几乎全靠灯光的间接反射照亮，噪点多：采样翻倍
+        dark = "basement" in ob.name or ob.name.endswith("_roof")
+        bpy.context.scene.cycles.samples = samples * 2 if dark else samples
         _bake_image(ob, size)
+        denoise(os.path.join(BAKE_DIR, ob.name + ".png"))
         _bake_vertex(ov)
         log[ob.name] = round(time.time() - t, 1)
     for o in bpy.data.objects:
@@ -93,3 +96,43 @@ def _bake_vertex(ov):
     """家具、灯盘、天花、板边 → 顶点色 Bake（面角域）"""
     _select(ov)
     bpy.ops.object.bake(type="COMBINED", pass_filter=PASSES, target="VERTEX_COLORS")
+
+
+def denoise(path):
+    """
+    烘焙贴图降噪：合成器里 Image → Denoise（OIDN）→ 输出，渲染一帧写回原文件。
+    合成器只能随渲染运行：临时隐藏全部对象、换 Workbench（几乎不耗时），色彩管理换 Standard（不经过 AgX，颜色原样写回），
+    渲染设置用完恢复。降噪只用颜色本身（烘焙图没有法线 / 反照率通道），UV 岛边缘有 8 px 外扩，不会把相邻岛的颜色糊进来
+    """
+    s = bpy.context.scene
+    img = bpy.data.images.load(path, check_existing=False)
+    ng = bpy.data.node_groups.new("DN_bake", "CompositorNodeTree")
+    ng.interface.new_socket("Image", in_out="OUTPUT", socket_type="NodeSocketColor")
+    ni = ng.nodes.new("CompositorNodeImage")
+    ni.image = img
+    dn = ng.nodes.new("CompositorNodeDenoise")
+    go = ng.nodes.new("NodeGroupOutput")
+    ng.links.new(ni.outputs["Image"], dn.inputs["Image"])
+    ng.links.new(dn.outputs["Image"], go.inputs[0])
+    r, vs = s.render, s.view_settings
+    keep = (s.compositing_node_group, r.resolution_x, r.resolution_y, r.resolution_percentage, r.engine, r.filepath,
+            r.image_settings.file_format, vs.view_transform, vs.look, vs.exposure, vs.gamma)
+    hidden = {o.name: o.hide_render for o in bpy.data.objects}
+    try:
+        for o in bpy.data.objects:
+            o.hide_render = True
+        s.compositing_node_group = ng
+        r.resolution_x, r.resolution_y = img.size
+        r.resolution_percentage = 100
+        r.engine = "BLENDER_WORKBENCH"
+        r.filepath = path
+        r.image_settings.file_format = "PNG"
+        vs.view_transform, vs.look, vs.exposure, vs.gamma = "Standard", "None", 0.0, 1.0
+        bpy.ops.render.render(write_still=True)
+    finally:
+        (s.compositing_node_group, r.resolution_x, r.resolution_y, r.resolution_percentage, r.engine, r.filepath,
+         r.image_settings.file_format, vs.view_transform, vs.look, vs.exposure, vs.gamma) = keep
+        for n, h in hidden.items():
+            bpy.data.objects[n].hide_render = h
+        bpy.data.node_groups.remove(ng)
+        bpy.data.images.remove(img)
