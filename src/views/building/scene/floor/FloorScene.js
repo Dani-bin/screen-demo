@@ -8,7 +8,7 @@
  *   - 房间覆盖层：按类型着色的地面光面 + 轮廓光带，悬浮 / 选中高亮，告警房间红色呼吸
  *   - 四种视图（setMode）：room 房间 / device 设备点位图标 / heat 温度热力 / desk 工位占用
  * 平面数据（three.js 的 x、z，原点为塔楼形心）来自 data/floor.js（几何由 plan.py 生成，与 GLB 对齐）。
- * 交互：悬浮房间 → onHover({ room, x, y })；点击 → onPick(roomId)；select(roomId) 金色高亮。
+ * 交互：悬浮房间 → onHover({ room, x, y })；点击 → onPick(roomId)；select(roomId) 金色高亮；大会议室标签「进入房间」→ onEnter(roomId)。
  */
 import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
@@ -55,6 +55,7 @@ export class FloorScene {
     this.container = o.container
     this.onHover = o.onHover
     this.onPick = o.onPick
+    this.onEnter = o.onEnter // 大会议室标签上的「进入房间」
     this.mode = "room"
     this.selected = null
     this.hovered = null
@@ -379,6 +380,17 @@ export class FloorScene {
     const name =
       room.type === "lobby" ? "核心筒 · 电梯 6 部" : `${room.id} ${room.name}`
     el.innerHTML = `${name}${tail}`
+    // 大会议室有房间级精细模型：标签上加「进入房间」入口（标签层不接收鼠标，按钮单独打开）
+    if (room.type === "conference" && this.onEnter) {
+      const btn = document.createElement("button")
+      btn.className = "enter"
+      btn.textContent = "进入房间 ›"
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation()
+        this.onEnter(room.id)
+      })
+      el.appendChild(btn)
+    }
     const obj = new CSS2DObject(el)
     obj.position.set(room.center[0], 3.4, room.center[1])
     this.dyn.add(obj)

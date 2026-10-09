@@ -91,7 +91,13 @@
         >
         <span v-if="tip.room.status !== '—'">{{ tip.room.status }}</span>
       </div>
-      <div class="hint">点击选中 · 房间级详情建设中</div>
+      <div class="hint">
+        {{
+          tip.room.type === "conference"
+            ? "点击选中 · 再点一次进入房间"
+            : "点击选中"
+        }}
+      </div>
     </div>
 
     <div v-if="loading" class="scene-tip">楼层模型加载中</div>
@@ -122,7 +128,7 @@
     /** 楼层，如 "32F" */
     floorKey: { type: String, default: "32F" }
   })
-  defineEmits(["back", "switch-floor"])
+  const emit = defineEmits(["back", "switch-floor", "enter-room"])
 
   const MODES = [
     { key: "room", name: "房间" },
@@ -183,7 +189,14 @@
         hovered.value = p?.room.id || null
         tip.value = p ? { room: p.room, x: p.x, y: p.y } : null
       },
-      onPick: (id) => select(id === selected.value ? null : id),
+      // 已选中的大会议室再点一次：进入房间级
+      onPick: (id) => {
+        const r = id && detail.value.rooms.find((x) => x.id === id)
+        if (r && id === selected.value && r.type === "conference")
+          emit("enter-room", id)
+        else select(id === selected.value ? null : id)
+      },
+      onEnter: (id) => emit("enter-room", id),
       // 精细楼层模型：floor_S.glb / floor_N.glb（scripts/blender/tower/detail.py）
       modelUrl: `${import.meta.env.BASE_URL}building/floor_${props.towerKey === "tower_N" ? "N" : "S"}.glb`
     })
@@ -242,6 +255,30 @@
 
       em {
         color: #ff8a92;
+      }
+    }
+
+    .enter {
+      margin-left: 10px;
+      padding: 1px 10px;
+      border: 1px solid #ffc65a;
+      background: linear-gradient(
+        180deg,
+        rgba(200, 140, 30, 0.85),
+        rgba(140, 90, 10, 0.85)
+      );
+      font-size: 12px;
+      color: #fff;
+      cursor: pointer;
+      pointer-events: auto;
+
+      &:hover {
+        background: linear-gradient(
+          180deg,
+          rgba(240, 175, 50, 0.95),
+          rgba(180, 120, 20, 0.95)
+        );
+        box-shadow: 0 0 10px rgba(255, 198, 90, 0.7);
       }
     }
   }
