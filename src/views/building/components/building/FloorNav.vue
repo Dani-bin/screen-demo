@@ -44,6 +44,14 @@
           >在岗 <em class="num">{{ current.staff }}</em> 人</span
         >
         <span v-if="current.alarm" class="warn">{{ current.alarm }}</span>
+        <!-- 只有办公层有精细楼层模型 -->
+        <button
+          v-if="hasFloorModel(current)"
+          class="enter"
+          @click="$emit('enter', current.key)"
+        >
+          进入楼层 ›
+        </button>
       </div>
     </div>
   </section>
@@ -51,6 +59,7 @@
 
 <script setup>
   import PanelTitle from "../PanelTitle.vue"
+  import { hasFloorModel } from "../../data/floor"
 
   const props = defineProps({
     /** data/building.js 的 towerFloors(key)，自下而上 */
@@ -58,7 +67,7 @@
     selected: { type: String, default: null },
     hovered: { type: String, default: null }
   })
-  defineEmits(["select", "hover"])
+  defineEmits(["select", "hover", "enter"])
 
   // 从高到低排：58F 在左上，B3 在右下
   const ordered = computed(() => props.floors.slice().reverse())
@@ -151,6 +160,21 @@
       &.green {
         background: #3ddc97;
       }
+    }
+  }
+
+  .enter {
+    margin-left: auto;
+    padding: 2px 12px;
+    border: 1px solid #ffc65a;
+    background: rgba(150, 100, 20, 0.55);
+    font-size: 12px;
+    color: #ffe6b0;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(190, 130, 30, 0.75);
+      color: #fff;
     }
   }
 

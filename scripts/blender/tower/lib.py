@@ -103,6 +103,9 @@ def add_poly(bm, ring, z, mat=0, down=False):
     vs = [bm.verts.new((x, y, z)) for x, y in ring]
     f = bm.faces.new(list(reversed(vs)) if down else vs)
     f.material_index = mat
+    # 三角化前必须先算法线：耳切法按面法线投影，新建的面法线是零向量，凹多边形会切出伸到多边形外面的翻面三角形
+    # （与相邻地面共面重叠，烘焙时互相遮挡成黑块）
+    f.normal_update()
     bmesh.ops.triangulate(bm, faces=[f], quad_method="BEAUTY", ngon_method="EAR_CLIP")
 
 
