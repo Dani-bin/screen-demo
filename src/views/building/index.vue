@@ -4,9 +4,11 @@
   本页只管级别切换与公共样式，每一级是 ./components/levels/ 下的一个组件：
     - 城市级 CityLevel：成都高新区三维地图（移植自射阳应急大屏首页的 Map3DScene）
     - 园区级 ParkLevel：成都金融城双子塔园区（Blender 建模 + 烘焙，three.js 展示，见 scene/park/）
-    - 楼宇级 BuildingLevel：双子塔南塔 / 北塔全息剖切（程序化 three.js，见 scene/tower/）
-  楼层 / 房间两级尚未实现，设计稿见 docs/design/building/。
-  当前级别同步到路由参数 ?level=（楼宇级另有 ?b=tower_S|tower_N），便于直接打开某一级（如 #/building?level=building&b=tower_N）。
+    - 楼宇级 BuildingLevel：双子塔南塔 / 北塔全息剖切（烘焙楼层 + three.js，见 scene/tower/）
+    - 楼层级 FloorLevel：标准办公层去顶俯视（Blender 精细楼层 + 烘焙，见 scene/floor/）
+  房间级尚未实现，设计稿见 docs/design/building/。
+  当前级别同步到路由参数 ?level=（楼宇级 / 楼层级另有 ?b=tower_S|tower_N，楼层级再加 ?f=32F），
+  便于直接打开某一级（如 #/building?level=floor&b=tower_N&f=32F）。
 -->
 <template>
   <div class="building-page">
@@ -30,6 +32,16 @@
         :tower-key="tower"
         @back="go('park')"
         @switch="(b) => go('building', { b })"
+        @enter-floor="(f) => go('floor', { f })"
+      />
+      <!-- 换塔整级重建（楼层模型按塔加载）；同一座塔换楼层只换数据 -->
+      <FloorLevel
+        v-else-if="level === 'floor'"
+        :key="tower"
+        :tower-key="tower"
+        :floor-key="floorKey"
+        @back="go('building')"
+        @switch-floor="(f) => go('floor', { f })"
       />
     </Transition>
   </div>
@@ -40,13 +52,16 @@
   import CityLevel from "./components/levels/CityLevel.vue"
   import ParkLevel from "./components/levels/ParkLevel.vue"
   import BuildingLevel from "./components/levels/BuildingLevel.vue"
+  import FloorLevel from "./components/levels/FloorLevel.vue"
+  import { towerFloors } from "./data/building"
+  import { hasFloorModel } from "./data/floor"
 
   /** 五级钻取；ready 为已实现的级别（顶栏里可点击跳转） */
   const LEVELS = [
     { key: "city", name: "城市", label: "成都高新区", ready: true },
     { key: "park", name: "园区", label: "成都金融城双子塔", ready: true },
     { key: "building", name: "楼宇", label: "南塔 / 北塔", ready: true },
-    { key: "floor", name: "楼层", label: "楼层平面" },
+    { key: "floor", name: "楼层", label: "楼层平面", ready: true },
     { key: "room", name: "房间", label: "房间与资产" }
   ]
 
@@ -61,6 +76,12 @@
   const tower = computed(() =>
     route.query.b === "tower_N" ? "tower_N" : "tower_S"
   )
+
+  /** 楼层级当前楼层：?f=32F，只接受有精细模型的办公层，否则回到 32F */
+  const floorKey = computed(() => {
+    const f = towerFloors(tower.value).find((x) => x.key === route.query.f)
+    return hasFloorModel(f) ? f.key : "32F"
+  })
 
   /** 切换级别；extra 为附带的路由参数（如楼宇级的塔楼 b） */
   function go(key, extra = {}) {

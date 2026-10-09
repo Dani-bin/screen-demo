@@ -55,6 +55,7 @@
         :hovered="hovered"
         @select="select"
         @hover="hoverFromNav"
+        @enter="(f) => $emit('enter-floor', f)"
       />
       <StaffPanel :profile="profile" :curve="staffCurve" />
     </div>
@@ -123,7 +124,7 @@
     /** tower_S 南塔 / tower_N 北塔 */
     towerKey: { type: String, default: "tower_S" }
   })
-  defineEmits(["back", "switch"])
+  defineEmits(["back", "switch", "enter-floor"])
 
   const TOWERS = [
     { key: "tower_S", name: "南塔" },
