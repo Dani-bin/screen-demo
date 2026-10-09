@@ -90,6 +90,9 @@
       <div class="hint">点击抽出该层</div>
     </div>
 
+    <div v-if="loading" class="scene-tip">楼层模型加载中</div>
+    <div v-if="error" class="scene-tip err">{{ error }}</div>
+
     <div class="bottom-tip">
       点击楼层或楼层导航抽出该层 · 悬浮查看楼层信息 · 拖动旋转、滚轮缩放
       &nbsp;|&nbsp; 塔高、层数、平面与屋顶来自
@@ -157,6 +160,8 @@
   const selected = ref("32F")
   const hovered = ref(null)
   const tip = shallowRef(null)
+  const loading = ref(true)
+  const error = ref("")
 
   let scene = null
 
@@ -188,10 +193,18 @@
         const floor = p && floors.find((f) => f.key === p.key)
         tip.value = floor ? { floor, x: p.x, y: p.y } : null
       },
-      onPick: (k) => select(k === selected.value ? null : k)
+      onPick: (k) => select(k === selected.value ? null : k),
+      // 烘焙楼层模型：tower_S.glb / tower_N.glb（scripts/blender/tower/）
+      modelUrl: `${import.meta.env.BASE_URL}building/${key === "tower_N" ? "tower_N" : "tower_S"}.glb`
     })
     scene.select(selected.value)
     if (import.meta.env.DEV) window.__towerScene = scene
+    scene.ready
+      .catch((err) => {
+        console.error(err)
+        error.value = "楼层模型加载失败"
+      })
+      .finally(() => (loading.value = false))
   })
 
   onUnmounted(() => {
@@ -387,6 +400,22 @@
       margin-right: 4px;
       vertical-align: 3px;
       display: inline-block;
+    }
+  }
+
+  .scene-tip {
+    position: absolute;
+    left: 50%;
+    bottom: 70px;
+    z-index: 5;
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: #2de2e6;
+    transform: translateX(-50%);
+    pointer-events: none;
+
+    &.err {
+      color: #ff3b47;
     }
   }
 

@@ -8,7 +8,7 @@
 | `01-ai-park.png` ~ `04-ai-room.png` | 中央场景 AI 概念图（Figma generate_image，gpt-image-2.5-sunburst，1536×1024，无文字） |
 | `11-draft-park.png` ~ `14-draft-room.png` | 整屏设计稿：概念图 + 与城市级一致的顶栏 / 面板 / 场景标注 |
 | `20-park-live.png` / `21-park-compare.png` / `22-park-closeup.png` | 园区级实拍、与设计稿的左右对比、拉近后的近景 |
-| `30-building-compare.png` / `31-building-live.png` / `32-building-redo-compare.png` / `33-building-real-compare.png` | 楼宇级：设计稿与实现对比、实拍、按概念图返工前后对比、写实化前后对比 |
+| `30-building-compare.png` / `31-building-live.png` / `32-building-redo-compare.png` / `33-building-real-compare.png` / `34-building-baked-compare.png` | 楼宇级：设计稿与实现对比、实拍、各版前后对比（34 为 Blender 烘焙版） |
 | `drafts-source.html` | 整屏稿源码（本机绝对路径引用素材与字体；`?level=park\|building\|floor\|room`，无头 Chrome 1920×1080 截图） |
 
 面板里的运营指标、品牌型号、人员等都是演示数据；真实的只有双子塔高度 / 层数 / 椭圆平面与斜切屋顶，
@@ -101,3 +101,13 @@
 整栋一张 `MeshPhysicalMaterial` 蓝玻璃（只画外侧面，避免背面叠加成白雾），shader 注入抽屉挖空、悬浮青色、告警红色呼吸与轮廓菲涅尔；
 核心筒光柱关闭深度测试透出整栋楼；人员热力在楼板上叠一层按在岗密度着色的光面；地下与底座沿用第二版。
 调参要点：室内整体要暗，亮的只有灯盘、层线与屏幕；58 层在画面里每层不到 10 像素，层线隔层一条亮、竖梃 6 m 一根，否则糊成灰网。
+
+### Blender 建模 + 烘焙室内灯光（2026-10-09，第四版）
+
+实时渲染算不出几十层室内的灯光照射与软阴影，楼层室内改为 Blender 建模、Cycles 烘焙（`scripts/blender/tower/`，做法同园区级）：
+- 每座塔 9 种楼层变体：办公 5 种（亮灯比例 100 / 85 / 70 / 55 / 40%，12 个分区按比例点亮）、大堂、商业、设备层、空中会所；
+  三维里按楼层数据（类型、入驻率）给每层挑变体，相邻楼层避免重复，按该层收分缩放，斜屋顶下几层用裁剪平面切掉伸出部分。
+- 每个变体两部分：楼板顶面 + 核心筒墙烘到 2048² 贴图（大面、明暗细节多）；家具、灯盘、天花、板边烘到面角顶点色
+  （家具上千个小面，放进贴图会切成上万个 UV 岛，缝隙把贴图挤满）。灯盘是自发光网格，在 Cycles 里真实照亮桌椅与地面，夜空从四周照进熄灯区。
+- 顶点色烘出来是 HDR（灯盘十几），导出时按最大通道压到 1，避免整片泛光；GLB 用 meshopt 压缩、不导出法线（显示用 MeshBasicMaterial）。
+- 玻璃幕墙、层线、竖梃、核心筒光柱、底座与地下剖口仍是 three.js（需要实时反射 / 动画）。抽出的楼层放大 1.15 倍，水平裁掉天花与灯盘露出室内。

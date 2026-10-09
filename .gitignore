@@ -37,3 +37,6 @@ models/charging/vendor/*.zip
 
 # Blender 脚本运行时生成的 Python 字节码
 __pycache__/
+
+# 楼宇级楼层烘焙中间图（每张 4 MB，导出时已转 WebP 打进 public/building/tower_*.glb；重新导出前先跑 tower.bake）
+models/tower/bake/
