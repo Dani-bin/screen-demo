@@ -16,7 +16,7 @@
  * 设计稿塔身高宽比约 2.7，所以标准层层高按 2.2 m 示意（真实 3.76 m），裙楼、地下层另给层高（见下方常量）。
  *
  * 模式（setMode）：section 楼层剖切 / facade 透视外立面 / mep 机电系统 / heat 人员热力，切换时各项亮度平滑过渡。
- * 交互：悬浮楼层 → onHover({ key, x, y })；点击 → onPick(key)；select(key) 抽出该层。
+ * 交互：悬浮楼层 → onHover({ key, x, y })；点击 → onPick(key)；select(key) 抽出该层；抽屉标签上的「进入楼层」→ onEnter(key)。
  */
 import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
@@ -39,6 +39,7 @@ import {
 import { coreMaterial, drawerGlassMaterial, riserMaterial } from "./shaders"
 import { buildFloorLines, glassMaterial, lightsMaterial } from "./floorKit"
 import { PLANT_TINT, loadFloorVariants, pickVariant } from "./bakedFloors"
+import { hasFloorModel } from "../../data/floor"
 
 const DEG = Math.PI / 180
 
@@ -141,6 +142,7 @@ export class BuildingScene {
    * @param {Array} o.floors data/building.js 的 towerFloors(key)
    * @param {Function} o.onHover ({ key, x, y } | null)
    * @param {Function} o.onPick (key)
+   * @param {Function} o.onEnter (key) 抽出楼层标签上的「进入楼层」按钮（只给有精细模型的办公层）
    * @param {string} o.modelUrl 烘焙楼层模型（public/building/tower_S.glb / tower_N.glb）
    */
   constructor(o) {
@@ -150,7 +152,8 @@ export class BuildingScene {
       tower: o.tower,
       floors: o.floors,
       onHover: o.onHover,
-      onPick: o.onPick
+      onPick: o.onPick,
+      onEnter: o.onEnter
     })
     this.floorMap = new Map(this.floors.map((f) => [f.key, f]))
     this.levels = this.tower.levels
@@ -1096,7 +1099,19 @@ export class BuildingScene {
       return
     }
     const occ = f.occupancy != null ? ` 入驻率 ${f.occupancy}%` : ""
-    this.selLabel.element.innerHTML = `${f.key} · ${f.name}${occ}`
+    const el = this.selLabel.element
+    el.innerHTML = `${f.key} · ${f.name}${occ}`
+    // 办公层有精细楼层模型：标签上加「进入楼层」入口（标签层整体不接收鼠标，按钮单独打开）
+    if (hasFloorModel(f) && this.onEnter) {
+      const btn = document.createElement("button")
+      btn.className = "enter"
+      btn.textContent = "进入楼层 ›"
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation()
+        this.onEnter(f.key)
+      })
+      el.appendChild(btn)
+    }
     this.selLabel.visible = true
     if (f.index < 0) {
       // 标签放在该层剖切面右端
