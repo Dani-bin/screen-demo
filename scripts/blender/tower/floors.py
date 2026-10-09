@@ -60,6 +60,10 @@ MATS = [
     ("light_warm", "#ffffff", 0.5, "#ffd9ad", 12.0),
     ("light_cool", "#ffffff", 0.5, "#e2ecff", 12.0),
     ("light_lobby", "#ffffff", 0.5, "#ffcf8f", 14.0),
+    ("light_base", "#ffffff", 0.5, "#e8f0ff", 45.0),  # 地下机房灯管：层高 13 m，要比办公灯盘亮得多
+    ("alarm", "#7a2a30", 0.5, "#ff2030", 4.0),  # 告警配电柜（地下 B2）
+    ("alarm_led", "#000000", 0.5, "#ff3040", 8.0),
+    ("led", "#000000", 0.5, "#30ff90", 6.0),
 ]
 MI = {name: i for i, (name, *_) in enumerate(MATS)}
 
@@ -120,8 +124,28 @@ def core_dims(ring, ang):
 # ---------------------------------------------------------------- 楼层
 
 
-def build(name, foot, variant, M, col, loc):
-    """生成一个楼层模型；foot 为塔楼原始平面（未内收），loc 为烘焙时摆放的位置（各变体错开，互不照亮）"""
+def clip_half(ring, d, limit):
+    """多边形按「投影 ≤ limit」的半平面裁剪（d 为单位向量），Sutherland–Hodgman"""
+    out = []
+    n = len(ring)
+    for i in range(n):
+        a, b = ring[i], ring[(i + 1) % n]
+        fa = a[0] * d[0] + a[1] * d[1] - limit
+        fb = b[0] * d[0] + b[1] * d[1] - limit
+        if fa <= 0:
+            out.append(a)
+        if (fa <= 0) != (fb <= 0):
+            t = fa / (fa - fb)
+            out.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t))
+    return out
+
+
+def build(name, foot, variant, M, col, loc, roof=None):
+    """
+    生成一个楼层模型；foot 为塔楼原始平面（未内收），loc 为烘焙时摆放的位置（各变体错开，互不照亮）。
+    roof：斜屋顶下的楼层 (下坡方向 d, 楼板处的投影上限, 家具处的投影上限)——楼板按楼板高度处的屋面裁剪，
+    家具只摆在家具高度处屋面以内（不会被屋面切开半张桌子）
+    """
     v = VARIANTS[variant]
     kind = v["kind"]
     rnd = random.Random(v["seed"])
@@ -130,6 +154,11 @@ def build(name, foot, variant, M, col, loc):
     ang = major_axis(foot)
     cw, cd = core_dims(foot, ang)
     plan = inset([(x * PODIUM_SCALE, y * PODIUM_SCALE) for x, y in foot] if podium else foot, INSET)
+    furn_plan = plan
+    if roof:
+        d, lim_slab, lim_furn = roof
+        furn_plan = clip_half(plan, d, lim_furn - 0.6)
+        plan = clip_half(plan, d, lim_slab)
     ca, sa = math.cos(ang), math.sin(ang)
 
     def xy(a, b):
@@ -140,7 +169,7 @@ def build(name, foot, variant, M, col, loc):
         x, y = xy(a, b)
         return in_poly(x, y, inset(plan, margin) if margin else plan)
 
-    inner2 = inset(plan, 1.8)
+    inner2 = inset(furn_plan, 1.8)
 
     def ok(a, b, pad_core=1.6):
         x, y = xy(a, b)

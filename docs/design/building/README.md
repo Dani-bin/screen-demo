@@ -8,7 +8,7 @@
 | `01-ai-park.png` ~ `04-ai-room.png` | 中央场景 AI 概念图（Figma generate_image，gpt-image-2.5-sunburst，1536×1024，无文字） |
 | `11-draft-park.png` ~ `14-draft-room.png` | 整屏设计稿：概念图 + 与城市级一致的顶栏 / 面板 / 场景标注 |
 | `20-park-live.png` / `21-park-compare.png` / `22-park-closeup.png` | 园区级实拍、与设计稿的左右对比、拉近后的近景 |
-| `30-building-compare.png` / `31-building-live.png` / `32-building-redo-compare.png` / `33-building-real-compare.png` / `34-building-baked-compare.png` | 楼宇级：设计稿与实现对比、实拍、各版前后对比（34 为 Blender 烘焙版） |
+| `30-building-compare.png` / `31-building-live.png` / `32-building-redo-compare.png` / `33-building-real-compare.png` / `34-building-baked-compare.png` / `35-building-basement-compare.png` | 楼宇级：设计稿与实现对比、实拍、各版前后对比（34 Blender 烘焙楼层、35 地下机房烘焙） |
 | `drafts-source.html` | 整屏稿源码（本机绝对路径引用素材与字体；`?level=park\|building\|floor\|room`，无头 Chrome 1920×1080 截图） |
 
 面板里的运营指标、品牌型号、人员等都是演示数据；真实的只有双子塔高度 / 层数 / 椭圆平面与斜切屋顶，
@@ -111,3 +111,10 @@
   （家具上千个小面，放进贴图会切成上万个 UV 岛，缝隙把贴图挤满）。灯盘是自发光网格，在 Cycles 里真实照亮桌椅与地面，夜空从四周照进熄灯区。
 - 顶点色烘出来是 HDR（灯盘十几），导出时按最大通道压到 1，避免整片泛光；GLB 用 meshopt 压缩、不导出法线（显示用 MeshBasicMaterial）。
 - 玻璃幕墙、层线、竖梃、核心筒光柱、底座与地下剖口仍是 three.js（需要实时反射 / 动画）。抽出的楼层放大 1.15 倍，水平裁掉天花与灯盘露出室内。
+
+### 地下机房烘焙、屋顶层、远景窗灯（2026-10-09，第五版）
+
+- 地下 B1～B3 机房也改为 Blender 建模烘焙（`scripts/blender/tower/basement.py`）：楼板 / 墙 / 剖面墙烘贴图，车辆、冷水机组、配电柜、水泵、水箱、管道、
+  灯管烘顶点色；告警配电柜是红色自发光，烘焙时把周围照成红色，three.js 只保留剖口描边、拾取体与红色波纹动画。机房层高 13 m，灯管强度 45，采样加倍压噪点。
+- 斜屋顶下的楼层单独建模（`top_<层号>`），楼板与家具按屋面裁剪，不再出现被屋面切开的家具。
+- 远景读不出室内：塔身玻璃按每层亮灯比例在窗格里透出暖光，随相机距离渐变（近看玻璃通透、显示烘焙的室内；远看读成设计稿那种一格格亮窗）。
