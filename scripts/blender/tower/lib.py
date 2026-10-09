@@ -124,3 +124,39 @@ def new_object(name, bm, mats, col):
     ob = bpy.data.objects.new(name, me)
     col.objects.link(ob)
     return ob
+
+
+def add_seg(bm, a, b, r, mat=0, seg=10, cap=True):
+    """两点之间的圆柱（任意方向：管道、立杆）；a、b 为 Blender 坐标"""
+    A, B = Vector(a), Vector(b)
+    d = B - A
+    if d.length < 1e-4:
+        return
+    q = d.normalized().to_track_quat("Z", "Y")
+    m = Matrix.Translation((A + B) / 2) @ q.to_matrix().to_4x4()
+    res = bmesh.ops.create_cone(bm, cap_ends=cap, segments=seg, radius1=r, radius2=r, depth=d.length, matrix=m)
+    for f in {f for v in res["verts"] for f in v.link_faces}:
+        f.material_index = mat
+
+
+def add_beam(bm, a, b, w, h, mat=0):
+    """两点之间的方截面梁（宽 w 保持水平、高 h 在竖直面内）：斜屋面下的钢梁"""
+    A, B = Vector(a), Vector(b)
+    d = (B - A).normalized()
+    side = d.cross(Vector((0, 0, 1)))
+    if side.length < 1e-4:
+        side = Vector((1, 0, 0))
+    side.normalize()
+    up = side.cross(d).normalized()
+    sw, sh = side * (w / 2), up * (h / 2)
+    corners = [P + s * sw + t * sh for P in (A, B) for s in (-1, 1) for t in (-1, 1)]
+    v = [bm.verts.new(c) for c in corners]
+    # 0..3 在 A 端（s,t = --,-+,+-,++），4..7 在 B 端
+    mid = (A + B) / 2
+    for f in ((0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (1, 5, 7, 3), (0, 2, 6, 4)):
+        face = bm.faces.new([v[i] for i in f])
+        face.normal_update()
+        # 绕向统一朝外：法线与「面中心 − 梁中心」反向就翻面
+        if face.normal.dot(face.calc_center_median() - mid) < 0:
+            face.normal_flip()
+        face.material_index = mat

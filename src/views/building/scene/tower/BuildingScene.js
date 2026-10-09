@@ -261,6 +261,23 @@ export class BuildingScene {
         fg.group.add(m)
       }
     }
+    // 屋顶机房：58F 顶板到斜屋面之间的楔形空腔（冷却塔、擦窗机、钢梁），按该段中部高度收分，屋面平面兜底裁剪
+    const roof = variants.roof
+    if (roof) {
+      const y0 = this.H - this.roofRise
+      const k = this._taperAt(y0 + this.roofRise / 2)
+      const clip = this._roofPlane(k)
+      const g = new THREE.Group()
+      g.position.y = y0
+      g.scale.set(k, 1, k)
+      for (const part of roof.parts) {
+        const mat = part.material
+        mat.clippingPlanes = [clip]
+        this.bakedMats.add(mat)
+        g.add(new THREE.Mesh(part.geometry, mat))
+      }
+      this.root.add(g)
+    }
     // 地下机房：剖切坐标建模（x = 画面横向、-y = 朝相机），绕竖轴转到相机方位
     const base = variants.basement
     if (base) {
@@ -285,7 +302,11 @@ export class BuildingScene {
     if (index < 5) return null
     const top = this.floorBottom(index) + FLOOR
     if (top < this.H - this.roofRise - 0.01) return null
-    const k = this._taperAt(this.floorBottom(index) + FLOOR / 2)
+    return this._roofPlane(this._taperAt(this.floorBottom(index) + FLOOR / 2))
+  }
+
+  /** 收分系数 k 下的屋面裁剪平面（世界坐标，保留屋面以下） */
+  _roofPlane(k) {
     const a = this.roofRise / this.roofSpan
     const n = new THREE.Vector3(
       -(a * this.roofDir[0]) / k,
@@ -484,7 +505,8 @@ export class BuildingScene {
         metalness: 0.2
       })
     )
-    plate.position.y = yBot - 0.8
+    // 顶面比 B3 地面低 5 cm：两者重合会在剖口地面上闪出黑色条纹（深度冲突）
+    plate.position.y = yBot - 0.85
     this.root.add(plate)
     const ring = (rad, tube, y, c, k) => {
       const m = new THREE.Mesh(
@@ -899,7 +921,7 @@ export class BuildingScene {
     })
   }
 
-  /** 屋顶：深色斜屋面 + 发光檐口 + 冷却塔 / 擦窗机 */
+  /** 屋顶：斜屋面玻璃 + 发光檐口 */
   _buildRoof() {
     const top = this.roofTops.rings
     const poly = top.map(([x, , z]) => [x, z])
@@ -911,8 +933,9 @@ export class BuildingScene {
         roughness: 0.08,
         metalness: 0.2,
         transparent: true,
-        opacity: 0.45,
-        envMapIntensity: 1.8,
+        // 透明度压低：屋面下的屋顶机房（冷却塔、钢梁、灯带）要透得出来
+        opacity: 0.22,
+        envMapIntensity: 1.2,
         depthWrite: false
       })
     )
@@ -931,30 +954,7 @@ export class BuildingScene {
         new THREE.LineBasicMaterial({ color: new THREE.Color(0.7, 0.95, 1.4) })
       )
     )
-    // 屋面设备：放在高侧（下坡方向反面），顶高按斜面算
-    const metal = new THREE.MeshStandardMaterial({
-      color: 0x5a6a80,
-      metalness: 0.6,
-      roughness: 0.4,
-      emissive: 0x0a2040,
-      emissiveIntensity: 0.5
-    })
-    const s = 1 - TAPER
-    const topAt = (x, z) => {
-      const p = (x * this.roofDir[0] + z * this.roofDir[1]) / s
-      return this.H - (this.roofRise * (p - this.roofLo)) / this.roofSpan
-    }
-    for (const [ox, oz] of [
-      [-0.35, 0.15],
-      [-0.25, -0.2],
-      [-0.05, 0.0]
-    ]) {
-      const x = (ox * this.roofDir[0] - oz * this.roofDir[1]) * this.radius * s
-      const z = (ox * this.roofDir[1] + oz * this.roofDir[0]) * this.radius * s
-      const m = new THREE.Mesh(new THREE.BoxGeometry(4, 2.6, 4), metal)
-      m.position.set(x, topAt(x, z) + 0.6, z)
-      this.root.add(m)
-    }
+    // 屋面下的设备（冷却塔、擦窗机等）是 Blender 烘焙的屋顶机房（tower_*.glb 的 roof，见 _loadFloors），透过斜屋面玻璃看见
     this.roofAnchor = new THREE.Vector3(0, this.H + 6, 0)
   }
 
