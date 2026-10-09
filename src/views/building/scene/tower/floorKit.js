@@ -134,7 +134,15 @@ export function glassMaterial(tint = 0x1f5fd0, glow = [0.016, 0.07, 0.21]) {
     uAlarm: { value: [new Vector3(0, -1, 0), new Vector3(0, -1, 0)] },
     uEdge: { value: new Color(0.35, 0.75, 1.0) },
     uEdgeK: { value: 0.35 },
-    uTime: { value: 0 }
+    uTime: { value: 0 },
+    // 远景窗灯（LOD）：每层亮灯比例 uLit[楼层号]，楼层换算 uBaseY / uFloorH / uFloorBase；
+    // 相机离得越远越亮（uLod 近、远距离之间渐变），近看时玻璃通透、看烘焙的室内
+    uLit: { value: new Array(64).fill(0) },
+    uBaseY: { value: 0 },
+    uFloorH: { value: 1 },
+    uFloorBase: { value: 0 },
+    uWin: { value: 0 },
+    uLod: { value: [220, 520] }
   }
   const m = new MeshPhysicalMaterial({
     color: tint,
@@ -163,6 +171,9 @@ export function glassMaterial(tint = 0x1f5fd0, glow = [0.016, 0.07, 0.21]) {
         `varying vec3 vWorldP;
         uniform vec3 uGap; uniform vec3 uHover; uniform vec3 uAlarm[2];
         uniform vec3 uEdge; uniform float uEdgeK; uniform float uTime; uniform vec3 uGlow;
+        uniform float uLit[64]; uniform float uBaseY; uniform float uFloorH; uniform float uFloorBase;
+        uniform float uWin; uniform vec2 uLod;
+        float hashW(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
         float inBand(vec3 b, float y) { return step(b.x, y) * step(y, b.y); }
         void main() {
           if (uGap.z > 0.5 && inBand(uGap, vWorldP.y) > 0.5) discard;`
@@ -173,6 +184,23 @@ export function glassMaterial(tint = 0x1f5fd0, glow = [0.016, 0.07, 0.21]) {
         // 轮廓菲涅尔：侧边一圈亮蓝（设计稿玻璃边缘的冷光）
         float fr = pow(1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition))), 3.0);
         totalEmissiveRadiance += uEdge * fr * uEdgeK + uGlow;
+        float winA = 0.0;
+        // 远景窗灯：每层沿周长 30 格（对上 6 m 一根的竖梃），按该层亮灯比例点亮，避开楼板那一条
+        if (uWin > 0.001) {
+          float fl = (vWorldP.y - uBaseY) / uFloorH;
+          float fi = uFloorBase + floor(fl);
+          float fy = fract(fl);
+          if (fi >= 0.0 && fi < 64.0) {
+            float lit = uLit[int(fi)];
+            float cell = floor((atan(vWorldP.z, vWorldP.x) / 6.2831853 + 0.5) * 30.0);
+            float h = hashW(vec2(cell, fi));
+            float on = step(h, lit) * smoothstep(0.12, 0.3, fy) * (1.0 - smoothstep(0.8, 0.92, fy));
+            float far = smoothstep(uLod.x, uLod.y, length(cameraPosition - vWorldP));
+            vec3 warm = mix(vec3(1.0, 0.78, 0.48), vec3(0.85, 0.92, 1.0), step(0.85, hashW(vec2(fi, cell * 1.3))));
+            winA = on * far * uWin;
+            totalEmissiveRadiance += warm * on * far * uWin * (0.1 + 0.1 * hashW(vec2(cell * 0.7, fi)));
+          }
+        }
         totalEmissiveRadiance += vec3(0.2, 0.7, 1.0) * 0.35 * inBand(uHover, vWorldP.y);
         float al = max(inBand(uAlarm[0], vWorldP.y), inBand(uAlarm[1], vWorldP.y));
         totalEmissiveRadiance += vec3(1.0, 0.15, 0.18) * al * (0.35 + 0.25 * sin(uTime * 4.0));`
@@ -180,7 +208,7 @@ export function glassMaterial(tint = 0x1f5fd0, glow = [0.016, 0.07, 0.21]) {
       .replace(
         "#include <opaque_fragment>",
         `#include <opaque_fragment>
-        gl_FragColor.a = min(1.0, gl_FragColor.a + fr * 0.2 + al * 0.25 + 0.3 * inBand(uHover, vWorldP.y));`
+        gl_FragColor.a = min(1.0, gl_FragColor.a + winA * 0.18 + fr * 0.2 + al * 0.25 + 0.3 * inBand(uHover, vWorldP.y));`
       )
   }
   return m

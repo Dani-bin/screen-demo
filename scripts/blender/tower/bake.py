@@ -44,6 +44,8 @@ def bake(names=None, size=2048, samples=128):
         # 只渲染这一对对象：家具、灯盘既是光源也是遮挡物
         for o in bpy.data.objects:
             o.hide_render = o not in (ob, ov)
+        # 地下机房几乎全靠灯光的间接反射照亮，噪点多：采样翻倍
+        bpy.context.scene.cycles.samples = samples * 2 if "basement" in ob.name else samples
         _bake_image(ob, size)
         _bake_vertex(ov)
         log[ob.name] = round(time.time() - t, 1)
