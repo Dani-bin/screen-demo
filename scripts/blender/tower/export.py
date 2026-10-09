@@ -21,6 +21,7 @@ def _baked_material(ob):
     """单一材质：烘焙图 → Base Color（UV 只有 Lightmap 一套）"""
     path = os.path.join(BAKE_DIR, ob.name + ".png")
     img = bpy.data.images.load(path, check_existing=True)
+    img.reload()  # 同一会话里重烘过：check_existing 拿到的是内存里的旧图
     m = bpy.data.materials.get("MB_" + ob.name) or bpy.data.materials.new("MB_" + ob.name)
     if m.node_tree is None:
         m.use_nodes = True

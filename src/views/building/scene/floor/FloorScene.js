@@ -144,8 +144,9 @@ export class FloorScene {
       mull: 2.4,
       color: [0.07, 0.28, 0.55]
     })
-    this.glass.opacity = 0.1
-    this.glass.userData.u.uEdgeK.value = 0.8
+    // 当前层幕墙要通透：前排工位隔着玻璃也要看得清，轮廓光只留一点
+    this.glass.opacity = 0.07
+    this.glass.userData.u.uEdgeK.value = 0.3
     const shell = new THREE.Mesh(
       loftGeometry([0, GLASS_H].map((y) => ring.map(([x, z]) => [x, y, z]))),
       this.glass
@@ -161,7 +162,8 @@ export class FloorScene {
         new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide })
       )
     this.scene.add(rim(GLASS_H - 0.12, GLASS_H, new THREE.Color(0.5, 1.2, 1.8)))
-    this.scene.add(rim(-0.35, -0.05, new THREE.Color(0.25, 0.6, 1.1)))
+    // 底边：楼板外沿一圈更宽的亮青色（设计稿楼层底部一道明显的光边）
+    this.scene.add(rim(-0.45, -0.05, new THREE.Color(0.35, 0.95, 1.6)))
     // 玻璃隔断（会议室、经理室、茶水间）：铝框在模型里，这里补淡蓝玻璃
     const pos = []
     for (const [x0, z0, x1, z1] of P.glass) {
@@ -176,15 +178,32 @@ export class FloorScene {
     const panes = new THREE.Mesh(
       pg,
       new THREE.MeshBasicMaterial({
-        color: 0x5fa8ff,
+        color: 0xcfe6ff,
         transparent: true,
-        opacity: 0.1,
+        opacity: 0.06,
         side: THREE.DoubleSide,
         depthWrite: false
       })
     )
     panes.renderOrder = 2
     this.scene.add(panes)
+    // 玻璃隔断顶边一道细亮线（设计稿玻璃房间的边框在暗处也读得出）
+    const top = []
+    for (const [x0, z0, x1, z1] of P.glass) top.push(x0, 2.72, z0, x1, 2.72, z1)
+    const tg = new THREE.BufferGeometry()
+    tg.setAttribute("position", new THREE.Float32BufferAttribute(top, 3))
+    this.scene.add(
+      new THREE.LineSegments(
+        tg,
+        new THREE.LineBasicMaterial({
+          color: new THREE.Color(0.55, 0.85, 1.2),
+          transparent: true,
+          opacity: 0.6,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+      )
+    )
   }
 
   /** 上下各两层线框楼层：楼板轮廓（上下两圈）、竖梃、核心筒与房间分隔线、淡淡的楼板面 */
@@ -233,6 +252,22 @@ export class FloorScene {
         acc = (acc + L) % 3
       }
       g.add(line(mull, 0.18))
+      // 一圈很淡的玻璃面（设计稿上下层是一道道玻璃环，不只是线）；只给下方的层，上方的层横在画面中间会蒙住当前层
+      if (k < 0)
+        g.add(
+          new THREE.Mesh(
+            loftGeometry(
+              [0, GLASS_H].map((y) => P.slab.map(([x, z]) => [x, y, z]))
+            ),
+            new THREE.MeshBasicMaterial({
+              color: new THREE.Color(0.02, 0.07, 0.16).multiplyScalar(fade),
+              transparent: true,
+              blending: THREE.AdditiveBlending,
+              depthWrite: false,
+              side: THREE.DoubleSide
+            })
+          )
+        )
       // 平面线：核心筒 + 房间轮廓
       const lines = [...loop(P.core, 0.02), ...loop(P.core, 2.8)]
       for (const r of P.rooms) lines.push(...loop(r.poly, 0.02))
@@ -318,13 +353,14 @@ export class FloorScene {
       edge.add(new THREE.Mesh(ribbonGeometry(room.poly, 0.08, 0.14), edgeMat))
       edge.add(new THREE.Mesh(ribbonGeometry(room.poly, 2.82, 0.1), edgeMat))
       this.dyn.add(edge)
-      // 基础亮度：按类型（核心筒、卫生间等很淡）
+      // 基础亮度：按类型（核心筒、卫生间等很淡）。只是一层淡淡的色调——设计稿房间的颜色像是灯光染出来的，
+      // 地面材质、家具阴影都还看得见，不能整片盖住烘焙出来的地面
       const base =
         room.type === "office"
-          ? 0.08
+          ? 0.03
           : room.type === "lobby" || room.type === "stair"
-            ? 0.03
-            : 0.16
+            ? 0.015
+            : 0.07
       this.roomViews.set(room.id, { room, fillMat, edgeMat, base })
       if (LABEL_TYPES.has(room.type)) this._roomLabel(room)
     }
@@ -639,19 +675,20 @@ export class FloorScene {
       let fill = v.base * fillK
       let edge = v.base * 1.6 * fillK
       if (room.level === "busy" && this.mode === "room") {
-        fill = 0.22 * fillK
+        fill = 0.1 * fillK
         edge = 0.9 * fillK
       }
       if (hov) {
-        fill = Math.max(fill, 0.28)
+        fill = Math.max(fill, 0.12)
         edge = Math.max(edge, 0.9)
       }
       if (sel) {
-        fill = Math.max(fill, 0.3)
+        fill = Math.max(fill, 0.12)
         edge = 1
       }
+      // 告警：轮廓红色闪烁为主，地面只泛一点红（整片铺红会盖住机房里的机柜）
       if (alarm) {
-        fill = Math.max(fill, 0.3 * pulse)
+        fill = Math.max(fill, 0.1 * pulse)
         edge = Math.max(edge, pulse)
       }
       v.fillMat.opacity += (fill - v.fillMat.opacity) * k

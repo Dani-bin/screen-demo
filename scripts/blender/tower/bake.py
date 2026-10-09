@@ -98,11 +98,11 @@ def _bake_vertex(ov):
     bpy.ops.object.bake(type="COMBINED", pass_filter=PASSES, target="VERTEX_COLORS")
 
 
-def denoise(path):
+def denoise(path, out=None, fmt="PNG"):
     """
     烘焙贴图降噪：合成器里 Image → Denoise（OIDN）→ 输出，渲染一帧写回原文件。
     合成器只能随渲染运行：临时隐藏全部对象、换 Workbench（几乎不耗时），色彩管理换 Standard（不经过 AgX，颜色原样写回），
-    渲染设置用完恢复。降噪只用颜色本身（烘焙图没有法线 / 反照率通道），UV 岛边缘有 8 px 外扩，不会把相邻岛的颜色糊进来
+    渲染设置用完恢复。out / fmt 可另存（如浮点烘焙 → OPEN_EXR，保留超过 1 的高光再做色调映射）。降噪只用颜色本身（烘焙图没有法线 / 反照率通道），UV 岛边缘有 8 px 外扩，不会把相邻岛的颜色糊进来
     """
     s = bpy.context.scene
     img = bpy.data.images.load(path, check_existing=False)
@@ -125,8 +125,8 @@ def denoise(path):
         r.resolution_x, r.resolution_y = img.size
         r.resolution_percentage = 100
         r.engine = "BLENDER_WORKBENCH"
-        r.filepath = path
-        r.image_settings.file_format = "PNG"
+        r.filepath = out or path
+        r.image_settings.file_format = fmt
         vs.view_transform, vs.look, vs.exposure, vs.gamma = "Standard", "None", 0.0, 1.0
         bpy.ops.render.render(write_still=True)
     finally:

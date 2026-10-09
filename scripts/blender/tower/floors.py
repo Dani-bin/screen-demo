@@ -52,7 +52,7 @@ MATS = [
     ("panel", "#56657c", 0.8, None, 0),  # 工位隔板（布面）
     ("chair", "#2e323a", 0.6, None, 0),
     ("monitor", "#0d0f12", 0.4, None, 0),
-    ("screen", "#000000", 0.3, "#bcd6ff", 2.5),
+    ("screen", "#000000", 0.3, "#bcd6ff", 4.0),  # 显示器屏幕（楼层级近看要读得出一块块蓝光）
     ("screen_w", "#000000", 0.3, "#ffe1b8", 2.5),
     ("alu", "#b4bac2", 0.35, None, 0),
     ("leaf", "#2f5a2c", 0.8, None, 0),
@@ -98,11 +98,14 @@ MATS = [
     ("rack", "#14171b", 0.4, None, 0),  # 服务器机柜
     ("led_b", "#000000", 0.5, "#3aa0ff", 6.0),  # 机柜蓝色指示灯 / 电梯楼层指示
     ("door_s", "#a3a9b1", 0.3, None, 0),  # 电梯不锈钢门
-    ("ceiling_b", "#a7aaae", 0.9, None, 0),  # 吊顶（只参与烘焙，不导出）
+    ("ceiling_b", "#55585e", 0.9, None, 0),  # 吊顶（只参与烘焙，不导出）：反照率低，室内明暗对比才出得来
     ("light_pw", "#ffffff", 0.5, "#fff0dc", 10.0),  # 办公灯盘（暖白）
-    ("light_pc", "#ffffff", 0.5, "#e4eeff", 10.0),  # 机房 / 卫生间灯盘（冷白）
+    ("light_pc", "#ffffff", 0.5, "#e4eeff", 40.0),  # 卫生间 / 强电间灯盘（冷白）
     ("sofa_g", "#5d626a", 0.8, None, 0),  # 灰色布艺沙发
     ("counter", "#d4d0c8", 0.4, None, 0),  # 茶水间台面
+    ("light_ln", "#ffffff", 0.5, "#fff0de", 90.0),  # 工位岛上方吊线灯（4000K）
+    ("light_dn", "#ffffff", 0.5, "#fff1df", 260.0),  # 筒灯（4000K，小而亮，地面留光斑）
+    ("light_or", "#ffffff", 0.5, "#ffad5c", 70.0),  # 机房暖橙灯（设计稿机房是橙色光）
 ]
 MI = {name: i for i, (name, *_) in enumerate(MATS)}
 
