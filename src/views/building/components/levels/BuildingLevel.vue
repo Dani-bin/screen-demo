@@ -124,7 +124,7 @@
     /** tower_S 南塔 / tower_N 北塔 */
     towerKey: { type: String, default: "tower_S" }
   })
-  defineEmits(["back", "switch", "enter-floor"])
+  const emit = defineEmits(["back", "switch", "enter-floor"])
 
   const TOWERS = [
     { key: "tower_S", name: "南塔" },
@@ -195,6 +195,7 @@
         tip.value = floor ? { floor, x: p.x, y: p.y } : null
       },
       onPick: (k) => select(k === selected.value ? null : k),
+      onEnter: (k) => emit("enter-floor", k),
       // 烘焙楼层模型：tower_S.glb / tower_N.glb（scripts/blender/tower/）
       modelUrl: `${import.meta.env.BASE_URL}building/${key === "tower_N" ? "tower_N" : "tower_S"}.glb`
     })
@@ -245,6 +246,31 @@
       box-shadow: 0 0 14px rgba(255, 190, 70, 0.5);
       color: #ffe6b0;
       transform: translate(55%, -60%);
+    }
+
+    /* 抽出楼层标签上的「进入楼层」入口：标签层不接收鼠标，按钮单独打开 */
+    .enter {
+      margin-left: 12px;
+      padding: 1px 10px;
+      border: 1px solid #ffc65a;
+      background: linear-gradient(
+        180deg,
+        rgba(200, 140, 30, 0.85),
+        rgba(140, 90, 10, 0.85)
+      );
+      font-size: 12px;
+      color: #fff;
+      cursor: pointer;
+      pointer-events: auto;
+
+      &:hover {
+        background: linear-gradient(
+          180deg,
+          rgba(240, 175, 50, 0.95),
+          rgba(180, 120, 20, 0.95)
+        );
+        box-shadow: 0 0 10px rgba(255, 198, 90, 0.7);
+      }
     }
 
     &.red {
