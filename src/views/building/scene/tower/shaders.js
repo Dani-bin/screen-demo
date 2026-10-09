@@ -45,18 +45,18 @@ export function coreMaterial(size, yRange, shafts = 6) {
         float span = front ? uSize.x : uSize.z;
         float t = ((front ? vLocal.x : vLocal.z) / span + 0.5) * uShafts;
         float shaft = floor(t);
-        float inShaft = 1.0 - smoothstep(0.26, 0.4, abs(fract(t) - 0.5));
+        float inShaft = 1.0 - smoothstep(0.22, 0.28, abs(fract(t) - 0.5));
         float y = vLocal.y + uSize.y * 0.5;
         float hgt = uSize.y;
         // 轿厢：每条井道一个光点，速度、相位不同，到顶折返
         float id = shaft + (front ? (vNl.z > 0.0 ? 0.0 : 6.0) : (vNl.x > 0.0 ? 12.0 : 18.0));
         float ph = fract(uTime * (0.02 + 0.03 * hash11(id)) + hash11(id + 3.1));
         float yb = abs(ph * 2.0 - 1.0) * hgt;
-        float car = exp(-pow((y - yb) / 1.6, 2.0)) * inShaft;
-        float base = 0.03 + 0.34 * inShaft;
+        float car = exp(-pow((y - yb) / 1.1, 2.0)) * inShaft;
+        float base = 0.015 + 0.26 * inShaft;
         // 顶部、底部渐隐
         float fade = smoothstep(0.0, 14.0, y) * (1.0 - smoothstep(hgt - 10.0, hgt, y));
-        vec3 col = vec3(0.08, 0.62, 1.0) * base + vec3(0.45, 0.9, 1.0) * car * 0.9;
+        vec3 col = vec3(0.08, 0.62, 1.0) * base + vec3(0.45, 0.9, 1.0) * car * 0.7;
         gl_FragColor = vec4(col * fade * uCore, 1.0);
       }`
   })

@@ -53,7 +53,8 @@ function box(w, h, d, x, y, z, rotY, color) {
 }
 
 const C = {
-  slabEdge: new Color(0.6, 0.88, 1.35) // 楼板外沿冷光线（设计稿一圈圈发亮的层线）
+  // 楼板外沿冷光线（设计稿一圈圈发亮的层线）：亮度留在辉光门槛以下，否则每层一圈光晕糊掉墙体
+  slabEdge: new Color(0.42, 0.66, 0.95)
 }
 
 /**
@@ -115,7 +116,7 @@ export function glassMaterial(
     uGap: { value: new Vector3(0, -1, 0) }, // x 起始高度、y 结束高度、z 开关
     uHover: { value: new Vector3(0, -1, 0) },
     uAlarm: { value: [new Vector3(0, -1, 0), new Vector3(0, -1, 0)] },
-    uEdge: { value: new Color(0.35, 0.8, 1.1) },
+    uEdge: { value: new Color(0.25, 0.6, 0.85) },
     uEdgeK: { value: 0.35 },
     uTime: { value: 0 },
     uGridCol: { value: new Color(...(grid.color || [0.12, 0.48, 0.85])) },

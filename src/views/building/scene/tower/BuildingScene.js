@@ -67,7 +67,7 @@ const MODES = {
     edge: 1.3,
     bake: 1.45,
     light: 1,
-    core: 1.15,
+    core: 0.75,
     riser: 0,
     heat: 0,
     plant: 0
@@ -199,13 +199,23 @@ export class BuildingScene {
     this.lastInteract = 0
 
     this.labelRenderer = new CSS2DRenderer({ element: o.labelLayer })
-    this.composer = new EffectComposer(r)
+    // 后处理渲染目标开 4 倍多重采样：EffectComposer 默认的目标不带 MSAA，renderer 的 antialias 不起作用，
+    // 玻璃上一像素宽的竖梃 / 层线会发虚、闪烁
+    this.composer = new EffectComposer(
+      r,
+      new THREE.WebGLRenderTarget(1, 1, {
+        type: THREE.HalfFloatType,
+        samples: 4
+      })
+    )
     this.composer.addPass(new RenderPass(this.scene, this.camera))
+    // 辉光只给真正的光源（灯带、告警、抽屉金框）：门槛 0.95，强度 / 半径都压小，
+    // 否则玻璃轮廓、层线、竖梃全都晕开一圈，墙体看不清
     this.bloom = new UnrealBloomPass(
       new THREE.Vector2(256, 256),
-      0.35,
-      0.4,
-      0.8
+      0.22,
+      0.2,
+      0.95
     )
     this.composer.addPass(this.bloom)
     this.composer.addPass(new OutputPass())
