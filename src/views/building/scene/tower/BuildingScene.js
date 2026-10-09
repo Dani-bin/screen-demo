@@ -5,8 +5,9 @@
  * 设计稿是写实剖切模型：
  *   - 楼层室内：Blender 建模 + Cycles 烘焙室内灯光（scripts/blender/tower/ → public/building/tower_S|N.glb，加载与选型见 bakedFloors.js），
  *     每层按楼层数据挑一个变体（办公按入驻率选亮灯比例、大堂 / 商业 / 设备层 / 会所按类型），按该层收分缩放，斜屋顶下几层用裁剪平面切掉
- *   - 塔身：真实椭圆平面（OSM，data/parkData.js 的 PARK_TOWERS）+ 向上收分 + 斜切屋顶；整栋一张物理材质蓝玻璃幕墙
- *     （夜空环境反射 + 轮廓菲涅尔），每层外沿一圈冷光层线与竖梃（floorKit.js）
+ *   - 塔身：真实椭圆平面（OSM，data/parkData.js 的 PARK_TOWERS）+ 轻微收分 + 陡斜切屋顶（高差为平面跨度 0.44，切过 53～58F）；
+ *     整栋一张物理材质蓝玻璃幕墙（夜空环境反射 + 轮廓菲涅尔 + 4.5 m 竖梃 / 层线网格），每层外沿一圈冷光层线（floorKit.js）；
+ *     屋面下的楔形空腔是烘焙的屋顶机房
  *   - 核心筒：青色电梯井光柱（不做深度测试，透出整栋楼），轿厢光点上下跑
  *   - 裙楼 1～4F：暖金色大堂玻璃，屋顶与广场各一圈树
  *   - 地下 B1～B3：石材圆台基座正面挖一个方形剖口（从广场一直切到底），露出车库、配电房、水泵房；告警设备红色波纹
@@ -32,7 +33,6 @@ import {
   clipHalfPlane,
   insetPoly,
   loftGeometry,
-  loopSegments,
   majorAxisAngle,
   prismGeometry
 } from "./geometry"
@@ -46,20 +46,24 @@ const DEG = Math.PI / 180
 const FLOOR = 2.2 // 塔楼标准层（设计稿塔身高宽比约 2.7）
 const PODIUM_FLOOR = 4.6 // 裙楼（设计稿裙楼约为塔身高度的 15%）
 const BASE_FLOOR = 13 // 地下层（比真实层高大，剖口里的机房才看得清）
-const TAPER = 0.14 // 塔顶相对底部收分
+const TAPER = 0.08 // 塔顶相对底部收分（设计稿塔身近乎直筒，收分大了像口红）
 const PODIUM_SCALE = 1.42 // 裙楼平面相对塔楼放大
 const BASE_SCALE = 2.25 // 底座半径 = 塔楼平面最大半径 × BASE_SCALE（设计稿底座直径约为塔身宽 2.3 倍）
 const NOTCH_HALF = 0.68 // 地下剖口半宽（× 底座半径）
 const NOTCH_FRONT = 0.26 // 剖口正面离轴心的距离（× 底座半径），正对相机
 const ROOM_D = 20 // 剖口往里能看到的机房进深（米）
 const DRAWER_SCALE = 1.15 // 抽出楼层放大倍数
+// 斜屋顶（与 scripts/blender/tower/floors.py 一致）：设计稿屋顶斜切很陡，高差 = 下坡方向平面跨度 × ROOF_RISE_K；
+// 屋面最高点高出顶层（58F）顶板 ROOF_HIGH，斜面往下切过最上面几层（那几层是单独建模的 top_<层号>）
+const ROOF_RISE_K = 0.44
+const ROOF_HIGH = 12
 
 /** 各模式下的亮度参数（切换时逐帧插值过去） */
 const MODES = {
-  // glass 玻璃不透明度、win 远景窗灯、edge 玻璃轮廓光、bake 烘焙楼层亮度、light 楼层外沿光线亮度、core 核心筒光柱、riser 立管、heat 热力着色、plant 设备层着色
+  // glass 玻璃不透明度、grid 玻璃竖梃 / 层线网格、edge 玻璃轮廓光、bake 烘焙楼层亮度、light 楼层外沿光线亮度、core 核心筒光柱、riser 立管、heat 热力着色、plant 设备层着色
   section: {
     glass: 0.2,
-    win: 1,
+    grid: 1,
     edge: 1.3,
     bake: 1.45,
     light: 1,
@@ -70,7 +74,7 @@ const MODES = {
   },
   facade: {
     glass: 0.5,
-    win: 1.3,
+    grid: 0.75,
     edge: 0.6,
     bake: 0.8,
     light: 0.75,
@@ -81,7 +85,7 @@ const MODES = {
   },
   mep: {
     glass: 0.15,
-    win: 0.1,
+    grid: 0.3,
     edge: 0.25,
     bake: 0.16,
     light: 0.12,
@@ -92,7 +96,7 @@ const MODES = {
   },
   heat: {
     glass: 0.18,
-    win: 0,
+    grid: 0.3,
     edge: 0.25,
     bake: 0.3,
     light: 1,
@@ -255,6 +259,8 @@ export class BuildingScene {
           mat.clippingPlanes = [clip]
         }
         mat.userData.plant = name === "plant"
+        // 裙楼大堂 / 商业灯光烘得很亮，整圈会糊成一块金饼：压暗一些，让玻璃竖梃和室内层次读得出来
+        mat.userData.k = name === "lobby" || name === "retail" ? 0.7 : 1
         this.bakedMats.add(mat)
         const m = new THREE.Mesh(part.geometry, mat)
         m.scale.set(fg.k, 1, fg.k)
@@ -264,8 +270,8 @@ export class BuildingScene {
     // 屋顶机房：58F 顶板到斜屋面之间的楔形空腔（冷却塔、擦窗机、钢梁），按该段中部高度收分，屋面平面兜底裁剪
     const roof = variants.roof
     if (roof) {
-      const y0 = this.H - this.roofRise
-      const k = this._taperAt(y0 + this.roofRise / 2)
+      const y0 = this.topY
+      const k = this._taperAt(y0 + ROOF_HIGH / 2)
       const clip = this._roofPlane(k)
       const g = new THREE.Group()
       g.position.y = y0
@@ -365,9 +371,6 @@ export class BuildingScene {
     const t = this.tower
     this.foot = t.footprint
     this.podiumH = 4 * PODIUM_FLOOR
-    // 屋顶高差按层高比例缩放（真实 18 m ÷ 3.76 m 层高 ≈ 4.8 层）
-    this.roofRise = ((t.roof?.height || 18) / (t.height / t.levels)) * FLOOR
-    this.H = this.podiumH + (this.levels - 4) * FLOOR + this.roofRise
     // 下坡方向：OSM 罗盘角（0 北、90 东）→ three 的 (x 东, z 南)
     const d = (t.roof?.direction ?? 90) * DEG
     this.roofDir = [Math.sin(d), -Math.cos(d)]
@@ -376,6 +379,10 @@ export class BuildingScene {
     )
     this.roofLo = Math.min(...proj)
     this.roofSpan = Math.max(...proj) - this.roofLo
+    // 顶层顶板高度、屋面最高点、屋面高差（见 ROOF_RISE_K / ROOF_HIGH）
+    this.topY = this.podiumH + (this.levels - 4) * FLOOR
+    this.H = this.topY + ROOF_HIGH
+    this.roofRise = ROOF_RISE_K * this.roofSpan
     this.radius = Math.max(...this.foot.map(([x, z]) => Math.hypot(x, z)))
     this.axis = majorAxisAngle(this.foot)
 
@@ -635,8 +642,13 @@ export class BuildingScene {
     this.podiumPoly = poly
     // 玻璃幕墙（暖色室内透出来，设计稿裙楼是一圈金黄的大堂玻璃）
     const rings = [0, this.podiumH].map((y) => poly.map(([x, z]) => [x, y, z]))
-    this.podiumGlass = glassMaterial(0x2a1806, [0.95, 0.58, 0.18])
-    this.podiumGlass.opacity = 0.16
+    // 暖色玻璃：底光压低（原来 0.95 的金色底光把裙楼糊成一块实心金饼），让烘焙的大堂室内透出来，暖金色竖梃 3 m 一根
+    this.podiumGlass = glassMaterial(0x2a1806, [0.12, 0.07, 0.02], {
+      color: [1.0, 0.66, 0.3],
+      mull: 3,
+      floorK: 1
+    })
+    this.podiumGlass.userData.u.uFloorH.value = PODIUM_FLOOR
     const shell = new THREE.Mesh(loftGeometry(rings), this.podiumGlass)
     shell.renderOrder = 2
     this.root.add(shell)
@@ -814,19 +826,10 @@ export class BuildingScene {
     this.root.add(this.towerShell)
     this.hitTargets.push(this.towerShell)
     this.roofTops = { rings: rings[n] }
-    // 远景窗灯：每层亮灯比例写进玻璃（见 floorKit.glassMaterial 的 uLit），远看时玻璃上透出一格格暖光
+    // 玻璃层线：每层楼板处一条（与竖梃组成设计稿那种清晰分格）
     const wu = this.towerGlass.userData.u
     wu.uBaseY.value = y0
     wu.uFloorH.value = FLOOR
-    wu.uFloorBase.value = 5
-    for (const f of this.floors)
-      if (f.index >= 5 && f.index < 64)
-        wu.uLit.value[f.index] =
-          f.kind === "plant"
-            ? 0.25
-            : f.kind === "sky"
-              ? 0.95
-              : (f.occupancy ?? 60) / 100
     // 告警楼层（最多两层）：玻璃红色呼吸
     const alarms = this.floors
       .filter((f) => f.alarm && f.index >= 5)
@@ -844,17 +847,28 @@ export class BuildingScene {
       )
     }
 
-    // 外立面上零星的传感器光点（设计稿塔身上几颗蓝 / 绿光点）
+    // 外立面上零星的传感器光点（设计稿塔身左侧轮廓上一列蓝色光点、一颗绿色）：放在画面左侧的轮廓上
     const dots = []
     const cols = []
     const rnd = mulberry(5)
-    for (let i = 0; i < 9; i++) {
-      const y = y0 + 10 + rnd() * (this.H - y0 - 30)
+    for (let i = 0; i < 8; i++) {
+      const y = y0 + 12 + ((i + rnd() * 0.5) / 8) * (this.topY - y0 - 30)
       const poly = this.towerPolyAt(y)
-      const p = poly[Math.floor(rnd() * poly.length)]
-      dots.push(p[0] * 1.01, y, p[1] * 1.01)
+      // 轮廓上离相机最近、又最靠画面左边的点（抽屉方向的反方向偏向相机）
+      let best = poly[0]
+      let bv = -Infinity
+      for (const p of poly) {
+        const v =
+          -(p[0] * this.drawerDir.x + p[1] * this.drawerDir.z) * 0.8 -
+          (p[0] * this.viewDir.x + p[1] * this.viewDir.z) * 0.6
+        if (v > bv) {
+          bv = v
+          best = p
+        }
+      }
+      dots.push(best[0] * 1.01, y, best[1] * 1.01)
       const green = i === 2
-      cols.push(0.2, green ? 1 : 0.6, green ? 0.4 : 1)
+      cols.push(0.2, green ? 1 : 0.65, green ? 0.4 : 1)
     }
     const dg = new THREE.BufferGeometry()
     dg.setAttribute("position", new THREE.Float32BufferAttribute(dots, 3))
@@ -862,7 +876,7 @@ export class BuildingScene {
     this.sensorDots = new THREE.Points(
       dg,
       new THREE.PointsMaterial({
-        size: 9,
+        size: 16,
         sizeAttenuation: false,
         vertexColors: true,
         map: dotTexture(),
@@ -893,11 +907,27 @@ export class BuildingScene {
     // 核心筒从地面起（地下剖切面里不出现光柱，免得把机房照成一片白）
     // 从裙楼顶起（不做深度测试，往下伸会压在裙楼和地下机房前面）
     const y0 = this.podiumH
-    const y1 = this.H - this.roofRise - 2
-    const size = new THREE.Vector3(w, y1 - y0, d)
+    // 光柱顶：斜屋面切过核心筒的最低处以下（屋面很陡，核心筒低侧比顶层顶板还低）
+    const pc = Math.max(
+      ...[-1, 1].flatMap((su) =>
+        [-1, 1].map((sv) => {
+          const u = (su * w) / 2
+          const v = (sv * d) / 2
+          const x = u * ca - v * sa
+          const z = u * sa + v * ca
+          return x * this.roofDir[0] + z * this.roofDir[1]
+        })
+      )
+    )
+    const y1 = Math.min(
+      this.topY,
+      this.H - (this.roofRise * (pc - this.roofLo)) / this.roofSpan - 2
+    )
+    // 光柱只取核心筒中间 55%：设计稿里是一道约 1/9 塔宽的窄光，整个核心筒那么宽会糊成一大片
+    const size = new THREE.Vector3(w * 0.55, y1 - y0, d * 0.55)
     const core = new THREE.Mesh(
-      new THREE.BoxGeometry(w, y1 - y0, d),
-      coreMaterial(size, [y0, y1])
+      new THREE.BoxGeometry(size.x, size.y, size.z),
+      coreMaterial(size, [y0, y1], 3)
     )
     core.position.y = (y0 + y1) / 2
     core.rotation.y = -this.axis
@@ -1077,10 +1107,12 @@ export class BuildingScene {
     const y = this.floorBottom(f.index)
     const realH = this.floorHeight(f.index)
     const fg = this.floorGroups.get(f.index)
-    // 抽屉整体放大 DRAWER_SCALE 倍（家具、层高同比），抽出后看得清室内；以该层中线为中心放大
+    // 抽屉平面放大 DRAWER_SCALE 倍，抽出后看得清室内；以该层中线为中心放大。
+    // 设计稿的抽屉是一个约两层高的金框盒子：围合高度取层高 × S × 1.7，家具竖向只多放大 1.25 倍（再高桌椅就变形了）
     const S = DRAWER_SCALE
     const k = fg?.k ?? 1
-    const h = realH * S
+    const h = realH * S * 1.7
+    const sy = S * 1.25
     const poly = (
       f.index <= 4 ? this.podiumPoly : insetPoly(this.foot, 0.35)
     ).map(([x, z]) => [x * k * S, z * k * S])
@@ -1091,14 +1123,14 @@ export class BuildingScene {
       // 抽屉去掉天花与吊顶灯盘（从斜上方看得见室内）：世界坐标的水平裁剪平面，抽屉只做水平移动
       const cut = new THREE.Plane(
         new THREE.Vector3(0, -1, 0),
-        g.position.y + h - 0.25 * S
+        g.position.y + (realH - 0.25) * sy
       )
       for (const part of v.parts) {
         // 抽屉用独立材质：不受模式亮度影响，始终是完整亮度
         const mat = part.material.clone()
         mat.clippingPlanes = [cut]
         const m = new THREE.Mesh(part.geometry, mat)
-        m.scale.set(k * S, S, k * S)
+        m.scale.set(k * S, sy, k * S)
         g.add(m)
       }
     }
@@ -1108,21 +1140,22 @@ export class BuildingScene {
     )
     this.drawerGlass = drawerGlassMaterial()
     g.add(new THREE.Mesh(loftGeometry(wallRings), this.drawerGlass))
-    // 上下金边
-    const edge = new THREE.LineBasicMaterial({
-      color: new THREE.Color(1.6, 1.15, 0.45)
+    // 上下金色边框：有厚度的发光带（设计稿抽屉粗粗的金框；1 像素的线远看就没了）
+    const edge = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(1.5, 1.05, 0.4),
+      side: THREE.DoubleSide
     })
-    for (const yy of [0.02, h - 0.02]) {
-      const lg = new THREE.BufferGeometry()
-      lg.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(
-          loopSegments(insetPoly(poly, -0.3), yy),
-          3
+    const ring = insetPoly(poly, -0.3)
+    for (const [y0, y1] of [
+      [0, 0.45],
+      [h - 0.45, h]
+    ])
+      g.add(
+        new THREE.Mesh(
+          loftGeometry([y0, y1].map((yy) => ring.map(([x, z]) => [x, yy, z]))),
+          edge
         )
       )
-      g.add(new THREE.LineSegments(lg, edge))
-    }
     // 暖光照亮下方塔身
     const light = new THREE.PointLight(0xffc070, 400, this.radius * 2.4, 1.5)
     light.position.y = h * 0.75
@@ -1272,13 +1305,14 @@ export class BuildingScene {
       m.userData.u.uTime.value = t
       m.userData.u.uEdgeK.value = c.edge
     }
-    this.towerGlass.userData.u.uWin.value = c.win
+    this.towerGlass.userData.u.uGrid.value = c.grid
+    this.podiumGlass.userData.u.uGrid.value = c.grid
     this.towerGlass.opacity = c.glass
     this.podiumGlass.opacity = c.glass * 0.8
     // 烘焙楼层亮度；设备层在机电模式下染绿
     if (this.bakedMats)
       for (const m of this.bakedMats) {
-        m.color.setScalar(c.bake)
+        m.color.setScalar(c.bake * (m.userData.k ?? 1))
         if (m.userData.plant) m.color.lerp(PLANT_TINT, c.plant * 0.8)
       }
     // 每层灯盘颜色：白光 → 热力色（按在岗密度）→ 设备层绿，乘灯盘亮度

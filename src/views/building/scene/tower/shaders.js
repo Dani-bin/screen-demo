@@ -8,10 +8,10 @@
 import { AdditiveBlending, DoubleSide, ShaderMaterial } from "three"
 
 /**
- * 核心筒：一道青色光柱，前后两面各 6 条电梯井（竖向亮带），轿厢光点在井道里往返；
+ * 核心筒：一道青色光柱，每个面 shafts 条电梯井（竖向亮带，井道之间留暗缝），轿厢光点在井道里往返；
  * 用模型局部坐标 vLocal 算井道（盒子尺寸 uSize）
  */
-export function coreMaterial(size, yRange) {
+export function coreMaterial(size, yRange, shafts = 6) {
   return new ShaderMaterial({
     transparent: true,
     depthWrite: false,
@@ -22,6 +22,7 @@ export function coreMaterial(size, yRange) {
       uY0: { value: yRange[0] },
       uY1: { value: yRange[1] },
       uCore: { value: 1 },
+      uShafts: { value: shafts },
       uTime: { value: 0 }
     },
     vertexShader: /* glsl */ `
@@ -34,7 +35,7 @@ export function coreMaterial(size, yRange) {
       }`,
     fragmentShader: /* glsl */ `
       uniform vec3 uSize;
-      uniform float uY0, uY1, uCore, uTime;
+      uniform float uY0, uY1, uCore, uTime, uShafts;
       varying vec3 vLocal;
       varying vec3 vNl;
       float hash11(float p) { return fract(sin(p * 91.7) * 43758.5453); }
@@ -42,9 +43,9 @@ export function coreMaterial(size, yRange) {
         // 前后面沿 x 排井道，两个侧面沿 z
         bool front = abs(vNl.z) > 0.5;
         float span = front ? uSize.x : uSize.z;
-        float t = ((front ? vLocal.x : vLocal.z) / span + 0.5) * 6.0;
+        float t = ((front ? vLocal.x : vLocal.z) / span + 0.5) * uShafts;
         float shaft = floor(t);
-        float inShaft = 1.0 - smoothstep(0.32, 0.46, abs(fract(t) - 0.5));
+        float inShaft = 1.0 - smoothstep(0.26, 0.4, abs(fract(t) - 0.5));
         float y = vLocal.y + uSize.y * 0.5;
         float hgt = uSize.y;
         // 轿厢：每条井道一个光点，速度、相位不同，到顶折返
@@ -52,7 +53,7 @@ export function coreMaterial(size, yRange) {
         float ph = fract(uTime * (0.02 + 0.03 * hash11(id)) + hash11(id + 3.1));
         float yb = abs(ph * 2.0 - 1.0) * hgt;
         float car = exp(-pow((y - yb) / 1.6, 2.0)) * inShaft;
-        float base = 0.06 + 0.32 * inShaft;
+        float base = 0.03 + 0.34 * inShaft;
         // 顶部、底部渐隐
         float fade = smoothstep(0.0, 14.0, y) * (1.0 - smoothstep(hgt - 10.0, hgt, y));
         vec3 col = vec3(0.08, 0.62, 1.0) * base + vec3(0.45, 0.9, 1.0) * car * 0.9;
@@ -119,7 +120,7 @@ export function drawerGlassMaterial() {
         float mu = abs(fract(vUv.x / 3.2 + 0.5) - 0.5) * 3.2;
         float mull = 1.0 - smoothstep(0.05, 0.15, mu);
         vec3 gold = vec3(1.0, 0.72, 0.25);
-        vec3 col = gold * (0.12 + fres * 0.5 + mull * 0.5) * (0.9 + 0.1 * sin(uTime * 3.0));
+        vec3 col = gold * (0.2 + fres * 0.55 + mull * 0.6) * (0.9 + 0.1 * sin(uTime * 3.0));
         gl_FragColor = vec4(col * uAmt, 1.0);
       }`
   })
