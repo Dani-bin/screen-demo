@@ -25,6 +25,8 @@ from .floors import MI
 
 OUT_DIR = os.path.join(ROOT, "public", "building")
 H = plan.WALL_H
+CEIL = 3.4  # 吊顶高度（只参与烘焙）：高于隔墙，墙顶能受光
+EXPOSURE = 1.2  # 烘焙结果的色调映射曝光（tonemap() 可单独重算，不用重烘）
 # 房间类型 → 地面材质
 FLOOR_MAT = {
     "office": "carpet_o",
@@ -39,6 +41,69 @@ FLOOR_MAT = {
     "power": "concrete",
     "service": "concrete",
 }
+
+
+# 地面程序纹理（烘焙时连同光照一起写进贴图）：颜色 1 / 2（砖块间随机）、缝色、块宽 / 块高（米）、缝宽、错缝、噪声起伏
+FLOOR_TEX = {
+    "MT_carpet_o": ("#525d70", "#48526a", "#384152", 0.5, 0.5, 0.012, 0.0, 0.22),  # 50 cm 方块地毯
+    "MT_corridor": ("#aeb1b6", "#a0a3a8", "#74777c", 1.2, 0.6, 0.006, 0.5, 0.06),  # 石材 120 × 60 错缝
+    "MT_wood_f": ("#80603f", "#6a4d33", "#4a3624", 1.8, 0.18, 0.004, 0.37, 0.12),  # 木地板长条
+    "MT_raised": ("#8c939b", "#838a92", "#545a61", 0.6, 0.6, 0.012, 0.0, 0.05),  # 机房架空地板
+    "MT_tile": ("#bcc0c4", "#b2b6ba", "#8a8e92", 0.3, 0.3, 0.005, 0.0, 0.04),  # 卫生间 / 茶水间地砖
+}
+
+
+def _texture_materials():
+    """
+    给楼层级地面材质接上砖块纹理：物体坐标 → 绕 z 转到平面主轴（对象属性 ang，南北塔共用材质、朝向不同）→ Brick → 叠一层噪声明暗起伏 → Base Color
+    """
+    for name, (c1, c2, cm, w, h, mort, off, nz) in FLOOR_TEX.items():
+        m = bpy.data.materials[name]
+        nt = m.node_tree
+        bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
+        for n in [n for n in nt.nodes if n.name.startswith("FT_")]:
+            nt.nodes.remove(n)
+
+        def node(t, nm):
+            n = nt.nodes.new(t)
+            n.name = "FT_" + nm
+            return n
+
+        tc = node("ShaderNodeTexCoord", "tc")
+        at = node("ShaderNodeAttribute", "ang")
+        at.attribute_type = "OBJECT"
+        at.attribute_name = "ang"
+        rot = node("ShaderNodeVectorRotate", "rot")
+        rot.rotation_type = "Z_AXIS"
+        nt.links.new(tc.outputs["Object"], rot.inputs["Vector"])
+        nt.links.new(at.outputs["Fac"], rot.inputs["Angle"])
+        br = node("ShaderNodeTexBrick", "brick")
+        br.offset = off
+        br.inputs["Scale"].default_value = 1.0
+        br.inputs["Brick Width"].default_value = w
+        br.inputs["Row Height"].default_value = h
+        br.inputs["Mortar Size"].default_value = mort
+        br.inputs["Mortar Smooth"].default_value = 0.2
+        br.inputs["Color1"].default_value = lib._lin(c1)
+        br.inputs["Color2"].default_value = lib._lin(c2)
+        br.inputs["Mortar"].default_value = lib._lin(cm)
+        nt.links.new(rot.outputs["Vector"], br.inputs["Vector"])
+        # 噪声明暗：地毯纤维 / 石材纹理的起伏
+        no = node("ShaderNodeTexNoise", "noise")
+        no.inputs["Scale"].default_value = 3.0
+        no.inputs["Detail"].default_value = 6.0
+        nt.links.new(rot.outputs["Vector"], no.inputs["Vector"])
+        mr = node("ShaderNodeMapRange", "range")
+        mr.inputs["To Min"].default_value = 1 - nz
+        mr.inputs["To Max"].default_value = 1 + nz * 0.6
+        nt.links.new(no.outputs["Fac"], mr.inputs["Value"])
+        mx = node("ShaderNodeMix", "mix")
+        mx.data_type = "RGBA"
+        mx.blend_type = "MULTIPLY"
+        mx.inputs["Factor"].default_value = 1.0
+        nt.links.new(br.outputs["Color"], mx.inputs["A"])
+        nt.links.new(mr.outputs["Result"], mx.inputs["B"])
+        nt.links.new(mx.outputs["Result"], bsdf.inputs["Base Color"])
 
 
 class Frame:
@@ -197,15 +262,26 @@ def _machine(F, bv, room, P):
         F.cyl(bv, 0.18, 1.5, a0 - 1.6, c[1] - 1.0 + k * 0.45, 0.0, "red", seg=10)
 
 
+_prnd = random.Random(7)
+
+
 def _plant(F, bv, a, b, big=False):
-    """盆栽：白色花盆 + 叶团"""
+    """盆栽：白色花盆 + 几团大小不一、高低错落的叶团（远看是一丛，不是一个球）"""
     from mathutils import Matrix
 
-    F.cyl(bv, 0.28 if big else 0.22, 0.5, a, b, 0.0, "pot", seg=10)
+    F.cyl(bv, 0.28 if big else 0.22, 0.5, a, b, 0.0, "pot", seg=12)
     x, y = F.to_xy(a, b)
-    res = bmesh.ops.create_icosphere(bv, subdivisions=1, radius=0.5 if big else 0.4, matrix=Matrix.Translation((x, y, 0.95)))
-    for f in {f for v in res["verts"] for f in v.link_faces}:
-        f.material_index = MI["leaf"]
+    k = 1.25 if big else 1.0
+    for i in range(5):
+        t = i * 2.4 + _prnd.random()
+        rr = (0.0 if i == 0 else 0.22) * k
+        z = (0.95 if i == 0 else 0.7 + _prnd.random() * 0.45) * k
+        res = bmesh.ops.create_icosphere(
+            bv, subdivisions=2, radius=(0.36 if i == 0 else 0.26) * k * (0.85 + _prnd.random() * 0.3),
+            matrix=Matrix.Translation((x + rr * math.cos(t), y + rr * math.sin(t), z)),
+        )
+        for f in {f for v in res["verts"] for f in v.link_faces}:
+            f.material_index = MI["leaf"]
 
 
 # ---------------------------------------------------------------- 主体
@@ -281,12 +357,12 @@ def build(tag, M, col, loc):
         # 第一跑：从走道一侧往里逐级升到平台（1.9 m）
         for k in range(n):
             bk = bb0 + (bb1 - bb0) * k / n
-            F.box(bv, (w - 0.1, (bb1 - bb0) / n, 0.16 * (k + 1)), ac - w / 2 - 0.05, bk + (bb1 - bb0) / n / 2, 0.08 * (k + 1), "stone")
+            F.box(bv, (w - 0.1, (bb1 - bb0) / n, 0.16 * (k + 1)), ac - w / 2 - 0.05, bk + (bb1 - bb0) / n / 2, 0.08 * (k + 1), "slab_edge")
         # 第二跑：从平台往回逐级下行（往下一层），台阶表面同样露在俯视里
         for k in range(n):
             bk = bb1 - (bb1 - bb0) * (k + 1) / n
             F.box(bv, (w - 0.1, (bb1 - bb0) / n, max(0.05, 1.9 - 0.16 * k)), ac + w / 2 + 0.05, bk + (bb1 - bb0) / n / 2, max(0.05, 1.9 - 0.16 * k) / 2, "concrete")
-        F.box(bv, (2 * w, 0.95 * cy - bb1, 1.9), ac, (bb1 + 0.95 * cy) / 2, 0.95, "stone")  # 平台
+        F.box(bv, (2 * w, 0.95 * cy - bb1, 1.9), ac, (bb1 + 0.95 * cy) / 2, 0.95, "concrete")  # 平台
         F.box(bv, (0.06, bb1 - bb0, 0.06), ac, (bb0 + bb1) / 2, 2.0, "metal_d")  # 中间扶手
 
     # ---- 卫生间：隔间 + 洗手台；强电间：配电柜；保洁间：货架
@@ -357,27 +433,67 @@ def build(tag, M, col, loc):
         elif t == "machine":
             _machine(F, bv, r, P)
 
-    # ---- 吊顶 + 灯盘（只参与烘焙）：吊顶朝下；灯盘 2.4 m 网格，机房 / 卫生间冷白，其余暖白
-    F.poly(bl, P["slab"], H, "ceiling_b", down=True)
+    # ---- 吊顶 + 灯具（只参与烘焙）：吊顶抬到 3.4 m（比 2.8 m 的隔墙高，墙顶不会被吊顶压成黑色），吊顶反照率低，
+    # 灯光的落差、阴影才出得来（设计稿是夜景室内：灯下亮、角落暗）。
+    #   开放办公：每个工位岛正上方一条吊线灯（沿岛长向），岛与岛之间再稀疏补几盏筒灯；
+    #   走道 / 电梯厅：一圈筒灯，地面留出一个个光斑；会议室：长桌上方吊线灯 + 四周筒灯；
+    #   机房：暖橙色灯盘（设计稿机房是橙色光）；卫生间、强电间等：冷白灯盘
     from .plan import in_poly
 
+    F.poly(bl, P["slab"], CEIL, "ceiling_b", down=True)
+
+    def room_at(a, b):
+        return next((r for r in P["rooms"] if in_poly(a, b, r["poly"])), None)
+
+    def downlight(a, b, mat="light_dn"):
+        """筒灯：朝下的发光圆片（直径 0.24 m）"""
+        ring = [(a + 0.12 * math.cos(k * math.pi / 6), b + 0.12 * math.sin(k * math.pi / 6)) for k in range(12)]
+        F.poly(bl, ring, CEIL - 0.02, mat, down=True)
+
+    # 工位岛吊线灯：同一岛 6 张桌连续存放，取中心与切线方向
+    ds = P["desks"]
+    for k in range(0, len(ds), 6):
+        isl = ds[k : k + 6]
+        ca = sum(d["a"] for d in isl) / len(isl)
+        cb = sum(d["b"] for d in isl) / len(isl)
+        F.box(bl, (3.8, 0.12, 0.05), ca, cb, 2.95, "light_ln", isl[0]["rot"], bottom=True)
+        F.box(bl, (0.02, 0.02, CEIL - 2.95), ca, cb, (CEIL + 2.95) / 2, "metal_d", isl[0]["rot"], bottom=True)
+    # 网格补灯：按房间类型选灯具
     for i in range(-14, 15):
         for j in range(-9, 10):
             a, b = i * 2.4, j * 2.4 + 1.2
             if not in_poly(a, b, plan.inset(P["slab"], 0.8)):
                 continue
-            room = next((r for r in P["rooms"] if in_poly(a, b, r["poly"])), None)
-            # 电梯井、核心筒墙体里不放灯
+            room = room_at(a, b)
+            t = room["type"] if room else "corridor"
             if room is None and abs(a) < cx and abs(b) < cy:
-                continue
-            cool = room is not None and room["type"] in ("machine", "wc", "power", "service", "stair")
-            F.box(bl, (1.2, 0.6, 0.03), a, b, H - 0.03, "light_pc" if cool else "light_pw", bottom=True)
+                continue  # 核心筒墙体、电梯井里不放灯
+            if t == "office":
+                # 离工位岛远的地方才补筒灯（岛上方已有吊线灯）
+                if all(math.dist((a, b), (d["a"], d["b"])) > 2.2 for d in ds):
+                    downlight(a, b)
+            elif t in ("corridor", "lobby", "pantry", "manager", "meeting"):
+                downlight(a, b)
+            elif t == "conference":
+                if (i + j) % 2 == 0:
+                    downlight(a, b)
+            elif t == "machine":
+                F.box(bl, (1.2, 0.3, 0.03), a, b, CEIL - 0.03, "light_or", bottom=True)
+            else:
+                F.box(bl, (0.6, 0.6, 0.03), a, b, CEIL - 0.03, "light_pc", bottom=True)
+    # 会议室长桌上方的吊线灯（与桌同向）
+    for r in P["rooms"]:
+        if r["type"] in ("conference", "meeting"):
+            c = r["center"]
+            rot = math.atan2(c[1], c[0]) + math.pi / 2
+            F.box(bl, (6.4 if r["type"] == "conference" else 3.0, 0.14, 0.05), c[0], c[1], 2.85, "light_ln", rot, bottom=True)
 
     ob = lib.new_object(f"{tag}_floor", bm, M, col)
     ov = lib.new_object(f"{tag}_floor_v", bv, M, col)
     ol = lib.new_object(f"{tag}_floor_lights", bl, M, col)
     for o in (ob, ov, ol):
         o.location = loc
+        o["ang"] = -P["ang"]  # 地面纹理转到平面主轴（见 _texture_materials）
     return ob, ov, ol
 
 
@@ -389,6 +505,7 @@ def run(tags=("S", "N")):
     importlib.reload(floors)
     importlib.reload(plan)
     M = floors.materials()
+    _texture_materials()
     col = lib.collection("FLOOR")
     stats = {}
     for i, tag in enumerate(tags):
@@ -407,8 +524,11 @@ def run(tags=("S", "N")):
     return stats
 
 
-def bake(tags=("S", "N"), size=4096, samples=256):
-    """烘焙：楼板贴图 + 家具顶点色；只渲染该塔楼层级的三个对象（吊顶灯盘提供室内光）"""
+def bake(tags=("S", "N"), size=4096, samples=256, vertex_samples=1024):
+    """
+    烘焙：楼板贴图（浮点 → <名>_raw.exr → OIDN 降噪 → <名>_dn.exr → tonemap() 压成 PNG）+ 家具顶点色（采样更高，顶点色没法降噪）。
+    只渲染该塔楼层级的三个对象（吊顶灯具提供室内光）。贴图保留超过 1 的高光，色调映射时按曝光压缩（灯下的光斑不会糊成一片白）
+    """
     from . import bake as K
 
     K._setup(samples)
@@ -418,14 +538,93 @@ def bake(tags=("S", "N"), size=4096, samples=256):
         t = time.time()
         for o in bpy.data.objects:
             o.hide_render = o not in (ob, ov, ol)
-        K._bake_image(ob, size)
-        K.denoise(os.path.join(K.BAKE_DIR, ob.name + ".png"))
+        bpy.context.scene.cycles.samples = samples
+        _bake_raw(ob, size)
+        raw = os.path.join(K.BAKE_DIR, ob.name + "_raw.exr")
+        K.denoise(raw, os.path.join(K.BAKE_DIR, ob.name + "_dn.exr"), "OPEN_EXR")
+        bpy.context.scene.cycles.samples = vertex_samples
         K._bake_vertex(ov)
         log[tag] = round(time.time() - t, 1)
     for o in bpy.data.objects:
         o.hide_render = False
+    tonemap(tags)
     bpy.ops.wm.save_mainfile()
     return log
+
+
+def _bake_raw(ob, size):
+    """楼板烘到浮点图（不截断超过 1 的部分），存 <名>_raw.exr"""
+    from . import bake as K
+
+    nm = "BKF_" + ob.name
+    if bpy.data.images.get(nm):
+        bpy.data.images.remove(bpy.data.images[nm])
+    img = bpy.data.images.new(nm, size, size, alpha=False, float_buffer=True)
+    nodes = []
+    for slot in ob.material_slots:
+        nt = slot.material.node_tree
+        n = nt.nodes.new("ShaderNodeTexImage")
+        n.image = img
+        nt.nodes.active = n
+        nodes.append((nt, n))
+    try:
+        K._select(ob)
+        bpy.ops.object.bake(type="COMBINED", pass_filter=K.PASSES, margin=8, use_clear=True)
+        img.filepath_raw = os.path.join(K.BAKE_DIR, ob.name + "_raw.exr")
+        img.file_format = "OPEN_EXR"
+        img.save()
+    finally:
+        for nt, n in nodes:
+            nt.nodes.remove(n)
+        bpy.data.images.remove(img)
+
+
+def _tone(x, k=EXPOSURE):
+    """色调曲线：1 - e^(-k·x)，暗部近似线性、高光平滑压到 1 以内"""
+    import numpy as np
+
+    return 1.0 - np.exp(-k * np.maximum(x, 0.0))
+
+
+def tonemap(tags=("S", "N"), k=None):
+    """降噪后的浮点烘焙图 → 色调映射 → sRGB 编码 → <名>.png（export 用这张）。改曝光只需重跑这一步"""
+    import numpy as np
+
+    from . import bake as K
+
+    k = EXPOSURE if k is None else k
+    for tag in tags:
+        name = f"{tag}_floor"
+        src = bpy.data.images.load(os.path.join(K.BAKE_DIR, name + "_dn.exr"), check_existing=False)
+        w, h = src.size
+        px = np.empty(w * h * 4, dtype=np.float32)
+        src.pixels.foreach_get(px)
+        bpy.data.images.remove(src)
+        px = px.reshape(-1, 4)
+        c = _tone(px[:, :3], k)
+        # 线性 → sRGB（字节图的 pixels 按显示空间存，要自己编码）
+        c = np.where(c <= 0.0031308, c * 12.92, 1.055 * np.power(c, 1 / 2.4) - 0.055)
+        px[:, :3] = c
+        px[:, 3] = 1.0
+        out = bpy.data.images.new("TM_" + name, w, h, alpha=False)
+        out.pixels.foreach_set(px.ravel())
+        out.filepath_raw = os.path.join(K.BAKE_DIR, name + ".png")
+        out.file_format = "PNG"
+        out.save()
+        bpy.data.images.remove(out)
+
+
+def _tone_colors(me, k=None):
+    """顶点色（线性、HDR）按同一条色调曲线压缩（楼宇级用的是等比截断，楼层级近看要保留明暗层次）"""
+    import numpy as np
+
+    attr = me.color_attributes["Bake"]
+    n = len(attr.data)
+    buf = np.empty(n * 4, dtype=np.float32)
+    attr.data.foreach_get("color", buf)
+    c = buf.reshape(n, 4)
+    c[:, :3] = _tone(c[:, :3], EXPOSURE if k is None else k)
+    attr.data.foreach_set("color", c.ravel())
 
 
 def export(tags=("S", "N")):
@@ -444,7 +643,7 @@ def export(tags=("S", "N")):
             me.materials.clear()
             me.materials.append(E._vertex_material() if suffix else E._baked_material(ob))
             if suffix:
-                E._clamp_colors(me)
+                _tone_colors(me)
             cp = bpy.data.objects.new("floor" + suffix, me)
             col.objects.link(cp)
             copies.append(cp)

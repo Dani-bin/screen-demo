@@ -39,9 +39,21 @@ def _lin(c):
 
 
 def material(name, color, rough=0.6, metal=0.0, emit=None, strength=0.0):
-    """Principled 材质（同名复用）；emit 为自发光颜色（sRGB），strength 为强度（Cycles 里真实照亮周围）"""
+    """
+    Principled 材质（同名复用）；emit 为自发光颜色（sRGB），strength 为强度（Cycles 里真实照亮周围）。
+    复用已有材质时也按参数刷新（否则改了材质表、.blend 里的旧值还在）；带自定义节点树的材质（没有 Principled）原样返回
+    """
     m = bpy.data.materials.get(name)
     if m is not None:
+        bsdf = next((n for n in m.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None) if m.node_tree else None
+        if bsdf is not None:
+            if not bsdf.inputs["Base Color"].is_linked:
+                bsdf.inputs["Base Color"].default_value = _lin(color)
+            bsdf.inputs["Roughness"].default_value = rough
+            bsdf.inputs["Metallic"].default_value = metal
+            if emit:
+                bsdf.inputs["Emission Color"].default_value = _lin(emit)
+                bsdf.inputs["Emission Strength"].default_value = strength
         return m
     m = bpy.data.materials.new(name)
     if m.node_tree is None:
