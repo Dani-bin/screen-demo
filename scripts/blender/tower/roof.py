@@ -1,9 +1,10 @@
 """
 屋顶机房：顶层（58F）顶板到斜屋面之间的楔形空腔（设计稿里斜屋顶玻璃下透出的设备）
 ----------------------------------------------------------
-竖向换算与 build.roof_floors / BuildingScene.js 一致：屋面高差 rise = 真实 18 m ÷ 真实层高 × 2.2 m；
-模型原点 = 塔楼形心、z = 0 为 58F 顶板顶面（three.js 里放在 H - rise 处，按该高度收分缩放，再用屋面裁剪平面兜底）。
-屋面高度沿下坡方向 d 线性下降：投影 p = x·d.x + y·d.y，屋面 z_r(p) = rise × (1 - (p - lo) / span)，p = lo 处最高。
+斜屋面几何见 floors.roof_geom（与 BuildingScene.js 一致）：屋面最高点高出 58F 顶板 ROOF_HIGH，沿下坡方向 d 线性下降；
+模型原点 = 塔楼形心、z = 0 为 58F 顶板顶面（three.js 里放在 58F 顶板处，按该段中部收分缩放，再用屋面裁剪平面兜底）。
+投影 p = x·d.x + y·d.y，屋面 z_r(p) = ROOF_HIGH - rise × (p - lo) / span：p = lo 处最高，往低侧约 27 m 降到顶板，
+所以屋顶机房只占平面的高侧一段（斜面再往下切过 53～58F，那几层单独建模，见 build.roof_floors）。
 内容：顶板（烘贴图）；顺坡钢梁 + 檩条 + 立柱、梁底灯带；电梯机房（核心筒顶）、三台冷却塔、热泵机组、
 冷却水管、擦窗机（轨道 + 机身 + 吊臂 + 吊篮）、检修走道与地面安全线（烘顶点色）。
 """
@@ -13,24 +14,21 @@ import math
 import bmesh
 
 from . import lib
-from .floors import FLOOR, INSET, MI, core_dims, in_poly, inset, major_axis
+from .floors import INSET, MI, ROOF_HIGH, clip_half, core_dims, in_poly, inset, major_axis, roof_geom
 
 
 def build(name, foot, b, M, col, loc):
-    levels = b["levels"]
-    roof = b.get("roof") or {}
-    rise = (roof.get("height", 18) / (b["height"] / levels)) * FLOOR
-    a = math.radians(roof.get("direction", 90))
-    d = (math.sin(a), math.cos(a))  # 下坡方向（Blender xy，与 roof_floors 相同）
+    g = roof_geom(foot, b)
+    rise, d, lo, span = g["rise"], g["d"], g["lo"], g["span"]
     e = (-d[1], d[0])  # 沿屋脊方向
-    proj = [x * d[0] + y * d[1] for x, y in foot]
-    lo, span = min(proj), max(proj) - min(proj)
-    plan = inset(foot, INSET)
+    depth = ROOF_HIGH * span / rise  # 屋面降到顶板处的投影距离（从 lo 起算）
+    # 屋顶机房平面：屋面高出顶板 0.3 m 以上的部分（高侧一段）
+    plan = clip_half(inset(foot, INSET), d, lo + depth * (1 - 0.3 / ROOF_HIGH))
     inner = inset(plan, 1.2)
 
     def zr(p):
-        """投影 p 处的屋面高度"""
-        return rise * (1 - (p - lo) / span)
+        """投影 p 处的屋面高度（相对 58F 顶板）"""
+        return ROOF_HIGH - rise * (p - lo) / span
 
     def xy(p, q):
         return p * d[0] + q * e[0], p * d[1] + q * e[1]
@@ -60,12 +58,12 @@ def build(name, foot, b, M, col, loc):
     qmin, qmax = min(qs), max(qs)
 
     def p_range(q, ring, step=0.25):
-        ps = [lo + i * step for i in range(int(span / step) + 1)]
+        ps = [lo + i * step for i in range(int(depth / step) + 1)]
         ins = [p for p in ps if in_poly(*xy(p, q), ring)]
         return (min(ins), max(ins)) if ins else None
 
     # ---- 顺坡钢梁（每 4.5 m 一根，梁顶贴着屋面下 0.25 m）+ 梁底灯带（隔一根一条）+ 高侧立柱
-    beam_ring = inset(plan, 0.6)
+    beam_ring = clip_half(inset(plan, 0.6), d, lo + depth * (1 - 1.2 / ROOF_HIGH))
     n = int((qmax - qmin) / 4.5)
     for i in range(1, n):
         q = qmin + (qmax - qmin) * i / n
@@ -89,7 +87,7 @@ def build(name, foot, b, M, col, loc):
             p += 9
     # 檩条：沿屋脊方向，每 5 m 一道
     p = lo + 3
-    while p < lo + span - 2:
+    while p < lo + depth - 3:
         qr = [x for x in (qmin + t * 0.25 for t in range(int((qmax - qmin) / 0.25) + 1)) if in_poly(*xy(p, x), beam_ring)]
         if len(qr) > 4:
             z = zr(p) - 0.25 - 0.12
@@ -117,7 +115,7 @@ def build(name, foot, b, M, col, loc):
     # ---- 冷却塔：高侧（p 小）沿屋脊排成一排，取能放下最多台的那一排
     tw, th = 4.6, 3.8
     towers = []
-    for pp in (lo + 0.16 * span, lo + 0.2 * span, lo + 0.24 * span, lo + 0.28 * span):
+    for pp in [lo + 4 + t * 1.5 for t in range(8)]:
         row = []
         for t in range(13):
             q = qmin + (qmax - qmin) * (0.2 + t * 0.05)
@@ -139,7 +137,7 @@ def build(name, foot, b, M, col, loc):
     units = []
     for t in range(12):
         q = qmin + (qmax - qmin) * (0.15 + t * 0.07)
-        p = lo + 0.47 * span
+        p = lo + depth * 0.7
         if fits(p, q, 1.3, 1.0, 2.0) and all(abs(q - u) > 2.6 for u in units) and not near_core(p, q, 2.2):
             units.append(q)
             box(bv, (2.6, 2.0, 1.7), p, q, 0.88, MI["ahu"])
@@ -164,7 +162,7 @@ def build(name, foot, b, M, col, loc):
             box(bv, (2.0, 0.12, 0.9), pz + 0.4, qa + t * 3, 0.48, MI["steel"])
 
     # ---- 擦窗机：沿屋脊的双轨 + 机身 + 立柱 + 吊臂（伸向高侧外缘）+ 吊篮
-    pb = lo + 0.4 * span
+    pb = lo + depth * 0.5
     rr = [x for x in (qmin + t * 0.25 for t in range(int((qmax - qmin) / 0.25) + 1)) if in_poly(*xy(pb, x), inset(plan, 2.0))]
     if rr:
         for dp in (-1.1, 1.1):
@@ -187,7 +185,7 @@ def build(name, foot, b, M, col, loc):
             box(bv, (0.92, 2.42, 0.12), p_end + 0.3, qb_, zm - 1.6, MI["yellow"])
 
     # ---- 检修走道（铝格栅）+ 安全线
-    for p in (lo + 0.36 * span, lo + 0.54 * span):
+    for p in (lo + depth * 0.36, lo + depth * 0.82):
         rq = [x for x in (qmin + t * 0.25 for t in range(int((qmax - qmin) / 0.25) + 1)) if in_poly(*xy(p, x), inset(plan, 2.5))]
         if len(rq) > 4:
             box(bv, (1.2, max(rq) - min(rq), 0.06), p, (min(rq) + max(rq)) / 2, 0.06, MI["alu"])

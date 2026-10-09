@@ -41,29 +41,24 @@ def unwrap(ob):
 
 def roof_floors(foot, b):
     """
-    斜屋顶下的楼层：与 BuildingScene.js 相同的竖向换算（标准层 2.2 m、裙楼 4 × 4.6 m、屋顶高差按层高比例缩放），
+    斜屋顶切到的楼层（竖向换算与 BuildingScene.js 相同：标准层 2.2 m、裙楼 4 × 4.6 m，屋面见 floors.roof_geom），
     返回 [(楼层号, 变体, (下坡方向, 楼板处投影上限, 家具处投影上限))]
     """
-    levels = b["levels"]
-    roof = b.get("roof") or {}
+    g = floors.roof_geom(foot, b)
+    H, rise, lo, span = g["H"], g["rise"], g["lo"], g["span"]
     podium_h = 4 * floors.PODIUM_FLOOR
-    rise = (roof.get("height", 18) / (b["height"] / levels)) * floors.FLOOR
-    H = podium_h + (levels - 4) * floors.FLOOR + rise
-    a = math.radians(roof.get("direction", 90))
-    d = (math.sin(a), math.cos(a))  # three 的 (sin, -cos) 换到 Blender 的 xy（y = -z）
-    proj = [x * d[0] + y * d[1] for x, y in foot]
-    lo, span = min(proj), max(proj) - min(proj)
 
     def lim(y):
         return lo + (H - y) * span / rise
 
     out = []
+    levels = b["levels"]
     for i in range(5, levels + 1):
         bottom = podium_h + (i - 5) * floors.FLOOR
         if bottom + floors.FLOOR < H - rise - 0.01:
             continue
         var = "sky" if i >= levels - 1 else "plant" if i == 54 else "off_85"
-        out.append((i, var, (d, lim(bottom + 0.05), lim(bottom + 1.3))))
+        out.append((i, var, (g["d"], lim(bottom + 0.05), lim(bottom + 1.3))))
     return out
 
 

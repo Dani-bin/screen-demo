@@ -2,9 +2,10 @@
  * 楼宇级 · 楼层外沿构件与玻璃材质
  * ----------------------------------------------------------
  * 楼层室内（楼板、家具、灯盘）是 Blender 建模 + Cycles 烘焙的（scripts/blender/tower/，加载见 bakedFloors.js）；
- * 这里只剩贴着玻璃的两样细构件和整栋的玻璃材质：
- *   buildFloorLines  每层楼板外沿一圈冷光线 + 竖梃（顶点色，随塔楼收分按层生成）
- *   glassMaterial    整栋一张物理材质蓝玻璃（环境反射 + 轮廓菲涅尔，抽屉挖空 / 悬浮 / 告警由 shader 注入）
+ * 这里只剩楼板外沿的光线和整栋的玻璃材质：
+ *   buildFloorLines  每层楼板外沿一圈冷光线（顶点色，随塔楼收分按层生成；热力 / 机电模式下变色）
+ *   glassMaterial    整栋一张物理材质玻璃：环境反射 + 轮廓菲涅尔 + 竖梃 / 层线网格（设计稿那种清晰的青色分格），
+ *                    抽屉挖空 / 悬浮 / 告警由 shader 注入
  * 坐标：楼层局部 y = 0 为楼板顶面，平面多边形为 three 的 xz（[[x, z], …]）。
  */
 import {
@@ -20,11 +21,8 @@ import {
   Vector3
 } from "three"
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js"
-import { insetPoly } from "./geometry"
 
 const UP = new Vector3(0, 1, 0)
-/** 竖梃间距（米）：设计稿的竖向分格很疏，太密在远景里会糊成灰色网格 */
-const FIN = 6
 
 /** 给几何体写入统一顶点色（统一转成非索引几何，合并要求全部一致） */
 function paint(geo, color) {
@@ -55,21 +53,17 @@ function box(w, h, d, x, y, z, rotY, color) {
 }
 
 const C = {
-  slabEdge: new Color(0.6, 0.88, 1.35), // 楼板外沿冷光线（设计稿一圈圈发亮的层线）
-  fin: new Color(0.24, 0.52, 0.98), // 铝合金竖梃（被蓝色玻璃染成蓝线）
-  finWarm: new Color(1.0, 0.72, 0.36) // 裙楼大堂竖梃（被室内暖光照亮）
+  slabEdge: new Color(0.6, 0.88, 1.35) // 楼板外沿冷光线（设计稿一圈圈发亮的层线）
 }
 
 /**
- * 一层的外沿构件（顶点色合并几何，局部坐标）
+ * 一层的楼板外沿光线（顶点色合并几何，局部坐标）；竖梃画在玻璃着色器里（glassMaterial 的 uMull）
  * @param {Object} o
  * @param {Array}  o.poly   该层平面（已收分）
- * @param {number} o.height 层高
- * @param {Object} o.floor  楼层数据（kind）
  * @param {number} o.edgeK  外沿光线亮度（塔身隔层一条亮线）
  */
 export function buildFloorLines(o) {
-  const { poly, height, floor } = o
+  const { poly } = o
   const lights = []
   // ---- 楼板外沿光线：贴着板边一圈细条；edgeK 控制亮度（塔身隔层一条亮线：58 层在画面里每层不到 10 像素，层层都亮会糊成一片）
   const edgeCol = C.slabEdge.clone().multiplyScalar(o.edgeK ?? 1)
@@ -93,25 +87,6 @@ export function buildFloorLines(o) {
     )
   }
 
-  // ---- 竖梃：沿外轮廓每 FIN 米一根；裙楼大堂用暖金色（被室内暖光照亮的金属框）
-  const finCol = floor.kind === "lobby" ? C.finWarm : C.fin // 竖梃略内收贴在玻璃内侧
-  const ring = insetPoly(poly, 0.25)
-  let acc = 0
-  for (let i = 0; i < ring.length; i++) {
-    const a = ring[i]
-    const b = ring[(i + 1) % ring.length]
-    const len = Math.hypot(b[0] - a[0], b[1] - a[1])
-    const ang = Math.atan2(b[1] - a[1], b[0] - a[0])
-    let t = (FIN - acc) % FIN
-    while (t < len) {
-      const x = a[0] + ((b[0] - a[0]) * t) / len
-      const z = a[1] + ((b[1] - a[1]) * t) / len
-      lights.push(box(0.1, height, 0.16, x, height / 2, z, -ang, finCol))
-      t += FIN
-    }
-    acc = (acc + len) % FIN
-  }
-
   return lights.length ? mergeGeometries(lights, false) : new BufferGeometry()
 }
 
@@ -122,27 +97,33 @@ export function lightsMaterial() {
 
 /**
  * 玻璃幕墙：物理材质（夜空环境反射 + 菲涅尔），淡蓝透明。
- * onBeforeCompile 注入按世界高度的效果：抽屉抽出的那层挖空、悬浮层青色、告警层红色呼吸、竖向细分格
+ * onBeforeCompile 注入：竖梃 / 层线网格（设计稿玻璃上清晰的青色分格，按屏幕像素宽度抗锯齿，远近都是细线）、
+ * 轮廓菲涅尔亮边、抽屉抽出的那层挖空、悬浮层青色、告警层红色呼吸。
+ * 竖梃按放样几何的 uv.x（底圈周长，米）每 mull 米一根；层线按世界高度 (y - uBaseY) / uFloorH 取整。
  * uniforms 都挂在 material.userData.u 上，场景逐帧改
+ * @param {number} tint 玻璃底色
+ * @param {Array}  glow 玻璃自身的底光
+ * @param {Object} grid { color 网格颜色, mull 竖梃间距（米）, floorK 层线相对竖梃的亮度 }
  */
-export function glassMaterial(tint = 0x1f5fd0, glow = [0.016, 0.07, 0.21]) {
+export function glassMaterial(
+  tint = 0x1650c0,
+  glow = [0.01, 0.05, 0.15],
+  grid = {}
+) {
   const u = {
-    // 玻璃自身的底光（设计稿塔身整体是一块发蓝光的玻璃体；裙楼是暖金色）
     uGlow: { value: new Color(...glow) },
     uGap: { value: new Vector3(0, -1, 0) }, // x 起始高度、y 结束高度、z 开关
     uHover: { value: new Vector3(0, -1, 0) },
     uAlarm: { value: [new Vector3(0, -1, 0), new Vector3(0, -1, 0)] },
-    uEdge: { value: new Color(0.35, 0.75, 1.0) },
+    uEdge: { value: new Color(0.35, 0.8, 1.1) },
     uEdgeK: { value: 0.35 },
     uTime: { value: 0 },
-    // 远景窗灯（LOD）：每层亮灯比例 uLit[楼层号]，楼层换算 uBaseY / uFloorH / uFloorBase；
-    // 相机离得越远越亮（uLod 近、远距离之间渐变），近看时玻璃通透、看烘焙的室内
-    uLit: { value: new Array(64).fill(0) },
+    uGridCol: { value: new Color(...(grid.color || [0.12, 0.48, 0.85])) },
+    uGrid: { value: 1 },
+    uMull: { value: grid.mull || 4.5 },
+    uFloorK: { value: grid.floorK ?? 0.45 },
     uBaseY: { value: 0 },
-    uFloorH: { value: 1 },
-    uFloorBase: { value: 0 },
-    uWin: { value: 0 },
-    uLod: { value: [220, 520] }
+    uFloorH: { value: 0 } // 0 = 不画层线
   }
   const m = new MeshPhysicalMaterial({
     color: tint,
@@ -150,7 +131,7 @@ export function glassMaterial(tint = 0x1f5fd0, glow = [0.016, 0.07, 0.21]) {
     roughness: 0.06,
     transparent: true,
     opacity: 0.42,
-    envMapIntensity: 1.3,
+    envMapIntensity: 0.9,
     specularIntensity: 1,
     // 只画朝外的一面：背面那层玻璃叠上来整栋会蒙一层白雾
     side: FrontSide,
@@ -160,47 +141,42 @@ export function glassMaterial(tint = 0x1f5fd0, glow = [0.016, 0.07, 0.21]) {
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u)
     sh.vertexShader = sh.vertexShader
-      .replace("void main() {", "varying vec3 vWorldP;\nvoid main() {")
+      .replace(
+        "void main() {",
+        "varying vec3 vWorldP;\nvarying float vGridU;\nvoid main() {"
+      )
       .replace(
         "#include <project_vertex>",
-        "#include <project_vertex>\nvWorldP = (modelMatrix * vec4(transformed, 1.0)).xyz;"
+        "#include <project_vertex>\nvWorldP = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvGridU = uv.x;"
       )
     sh.fragmentShader = sh.fragmentShader
       .replace(
         "void main() {",
-        `varying vec3 vWorldP;
+        `varying vec3 vWorldP; varying float vGridU;
         uniform vec3 uGap; uniform vec3 uHover; uniform vec3 uAlarm[2];
         uniform vec3 uEdge; uniform float uEdgeK; uniform float uTime; uniform vec3 uGlow;
-        uniform float uLit[64]; uniform float uBaseY; uniform float uFloorH; uniform float uFloorBase;
-        uniform float uWin; uniform vec2 uLod;
-        float hashW(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        uniform vec3 uGridCol; uniform float uGrid; uniform float uMull; uniform float uFloorK;
+        uniform float uBaseY; uniform float uFloorH;
         float inBand(vec3 b, float y) { return step(b.x, y) * step(y, b.y); }
+        // 细线：t 每过一个整数一条线，宽约 1.5 像素（至少 w 个单位），抗锯齿
+        float gridLine(float t, float w) {
+          float fw = max(fwidth(t), 1e-4);
+          return 1.0 - smoothstep(0.5 * fw, 1.5 * fw + w, abs(fract(t + 0.5) - 0.5));
+        }
         void main() {
           if (uGap.z > 0.5 && inBand(uGap, vWorldP.y) > 0.5) discard;`
       )
       .replace(
         "#include <emissivemap_fragment>",
         `#include <emissivemap_fragment>
-        // 轮廓菲涅尔：侧边一圈亮蓝（设计稿玻璃边缘的冷光）
-        float fr = pow(1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition))), 3.0);
+        // 轮廓菲涅尔：侧边一圈亮青（设计稿塔身两侧发亮的轮廓）
+        float fr = pow(1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition))), 2.5);
         totalEmissiveRadiance += uEdge * fr * uEdgeK + uGlow;
-        float winA = 0.0;
-        // 远景窗灯：每层沿周长 30 格（对上 6 m 一根的竖梃），按该层亮灯比例点亮，避开楼板那一条
-        if (uWin > 0.001) {
-          float fl = (vWorldP.y - uBaseY) / uFloorH;
-          float fi = uFloorBase + floor(fl);
-          float fy = fract(fl);
-          if (fi >= 0.0 && fi < 64.0) {
-            float lit = uLit[int(fi)];
-            float cell = floor((atan(vWorldP.z, vWorldP.x) / 6.2831853 + 0.5) * 30.0);
-            float h = hashW(vec2(cell, fi));
-            float on = step(h, lit) * smoothstep(0.12, 0.3, fy) * (1.0 - smoothstep(0.8, 0.92, fy));
-            float far = smoothstep(uLod.x, uLod.y, length(cameraPosition - vWorldP));
-            vec3 warm = mix(vec3(1.0, 0.78, 0.48), vec3(0.85, 0.92, 1.0), step(0.85, hashW(vec2(fi, cell * 1.3))));
-            winA = on * far * uWin;
-            totalEmissiveRadiance += warm * on * far * uWin * (0.1 + 0.1 * hashW(vec2(cell * 0.7, fi)));
-          }
-        }
+        // 竖梃 + 层线网格
+        float grid = gridLine(vGridU / uMull, 0.015);
+        if (uFloorH > 0.0) grid = max(grid, uFloorK * gridLine((vWorldP.y - uBaseY) / uFloorH, 0.02));
+        grid *= uGrid;
+        totalEmissiveRadiance += uGridCol * grid;
         totalEmissiveRadiance += vec3(0.2, 0.7, 1.0) * 0.35 * inBand(uHover, vWorldP.y);
         float al = max(inBand(uAlarm[0], vWorldP.y), inBand(uAlarm[1], vWorldP.y));
         totalEmissiveRadiance += vec3(1.0, 0.15, 0.18) * al * (0.35 + 0.25 * sin(uTime * 4.0));`
@@ -208,7 +184,7 @@ export function glassMaterial(tint = 0x1f5fd0, glow = [0.016, 0.07, 0.21]) {
       .replace(
         "#include <opaque_fragment>",
         `#include <opaque_fragment>
-        gl_FragColor.a = min(1.0, gl_FragColor.a + winA * 0.18 + fr * 0.2 + al * 0.25 + 0.3 * inBand(uHover, vWorldP.y));`
+        gl_FragColor.a = min(1.0, gl_FragColor.a + grid * 0.3 + fr * 0.25 + al * 0.25 + 0.3 * inBand(uHover, vWorldP.y));`
       )
   }
   return m

@@ -24,6 +24,10 @@ FLOOR = 2.2
 PODIUM_FLOOR = 4.6
 PODIUM_SCALE = 1.42
 INSET = 0.35
+# 斜屋顶（与 BuildingScene.js 的 ROOF_RISE_K / ROOF_HIGH 一致）：设计稿屋顶斜切很陡，高差约为下坡方向平面跨度的 0.44
+# （OSM 真实高差 18 m 只有跨度的 0.3）；屋面最高点高出顶层顶板 ROOF_HIGH，斜面从那里往下切过最上面几层
+ROOF_RISE_K = 0.44
+ROOF_HIGH = 12.0
 
 VARIANTS = {
     "off_100": {"kind": "office", "lit": 1.0, "seed": 11},
@@ -135,6 +139,22 @@ def core_dims(ring, ang):
     ma = max(abs(x * ca + y * sa) for x, y in ring)
     mb = max(abs(-x * sa + y * ca) for x, y in ring)
     return ma * 2 * 0.16, mb * 2 * 0.17
+
+
+def roof_geom(foot, b):
+    """
+    斜屋顶几何（三维里同样的算法，见 BuildingScene._build）：
+    top 顶层顶板高度、H 屋面最高点、rise 高差、d 下坡方向（Blender xy）、lo / span 平面沿 d 的投影最小值与跨度。
+    屋面高度沿 d 线性下降：y_roof(p) = H - rise × (p - lo) / span
+    """
+    levels = b["levels"]
+    roof = b.get("roof") or {}
+    a = math.radians(roof.get("direction", 90))
+    d = (math.sin(a), math.cos(a))  # three 的 (sin, -cos) 换到 Blender 的 xy（y = -z）
+    proj = [x * d[0] + y * d[1] for x, y in foot]
+    lo, span = min(proj), max(proj) - min(proj)
+    top = 4 * PODIUM_FLOOR + (levels - 4) * FLOOR
+    return {"top": top, "H": top + ROOF_HIGH, "rise": ROOF_RISE_K * span, "d": d, "lo": lo, "span": span}
 
 
 # ---------------------------------------------------------------- 楼层
