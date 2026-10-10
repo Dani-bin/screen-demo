@@ -33,11 +33,10 @@ scripts/__pycache__/
 
 # Blender 自动备份
 *.blend1
-# Sketchfab 下载的原始压缩包（已解压到同名目录，压缩包不入库）
-models/charging/vendor/*.zip
+
+# Blender 模型源文件目录（.blend、贴图、烘焙中间图、Sketchfab 第三方模型）只留在本地，不入库：
+# 页面运行只加载 public/ 下导出的 GLB；重新建模 / 烘焙才需要它
+models/
 
 # Blender 脚本运行时生成的 Python 字节码
 __pycache__/
-
-# 楼宇级楼层烘焙中间图（每张 4 MB，导出时已转 WebP 打进 public/building/tower_*.glb；重新导出前先跑 tower.bake）
-models/tower/bake/
