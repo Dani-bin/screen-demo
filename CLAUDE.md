@@ -21,7 +21,8 @@ This project uses **yarn** (see `yarn.lock`).
 - `yarn format` — Prettier over the whole repo
 - `/charging` 3D model (Blender, not three.js code): the station is built by the Python package `scripts/blender/charging/` run inside Blender 5.1+ through the Blender Lab MCP add-on (port 9876):
   `import sys; sys.path.insert(0, "<repo>/scripts/blender"); import charging.build as b; b.run()` rebuilds the scene and saves `models/charging/station.blend`; `import charging.export as e; e.export()` writes `public/charging/station.glb` + `cars.glb`.
-  Edit the scripts, never the .blend by hand — the .blend and GLBs are build outputs. `b.run(render_to="<png>")` also renders a preview from the dashboard camera angle
+  Edit the scripts, never the .blend by hand — the .blend and GLBs are build outputs.
+  The whole `models/` directory (.blend files, textures, bake intermediates, the Sketchfab vendor models) is git-ignored and exists only locally; the pages load only the GLBs in `public/`. A fresh clone can run every page but cannot rebuild the Blender models without a copy of `models/` (the charging vendor models must be re-downloaded from Sketchfab). `b.run(render_to="<png>")` also renders a preview from the dashboard camera angle
 - `node scripts/capture-home-previews.mjs [devServerUrl] [key…]` — regenerates the homepage preview images `public/home/<key>.webp` with headless Chrome (dev server must be running; default URL `https://localhost:8892`; Node 22+; `CHROME_PATH` overrides the Chrome location). It waits for the scene to finish loading, then captures mid-way through the first tour stop (per-demo `SETTLE` seconds in the script)
 
 There is **no test framework** configured. For the `/city` landmark models the regression tool is a Node script (read-only, builds the landmark modules outside the browser):
