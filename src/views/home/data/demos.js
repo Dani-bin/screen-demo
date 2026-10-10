@@ -78,5 +78,23 @@ export const DEMOS = [
     // 取自大屏的能源蓝
     accent: "#1f7fd6",
     preview: "home/charging.webp"
+  },
+  {
+    key: "building",
+    path: "/building",
+    name: "高新区数字楼宇",
+    en: "DIGITAL BUILDING",
+    subTitle: "成都高新区 · 金融城双子塔",
+    desc: "立体行政区地图呈现成都高新区南区 5 个街道，百米高楼光柱与金融城双子塔联动；园区级按 OSM 真实布局建模、烘焙夜景光照，按城市、园区、楼宇、楼层、房间五级钻取。",
+    tags: ["五级钻取", "立体行政区地图", "OSM 真实边界"],
+    // 依据：building/data/mapData.js 的 STREETS（南区 5 个街道，面积由边界计算，合计 86.1 km²）与 PARK（双子塔高 218 m）
+    stats: [
+      { value: "5", unit: "个", key: "南区街道" },
+      { value: "86.1", unit: "km²", key: "辖区面积" },
+      { value: "218", unit: "m", key: "双子塔高度" }
+    ],
+    // 取自园区强调色（双子塔金色光柱）
+    accent: "#c8902e",
+    preview: "home/building.webp"
   }
 ]
