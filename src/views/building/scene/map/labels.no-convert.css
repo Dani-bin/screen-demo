@@ -1,0 +1,345 @@
+/*
+ * 城市级地图的 CSS3D 标签样式（立牌 / 街道名 / 周边区县 / 园区卡片 / 大标题，沿用射阳 Map3DScene）
+ *
+ * 文件名带 no-convert：这里的 px 不经 postcss-pxtorem 转成 rem。
+ * CSS3D 标签是贴在 3D 场景里的 DOM，最终屏幕尺寸 = 元素 CSS 尺寸 × 标签缩放 × 画布高度；
+ * 画布已经随大屏舞台缩放了，元素尺寸再随 rem 缩放一次就是平方关系——
+ * 大屏上标签偏大、小屏上偏小。固定 px 后标签与地图严格等比。
+ */
+.map3d-scene .info-point {
+  background: rgba(0, 0, 0, 0.5);
+  color: #a3dcde;
+  font-size: 14px;
+  width: 170px;
+  height: 106px;
+  padding: 16px 12px 0;
+  margin-bottom: 30px;
+  will-change: transform;
+}
+.map3d-scene .info-point-wrap:after,
+.map3d-scene .info-point-wrap:before {
+  display: block;
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 15px;
+  height: 15px;
+  border-top: 1px solid #4b87a6;
+}
+.map3d-scene .info-point-wrap:before {
+  left: 0;
+  border-left: 1px solid #4b87a6;
+}
+.map3d-scene .info-point-wrap:after {
+  right: 0;
+  border-right: 1px solid #4b87a6;
+}
+.map3d-scene .info-point-wrap-inner:after,
+.map3d-scene .info-point-wrap-inner:before {
+  display: block;
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 15px;
+  height: 15px;
+  border-bottom: 1px solid #4b87a6;
+}
+.map3d-scene .info-point-wrap-inner:before {
+  left: 0;
+  border-left: 1px solid #4b87a6;
+}
+.map3d-scene .info-point-wrap-inner:after {
+  right: 0;
+  border-right: 1px solid #4b87a6;
+}
+.map3d-scene .info-point-line {
+  position: absolute;
+  top: 7px;
+  right: 12px;
+  display: flex;
+}
+.map3d-scene .info-point-line .line {
+  width: 5px;
+  height: 2px;
+  margin-right: 5px;
+  background: #17e5c3;
+}
+.map3d-scene .info-point-content .content-item {
+  display: flex;
+  height: 28px;
+  line-height: 28px;
+  background: rgba(35, 47, 58, 0.6);
+  margin-bottom: 5px;
+}
+.map3d-scene .info-point-content .content-item .label {
+  width: 60px;
+  padding-left: 10px;
+}
+.map3d-scene .info-point-content .content-item .value {
+  color: #ffffff;
+}
+.map3d-scene {
+  /* 立牌：数值 + 名称 + 排名 */
+}
+.map3d-scene .provinces-label-wrap {
+  transform: translate(50%, 200%);
+  opacity: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 18px;
+  width: 200px;
+  height: 53px;
+  border-radius: 30px 30px 30px 0px;
+  background: rgba(0, 0, 0, 0.4);
+}
+.map3d-scene .provinces-label .number {
+  color: #fff;
+  font-size: 30px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.map3d-scene .provinces-label .number .unit {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.5;
+  padding-left: 5px;
+}
+.map3d-scene .provinces-label .name {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.map3d-scene .provinces-label .name span {
+  display: block;
+}
+.map3d-scene .provinces-label .name .en {
+  color: #fff;
+  font-size: 10px;
+  opacity: 0.5;
+  font-weight: 700;
+}
+.map3d-scene .provinces-label .no {
+  color: #7efbf6;
+  text-shadow:
+    0 0 5px #7efbf6,
+    0 0 10px #7efbf6;
+  font-size: 30px;
+  font-weight: 700;
+}
+.map3d-scene .provinces-label .yellow .no {
+  color: #fef99e !important;
+  text-shadow:
+    0 0 5px #fef99e,
+    0 0 10px #fef99e !important;
+}
+.map3d-scene .provinces-label .red .no {
+  color: #ff7b7b !important;
+  text-shadow:
+    0 0 5px #ff7b7b,
+    0 0 10px #ff7b7b !important;
+}
+.map3d-scene {
+  /* 周边区县标签 */
+}
+.map3d-scene .china-label {
+  color: #fff;
+  font-size: 12px;
+  will-change: transform;
+}
+.map3d-scene .china-label .other-label {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  will-change: transform;
+}
+.map3d-scene .china-label.blur {
+  filter: blur(2px);
+  opacity: 0.5;
+}
+.map3d-scene .china-label .label-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: 0 10px 0 0;
+}
+.map3d-scene {
+  /* 没有立牌的乡镇：名称 + 数值 */
+}
+.map3d-scene .town-tag {
+  color: #fff;
+  font-size: 14px;
+  will-change: transform;
+}
+.map3d-scene .town-tag .other-label {
+  display: flex;
+  align-items: baseline;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  will-change: transform;
+}
+.map3d-scene .town-tag .other-label b {
+  margin-left: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #7efbf6;
+}
+.map3d-scene .town-tag .other-label i {
+  margin-left: 3px;
+  font-size: 10px;
+  font-style: normal;
+  opacity: 0.6;
+}
+.map3d-scene {
+  /* 平贴在地图表面的乡镇名称 */
+}
+.map3d-scene .town-name {
+  color: #eaf7ff;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  text-shadow:
+    0 0 4px rgba(0, 40, 80, 0.9),
+    0 1px 2px rgba(0, 20, 48, 0.9);
+  will-change: transform;
+}
+.map3d-scene .town-name .other-label {
+  background: none;
+  padding: 0;
+}
+.map3d-scene .map-label {
+  padding: 5px;
+  color: #fff;
+  will-change: transform;
+  font-size: 36px;
+  font-weight: bold;
+  letter-spacing: 4.5px;
+  -webkit-box-reflect: below 0 -webkit-linear-gradient(transparent, transparent
+        20%, rgba(255, 255, 255, 0.3));
+}
+.map3d-scene .map-label .other-label {
+  display: flex;
+  flex-direction: column;
+}
+.map3d-scene .map-label span {
+  font-size: 38px;
+}
+.map3d-scene .map-label .dot {
+  margin: 0 -2px;
+  font-style: normal;
+}
+.map3d-scene .map-label span:last-child {
+  font-size: 12px;
+  font-weight: normal;
+  letter-spacing: 0px;
+  color: #a7d5ef;
+}
+.map3d-scene .decoration-label .label-icon {
+  display: block;
+  width: 40px;
+  height: 40px;
+}
+.map3d-scene .other-label {
+  transform: translateY(200%);
+  opacity: 0;
+  background: none;
+  will-change: transform;
+}
+.map3d-scene {
+  /* 园区卡片：成都金融城双子塔（金色强调，可点击进入园区） */
+}
+.map3d-scene .park-label {
+  will-change: transform;
+}
+.map3d-scene .park-label-wrap {
+  transform: translate(50%, 60px);
+  opacity: 0;
+}
+.map3d-scene .park-label-card {
+  position: relative;
+  width: 300px;
+  padding: 16px 20px 14px;
+  border: 1px solid rgba(255, 198, 90, 0.75);
+  border-radius: 4px 24px 4px 24px;
+  background: linear-gradient(
+    135deg,
+    rgba(60, 38, 6, 0.86),
+    rgba(12, 22, 44, 0.86)
+  );
+  box-shadow:
+    0 0 24px rgba(255, 180, 60, 0.35),
+    inset 0 0 20px rgba(255, 190, 80, 0.12);
+  color: #fff;
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+.map3d-scene .park-label-card:hover {
+  box-shadow:
+    0 0 36px rgba(255, 190, 70, 0.6),
+    inset 0 0 24px rgba(255, 190, 80, 0.2);
+  transform: translateY(-4px);
+}
+.map3d-scene .park-label-tag {
+  position: absolute;
+  top: -13px;
+  left: 18px;
+  padding: 2px 10px;
+  border-radius: 2px;
+  background: #ffc65a;
+  color: #2b1a00;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.map3d-scene .park-label-name {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  color: #ffe6b0;
+  text-shadow: 0 0 8px rgba(255, 180, 60, 0.6);
+}
+.map3d-scene .park-label-en {
+  margin-top: 2px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  opacity: 0.55;
+  white-space: nowrap;
+}
+.map3d-scene .park-label-meta {
+  display: flex;
+  gap: 18px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+.map3d-scene .park-label-meta b {
+  margin-right: 3px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+}
+.map3d-scene .park-label-enter {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 198, 90, 0.4);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffc65a;
+}
+.map3d-scene .park-label-enter i {
+  font-style: normal;
+  font-size: 18px;
+}

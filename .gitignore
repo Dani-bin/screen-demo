@@ -8,6 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 docs/articles
+douyin
 
 node_modules
 dist
@@ -36,3 +37,6 @@ scripts/__pycache__/
 # Blender 模型源文件目录（.blend、贴图、烘焙中间图、Sketchfab 第三方模型）只留在本地，不入库：
 # 页面运行只加载 public/ 下导出的 GLB；重新建模 / 烘焙才需要它
 models/
+
+# Blender 脚本运行时生成的 Python 字节码
+__pycache__/
