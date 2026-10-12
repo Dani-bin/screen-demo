@@ -36,6 +36,12 @@ const routes = [
     component: () => import("@/views/charging/index.vue")
   },
   {
+    // 综合能源补给站：油 / 气 / 电 / 换电一体化补给站数字孪生，Blender 建模 + three.js 展示
+    path: "/energy",
+    name: "Energy",
+    component: () => import("@/views/energy/index.vue")
+  },
+  {
     // 数字楼宇：城市（成都高新区）→ 园区 → 楼宇 → 楼层 → 房间 五级钻取
     path: "/building",
     name: "Building",

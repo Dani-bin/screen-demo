@@ -96,5 +96,24 @@ export const DEMOS = [
     // 取自园区强调色（双子塔金色光柱）
     accent: "#c8902e",
     preview: "home/building.webp"
+  },
+  {
+    key: "energy",
+    path: "/energy",
+    name: "综合能源补给站",
+    en: "INTEGRATED ENERGY STATION",
+    subTitle: "油 · 气 · 电 · 换电 · 数字孪生",
+    desc: "按甲方设施清单在假定地块上完成规划，开场从卫星航拍「长出」三维场站；加油、LNG 加气、重卡超充、乘用车换电客货分流，仿真驱动车辆进站补能与库存告警。",
+    tags: ["规划到三维", "Blender 建模", "补给车流仿真"],
+    // 依据：energy/data/station.js 的 PILE_IDS（重卡超充 10 位）、补给类型 KINDS（油 / 气 / 电 / 换电），
+    // 用地面积取 energy/data/plan.json 的 siteArea（19,450 m²）
+    stats: [
+      { value: "4", unit: "类", key: "补给能源" },
+      { value: "10", unit: "位", key: "重卡超充" },
+      { value: "1.9", unit: "ha", key: "规划用地" }
+    ],
+    // 取自加油罩棚的橙色灯带
+    accent: "#e0782f",
+    preview: "home/energy.webp"
   }
 ]
