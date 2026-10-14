@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>方案 A · Bento 作品墙</title>
+    <script src="data.js"></script>
+    <style id="fonts"></style>
+    <style>
+      /* 方案 A：暖白底作品墙。最新 / 推荐演示占 2×2 大格，其余 4 列网格向下滚动，筛选标签按行业过滤 */
+      :root {
+        --bg: #f4f1ea;
+        --card: #fffdf8;
+        --ink: #1f2d3a;
+        --ink-soft: #5b6672;
+        --ink-faint: #8b939b;
+        --line: #e4ddd0;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+      body { font-family: "HanSans", sans-serif; color: var(--ink); }
+      .page { position: relative; width: 1920px; height: 1080px; padding: 44px 80px 0; display: flex; flex-direction: column; }
+
+      /* 顶栏 */
+      .head { display: flex; align-items: center; justify-content: space-between; height: 44px; }
+      .brand { display: flex; align-items: center; gap: 16px; }
+      .mark { width: 40px; height: 40px; border-radius: 10px; background: var(--ink); position: relative; }
+      .mark::after { content: ""; position: absolute; inset: 12px; border: 3px solid #fff; transform: rotate(45deg); border-radius: 3px; }
+      .brand h1 { font-family: "ShuHei"; font-size: 30px; letter-spacing: 3px; }
+      .brand span { font-size: 13px; letter-spacing: 6px; color: var(--ink-faint); margin-left: 6px; }
+      .clock { display: flex; align-items: baseline; gap: 14px; }
+      .clock b { font-family: "DIN"; font-size: 28px; }
+      .clock span { font-size: 15px; color: var(--ink-soft); }
+
+      /* 工具行：标题 + 筛选 + 视图切换 */
+      .tools { display: flex; align-items: flex-end; justify-content: space-between; margin: 32px 0 20px; }
+      .title { display: flex; align-items: baseline; gap: 16px; }
+      .title h2 { font-family: "ShuHei"; font-size: 40px; letter-spacing: 2px; }
+      .title em { font-style: normal; font-family: "DIN"; font-size: 40px; color: #1f7fd6; }
+      .title p { font-size: 16px; color: var(--ink-soft); }
+      .filters { display: flex; align-items: center; gap: 10px; }
+      .chip { height: 40px; padding: 0 20px; border-radius: 20px; border: 1px solid var(--line); background: var(--card); display: flex; align-items: center; gap: 8px; font-size: 16px; color: var(--ink-soft); }
+      .chip i { font-style: normal; font-family: "DIN"; font-size: 14px; color: var(--ink-faint); }
+      .chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+      .chip.on i { color: rgba(255, 255, 255, 0.6); }
+      .sep { width: 1px; height: 24px; background: var(--line); margin: 0 8px; }
+      .search { height: 40px; width: 220px; border-radius: 20px; border: 1px solid var(--line); background: var(--card); display: flex; align-items: center; gap: 8px; padding: 0 16px; color: var(--ink-faint); font-size: 15px; }
+      .search svg { width: 18px; height: 18px; }
+
+      /* 网格：4 列，首项 2×2 */
+      .scroller { position: relative; flex: 1; overflow: hidden; }
+      .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 352px; gap: 22px; }
+      .card { position: relative; border-radius: 16px; overflow: hidden; background: var(--card); border: 1px solid var(--line); display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(31, 45, 58, 0.05); }
+      .card .shot { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: #dfe3e6; }
+      .card .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .card .no { position: absolute; left: 14px; top: 12px; font-family: "DIN"; font-size: 14px; color: #fff; background: rgba(15, 23, 33, 0.55); padding: 3px 10px; border-radius: 12px; }
+      .card .cat { position: absolute; right: 14px; top: 12px; font-size: 13px; color: #fff; background: var(--accent); padding: 4px 12px; border-radius: 12px; }
+      .card .info { padding: 14px 18px 0; }
+      .card h3 { font-size: 21px; font-weight: 600; letter-spacing: 1px; }
+      .card .sub { margin-top: 4px; font-size: 14px; color: var(--ink-soft); }
+      .card .tags { margin-top: 10px; display: flex; gap: 8px; }
+      .card .tags span { font-size: 12px; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); padding: 2px 10px; border-radius: 10px; }
+      .card::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--accent); }
+      /* 悬停态示意：第 3 张卡片 */
+      .card.hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(31, 45, 58, 0.16); border-color: var(--accent); }
+      .card.hover .enter { opacity: 1; }
+      .enter { position: absolute; inset: 0; aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 33, 0.35); opacity: 0; }
+      .enter b { height: 48px; padding: 0 26px; border-radius: 24px; background: #fff; color: var(--ink); font-size: 17px; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+
+      /* 推荐大格 */
+      .feature { grid-column: span 2; grid-row: span 2; }
+      .feature .shot { flex: none; }
+      .feature .info { padding: 18px 26px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+      .feature h3 { font-family: "ShuHei"; font-size: 36px; font-weight: normal; letter-spacing: 2px; }
+      .feature .en { font-size: 12px; letter-spacing: 6px; color: var(--accent); margin-top: 6px; }
+      .feature .desc { margin-top: 10px; font-size: 15px; line-height: 1.6; color: var(--ink-soft); max-width: 470px; }
+      .feature .stats { display: flex; gap: 28px; margin-top: 4px; }
+      .feature .stats div { text-align: left; }
+      .feature .stats b { font-family: "DIN"; font-size: 30px; }
+      .feature .stats small { font-size: 13px; color: var(--ink-faint); margin-left: 3px; }
+      .feature .stats p { font-size: 13px; color: var(--ink-faint); margin-top: 2px; }
+      .feature .go { margin-top: 16px; height: 50px; padding: 0 28px; border-radius: 25px; background: var(--ink); color: #fff; font-size: 17px; display: inline-flex; align-items: center; gap: 10px; }
+      .feature .badge { position: absolute; left: 18px; top: 16px; display: flex; gap: 8px; }
+      .feature .badge span { font-size: 14px; color: #fff; background: var(--accent); padding: 5px 14px; border-radius: 14px; }
+      .feature .badge span.new { background: #1f2d3a; }
+      .feature .dots { position: absolute; right: 18px; top: 20px; display: flex; gap: 6px; }
+      .feature .dots i { width: 8px; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.55); }
+      .feature .dots i.on { width: 26px; background: #fff; }
+
+      /* 占位卡 */
+      .card.ph { background: transparent; border: 2px dashed #d3cabb; box-shadow: none; align-items: center; justify-content: center; color: var(--ink-faint); gap: 10px; }
+      .card.ph::before { display: none; }
+      .card.ph svg { width: 40px; height: 40px; }
+      .card.ph h3 { font-size: 18px; font-weight: normal; }
+      .card.ph .sub { color: var(--ink-faint); }
+
+      /* 底部渐隐 + 滚动提示 */
+      .fade { position: absolute; left: 0; right: 0; bottom: 0; height: 170px; background: linear-gradient(to bottom, rgba(244, 241, 234, 0), var(--bg) 78%); pointer-events: none; }
+      .more { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--ink-soft); background: var(--card); border: 1px solid var(--line); padding: 10px 22px; border-radius: 22px; box-shadow: 0 6px 18px rgba(31, 45, 58, 0.08); }
+      .more svg { width: 18px; height: 18px; }
+      .scrollbar { position: absolute; right: -40px; top: 0; width: 4px; height: 100%; border-radius: 2px; background: var(--line); }
+      .scrollbar i { position: absolute; top: 0; left: 0; width: 4px; height: 62%; border-radius: 2px; background: #b9b0a0; }
+      .note { position: absolute; left: 80px; top: 1046px; font-size: 13px; color: var(--ink-faint); }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="head">
+        <div class="brand"><i class="mark"></i><h1>三维可视化大屏 · 演示中心</h1><span>SHOWCASE</span></div>
+        <div class="clock"><b>09:17:04</b><span>2026-10-14 星期三</span></div>
+      </header>
+
+      <div class="tools">
+        <div class="title"><h2>全部演示</h2><em>08</em><p>点击卡片进入演示 · ↑↓ 滚动浏览</p></div>
+        <div class="filters" id="filters"></div>
+      </div>
+
+      <div class="scroller">
+        <div class="grid" id="grid"></div>
+        <div class="fade"></div>
+        <div class="more">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" /></svg>
+          向下滚动查看更多 · 还有 3 个
+        </div>
+      </div>
+    </div>
+    <script>
+      document.getElementById("fonts").textContent = FONTS
+      const D = DEMOS
+      // 筛选标签：按行业分类计数
+      const cats = {}
+      D.forEach((d) => (cats[d.cat] = (cats[d.cat] || 0) + 1))
+      const chips = [["全部", D.length], ...Object.entries(cats)]
+      document.getElementById("filters").innerHTML =
+        chips.map(([c, n], i) => `<span class="chip${i === 0 ? " on" : ""}">${c}<i>${n}</i></span>`).join("") +
+        `<span class="sep"></span><span class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>搜索演示</span>`
+      const arrow = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`
+      // 推荐大格放最新的演示（营山），其余按编号排
+      const order = [4, 0, 1, 2, 3, 5, 6, 7]
+      document.getElementById("grid").innerHTML = order
+        .map((i, k) => {
+          const d = D[i]
+          const no = String(i + 1).padStart(2, "0")
+          if (d.placeholder)
+            return `<div class="card ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg><h3>${d.name}</h3><div class="sub">${d.sub}</div></div>`
+          if (k === 0)
+            return `<div class="card feature" style="--accent:${d.accent}">
+              <div class="shot"><img src="${d.img}"><div class="badge"><span class="new">最新上线</span><span>${d.cat}</span></div><div class="dots"><i class="on"></i><i></i><i></i></div></div>
+              <div class="info"><div><h3>${d.name}</h3><div class="en">${d.en}</div><p class="desc">${d.desc}</p></div>
+                <div><div class="stats">${d.stats.map(([v, u, k]) => `<div><b>${v}</b><small>${u}</small><p>${k}</p></div>`).join("")}</div>
+                <span class="go">进入演示 ${arrow}</span></div></div></div>`
+          return `<div class="card${k === 3 ? " hover" : ""}" style="--accent:${d.accent}">
+            <div class="shot"><img src="${d.img}"><span class="no">${no}</span><span class="cat">${d.cat}</span><div class="enter"><b>进入演示 ${arrow}</b></div></div>
+            <div class="info"><h3>${d.name}</h3><div class="sub">${d.sub}</div><div class="tags">${d.tags.map((t) => `<span>${t}</span>`).join("")}</div></div></div>`
+        })
+        .join("")
+      markReady()
+    </script>
+  </body>
+</html>

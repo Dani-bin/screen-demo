@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>方案 B · 沉浸聚焦 + 侧边目录</title>
+    <script src="data.js"></script>
+    <style id="fonts"></style>
+    <style>
+      /* 方案 B：当前演示的截图铺满全屏做背景，左侧大字介绍，右侧玻璃质感的竖向目录（可滚动、按行业筛选），自动轮播保留 */
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #050a14; }
+      body { font-family: "HanSans", sans-serif; color: #fff; }
+      .page { position: relative; width: 1920px; height: 1080px; overflow: hidden; --accent: #1f7fd6; }
+      .bg { position: absolute; inset: 0; }
+      /* 背景放大到截图中部的三维场景，避开原大屏自己的标题栏与两侧面板 */
+      .bg img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.7) translate(2%, 3%); transform-origin: 50% 46%; }
+      /* 左深右浅的压暗，保证左侧文字与右侧目录都可读 */
+      .shade { position: absolute; inset: 0; background:
+        linear-gradient(90deg, rgba(5, 10, 20, 0.96) 0%, rgba(5, 10, 20, 0.86) 30%, rgba(5, 10, 20, 0.35) 58%, rgba(5, 10, 20, 0.55) 72%, rgba(5, 10, 20, 0.85) 100%),
+        linear-gradient(0deg, rgba(5, 10, 20, 0.9) 0%, rgba(5, 10, 20, 0) 30%),
+        linear-gradient(180deg, rgba(5, 10, 20, 0.92) 0%, rgba(5, 10, 20, 0) 22%); }
+
+      .head { position: absolute; left: 96px; right: 80px; top: 44px; height: 44px; display: flex; align-items: center; justify-content: space-between; }
+      .brand { display: flex; align-items: center; gap: 16px; }
+      .mark { width: 40px; height: 40px; border-radius: 10px; background: #fff; position: relative; }
+      .mark::after { content: ""; position: absolute; inset: 12px; border: 3px solid #0b1424; transform: rotate(45deg); border-radius: 3px; }
+      .brand h1 { font-family: "ShuHei"; font-size: 30px; letter-spacing: 3px; }
+      .brand span { font-size: 13px; letter-spacing: 6px; color: rgba(255, 255, 255, 0.5); margin-left: 6px; }
+      .clock { display: flex; align-items: baseline; gap: 14px; }
+      .clock b { font-family: "DIN"; font-size: 28px; }
+      .clock span { font-size: 15px; color: rgba(255, 255, 255, 0.65); }
+
+      /* 左侧介绍 */
+      .intro { position: absolute; left: 96px; top: 250px; width: 760px; }
+      .idx { display: flex; align-items: center; gap: 16px; font-family: "DIN"; font-size: 22px; color: rgba(255, 255, 255, 0.55); }
+      .idx b { font-size: 22px; color: var(--accent); }
+      .idx i { width: 64px; height: 2px; background: var(--accent); }
+      .idx span { font-family: "HanSans"; font-size: 15px; color: #fff; background: var(--accent); padding: 4px 14px; border-radius: 14px; margin-left: 8px; }
+      .intro h2 { margin-top: 26px; font-family: "ShuHei"; font-size: 92px; letter-spacing: 4px; line-height: 1.1; text-shadow: 0 6px 30px rgba(0, 0, 0, 0.6); }
+      .intro .en { margin-top: 14px; font-size: 18px; letter-spacing: 10px; color: #6fb4ff; }
+      .intro .sub { margin-top: 26px; font-size: 24px; color: rgba(255, 255, 255, 0.92); }
+      .intro .desc { margin-top: 16px; font-size: 18px; line-height: 1.8; color: rgba(255, 255, 255, 0.72); width: 640px; }
+      .intro .tags { margin-top: 22px; display: flex; gap: 12px; }
+      .intro .tags span { font-size: 15px; padding: 6px 16px; border-radius: 16px; border: 1px solid rgba(111, 180, 255, 0.5); color: #bfe0ff; background: rgba(31, 127, 214, 0.15); }
+      .stats { margin-top: 40px; display: flex; gap: 56px; }
+      .stats b { font-family: "DIN"; font-size: 52px; }
+      .stats small { font-size: 16px; color: rgba(255, 255, 255, 0.6); margin-left: 4px; }
+      .stats p { font-size: 15px; color: rgba(255, 255, 255, 0.55); margin-top: 2px; }
+      .acts { margin-top: 44px; display: flex; gap: 16px; }
+      .btn { height: 60px; padding: 0 34px; border-radius: 30px; display: flex; align-items: center; gap: 12px; font-size: 19px; }
+      .btn.primary { background: var(--accent); box-shadow: 0 10px 30px rgba(31, 127, 214, 0.45); font-weight: 600; }
+      .btn.ghost { border: 1px solid rgba(255, 255, 255, 0.35); color: rgba(255, 255, 255, 0.85); }
+      .hint { position: absolute; left: 96px; bottom: 54px; display: flex; align-items: center; gap: 24px; font-size: 15px; color: rgba(255, 255, 255, 0.5); }
+      .hint kbd { font-family: "DIN"; font-size: 13px; padding: 3px 9px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 6px; margin-right: 6px; color: rgba(255, 255, 255, 0.8); }
+
+      /* 右侧目录 */
+      .catalog { position: absolute; right: 80px; top: 128px; bottom: 54px; width: 500px; border-radius: 22px; background: rgba(9, 16, 30, 0.72); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(18px); display: flex; flex-direction: column; overflow: hidden; }
+      .cat-head { padding: 24px 26px 16px; }
+      .cat-title { display: flex; align-items: baseline; justify-content: space-between; }
+      .cat-title h3 { font-size: 22px; font-weight: 600; letter-spacing: 2px; }
+      .cat-title h3 em { font-style: normal; font-family: "DIN"; color: #6fb4ff; margin-left: 8px; }
+      .cat-title span { font-size: 13px; color: rgba(255, 255, 255, 0.45); }
+      .tabs { margin-top: 16px; display: flex; gap: 8px; flex-wrap: nowrap; }
+      .tabs span { font-size: 14px; padding: 5px 13px; border-radius: 14px; color: rgba(255, 255, 255, 0.65); background: rgba(255, 255, 255, 0.06); white-space: nowrap; }
+      .tabs span.on { background: #fff; color: #0b1424; font-weight: 600; }
+      .list { position: relative; flex: 1; overflow: hidden; padding: 4px 14px; }
+      .row { position: relative; display: flex; align-items: center; gap: 16px; padding: 12px; border-radius: 14px; margin-bottom: 6px; }
+      .row .thumb { flex: none; width: 150px; height: 84px; border-radius: 10px; overflow: hidden; background: rgba(255, 255, 255, 0.06); }
+      .row .thumb img { width: 100%; height: 100%; object-fit: cover; }
+      .row .no { font-family: "DIN"; font-size: 14px; color: rgba(255, 255, 255, 0.4); }
+      .row h4 { font-size: 19px; font-weight: 600; margin-top: 2px; letter-spacing: 1px; }
+      .row p { font-size: 13px; color: rgba(255, 255, 255, 0.55); margin-top: 4px; }
+      .row .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-right: 6px; }
+      .row.on { background: rgba(31, 127, 214, 0.22); box-shadow: inset 0 0 0 1px rgba(111, 180, 255, 0.45); }
+      .row.on::before { content: ""; position: absolute; left: 0; top: 18px; bottom: 18px; width: 4px; border-radius: 2px; background: var(--accent); }
+      .row.on .prog { position: absolute; left: 12px; right: 12px; bottom: 6px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.12); }
+      .row.on .prog i { position: absolute; left: 0; top: 0; bottom: 0; width: 46%; border-radius: 2px; background: #6fb4ff; }
+      .row.ph { opacity: 0.55; }
+      .row.ph .thumb { border: 1.5px dashed rgba(255, 255, 255, 0.25); background: transparent; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.4); }
+      .list::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(rgba(9, 16, 30, 0), rgba(9, 16, 30, 0.95)); }
+      .scroll { position: absolute; right: 6px; top: 8px; width: 4px; height: 58%; border-radius: 2px; background: rgba(255, 255, 255, 0.25); }
+      .cat-foot { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 14px 26px 18px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 14px; color: rgba(255, 255, 255, 0.55); }
+      .cat-foot .nav { display: flex; gap: 10px; }
+      .cat-foot .nav i { width: 40px; height: 40px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.25); display: flex; align-items: center; justify-content: center; }
+      .cat-foot .nav svg { width: 18px; height: 18px; }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <div class="bg"><img id="bgimg" /></div>
+      <div class="shade"></div>
+
+      <header class="head">
+        <div class="brand"><i class="mark"></i><h1>三维可视化大屏 · 演示中心</h1><span>SHOWCASE</span></div>
+        <div class="clock"><b>09:17:04</b><span>2026-10-14 星期三</span></div>
+      </header>
+
+      <section class="intro" id="intro"></section>
+      <div class="hint"><span><kbd>↑</kbd><kbd>↓</kbd>切换演示</span><span><kbd>Enter</kbd>进入</span><span>自动轮播 8 秒 · 悬停暂停</span></div>
+
+      <aside class="catalog">
+        <div class="cat-head">
+          <div class="cat-title"><h3>全部演示<em>08</em></h3><span>按行业筛选</span></div>
+          <div class="tabs" id="tabs"></div>
+        </div>
+        <div class="list" id="list"><i class="scroll"></i></div>
+        <div class="cat-foot">
+          <span>第 3 / 8 个 · 列表可滚动</span>
+          <div class="nav">
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 15l6-6 6 6" /></svg></i>
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6" /></svg></i>
+          </div>
+        </div>
+      </aside>
+    </div>
+    <script>
+      document.getElementById("fonts").textContent = FONTS
+      const D = DEMOS
+      const cur = 2 // 当前聚焦：智慧充电站
+      const d = D[cur]
+      document.getElementById("page").style.setProperty("--accent", d.accent)
+      document.getElementById("bgimg").src = d.img
+      const arrow = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`
+      document.getElementById("intro").innerHTML = `
+        <div class="idx"><b>03</b> / 08 <i></i><span>${d.cat}</span></div>
+        <h2>${d.name}</h2><div class="en">${d.en}</div>
+        <div class="sub">${d.sub}</div><p class="desc">${d.desc}</p>
+        <div class="tags">${d.tags.map((t) => `<span>${t}</span>`).join("")}</div>
+        <div class="stats">${d.stats.map(([v, u, k]) => `<div><b>${v}</b><small>${u}</small><p>${k}</p></div>`).join("")}</div>
+        <div class="acts"><span class="btn primary">进入演示 ${arrow}</span><span class="btn ghost">全屏预览</span></div>`
+      const cats = {}
+      D.forEach((x) => (cats[x.cat] = (cats[x.cat] || 0) + 1))
+      document.getElementById("tabs").innerHTML = [["全部", D.length], ...Object.entries(cats)]
+        .map(([c, n], i) => `<span class="${i === 0 ? "on" : ""}">${c} ${n}</span>`).join("")
+      document.getElementById("list").insertAdjacentHTML("beforeend", D.map((x, i) => {
+        const no = String(i + 1).padStart(2, "0")
+        if (x.placeholder)
+          return `<div class="row ph"><div class="thumb"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg></div><div><div class="no">${no}</div><h4>${x.name}</h4><p>${x.sub}</p></div></div>`
+        return `<div class="row${i === cur ? " on" : ""}" style="--c:${x.accent}"><div class="thumb"><img src="${x.img}"></div>
+          <div><div class="no">${no}</div><h4>${x.name}</h4><p><span class="dot"></span>${x.cat} · ${x.sub}</p></div>${i === cur ? '<div class="prog"><i></i></div>' : ""}</div>`
+      }).join(""))
+      markReady()
+    </script>
+  </body>
+</html>
