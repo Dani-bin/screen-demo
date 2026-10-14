@@ -1,6 +1,7 @@
 <!--
-  首页顶栏：品牌标题 + 时钟
+  首页顶栏：品牌标题 + 视图切换 + 时钟
   与各演示页的顶栏相互独立，不复用 SchoolHead.vue / CityHead.vue。
+  配色全部取自页面下发的 CSS 变量（--ink 等），深色 / 浅色两种视图共用本组件。
 -->
 <template>
   <header class="home-head">
@@ -9,15 +10,47 @@
       <h1 class="brand-name">三维可视化大屏 · 演示中心</h1>
       <span class="brand-en">SHOWCASE</span>
     </div>
-    <div class="head-clock">
-      <time class="clock-time">{{ time }}</time>
-      <span class="clock-date">{{ date }}</span>
+    <div class="head-right">
+      <!-- 视图切换：作品墙（网格浏览全部）/ 聚焦（全屏轮播 + 侧边目录） -->
+      <div class="view-switch" role="radiogroup" aria-label="切换首页视图">
+        <button
+          v-for="v in VIEWS"
+          :key="v.key"
+          type="button"
+          role="radio"
+          class="view-btn"
+          :class="{ active: view === v.key }"
+          :aria-checked="view === v.key"
+          @click="emit('update:view', v.key)"
+        >
+          <component :is="v.icon" class="view-icon" aria-hidden="true" />
+          {{ v.label }}
+        </button>
+      </div>
+      <div class="head-clock">
+        <time class="clock-time">{{ time }}</time>
+        <span class="clock-date">{{ date }}</span>
+      </div>
     </div>
   </header>
 </template>
 
 <script setup>
+  import { LayoutGrid, MonitorPlay } from "lucide-vue-next"
   import { pad2 } from "../utils"
+
+  defineProps({
+    /** 当前视图：wall 作品墙 / spotlight 聚焦 */
+    view: { type: String, required: true }
+  })
+
+  const emit = defineEmits(["update:view"])
+
+  /** 可切换的两种视图 */
+  const VIEWS = [
+    { key: "wall", label: "作品墙", icon: LayoutGrid },
+    { key: "spotlight", label: "聚焦", icon: MonitorPlay }
+  ]
 
   const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"]
 
@@ -96,6 +129,57 @@
     font-size: 13px;
     letter-spacing: 5px;
     color: var(--ink-faint);
+  }
+
+  .head-right {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+  }
+
+  /* 分段式切换按钮：外框淡底，选中项实心 */
+  .view-switch {
+    display: flex;
+    padding: 4px;
+    border-radius: 24px;
+    background: var(--switch-bg);
+    border: 1px solid var(--line);
+  }
+
+  .view-btn {
+    height: 38px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 19px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    color: var(--ink-soft);
+    background: transparent;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+
+    &:hover {
+      color: var(--ink);
+    }
+
+    &.active {
+      background: var(--ink);
+      color: var(--bg);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent, #1f7fd6);
+      outline-offset: 2px;
+    }
+  }
+
+  .view-icon {
+    width: 18px;
+    height: 18px;
   }
 
   .head-clock {
