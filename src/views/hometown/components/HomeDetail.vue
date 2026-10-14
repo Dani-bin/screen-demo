@@ -7,13 +7,13 @@
       <div class="tape r"></div>
       <img :src="photo" alt="老家老照片" />
       <h3>
-        {{ HOME_CARD.title }}<small>{{ HOME_CARD.built }}</small>
+        {{ HOME_CARD.title
+        }}<small v-if="HOME_CARD.built">{{ HOME_CARD.built }}</small>
       </h3>
       <p>
         <template v-for="(l, i) in HOME_CARD.lines" :key="i"
           >{{ l }}<br
         /></template>
-        <span class="todo">（文字待补充）</span>
       </p>
       <div class="date">{{ HOME_CARD.date }}</div>
     </div>
@@ -126,10 +126,6 @@
       right: 30px;
       transform: rotate(7deg);
     }
-  }
-  .todo {
-    color: #b49a7a;
-    font-size: 12px;
   }
   .foot {
     position: absolute;
