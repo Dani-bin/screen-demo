@@ -2,14 +2,12 @@
      位置来自场景每帧投影的锚点（设计稿坐标） -->
 <template>
   <div class="pins">
-    <div
-      v-for="(n, i) in nodes"
-      :key="'n' + i"
-      class="node"
-      :style="{ left: rem(n[0]), top: rem(n[1]) }"
-    >
-      {{ i + 1 }}
-    </div>
+    <!-- 不在画面里的节点锚点为空，只是不画；编号按节点本身的顺序，不能先过滤再编号 -->
+    <template v-for="(n, i) in anchors.nodes" :key="'n' + i">
+      <div v-if="n" class="node" :style="{ left: rem(n[0]), top: rem(n[1]) }">
+        {{ i + 1 }}
+      </div>
+    </template>
     <template v-if="anchors.home">
       <div
         class="pin home"
@@ -36,13 +34,11 @@
 <script setup>
   import { rem } from "../utils"
 
-  const props = defineProps({
+  defineProps({
     anchors: { type: Object, required: true },
     photo: { type: String, required: true }
   })
   defineEmits(["home"])
-
-  const nodes = computed(() => props.anchors.nodes.filter(Boolean))
 </script>
 
 <style lang="scss" scoped>

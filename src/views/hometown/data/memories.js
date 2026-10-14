@@ -14,8 +14,8 @@ export const ROUTE_STEPS = [
   { title: "我家", text: "红灯笼一挂，就是一整年" }
 ]
 
-/** 回家的路全长（米），由回家路线折线长度取整 */
-export const ROUTE_LENGTH = 170
+/** 回家的路全长（米），由回家路线折线长度取整到 10 米（2026-10-13 按用户重画的红线约 184 m） */
+export const ROUTE_LENGTH = 180
 
 /** 近景的老照片卡片 */
 export const HOME_CARD = {
