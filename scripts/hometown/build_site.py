@@ -228,6 +228,8 @@ def main():
             kind, storeys = ("oldtile", 1) if area < 80 else ("flat", 2)
         if area < 40 and kind in ("flat", "tile"):
             storeys = 1                           # 小块屋顶是一层附屋 / 杂屋
+        if P.HD:
+            storeys = P.HD.STOREYS_AT.get(tuple(pts[0]), storeys)   # 用户指定过的层数
         if not P.HD:
             # 旧截图上手描轮廓常把院坝一起圈进去：住宅体量按川北自建房常见尺寸封顶
             cap = {"flat": (15.0, 11.0), "tile": (14.0, 10.0),
@@ -655,7 +657,8 @@ def write_page_data(d):
 
 
 def write_satellite():
-    """开场用的卫星图：截图上手画的红线（范围）、蓝线（回家路线）用 inpaint 抹掉，缩到 1600 宽。"""
+    """开场用的卫星图：截图上手画的红线（范围）、蓝线（回家路线）用 inpaint 抹掉，
+    沙盘范围内换成高清卫星图，缩到 1600 宽。"""
     img = cv2.imread(os.path.join(ROOT, "docs", "design", "hometown",
                                   "satellite-outline-v2.webp"))
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -664,6 +667,16 @@ def write_satellite():
     blue = cv2.inRange(hsv, (95, 150, 150), (115, 255, 255))
     mask = cv2.dilate(red | blue, np.ones((7, 7), np.uint8))
     out = cv2.inpaint(img, mask, 6, cv2.INPAINT_TELEA)
+    if P.HD:
+        # 高清卫星图（抠图，2026-10-13 起地图以它为准）仿射到同一坐标系盖上去：抠图范围内用高清图，
+        # 边缘 alpha 羽化约 6 px 免得接缝生硬；抠图外仍是旧截图，只作周边参照
+        rgba = cv2.imread(P.HD.HD_IMAGE, cv2.IMREAD_UNCHANGED)
+        h_, w_ = out.shape[:2]
+        hd = cv2.warpAffine(rgba[..., :3], P.HD.HD_M, (w_, h_), flags=cv2.INTER_CUBIC)
+        a = cv2.warpAffine(rgba[..., 3], P.HD.HD_M, (w_, h_)).astype(np.float32) / 255
+        a = cv2.erode(a, np.ones((5, 5), np.uint8))
+        a = cv2.GaussianBlur(a, (0, 0), 3.0)[..., None]
+        out = (hd * a + out * (1 - a)).astype(np.uint8)
     out = cv2.resize(out, (1600, round(1600 * img.shape[0] / img.shape[1])),
                      interpolation=cv2.INTER_AREA)
     os.makedirs(os.path.dirname(SAT_OUT), exist_ok=True)
