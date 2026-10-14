@@ -1,0 +1,225 @@
+<!doctype html>
+<!-- 综合能源补给站 大屏设计稿 v1 源码：中央场站为 AI 概念图，四周面板为 HTML，用 headless Chrome 截图成 03-dashboard-v1.png。数据均为演示数据。 -->
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face { font-family: "Alimama"; src: url("../../../src/assets/fonts/AlimamaShuHeiTi-Bold.ttf"); }
+      @font-face { font-family: "SHS"; src: url("../../../src/assets/fonts/SourceHanSansCN-Regular.otf"); }
+      @font-face { font-family: "DIN"; src: url("../../../src/assets/fonts/DIN-Bold.otf"); }
+      :root {
+        --bg: #050b17; --panel: rgba(9, 20, 40, 0.82); --line: #1d3b66;
+        --cyan: #2de2e6; --green: #3ddc97; --fuel: #ff9a3d; --lng: #b48cff;
+        --blue: #4c8dff; --red: #ff4d5a; --txt: #e6f0ff; --sub: #8ea6c8;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { width: 1920px; height: 1080px; background: radial-gradient(ellipse at 50% 40%, #0b1a33 0%, var(--bg) 70%);
+        font-family: "SHS", sans-serif; color: var(--txt); overflow: hidden; position: relative; }
+      .num { font-family: "DIN", sans-serif; }
+      /* 顶部标题 */
+      .header { position: absolute; left: 0; right: 0; top: 0; height: 72px; }
+      .header .title { position: absolute; left: 50%; transform: translateX(-50%); top: 0; width: 760px; height: 64px;
+        background: linear-gradient(180deg, rgba(20, 60, 120, .55), rgba(10, 30, 60, .2));
+        clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%); border-bottom: 2px solid var(--cyan);
+        font-family: "Alimama"; font-size: 36px; letter-spacing: 6px; text-align: center; line-height: 62px;
+        text-shadow: 0 0 18px rgba(45, 226, 230, .6); }
+      .header .meta { position: absolute; right: 28px; top: 20px; font-size: 16px; color: var(--sub); display: flex; gap: 22px; }
+      .header .meta b { color: var(--txt); font-family: "DIN"; font-weight: normal; }
+      .header .left { position: absolute; left: 28px; top: 20px; font-size: 16px; color: var(--sub); display: flex; gap: 14px; }
+      .tab { padding: 2px 14px; border: 1px solid var(--line); border-radius: 3px; }
+      .tab.on { border-color: var(--cyan); color: var(--cyan); background: rgba(45, 226, 230, .08); }
+      /* 面板通用 */
+      .panel { position: absolute; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 18px; }
+      .panel h3 { font-size: 19px; font-weight: normal; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+        padding-bottom: 8px; border-bottom: 1px solid rgba(45, 120, 200, .25); }
+      .panel h3::before { content: ""; width: 4px; height: 16px; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+      .panel h3 small { margin-left: auto; font-size: 13px; color: var(--sub); }
+      .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .kpi { background: rgba(30, 70, 130, .18); border: 1px solid rgba(45, 120, 200, .25); border-radius: 4px; padding: 8px 10px; }
+      .kpi .l { font-size: 13px; color: var(--sub); }
+      .kpi .v { font-family: "DIN"; font-size: 24px; margin-top: 2px; }
+      .kpi .v small { font-size: 12px; color: var(--sub); margin-left: 2px; font-family: "SHS"; }
+      .row { display: flex; align-items: center; font-size: 14px; margin: 9px 0; gap: 10px; }
+      .row .n { width: 92px; color: var(--sub); }
+      .bar { flex: 1; height: 10px; background: rgba(60, 100, 160, .25); border-radius: 5px; overflow: hidden; }
+      .bar i { display: block; height: 100%; border-radius: 5px; }
+      .row .p { width: 70px; text-align: right; font-family: "DIN"; font-size: 16px; }
+      .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+      /* 重卡超充车位格 */
+      .bays { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+      .bay { border: 1px solid; border-radius: 4px; padding: 6px 4px; text-align: center; font-size: 12px; }
+      .bay .id { font-family: "DIN"; font-size: 15px; }
+      .bay .s { font-family: "DIN"; font-size: 17px; }
+      .bay.c { border-color: var(--green); background: rgba(61, 220, 151, .1); color: var(--green); }
+      .bay.f { border-color: #3a5378; color: var(--sub); }
+      .bay.a { border-color: var(--red); background: rgba(255, 77, 90, .15); color: var(--red); }
+      .alarm { font-size: 13px; display: grid; grid-template-columns: 52px 42px 1fr; gap: 6px; padding: 6px 0;
+        border-bottom: 1px dashed rgba(45, 120, 200, .2); }
+      .lv { font-size: 11px; text-align: center; border-radius: 2px; padding: 1px 0; }
+      /* 中央场景 */
+      .scene { position: absolute; left: 412px; top: 82px; width: 1096px; height: 616px; }
+      .scene img { width: 100%; height: 100%; display: block;
+        -webkit-mask-image: radial-gradient(ellipse 72% 78% at 50% 48%, #000 70%, transparent 100%); }
+      .tag { position: absolute; padding: 5px 10px 5px 10px; background: rgba(6, 16, 34, .86); border: 1px solid; border-radius: 4px;
+        font-size: 13px; white-space: nowrap; transform: translate(-50%, -100%); }
+      .tag b { font-family: "DIN"; font-weight: normal; font-size: 18px; margin-left: 6px; }
+      .tag::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 26px; background: currentColor; }
+      .tag::before { content: ""; position: absolute; left: calc(50% - 4px); top: calc(100% + 24px); width: 9px; height: 9px;
+        border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; }
+      .flowbar { position: absolute; left: 412px; top: 704px; width: 1096px; display: flex; justify-content: center; gap: 26px;
+        font-size: 13px; color: var(--sub); }
+      .flowbar span { display: flex; align-items: center; gap: 6px; }
+      .flowbar i { width: 22px; height: 3px; display: inline-block; }
+      .chip { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; margin-left: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="left"><span class="tab on">综合态势</span><span class="tab">油气</span><span class="tab">充换电</span><span class="tab">安全</span><span class="tab">规划回顾</span></div>
+      <div class="title">综合能源补给站智慧运营平台</div>
+      <div class="meta"><span><b>2026-10-12 18:42:16</b></span><span>多云 <b>21°C</b></span><span style="color: var(--green)">● 站点运行正常</span></div>
+    </div>
+
+    <!-- 左一：今日补给概览 -->
+    <div class="panel" style="left: 20px; top: 82px; width: 380px; height: 236px">
+      <h3>今日补给概览<small>截至 18:42</small></h3>
+      <div class="kpis">
+        <div class="kpi"><div class="l">服务车次</div><div class="v">1,286<small>辆</small></div></div>
+        <div class="kpi"><div class="l">其中重卡</div><div class="v" style="color: var(--fuel)">444<small>辆</small></div></div>
+        <div class="kpi"><div class="l">今日营收</div><div class="v" style="color: var(--cyan)">31.2<small>万元</small></div></div>
+        <div class="kpi"><div class="l"><span class="dot" style="background: var(--fuel)"></span>加油</div><div class="v">18,640<small>L</small></div></div>
+        <div class="kpi"><div class="l"><span class="dot" style="background: var(--lng)"></span>加气</div><div class="v">15.6<small>t</small></div></div>
+        <div class="kpi"><div class="l"><span class="dot" style="background: var(--green)"></span>充电 / 换电</div><div class="v">9,820<small>kWh</small></div></div>
+      </div>
+    </div>
+
+    <!-- 左二：油气库存 -->
+    <div class="panel" style="left: 20px; top: 330px; width: 380px; height: 250px">
+      <h3>油气库存<small>液位 / 压力</small></h3>
+      <div class="row"><span class="n">92# 汽油</span><div class="bar"><i style="width: 68%; background: var(--fuel)"></i></div><span class="p">68%</span></div>
+      <div class="row"><span class="n">95# 汽油</span><div class="bar"><i style="width: 54%; background: var(--fuel)"></i></div><span class="p">54%</span></div>
+      <div class="row"><span class="n">0# 柴油 1</span><div class="bar"><i style="width: 72%; background: #ffc35a"></i></div><span class="p">72%</span></div>
+      <div class="row"><span class="n">0# 柴油 2</span><div class="bar"><i style="width: 28%; background: var(--red)"></i></div><span class="p" style="color: var(--red)">28%</span></div>
+      <div class="row"><span class="n">LNG 储罐</span><div class="bar"><i style="width: 61%; background: var(--lng)"></i></div><span class="p">61%</span></div>
+      <div class="row"><span class="n">CNG 储气</span><div class="bar"><i style="width: 86%; background: var(--blue)"></i></div><span class="p">21.6<small style="font-size: 11px"> MPa</small></span></div>
+    </div>
+
+    <!-- 左三：安全监测 -->
+    <div class="panel" style="left: 20px; top: 592px; width: 380px; height: 238px">
+      <h3>安全监测<small>罐区 / 加油加气区</small></h3>
+      <div class="kpis">
+        <div class="kpi"><div class="l">可燃气体</div><div class="v" style="color: var(--green)">2<small>%LEL</small></div></div>
+        <div class="kpi"><div class="l">LNG 罐压</div><div class="v">0.42<small>MPa</small></div></div>
+        <div class="kpi"><div class="l">LNG 液温</div><div class="v">-152<small>°C</small></div></div>
+        <div class="kpi"><div class="l">静电接地</div><div class="v" style="color: var(--green); font-size: 20px">正常</div></div>
+        <div class="kpi"><div class="l">视频在线</div><div class="v">32<small>/32 路</small></div></div>
+        <div class="kpi"><div class="l">安全运行</div><div class="v" style="color: var(--cyan)">418<small>天</small></div></div>
+      </div>
+    </div>
+
+    <!-- 右一：重卡超充 -->
+    <div class="panel" style="left: 1520px; top: 82px; width: 380px; height: 262px">
+      <h3>重卡超充<small>10 位 · 实时 <span class="num" style="color: var(--green); font-size: 15px">2,860</span> kW</small></h3>
+      <div class="bays">
+        <div class="bay c"><div class="id">C01</div><div class="s">82%</div>充电中</div>
+        <div class="bay c"><div class="id">C02</div><div class="s">47%</div>充电中</div>
+        <div class="bay f"><div class="id">C03</div><div class="s">—</div>空闲</div>
+        <div class="bay c"><div class="id">C04</div><div class="s">63%</div>充电中</div>
+        <div class="bay c"><div class="id">C05</div><div class="s">91%</div>充电中</div>
+        <div class="bay f"><div class="id">C06</div><div class="s">—</div>空闲</div>
+        <div class="bay a"><div class="id">C07</div><div class="s">55%</div>降功率</div>
+        <div class="bay c"><div class="id">C08</div><div class="s">36%</div>充电中</div>
+        <div class="bay c"><div class="id">C09</div><div class="s">74%</div>充电中</div>
+        <div class="bay f"><div class="id">C10</div><div class="s">—</div>空闲</div>
+      </div>
+      <div class="row" style="margin-top: 12px"><span class="n">利用率</span><div class="bar"><i style="width: 70%; background: var(--green)"></i></div><span class="p">70%</span></div>
+    </div>
+
+    <!-- 右二：换电站 + 光伏 -->
+    <div class="panel" style="left: 1520px; top: 356px; width: 380px; height: 224px">
+      <h3>换电 · 光伏<small>乘用车换电站 / 罩棚光伏</small></h3>
+      <div class="kpis">
+        <div class="kpi"><div class="l">今日换电</div><div class="v" style="color: var(--cyan)">86<small>次</small></div></div>
+        <div class="kpi"><div class="l">平均时长</div><div class="v">3.4<small>min</small></div></div>
+        <div class="kpi"><div class="l">满电电池</div><div class="v" style="color: var(--green)">8<small>/13 仓</small></div></div>
+        <div class="kpi"><div class="l">光伏装机</div><div class="v">420<small>kWp</small></div></div>
+        <div class="kpi"><div class="l">今日发电</div><div class="v" style="color: #ffd45a">1,980<small>kWh</small></div></div>
+        <div class="kpi"><div class="l">箱变负载</div><div class="v">64<small>%</small></div></div>
+      </div>
+    </div>
+
+    <!-- 右三：告警 -->
+    <div class="panel" style="left: 1520px; top: 592px; width: 380px; height: 238px">
+      <h3>告警与作业<small>今日 <span class="num" style="color: var(--red); font-size: 15px">4</span> 条</small></h3>
+      <div class="alarm"><span class="num">18:36</span><span class="lv" style="background: rgba(255, 77, 90, .25); color: var(--red)">重要</span><span>C07 枪头温度 68°C，已自动降功率</span></div>
+      <div class="alarm"><span class="num">18:21</span><span class="lv" style="background: rgba(180, 140, 255, .25); color: var(--lng)">作业</span><span>LNG 槽车卸车作业中，罐区限行</span></div>
+      <div class="alarm"><span class="num">18:05</span><span class="lv" style="background: rgba(255, 154, 61, .25); color: var(--fuel)">一般</span><span>0# 柴油 2 号罐液位 28%，已下单补货</span></div>
+      <div class="alarm"><span class="num">17:48</span><span class="lv" style="background: rgba(76, 141, 255, .25); color: var(--blue)">提示</span><span>换电站 7 号仓电池温度偏高，已处理</span></div>
+    </div>
+
+    <!-- 中央场站（AI 概念图） + 悬浮标签 -->
+    <div class="scene">
+      <img src="01-ai-overview.png" />
+      <div class="tag" style="left: 26%; top: 20%; color: var(--fuel)">加油加气站<b>12/12 枪</b></div>
+      <div class="tag" style="left: 42.5%; top: 18%; color: var(--cyan)">换电站<b>86 次</b></div>
+      <div class="tag" style="left: 18.5%; top: 4%; color: var(--blue)">办公楼 · 司机之家</div>
+      <div class="tag" style="left: 55%; top: 41%; color: var(--lng)">LNG 加气<b>4 枪</b></div>
+      <div class="tag" style="left: 70%; top: 33%; color: var(--green)">重卡超充<b>7/10</b></div>
+      <div class="tag" style="left: 73%; top: 56%; color: var(--red)">箱变 ×2<b>64%</b></div>
+      <div class="tag" style="left: 89%; top: 62%; color: var(--lng)">LNG 储罐<b>61%</b></div>
+    </div>
+    <div class="flowbar">
+      <span><i style="background: var(--fuel)"></i>加油加气</span><span><i style="background: var(--lng)"></i>LNG</span>
+      <span><i style="background: var(--green)"></i>重卡超充</span><span><i style="background: var(--cyan)"></i>换电</span>
+      <span style="color: #5a7398">中央场站为 AI 概念图 · Blender 建模以此为参考 · 数据为演示数据</span>
+    </div>
+
+    <!-- 底部：24h 补给趋势 -->
+    <div class="panel" style="left: 20px; top: 842px; width: 1050px; height: 218px">
+      <h3>24 小时补给车次<small><span class="dot" style="background: var(--fuel)"></span>加油 <span class="dot" style="background: var(--lng); margin-left: 12px"></span>加气 <span class="dot" style="background: var(--green); margin-left: 12px"></span>充电 <span class="dot" style="background: var(--cyan); margin-left: 12px"></span>换电</small></h3>
+      <svg id="trend" width="1012" height="150"></svg>
+    </div>
+
+    <!-- 底部：设备状态 -->
+    <div class="panel" style="left: 1082px; top: 842px; width: 818px; height: 218px">
+      <h3>设备状态<small>在线 / 总数</small></h3>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px">
+        <div class="kpi"><div class="l">加油机</div><div class="v">12<small>/12</small></div></div>
+        <div class="kpi"><div class="l">LNG 加气机</div><div class="v">4<small>/4</small></div></div>
+        <div class="kpi"><div class="l">CNG 加气机</div><div class="v">4<small>/4</small></div></div>
+        <div class="kpi"><div class="l">重卡超充终端</div><div class="v">10<small>/10</small><span class="chip" style="background: rgba(255, 77, 90, .2); color: var(--red)">1 告警</span></div></div>
+        <div class="kpi"><div class="l">换电站</div><div class="v">1<small>/1</small></div></div>
+        <div class="kpi"><div class="l">箱式变压器</div><div class="v">2<small>/2</small></div></div>
+        <div class="kpi"><div class="l">光伏逆变器</div><div class="v">6<small>/6</small></div></div>
+        <div class="kpi"><div class="l">LNG 泵撬</div><div class="v">1<small>/1</small><span class="chip" style="background: rgba(180, 140, 255, .2); color: var(--lng)">卸车中</span></div></div>
+      </div>
+    </div>
+
+    <script>
+      // 24h 车次趋势：四条折线，19 点之后为虚线预测
+      const svg = document.getElementById("trend")
+      const W = 1012, H = 150, L = 36, B = 22, T = 8
+      const series = [
+        ["#ff9a3d", [22,14,10,8,9,18,46,78,92,84,70,66,72,68,64,70,86,96,88,62,48,40,34,28]],
+        ["#b48cff", [30,26,22,20,24,30,38,44,48,46,42,40,42,44,46,48,50,52,48,44,40,38,36,32]],
+        ["#3ddc97", [18,20,22,20,16,14,18,24,30,34,38,40,42,40,38,36,38,42,46,48,44,36,28,22]],
+        ["#2de2e6", [2,1,1,1,1,2,4,8,9,7,6,5,6,6,5,6,8,9,7,5,4,3,3,2]]
+      ]
+      const max = 100, x = i => L + (i * (W - L - 10)) / 23, y = v => T + (1 - v / max) * (H - T - B)
+      let html = ""
+      for (let v = 0; v <= 100; v += 25) {
+        html += `<line x1="${L}" x2="${W - 10}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(60,100,160,.25)" stroke-dasharray="3 4"/>`
+        html += `<text x="${L - 8}" y="${y(v) + 4}" fill="#8ea6c8" font-size="11" text-anchor="end" font-family="DIN">${v}</text>`
+      }
+      for (let i = 0; i < 24; i += 3) html += `<text x="${x(i)}" y="${H - 4}" fill="#8ea6c8" font-size="11" text-anchor="middle" font-family="DIN">${String(i).padStart(2, "0")}:00</text>`
+      const now = 18.7
+      html += `<line x1="${x(now)}" x2="${x(now)}" y1="${T}" y2="${H - B}" stroke="#2de2e6" stroke-width="1"/>`
+      for (const [c, d] of series) {
+        const pts = d.map((v, i) => `${x(i)},${y(v)}`)
+        html += `<polyline points="${pts.slice(0, 19).join(" ")}" fill="none" stroke="${c}" stroke-width="2"/>`
+        html += `<polyline points="${pts.slice(18).join(" ")}" fill="none" stroke="${c}" stroke-width="1.5" stroke-dasharray="4 4" opacity=".6"/>`
+      }
+      svg.innerHTML = html
+    </script>
+  </body>
+</html>
