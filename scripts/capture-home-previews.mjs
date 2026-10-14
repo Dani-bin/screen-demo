@@ -45,7 +45,14 @@ const READY_TIMEOUT = 60
  * 新演示未配置时取 DEFAULT_SETTLE。
  */
 const DEFAULT_SETTLE = 5
-const SETTLE = { school: 5, city: 6, charging: 6, building: 8, energy: 16 }
+const SETTLE = {
+  school: 5,
+  city: 6,
+  charging: 6,
+  building: 8,
+  energy: 16,
+  hometown: 11
+}
 
 /**
  * 页面就绪条件（在页面里求值）：整页加载完、路由组件已渲染、

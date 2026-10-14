@@ -42,6 +42,12 @@ const routes = [
     component: () => import("@/views/energy/index.vue")
   },
   {
+    // 老家沙盘：营山五通村，按卫星图与老照片还原，Blender 建模 + three.js 展示
+    path: "/hometown",
+    name: "Hometown",
+    component: () => import("@/views/hometown/index.vue")
+  },
+  {
     // 数字楼宇：城市（成都高新区）→ 园区 → 楼宇 → 楼层 → 房间 五级钻取
     path: "/building",
     name: "Building",
