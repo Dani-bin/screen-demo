@@ -124,11 +124,12 @@ export const DEMOS = [
     subTitle: "老家记忆 · 四季沙盘之夏",
     desc: "四川营山五通村，按卫星图与老照片还原的盛夏沙盘：开场从卫星图长成三维村庄，沿田埂走一遍回家的路，推门回到老屋前对照老照片，傍晚与夜晚可切换。",
     tags: ["卫星图配准", "老照片还原", "昼夜切换"],
-    // 依据：scripts/hometown/build_site.py 输出（沙盘 5.08 公顷、房屋 43 栋）与 data/memories.js 的回家路线长度
+    // 依据：scripts/hometown/build_site.py 输出（沙盘 5.23 公顷、房屋 73 栋，含厂区 16 栋厂棚）
+    // 与 data/memories.js 的回家路线长度 ROUTE_LENGTH
     stats: [
-      { value: "5.1", unit: "公顷", key: "还原范围" },
-      { value: "43", unit: "栋", key: "农家房屋" },
-      { value: "170", unit: "m", key: "回家的路" }
+      { value: "5.2", unit: "公顷", key: "还原范围" },
+      { value: "73", unit: "栋", key: "房屋" },
+      { value: "180", unit: "m", key: "回家的路" }
     ],
     // 取自页面的印章红
     accent: "#b8392b",
