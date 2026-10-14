@@ -1,0 +1,656 @@
+<!doctype html>
+<!--
+  /hometown 设计稿 v2（纪念册风）：效果图 05 / 07 / 06 上叠加页面界面。
+  截图：无头 Chrome 打开 drafts-v2.html?frame=dusk|night|home，1920×1080。
+  画面上的标注 / 路线节点坐标由 Blender 把三维点投影到效果图相机得到（见 README）。
+  回忆文字全部是占位，等用户替换。
+-->
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>老家沙盘设计稿</title>
+    <style>
+      @font-face {
+        font-family: "Alimama ShuHeiTi";
+        src: url("../../../src/assets/fonts/AlimamaShuHeiTi-Bold.ttf");
+      }
+      @font-face {
+        font-family: "Source Han Sans CN";
+        src: url("../../../src/assets/fonts/SourceHanSansCN-Regular.otf");
+      }
+      @font-face {
+        font-family: "DIN";
+        src: url("../../../src/assets/fonts/DIN-Bold.otf");
+      }
+      :root {
+        --paper: #f6efe1;
+        --paper-2: #efe4cf;
+        --ink: #3d2f22;
+        --ink-2: #7a6650;
+        --warm: #e9a84b;
+        --seal: #b8392b;
+        --cream: #fff7e8;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #2b2620;
+        font-family: "Source Han Sans CN", sans-serif;
+        color: var(--ink);
+      }
+      .frame {
+        position: absolute;
+        inset: 0;
+        display: none;
+        background-size: cover;
+        background-position: center;
+      }
+      .frame.on {
+        display: block;
+      }
+      /* 四周一圈很淡的暖色暗角 + 极细纸张边框，像装在相册里的照片 */
+      .frame::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(rgba(40, 26, 12, 0.5), transparent 22%),
+          linear-gradient(0deg, rgba(40, 26, 12, 0.45), transparent 28%);
+      }
+      .frame::after {
+        content: "";
+        position: absolute;
+        inset: 18px;
+        border: 1px solid rgba(255, 240, 210, 0.35);
+        border-radius: 4px;
+        pointer-events: none;
+      }
+      .night::before {
+        background:
+          linear-gradient(rgba(4, 8, 20, 0.55), transparent 22%),
+          linear-gradient(0deg, rgba(4, 8, 20, 0.5), transparent 28%);
+      }
+
+      /* ---------------- 标题 */
+      .title {
+        position: absolute;
+        left: 76px;
+        top: 58px;
+        z-index: 3;
+        color: var(--cream);
+      }
+      .title .row {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+      }
+      .title h1 {
+        font-family: "Alimama ShuHeiTi";
+        font-size: 66px;
+        letter-spacing: 10px;
+        text-shadow: 0 4px 22px rgba(30, 16, 4, 0.45);
+      }
+      .seal {
+        width: 58px;
+        height: 58px;
+        border: 3px solid var(--seal);
+        border-radius: 6px;
+        color: var(--seal);
+        background: rgba(255, 240, 220, 0.9);
+        font-family: "Alimama ShuHeiTi";
+        font-size: 22px;
+        line-height: 1.05;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        transform: rotate(-8deg);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      }
+      .title p {
+        margin-top: 14px;
+        font-size: 20px;
+        letter-spacing: 4px;
+        opacity: 0.92;
+      }
+      .title p span + span::before {
+        content: "·";
+        margin: 0 12px;
+        opacity: 0.6;
+      }
+
+      /* ---------------- 右上工具 */
+      .tools {
+        position: absolute;
+        right: 76px;
+        top: 66px;
+        z-index: 3;
+        display: flex;
+        gap: 14px;
+        align-items: center;
+      }
+      .tabs {
+        display: flex;
+        background: var(--paper);
+        border-radius: 6px;
+        padding: 5px;
+        box-shadow: 0 8px 24px rgba(30, 16, 4, 0.3);
+        transform: rotate(1deg);
+      }
+      .tabs span {
+        padding: 9px 22px;
+        font-size: 18px;
+        letter-spacing: 3px;
+        color: var(--ink-2);
+        border-radius: 4px;
+      }
+      .tabs span.on {
+        background: var(--ink);
+        color: var(--cream);
+      }
+      .icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: var(--paper);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 8px 24px rgba(30, 16, 4, 0.3);
+      }
+      .icon svg {
+        width: 22px;
+        height: 22px;
+        stroke: var(--ink);
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .compass {
+        position: absolute;
+        right: 92px;
+        top: 150px;
+        z-index: 3;
+        width: 64px;
+        height: 64px;
+        color: var(--cream);
+        font-size: 15px;
+        text-align: center;
+        opacity: 0.85;
+      }
+
+      /* ---------------- 地图标注 */
+      .pin {
+        position: absolute;
+        z-index: 2;
+        transform: translate(-50%, -100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .pin em {
+        font-style: normal;
+        padding: 5px 13px;
+        font-size: 16px;
+        letter-spacing: 2px;
+        background: rgba(246, 239, 225, 0.92);
+        color: var(--ink);
+        border-radius: 3px;
+        box-shadow: 0 3px 10px rgba(30, 16, 4, 0.25);
+        white-space: nowrap;
+      }
+      .pin::after {
+        content: "";
+        width: 1px;
+        height: var(--h, 34px);
+        background: linear-gradient(rgba(255, 247, 232, 0.9), rgba(255, 247, 232, 0));
+      }
+      .night .pin em {
+        background: rgba(30, 34, 52, 0.78);
+        color: #f1e6cf;
+        box-shadow: none;
+        border: 1px solid rgba(255, 220, 160, 0.25);
+      }
+      /* 我家：红色印章名牌 + 别着的小拍立得 */
+      .pin.home em {
+        font-family: "Alimama ShuHeiTi";
+        font-size: 26px;
+        padding: 8px 20px;
+        color: #fff;
+        background: var(--seal);
+        border-radius: 4px;
+        box-shadow: 0 8px 22px rgba(120, 30, 20, 0.45);
+      }
+      .night .pin.home em {
+        background: var(--seal);
+        color: #fff;
+        border: none;
+        box-shadow: 0 0 24px rgba(255, 120, 60, 0.6);
+      }
+      .pin.home::after {
+        width: 2px;
+        background: linear-gradient(#f2c37a, rgba(242, 195, 122, 0));
+      }
+      .mini {
+        position: absolute;
+        z-index: 2;
+        width: 128px;
+        padding: 7px 7px 22px;
+        background: var(--paper);
+        box-shadow: 0 10px 26px rgba(20, 10, 0, 0.4);
+        transform: rotate(6deg);
+        font-size: 13px;
+        color: var(--ink-2);
+        text-align: center;
+      }
+      .mini img {
+        display: block;
+        width: 100%;
+        height: 96px;
+        object-fit: cover;
+        object-position: center 35%;
+        filter: sepia(0.15);
+      }
+      .mini b {
+        position: absolute;
+        bottom: 4px;
+        left: 0;
+        right: 0;
+        font-weight: normal;
+        letter-spacing: 1px;
+      }
+      /* 路线节点：编号圆点 */
+      .node {
+        position: absolute;
+        z-index: 2;
+        transform: translate(-50%, -50%);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--cream);
+        color: var(--ink);
+        font-family: "DIN";
+        font-size: 16px;
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--warm);
+        box-shadow: 0 0 0 5px rgba(233, 168, 75, 0.28), 0 4px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      /* ---------------- 底部"回家的路"纸带 */
+      .ribbon {
+        position: absolute;
+        left: 76px;
+        right: 76px;
+        bottom: 46px;
+        z-index: 3;
+        display: flex;
+        align-items: stretch;
+        background: var(--paper);
+        border-radius: 6px;
+        box-shadow: 0 16px 40px rgba(20, 10, 0, 0.35);
+        overflow: hidden;
+      }
+      /* 夜晚：深色纸带，不抢画面里的灯光 */
+      .night .ribbon {
+        background: rgba(28, 26, 34, 0.86);
+        border: 1px solid rgba(255, 220, 160, 0.18);
+      }
+      .night .step h4 {
+        color: #f1e6cf;
+      }
+      .night .step p {
+        color: #b9ad97;
+      }
+      .night .step i {
+        background: #2c2a33;
+        color: #f1e6cf;
+      }
+      .night .ribbon .head {
+        background: rgba(0, 0, 0, 0.35);
+      }
+      .ribbon .head {
+        width: 236px;
+        padding: 16px 24px;
+        background: var(--ink);
+        color: var(--cream);
+      }
+      .ribbon .head h3 {
+        font-family: "Alimama ShuHeiTi";
+        font-size: 28px;
+        letter-spacing: 4px;
+      }
+      .ribbon .head p {
+        margin-top: 8px;
+        font-size: 15px;
+        opacity: 0.75;
+        letter-spacing: 1px;
+      }
+      .ribbon .head b {
+        font-family: "DIN";
+        font-size: 36px;
+        color: var(--warm);
+        margin-right: 6px;
+      }
+      .steps {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        position: relative;
+        padding: 14px 10px 14px;
+      }
+      /* 节点之间的虚线 */
+      .steps::before {
+        content: "";
+        position: absolute;
+        left: 8%;
+        right: 8%;
+        top: 31px;
+        border-top: 2px dashed rgba(122, 102, 80, 0.45);
+      }
+      .step {
+        position: relative;
+        padding: 0 16px;
+        text-align: center;
+      }
+      .step i {
+        position: relative;
+        display: inline-grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--cream);
+        border: 2px solid var(--warm);
+        font-style: normal;
+        font-family: "DIN";
+        font-size: 17px;
+      }
+      .step.last i {
+        background: var(--seal);
+        border-color: var(--seal);
+        color: #fff;
+      }
+      .step h4 {
+        margin-top: 6px;
+        font-size: 18px;
+        letter-spacing: 2px;
+      }
+      .step p {
+        margin-top: 4px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--ink-2);
+      }
+      .todo {
+        color: #b49a7a;
+        font-size: 12px;
+      }
+
+      /* ---------------- 近景：老照片卡片 */
+      .back {
+        position: absolute;
+        left: 76px;
+        top: 214px;
+        z-index: 3;
+        padding: 10px 20px;
+        border-radius: 4px;
+        background: var(--paper);
+        font-size: 17px;
+        letter-spacing: 2px;
+        box-shadow: 0 8px 22px rgba(30, 16, 4, 0.3);
+      }
+      .card {
+        position: absolute;
+        right: 104px;
+        top: 168px;
+        width: 500px;
+        z-index: 3;
+        padding: 20px 20px 26px;
+        background: var(--paper);
+        border-radius: 3px;
+        transform: rotate(2.4deg);
+        box-shadow: 0 30px 60px rgba(20, 10, 0, 0.45);
+      }
+      .card img {
+        display: block;
+        width: 100%;
+        height: 540px;
+        object-fit: cover;
+        object-position: center 40%;
+        filter: sepia(0.2) saturate(0.92) contrast(0.96);
+      }
+      .card .tape {
+        position: absolute;
+        top: -16px;
+        width: 120px;
+        height: 32px;
+        background: rgba(240, 214, 160, 0.78);
+      }
+      .card .tape.l {
+        left: 30px;
+        transform: rotate(-8deg);
+      }
+      .card .tape.r {
+        right: 30px;
+        transform: rotate(7deg);
+      }
+      .card h3 {
+        margin-top: 18px;
+        font-family: "Alimama ShuHeiTi";
+        font-size: 32px;
+        letter-spacing: 4px;
+      }
+      .card h3 small {
+        font-family: "Source Han Sans CN";
+        font-size: 17px;
+        letter-spacing: 1px;
+        color: var(--ink-2);
+        margin-left: 12px;
+      }
+      .card p {
+        margin-top: 10px;
+        font-size: 17px;
+        line-height: 1.8;
+        color: var(--ink-2);
+      }
+      .card .date {
+        position: absolute;
+        right: 22px;
+        bottom: 24px;
+        font-family: "DIN";
+        font-size: 18px;
+        color: #c06a2a;
+        opacity: 0.85;
+        transform: rotate(-3deg);
+      }
+      /* 近景细节注记：圆环 + 引线 + 便签 */
+      .note {
+        position: absolute;
+        z-index: 3;
+      }
+      .note .dot {
+        position: absolute;
+        left: -11px;
+        top: -11px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid var(--cream);
+        background: rgba(233, 168, 75, 0.85);
+        box-shadow: 0 0 0 6px rgba(255, 247, 232, 0.28), 0 3px 10px rgba(0, 0, 0, 0.35);
+      }
+      .note .line {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 1px;
+        background: rgba(255, 247, 232, 0.9);
+        transform-origin: 0 0;
+      }
+      .note .tag {
+        position: absolute;
+        padding: 7px 14px;
+        background: var(--paper);
+        border-radius: 3px;
+        font-size: 17px;
+        letter-spacing: 2px;
+        white-space: nowrap;
+        box-shadow: 0 6px 16px rgba(20, 10, 0, 0.35);
+      }
+      .note .tag.open {
+        width: 300px;
+        white-space: normal;
+        padding: 14px 18px 16px;
+        transform: rotate(-1.5deg);
+      }
+      .note .tag.open b {
+        display: block;
+        font-family: "Alimama ShuHeiTi";
+        font-weight: normal;
+        font-size: 22px;
+        letter-spacing: 3px;
+      }
+      .note .tag.open span {
+        display: block;
+        margin-top: 6px;
+        font-size: 15px;
+        letter-spacing: 1px;
+        line-height: 1.7;
+        color: var(--ink-2);
+      }
+      .homefoot {
+        position: absolute;
+        left: 76px;
+        bottom: 52px;
+        z-index: 3;
+        color: var(--cream);
+        font-size: 18px;
+        letter-spacing: 3px;
+      }
+      .homefoot span + span::before {
+        content: "·";
+        margin: 0 12px;
+        opacity: 0.6;
+      }
+    </style>
+  </head>
+  <body>
+    <template id="chrome">
+      <div class="title">
+        <div class="row">
+          <h1>营山 · 五通村</h1>
+          <div class="seal">老<br />家</div>
+        </div>
+        <p><span>四川 · 南充 · 营山县</span><span>海拔约 330 米</span><span>2017 年 · 夏</span></p>
+      </div>
+      <div class="tools">
+        <div class="tabs"><span data-t="dusk">傍晚</span><span data-t="night">夜晚</span></div>
+        <div class="icon">
+          <!-- 静音：喇叭 + 叉 -->
+          <svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z" /><path d="m17 9 5 6M22 9l-5 6" /></svg>
+        </div>
+      </div>
+    </template>
+
+    <section class="frame" id="dusk" style="background-image: url(05-effect-overview.png)"></section>
+    <section class="frame night" id="night" style="background-image: url(07-effect-night.png)"></section>
+    <section class="frame" id="home" style="background-image: url(06-effect-my-house.png)">
+      <div class="back">← 返回全景</div>
+      <div class="card">
+        <div class="tape l"></div>
+        <div class="tape r"></div>
+        <img src="my-house-photo.webp" alt="老家老照片" />
+        <h3>我家<small>建于 20XX 年</small></h3>
+        <p>
+          地坝两边六棵枇杷树，门口两只红灯笼<br />
+          推开铁门，就到家了<span class="todo">（文字待补充）</span>
+        </p>
+        <div class="date">'17 7 27</div>
+      </div>
+      <div class="homefoot"><span>正房三层</span><span>地坝 12 × 9 米</span><span>两旁六棵枇杷树</span></div>
+    </section>
+
+    <script>
+      // ---------------- 由 Blender 投影得到的画面坐标（1920×1080）
+      const PLACES = [
+        { t: "池塘", x: 604, y: 360 },
+        { t: "大田", x: 886, y: 673 },
+        { t: "垃圾回收站", x: 1261, y: 458, h: 30 },
+        { t: "养猪场", x: 1459, y: 424 },
+        { t: "小工厂", x: 1406, y: 588 },
+        { t: "气罐仓库", x: 423, y: 780 }
+      ]
+      const HOME = { x: 865, y: 283 }
+      const NODES = [
+        { x: 1288, y: 717, t: "公路路口", s: "放学的车在这儿停，跳下车就算到家了" },
+        { x: 1213, y: 618, t: "小工厂边", s: "路过回收站，总要看一眼又堆了些什么" },
+        { x: 1089, y: 442, t: "大田田埂", s: "夏天走田埂，稻子齐腰，青蛙一路跳开" },
+        { x: 871, y: 363, t: "地坝铁门", s: "推开铁门，枇杷树下有人喊吃饭" },
+        { x: 865, y: 283, t: "我家", s: "红灯笼一挂，就是一整年" }
+      ]
+      const NOTES = [
+        { x: 771, y: 700, t: "堂屋", s: "过年一家人围着八仙桌吃团年饭", open: true, dx: -250, dy: 110 },
+        { x: 780, y: 470, t: "二楼阳台", dx: -330, dy: -60 },
+        { x: 0, y: 0, t: "枇杷树", dx: 70, dy: -70, id: "loquat" }
+      ]
+      const LOQUAT = { x: 110, y: 560 }
+
+      const frame = new URLSearchParams(location.search).get("frame") || "dusk"
+      const root = document.getElementById(frame)
+      root.classList.add("on")
+      const el = (html) => {
+        const d = document.createElement("div")
+        d.innerHTML = html.trim()
+        return d.firstChild
+      }
+
+      if (frame !== "home") {
+        root.appendChild(document.getElementById("chrome").content.cloneNode(true))
+        root.querySelector(`.tabs [data-t=${frame}]`).classList.add("on")
+        // 指北针：截图里真北在左上（相对图像上方逆时针约 76°），透视下近似画成指向左上
+        root.appendChild(
+          el(`<div class="compass"><svg viewBox="0 0 64 64" width="64" height="64">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,247,232,.55)" />
+            <path d="M32 32 L9 22 L14 30 Z" fill="#fff7e8" /><path d="M32 32 L55 42 L50 34 Z" fill="rgba(255,247,232,.45)" />
+            <text x="2" y="20" fill="#fff7e8" font-size="12">北</text></svg></div>`)
+        )
+        for (const p of PLACES)
+          root.appendChild(el(`<div class="pin" style="left:${p.x}px;top:${p.y}px;--h:${p.h || 30}px"><em>${p.t}</em></div>`))
+        root.appendChild(el(`<div class="pin home" style="left:${HOME.x}px;top:${HOME.y - 44}px;--h:52px"><em>我家</em></div>`))
+        root.appendChild(el(`<div class="mini" style="left:${HOME.x + 86}px;top:${HOME.y - 196}px">
+          <img src="my-house-photo.webp" /><b>点我回家看看</b></div>`))
+        NODES.slice(0, 4).forEach((n, i) => root.appendChild(el(`<div class="node" style="left:${n.x}px;top:${n.y}px">${i + 1}</div>`)))
+        const steps = NODES.map(
+          (n, i) => `<div class="step ${i === 4 ? "last" : ""}"><i>${i + 1}</i><h4>${n.t}</h4><p>${n.s}</p></div>`
+        ).join("")
+        root.appendChild(
+          el(`<div class="ribbon"><div class="head"><h3>回家的路</h3><p><b>170</b>米</p>
+            <p class="todo" style="color:#c9b896;margin-top:2px">文字均为占位，待补充</p></div><div class="steps">${steps}</div></div>`)
+        )
+      } else {
+        root.appendChild(document.getElementById("chrome").content.cloneNode(true))
+        root.querySelector(`.tabs [data-t=dusk]`).classList.add("on")
+        for (const n of NOTES) {
+          const p = n.id === "loquat" ? LOQUAT : n
+          const len = Math.hypot(n.dx, n.dy)
+          const ang = (Math.atan2(n.dy, n.dx) * 180) / Math.PI
+          const tag = n.open
+            ? `<div class="tag open" style="left:${n.dx - 300}px;top:${n.dy - 20}px"><b>${n.t}</b><span>${n.s}<span class="todo">（待补充）</span></span></div>`
+            : `<div class="tag" style="left:${n.dx + (n.dx < 0 ? -120 : 0)}px;top:${n.dy - 18}px">${n.t}</div>`
+          root.appendChild(
+            el(`<div class="note" style="left:${p.x}px;top:${p.y}px">
+              <div class="line" style="width:${len}px;transform:rotate(${ang}deg)"></div>
+              <div class="dot"></div>${tag}</div>`)
+          )
+        }
+      }
+    </script>
+  </body>
+</html>

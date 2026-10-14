@@ -1,0 +1,343 @@
+<!doctype html>
+<!--
+  /hometown 设计稿源文件：Blender Cycles 渲染图（draft-bg-*.png）上叠加页面界面。
+  截图：node 无头 Chrome 打开 drafts-source.html?frame=overview|home，1920×1080。
+  标注点坐标（LABELS）由 Blender 把三维点投影到渲染相机得到。
+-->
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>老家沙盘设计稿</title>
+    <style>
+      @font-face {
+        font-family: "Alimama ShuHeiTi";
+        src: url("../../../src/assets/fonts/AlimamaShuHeiTi-Bold.ttf");
+      }
+      @font-face {
+        font-family: "Source Han Sans CN";
+        src: url("../../../src/assets/fonts/SourceHanSansCN-Regular.otf");
+      }
+      @font-face {
+        font-family: "DIN";
+        src: url("../../../src/assets/fonts/DIN-Bold.otf");
+      }
+      :root {
+        --ink: #fff8ec;
+        --warm: #ffd27a;
+        --glass: rgba(34, 28, 22, 0.42);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #6b7280;
+        font-family: "Source Han Sans CN", sans-serif;
+        color: var(--ink);
+      }
+      .frame {
+        position: absolute;
+        inset: 0;
+        display: none;
+        background-size: cover;
+        background-position: center;
+      }
+      .frame.on {
+        display: block;
+      }
+      /* 上下两条暗角渐变，保证文字可读又不压画面 */
+      .frame::before,
+      .frame::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        pointer-events: none;
+      }
+      .frame::before {
+        top: 0;
+        height: 260px;
+        background: linear-gradient(rgba(30, 22, 14, 0.55), transparent);
+      }
+      .frame::after {
+        bottom: 0;
+        height: 220px;
+        background: linear-gradient(transparent, rgba(30, 22, 14, 0.6));
+      }
+      .title {
+        position: absolute;
+        left: 72px;
+        top: 52px;
+        z-index: 2;
+      }
+      .title h1 {
+        font-family: "Alimama ShuHeiTi";
+        font-size: 64px;
+        letter-spacing: 8px;
+        text-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+      }
+      .title p {
+        margin-top: 10px;
+        font-size: 22px;
+        letter-spacing: 10px;
+        opacity: 0.9;
+      }
+      .title p::before {
+        content: "";
+        display: inline-block;
+        width: 46px;
+        height: 2px;
+        margin-right: 16px;
+        vertical-align: middle;
+        background: var(--warm);
+      }
+      .tools {
+        position: absolute;
+        right: 72px;
+        top: 64px;
+        z-index: 2;
+        display: flex;
+        gap: 14px;
+      }
+      .seg {
+        display: flex;
+        padding: 5px;
+        border-radius: 30px;
+        background: var(--glass);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+      .seg span {
+        padding: 9px 22px;
+        border-radius: 24px;
+        font-size: 18px;
+        letter-spacing: 2px;
+      }
+      .seg span.on {
+        background: var(--warm);
+        color: #4a2f10;
+      }
+      .icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--glass);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        font-size: 20px;
+      }
+      .foot {
+        position: absolute;
+        left: 72px;
+        right: 72px;
+        bottom: 46px;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        font-size: 18px;
+        letter-spacing: 2px;
+      }
+      .foot .meta span + span::before {
+        content: "·";
+        margin: 0 14px;
+        opacity: 0.6;
+      }
+      .route {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 22px;
+        border-radius: 14px;
+        background: var(--glass);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
+      .route i {
+        width: 46px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--warm);
+        box-shadow: 0 0 10px var(--warm);
+      }
+      .route b {
+        font-family: "DIN";
+        font-size: 30px;
+        color: var(--warm);
+      }
+      /* 地图标注：圆点 + 竖线 + 名牌 */
+      .pin {
+        position: absolute;
+        z-index: 1;
+        transform: translate(-50%, -100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .pin em {
+        font-style: normal;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 17px;
+        letter-spacing: 2px;
+        background: rgba(30, 24, 18, 0.62);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        white-space: nowrap;
+      }
+      .pin::after {
+        content: "";
+        width: 2px;
+        height: var(--h, 40px);
+        background: linear-gradient(rgba(255, 255, 255, 0.85), transparent);
+      }
+      .pin.home em {
+        font-family: "Alimama ShuHeiTi";
+        font-size: 26px;
+        padding: 9px 22px;
+        background: linear-gradient(135deg, #e8a33a, #c4462c);
+        color: #fff;
+        border: none;
+        box-shadow: 0 6px 24px rgba(196, 70, 44, 0.55);
+      }
+      .pin.home::after {
+        background: linear-gradient(#ffd27a, transparent);
+        width: 3px;
+      }
+      .pin.soft em {
+        background: rgba(30, 24, 18, 0.4);
+        font-size: 15px;
+      }
+      /* 老照片卡片（近景） */
+      .card {
+        position: absolute;
+        right: 96px;
+        top: 200px;
+        width: 520px;
+        z-index: 2;
+        padding: 22px 22px 26px;
+        background: #f6efe2;
+        color: #3d2f22;
+        border-radius: 6px;
+        transform: rotate(2.2deg);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+      }
+      .card img {
+        display: block;
+        width: 100%;
+        height: 560px;
+        object-fit: cover;
+        object-position: center 40%;
+        filter: sepia(0.18) saturate(0.95);
+      }
+      .card h3 {
+        margin-top: 18px;
+        font-family: "Alimama ShuHeiTi";
+        font-size: 30px;
+        letter-spacing: 4px;
+      }
+      .card p {
+        margin-top: 8px;
+        font-size: 17px;
+        line-height: 1.75;
+        color: #6b5a48;
+      }
+      .card .tape {
+        position: absolute;
+        top: -14px;
+        left: 50%;
+        width: 120px;
+        height: 30px;
+        margin-left: -60px;
+        background: rgba(255, 236, 190, 0.75);
+        transform: rotate(-3deg);
+      }
+      .back {
+        position: absolute;
+        left: 72px;
+        top: 200px;
+        z-index: 2;
+        padding: 12px 22px;
+        border-radius: 26px;
+        font-size: 18px;
+        letter-spacing: 2px;
+        background: var(--glass);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 全景 -->
+    <section class="frame" id="overview" style="background-image: url(draft-bg-overview.png), radial-gradient(circle at 10% 34%, rgba(255, 214, 150, 0.6), transparent 38%), linear-gradient(180deg, #8494a8 0%, #b9a596 38%, #e3b88f 58%, #c9a58c 76%, #8d8a8c 100%)">
+      <div class="title">
+        <h1>营山 · 五通村</h1>
+        <p>老家记忆</p>
+      </div>
+      <div class="tools">
+        <div class="seg"><span class="on">傍晚</span><span>夜晚</span></div>
+        <div class="icon">🔇</div>
+      </div>
+      <div id="pins-overview"></div>
+      <div class="foot">
+        <div class="meta">
+          <span>四川 · 南充 · 营山县</span><span>海拔约 330 米</span><span>2017 年 · 夏</span>
+        </div>
+        <div class="route"><i></i>回家的路 · 公路路口 → 我家<b>170</b>米</div>
+      </div>
+    </section>
+
+    <!-- 近景：推到我家，照片机位 + 老照片对照 -->
+    <section class="frame" id="home" style="background-image: url(draft-bg-home.png), radial-gradient(circle at 10% 34%, rgba(255, 214, 150, 0.6), transparent 38%), linear-gradient(180deg, #8494a8 0%, #b9a596 38%, #e3b88f 58%, #c9a58c 76%, #8d8a8c 100%)">
+      <div class="title">
+        <h1>营山 · 五通村</h1>
+        <p>老家记忆</p>
+      </div>
+      <div class="tools">
+        <div class="seg"><span class="on">傍晚</span><span>夜晚</span></div>
+        <div class="icon">🔇</div>
+      </div>
+      <div class="back">← 返回全景</div>
+      <div class="card">
+        <div class="tape"></div>
+        <img src="my-house-photo.webp" alt="老家老照片" />
+        <h3>我家</h3>
+        <p>三开间、三层，白瓷砖外墙<br />门口两只红灯笼，左边一棵枇杷树<br />建于 20XX 年（待补充）</p>
+      </div>
+      <div class="foot">
+        <div class="meta">
+          <span>正房 12 × 10 米</span><span>右侧偏房一间</span><span>门前院坝</span>
+        </div>
+        <div class="route"><i></i>从公路路口走回来<b>170</b>米</div>
+      </div>
+    </section>
+
+    <script>
+      // 标注点：Blender 投影得到的画面坐标（1920×1080），h 为竖线长度
+      const LABELS = {
+        overview: [
+          { t: "我家", x: 888, y: 246, h: 70, cls: "home" },
+          { t: "公路路口", x: 1289, y: 710, h: 34 },
+          { t: "池塘", x: 604, y: 359, h: 30, cls: "soft" },
+          { t: "大田", x: 886, y: 665, h: 30, cls: "soft" },
+          { t: "垃圾回收站", x: 1261, y: 458, h: 34, cls: "soft" },
+          { t: "养猪场", x: 1459, y: 424, h: 34, cls: "soft" },
+          { t: "气罐仓库", x: 423, y: 780, h: 34, cls: "soft" }
+        ]
+      }
+      const frame = new URLSearchParams(location.search).get("frame") || "overview"
+      document.getElementById(frame).classList.add("on")
+      for (const p of LABELS[frame] || []) {
+        const el = document.createElement("div")
+        el.className = "pin " + (p.cls || "")
+        el.style.left = p.x + "px"
+        el.style.top = p.y + "px"
+        el.style.setProperty("--h", p.h + "px")
+        el.innerHTML = `<em>${p.t}</em>`
+        document.getElementById("pins-" + frame).appendChild(el)
+      }
+    </script>
+  </body>
+</html>
