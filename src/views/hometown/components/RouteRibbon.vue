@@ -7,7 +7,6 @@
         <b>{{ ROUTE_LENGTH }}</b
         >米
       </p>
-      <p class="todo">文字均为占位，待补充</p>
     </div>
     <div class="steps">
       <div
@@ -65,11 +64,6 @@
       font-size: 36px;
       color: var(--warm);
       margin-right: 6px;
-    }
-    .todo {
-      margin-top: 2px;
-      color: #c9b896;
-      font-size: 12px;
     }
   }
   .steps {

@@ -17,10 +17,10 @@ export const ROUTE_STEPS = [
 /** 回家的路全长（米），由回家路线折线长度取整到 10 米（2026-10-13 按用户重画的红线约 184 m） */
 export const ROUTE_LENGTH = 180
 
-/** 近景的老照片卡片 */
+/** 近景的老照片卡片（built 是标题旁的建造年份，如"建于 2008 年"；留空则不显示） */
 export const HOME_CARD = {
   title: "我家",
-  built: "建于 20XX 年",
+  built: "",
   lines: ["地坝两边六棵枇杷树，门口两只红灯笼", "推开铁门，就到家了"],
   date: "'12 夏"
 }
