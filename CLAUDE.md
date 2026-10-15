@@ -105,6 +105,7 @@ The screen scales via rem, not media queries. **Author all sizes in `px`** — t
 ## Environments
 
 - `.env.development` / `.env.production` only set `VITE_APP_ENV`; `production` switches the build `base` to `/bi/`. There is no dev proxy and no backend.
+- The `BASE_PATH` env var overrides `base` (`vite.config.js`). Every push to `master` triggers `.github/workflows/deploy-pages.yml`, which builds with `BASE_PATH=/screen-demo/` and publishes to GitHub Pages at https://dani-bin.github.io/screen-demo/ (the repo's Pages source must be set to "GitHub Actions"). Assets in `public/` must be referenced through `import.meta.env.BASE_URL`, never with an absolute `/…` path, or they break under both `/bi/` and `/screen-demo/`.
 
 ## Code style
 

@@ -1,0 +1,54 @@
+# 推送到 master 后自动构建并发布到 GitHub Pages
+# 访问地址：https://dani-bin.github.io/screen-demo/
+# 首次使用前需在仓库 Settings → Pages → Build and deployment 把 Source 设为「GitHub Actions」
+name: 部署到 GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  # 允许在 Actions 页面手动重新部署
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只保留一次部署，新的推送会取消还在排队的旧部署
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: 安装依赖
+        run: yarn install --frozen-lockfile
+
+      - name: 构建
+        run: yarn build
+        env:
+          # 项目站点挂在 https://<用户名>.github.io/<仓库名>/ 下，base 必须是 /<仓库名>/
+          BASE_PATH: /${{ github.event.repository.name }}/
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
