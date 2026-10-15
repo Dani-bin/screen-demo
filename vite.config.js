@@ -19,8 +19,12 @@ export default defineConfig(({ mode }) => {
   // 本地预览开关：DEV_HTTP=1 时不启用自签名 https（Claude 内置浏览器等预览工具不接受
   // 自签名证书），端口取预览工具分配的 PORT。都不设时与原来一致：https://localhost:8892
   const devHttp = process.env.DEV_HTTP === "1"
+  // 部署路径：BASE_PATH 环境变量优先（GitHub Pages 构建传入 /screen-demo/，
+  // 见 .github/workflows/deploy-pages.yml），否则生产环境 /bi/、开发环境 /
+  const base =
+    process.env.BASE_PATH || (VITE_APP_ENV === "production" ? "/bi/" : "/")
   return {
-    base: VITE_APP_ENV === "production" ? "/bi/" : "/",
+    base,
     plugins: [
       vue(),
       ...(devHttp ? [] : [basicSsl()]),
