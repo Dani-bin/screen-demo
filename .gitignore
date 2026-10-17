@@ -40,3 +40,6 @@ models/
 
 # Blender 脚本运行时生成的 Python 字节码
 __pycache__/
+
+# 头脑风暴可视化草图（superpowers 视觉伴侣）
+.superpowers/

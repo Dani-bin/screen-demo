@@ -1,0 +1,59 @@
+// 候诊大厅 · E 缤纷等距插画风的公共变量与混入（各组件 @use 引入）
+// 配色与 scripts/waiting/draft_v2.py 的 THEMES["e"] 一致：粗描边 + 实心错位阴影的糖果色卡片
+$ink: #231942;
+$sub: #5e548e;
+$faint: #9a8cc4;
+$brand: #6c5ce7;
+$brand-sub: #e2dcff;
+$call: #ff7a00;
+$call-deep: #e55b00;
+$call-tint: #ffe1c2;
+$wait: #3b82f6;
+$recheck: #a855f7;
+$missed: #f43f5e;
+$busy: #10b981;
+$over: #d97706;
+$track: rgba(108, 92, 231, 0.12);
+$soft: #f4f0ff;
+
+$title: "Alimama ShuHeiTi", sans-serif;
+$num: "DIN", sans-serif;
+
+// 卡片：白底、深色粗描边、右下实心阴影
+@mixin card($r: 18px) {
+  background: #fff;
+  border: 2.5px solid $ink;
+  border-radius: $r;
+  box-shadow: 5px 5px 0 $ink;
+}
+
+// 卡片标题：彩色胶囊
+@mixin pill($bg: $brand) {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 13px;
+  border: 2px solid $ink;
+  border-radius: 15px;
+  background: $bg;
+  color: #fff;
+  font-family: $title;
+  font-size: 17px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+// 小标签（复诊、叫号中……）
+@mixin tag($bg, $fg: #fff) {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border: 1.5px solid $ink;
+  border-radius: 9px;
+  background: $bg;
+  color: $fg;
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}

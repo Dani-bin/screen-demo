@@ -141,5 +141,45 @@ export const DEMOS = [
     // 取自页面的印章红
     accent: "#b8392b",
     preview: "home/hometown.webp"
+  },
+  {
+    key: "hospital",
+    path: "/hospital",
+    name: "医院院内导航",
+    en: "HOSPITAL WAYFINDING",
+    subTitle: "门诊医技综合楼 · 三层",
+    category: "智慧医疗",
+    desc: "三层门诊医技综合楼的院内导航：自选起点和终点，按路网规划跨楼层路线，明确提示走楼梯、电梯还是扶梯，人员沿路线模拟走到诊室，可一键切换只乘电梯的无障碍路线。",
+    tags: ["路网寻路", "跨楼层导航", "无障碍路线"],
+    // 依据：scripts/hospital/plan.py 每层 20 个导航目的地、共 3 层；
+    // 竖向交通 = 东西 2 部楼梯 + 2 台电梯 + 中庭 4 部扶梯（plan.py 的 STAIR / ELEV / ESC）
+    stats: [
+      { value: "60", unit: "个", key: "诊室与检查室" },
+      { value: "3", unit: "层", key: "跨楼层导航" },
+      { value: "8", unit: "处", key: "楼梯 · 电梯 · 扶梯" }
+    ],
+    // 取自页面导视牌的深绿
+    accent: "#0f5b4c",
+    preview: "home/hospital.webp"
+  },
+  {
+    key: "waiting",
+    path: "/waiting",
+    name: "候诊大厅叫号",
+    en: "CLINIC WAITING HALL",
+    subTitle: "门诊医技综合楼 · 2F 内科候诊区",
+    category: "智慧医疗",
+    desc: "把候诊区搬进三维：8 间诊室上方的三色状态柱一眼看出待诊、复诊、过诊各有多少人，自动轮播每间诊室的名单和就诊时长；新叫号时镜头飞到被叫诊室、诊室亮起橙色光柱，可开语音播报。",
+    tags: ["三维叫号", "诊室轮播", "复诊插队"],
+    // 依据：data/rooms.js 8 间诊室；状态分待诊 / 复诊 / 过诊三类；
+    // data/plan.json（scripts/waiting/build_plan.py 按 CAD 截出）连排椅共 165 座
+    stats: [
+      { value: "8", unit: "间", key: "内科诊室" },
+      { value: "3", unit: "类", key: "待诊 · 复诊 · 过诊" },
+      { value: "165", unit: "座", key: "候诊座位" }
+    ],
+    // 取自页面的主题紫
+    accent: "#6c5ce7",
+    preview: "home/waiting.webp"
   }
 ]

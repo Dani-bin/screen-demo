@@ -48,6 +48,18 @@ const routes = [
     component: () => import("@/views/hometown/index.vue")
   },
   {
+    // 医院院内导航：虚构三层门诊楼，选起终点 → 跨楼层路线（楼梯 / 电梯 / 扶梯）→ 人员模拟
+    path: "/hospital",
+    name: "Hospital",
+    component: () => import("@/views/hospital/index.vue")
+  },
+  {
+    // 候诊大厅：同一家医院 2F 内科候诊区，三维展示各诊室待诊 / 复诊 / 过诊 + 叫号高亮
+    path: "/waiting",
+    name: "Waiting",
+    component: () => import("@/views/waiting/index.vue")
+  },
+  {
     // 数字楼宇：城市（成都高新区）→ 园区 → 楼宇 → 楼层 → 房间 五级钻取
     path: "/building",
     name: "Building",
