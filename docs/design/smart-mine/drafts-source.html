@@ -1,0 +1,540 @@
+<!doctype html>
+<!--
+  West Elk 煤矿 大屏设计稿源码
+  三维画面由 scene.js 用真实高程 + 航拍影像实时渲染，四周面板为 HTML。
+  真实的：地形、影像、地面设施与钻场位置、地层顺序、矿井概况里的公开数字；其余（井下布置、生产与监测数据）均为演示数据。
+  经开发服务器打开：/docs/design/smart-mine/drafts-source.html?frame=overview|underground|closeup
+  ?clean=1 只留三维画面；?cam={"az":20,...} 覆盖镜头（调构图用）。截图：node scripts/smart-mine/capture.mjs <地址> <png>
+-->
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>West Elk 煤矿 · 设计稿</title>
+    <link rel="stylesheet" href="./drafts.no-convert.css" />
+  </head>
+  <body>
+    <canvas id="gl"></canvas>
+    <div id="tags" class="tags ui"></div>
+    <div id="ui" class="ui"></div>
+    <script type="module">
+      import { renderScene } from "./scene.js"
+
+      const q = new URLSearchParams(location.search)
+      const frame = q.get("frame") || "overview"
+      if (q.get("clean")) document.body.classList.add("clean")
+      const fmt = (v, d = 0) =>
+        Number(v).toLocaleString("en-US", {
+          minimumFractionDigits: d,
+          maximumFractionDigits: d
+        })
+
+      // ---------------- 小图表（SVG） ----------------
+
+      /** 柱状图：最后一根可标为「今日截至目前」（半透明） */
+      function bars(
+        vals,
+        labels,
+        { w = 370, h = 118, color = "#36e0ff", partialLast = false } = {}
+      ) {
+        const max = Math.max(...vals) * 1.18
+        const bw = (w - 20) / vals.length
+        const top = 14
+        const base = h - 20
+        let s = ""
+        for (let k = 0; k <= 3; k++) {
+          const y = top + ((base - top) * k) / 3
+          s += `<line x1="0" x2="${w}" y1="${y}" y2="${y}" stroke="rgba(120,170,230,.14)" stroke-dasharray="3 4"/>`
+        }
+        vals.forEach((v, i) => {
+          const bh = ((base - top) * v) / max
+          const x = 10 + i * bw + bw * 0.28
+          const last = i === vals.length - 1
+          const op = partialLast && last ? 0.45 : 1
+          s += `<rect x="${x}" y="${base - bh}" width="${bw * 0.44}" height="${bh}" fill="url(#g-bar)" opacity="${op}"/>`
+          s += `<rect x="${x}" y="${base - bh}" width="${bw * 0.44}" height="2" fill="${color}" opacity="${op}"/>`
+          s += `<text x="${x + bw * 0.22}" y="${base - bh - 4}" fill="#cfe3ff" font-size="11" text-anchor="middle" font-family="DIN">${fmt(v)}</text>`
+          s += `<text x="${x + bw * 0.22}" y="${h - 4}" fill="#6f87a8" font-size="11" text-anchor="middle" font-family="DIN">${labels[i]}</text>`
+        })
+        return `<svg class="chart" width="${w}" height="${h}"><defs><linearGradient id="g-bar" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${color}" stop-opacity=".85"/><stop offset="1" stop-color="${color}" stop-opacity=".08"/></linearGradient></defs>${s}</svg>`
+      }
+
+      /** 折线面积图，带阈值虚线 */
+      function area(
+        vals,
+        {
+          w = 370,
+          h = 112,
+          color = "#ffcf3a",
+          min = 0,
+          max = 1,
+          lines = [],
+          xlabels = []
+        } = {}
+      ) {
+        const top = 8
+        const base = h - 18
+        const X = (i) => 26 + (i * (w - 30)) / (vals.length - 1)
+        const Y = (v) => base - ((v - min) / (max - min)) * (base - top)
+        let s = ""
+        for (let k = 0; k <= 4; k++) {
+          const v = min + ((max - min) * k) / 4
+          s += `<line x1="26" x2="${w}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(120,170,230,.12)"/>`
+          s += `<text x="0" y="${Y(v) + 4}" fill="#6f87a8" font-size="10" font-family="DIN">${v.toFixed(1)}</text>`
+        }
+        for (const l of lines) {
+          s += `<line x1="26" x2="${w}" y1="${Y(l.v)}" y2="${Y(l.v)}" stroke="${l.c}" stroke-dasharray="5 4" stroke-width="1.2"/>`
+          s += `<text x="${w - 2}" y="${Y(l.v) - 4}" fill="${l.c}" font-size="11" text-anchor="end">${l.t}</text>`
+        }
+        const pts = vals.map((v, i) => `${X(i)},${Y(v)}`).join(" ")
+        s += `<polygon points="26,${base} ${pts} ${X(vals.length - 1)},${base}" fill="url(#g-area)"/>`
+        s += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8"/>`
+        const lx = X(vals.length - 1)
+        const ly = Y(vals[vals.length - 1])
+        s += `<circle cx="${lx}" cy="${ly}" r="4" fill="${color}"/><circle cx="${lx}" cy="${ly}" r="8" fill="${color}" opacity=".25"/>`
+        xlabels.forEach(
+          ([i, t]) =>
+            (s += `<text x="${X(i)}" y="${h - 3}" fill="#6f87a8" font-size="10" text-anchor="${i === vals.length - 1 ? "end" : "middle"}" font-family="DIN">${t}</text>`)
+        )
+        return `<svg class="chart" width="${w}" height="${h}"><defs><linearGradient id="g-area" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${color}" stop-opacity=".35"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>${s}</svg>`
+      }
+
+      /** 环形进度 */
+      function ring(pct, label, { size = 92, color = "#c6ff5a" } = {}) {
+        const r = size / 2 - 7
+        const c = 2 * Math.PI * r
+        return `<svg width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="rgba(120,170,230,.15)" stroke-width="7"/>
+          <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${color}" stroke-width="7" stroke-dasharray="${c * pct} ${c}" transform="rotate(-90 ${size / 2} ${size / 2})" stroke-linecap="round" style="filter:drop-shadow(0 0 4px ${color})"/>
+          <text x="50%" y="48%" fill="#fff" font-size="22" text-anchor="middle" font-family="DIN">${Math.round(pct * 100)}%</text>
+          <text x="50%" y="68%" fill="#8ea6c8" font-size="11" text-anchor="middle">${label}</text></svg>`
+      }
+
+      const row = (k, v, unit, pct, color) =>
+        `<div class="row"><span class="k">${k}</span><span class="bar"><i style="width:${pct}%;background:linear-gradient(90deg,${color}33,${color})"></i></span><span class="v">${v}<small>${unit}</small></span></div>`
+      const sensor = (name, v, unit, st) =>
+        `<div class="sensor ${st === "warn" ? "is-warn" : ""}"><span>${name}</span><b class="${st === "warn" ? "warn" : ""}">${v}<small>${unit}</small></b><em class="${st}">${st === "warn" ? "预警" : "正常"}</em></div>`
+      const panel = (title, small, body, cls = "") =>
+        `<section class="panel ${cls}"><h3>${title}${small ? `<small>${small}</small>` : ""}</h3>${body}</section>`
+
+      // 回风隅角瓦斯 24 h（演示数据：早班割煤后逐步升高）
+      const t1 = [
+        0.46, 0.44, 0.43, 0.45, 0.48, 0.47, 0.44, 0.42, 0.41, 0.43, 0.46, 0.5,
+        0.53, 0.51, 0.49, 0.52, 0.56, 0.58, 0.55, 0.6, 0.66, 0.71, 0.77, 0.82
+      ]
+      const t1Chart = area(t1, {
+        min: 0.2,
+        max: 1.2,
+        lines: [
+          { v: 0.8, c: "#ffcf3a", t: "预警 0.8%" },
+          { v: 1.0, c: "#ff5a5f", t: "断电 1.0%" }
+        ],
+        xlabels: [
+          [0, "10:00"],
+          [6, "16:00"],
+          [12, "22:00"],
+          [18, "04:00"],
+          [23, "09:00"]
+        ]
+      })
+
+      // ---------------- 公共框架 ----------------
+
+      function header() {
+        return `<div class="head">
+          <div class="meta l"><span><b>2026-10-17</b> 周六</span><span><b>09:42</b> MDT</span><span>Somerset · 晴 <b>8</b>℃</span></div>
+          <div class="wing l"></div><div class="wing r"></div>
+          <div class="title"><h1>West Elk 智能矿山综合管控平台</h1><p>美国科罗拉多州 · 北福克河谷 · 井工长壁开采</p></div>
+          <div class="meta r"><span class="safe">安全生产 <b>1,286</b> 天</span><span>井下 <b>46</b> 人</span><span>当班 早班</span></div>
+        </div>`
+      }
+      const TABS = ["综合态势", "井下透视", "工业广场", "通风瓦斯", "生产运营"]
+      function footer(on) {
+        return `<div class="foot"><div class="tabs">${TABS.map((t) => `<span class="${t === on ? "on" : ""}">${t}</span>`).join("")}</div>
+          <div class="credit">地形：USGS 3DEP 激光雷达 DEM · 影像：USDA NAIP 航拍 · 地层：USGS / 科罗拉多地调局资料 · 井下布置与运行数据为演示</div></div>`
+      }
+      function toolbar(on) {
+        return `<div class="toolbar">${["地表", "透视", "剖切", "复位"].map((t) => `<span class="${t === on ? "on" : ""}">${t}</span>`).join("")}</div>`
+      }
+      function compass(tags) {
+        const a = tags.find((t) => t.key === "n0")
+        const b = tags.find((t) => t.key === "n1")
+        const deg = (Math.atan2(b.x - a.x, a.y - b.y) * 180) / Math.PI
+        return `<div class="compass"><div class="rose" style="transform:rotate(${deg}deg)"><b>N</b><i></i></div></div>`
+      }
+      function legend(items) {
+        return `<div class="maplegend">${items.map(([c, t, k = ""]) => `<div><i class="${k}" style="background:${c}"></i>${t}</div>`).join("")}</div>`
+      }
+
+      /** 场景标注：按锚点屏幕坐标放置；cfg[key] = { c 颜色, h 引线高度, dx 水平偏移, cls, html } */
+      function placeTags(tags, cfg) {
+        const host = document.getElementById("tags")
+        host.innerHTML = tags
+          .filter((t) => cfg[t.key] && t.visible)
+          .map((t) => {
+            const c = cfg[t.key]
+            return `<div class="tag ${c.cls || ""}" style="left:${t.x}px;top:${t.y}px;--c:${c.c};--h:${c.h ?? 46}px;--dx:${c.dx ?? "-50%"}">
+              <span class="stem"></span><span class="pin"></span><div class="box">${c.html}</div></div>`
+          })
+          .join("")
+      }
+
+      // ---------------- 各画面 ----------------
+
+      function overviewUI(f, L) {
+        const left = [
+          panel(
+            "矿井概况",
+            "Mountain Coal Co.",
+            `<div class="facts">
+              <div class="wide"><span>位置</span><b>美国科罗拉多州 Gunnison 县 Somerset</b></div><div><span>开采方式</span><b>井工 · 长壁综采</b></div><div><span>井田面积</span><b class="num">74.5 km²</b></div>
+              <div class="wide"><span>在采煤层</span><b>B 煤（萨默塞特煤）· 采高 3.6 m</b></div>
+              <div><span>煤种</span><b>高挥发分烟煤</b></div><div><span>最大埋深</span><b class="num">≈ 490 m</b></div>
+              <div><span>2025 年产量</span><b class="num">294 万 t</b></div><div><span>职工</span><b class="num">292 人</b></div>
+            </div>`
+          ),
+          panel(
+            "生产统计",
+            "单位：吨",
+            `<div class="kpis">
+              <div class="kpi"><span>昨日原煤</span><b>10,320</b><i>t</i></div>
+              <div class="kpi"><span>本月累计</span><b>17.6</b><i>万 t</i><span class="up">▲ 6.2%</span></div>
+              <div class="kpi"><span>月计划完成</span><b class="ok">67.7</b><i>%</i></div>
+            </div>
+            <div style="margin-top:8px;font-size:13px;color:var(--sub)">近 7 日原煤产量（今日截至 09:42）</div>
+            ${bars([9480, 10120, 8860, 10650, 9930, 10320, 4210], ["10-11", "10-12", "10-13", "10-14", "10-15", "10-16", "今日"], { partialLast: true })}`
+          ),
+          panel(
+            "煤流运输",
+            "实时",
+            `<div class="flow">
+              <div class="node"><div class="ic">综采</div><b>1,820</b><span>t/h</span></div><div class="arrow"></div>
+              <div class="node"><div class="ic">皮带</div><b>1,820</b><span>t/h</span></div><div class="arrow"></div>
+              <div class="node"><div class="ic">洗选</div><b>1,650</b><span>t/h</span></div><div class="arrow"></div>
+              <div class="node"><div class="ic">装车</div><b>1</b><span>列 / 今日</span></div>
+            </div>
+            ${row("原煤堆场", "3.6", "万 t", 60, "#36e0ff")}
+            ${row("精煤堆场", "4.2", "万 t", 70, "#4c9dff")}
+            ${row("矸石场库容", "38", "% 剩余", 38, "#b8aef0")}
+            ${row("今日装车", "11,400", "t", 52, "#3ddc97")}`,
+            "grow"
+          )
+        ]
+        const right = [
+          panel(
+            "安全监测",
+            "测点 <b>412</b> · 在线 <b>99.3%</b>",
+            `<div class="sensors">
+              ${sensor("回风隅角 CH₄", "0.82", "%", "warn")}${sensor("工作面 CH₄", "0.36", "%", "ok")}
+              ${sensor("回风巷 CH₄", "0.48", "%", "ok")}${sensor("工作面 CO", "6", "ppm", "ok")}
+              ${sensor("总回风量", "12,600", "m³/min", "ok")}${sensor("工作面温度", "21.4", "℃", "ok")}
+            </div>`
+          ),
+          panel(
+            "瓦斯抽采",
+            "地面钻孔抽采",
+            `<div class="ring">${ring(62 / 85, "在抽率")}
+              <div class="txt"><div>抽采钻孔<b>${f.wells}</b> 口 · 在抽<b>62</b> 口</div><div>抽采纯量<b>32.6</b> m³/min</div>
+              <div>平均浓度<b>41</b> %</div><div>火炬燃烧<b>2</b> 台运行</div></div></div>
+            <div style="margin:8px 0 2px;font-size:13px;color:var(--sub)">LW-B05 回风隅角瓦斯浓度（%）· 24 h</div>${t1Chart}`
+          ),
+          panel(
+            "告警事件",
+            "今日 <b>5</b> 条 · 未闭环 <b>2</b>",
+            `<ul class="events">
+              <li><time>09:31</time><i class="lv" style="background:var(--yellow)"></i><p>LW-B05 回风隅角瓦斯 0.82%，接近断电值</p><em class="warn">处置中</em></li>
+              <li><time>08:57</time><i class="lv" style="background:var(--yellow)"></i><p>LW-B07 运输顺槽掘进面粉尘 6.8 mg/m³</p><em class="warn">已通知</em></li>
+              <li><time>07:40</time><i class="lv" style="background:var(--blue)"></i><p>17 号钻场抽采负压下降至 13 kPa</p><em>已处理</em></li>
+              <li><time>06:15</time><i class="lv" style="background:var(--green)"></i><p>主平硐 2# 皮带跑偏保护动作</p><em>已恢复</em></li>
+              <li><time>02:08</time><i class="lv" style="background:var(--green)"></i><p>Deer Creek 主扇例行倒机</p><em>完成</em></li>
+            </ul>`,
+            "grow"
+          )
+        ]
+        return {
+          html: `${header()}<div class="col l">${left.join("")}</div><div class="col r">${right.join("")}</div>${footer("综合态势")}${toolbar("地表")}${legend(
+            [
+              ["rgba(210,200,255,.7)", "已采采空区（投影）"],
+              ["#ffb450", "在采工作面"],
+              ["#50ebf0", "待采 / 规划工作面"],
+              ["#5adcff", "主要大巷", "line"],
+              ["#c6ff5a", "瓦斯抽采钻场", "dot"]
+            ]
+          )}`,
+          tags: {
+            plant: {
+              c: "#36e0ff",
+              h: 96,
+              cls: "big",
+              html: `<b>工业广场</b><p>选煤厂 · 储煤场 · 铁路装车站</p>`
+            },
+            face: {
+              c: "#ff9a3d",
+              h: 110,
+              dx: "-72%",
+              html: `<b>LW-B05 综采工作面</b><p>埋深 <em>${f.faceDepth}</em> m · 已推进 <em>58</em>%</p>`
+            },
+            wells: {
+              c: "#c6ff5a",
+              h: 64,
+              dx: "-20%",
+              html: `<b>瓦斯抽采钻场</b><p><em>${f.wells}</em> 处 · 在抽 <em>62</em></p>`
+            },
+            shaft: {
+              c: "#ff7a6a",
+              h: 52,
+              dx: "-12%",
+              html: `<b>Deer Creek 回风井</b><p>主扇回风 <em>12,600</em> m³/min</p>`
+            },
+            refuse: { c: "#b8aef0", h: 38, cls: "mini", html: `矸石场` },
+            somerset: { c: "#8ea6c8", cls: "mini flat", html: `Somerset 镇` },
+            river: { c: "#5aa8ff", cls: "mini flat", html: `北福克河` }
+          }
+        }
+      }
+
+      function strataColumn(f, L) {
+        // 工作面位置的钻孔柱状：从 B 煤底板以下 70 m 到地表，高度按米等比
+        const depth = f.faceDepth
+        const lo = -70
+        const H = 236
+        const W0 = 370
+        const CW = 150
+        const k = H / (depth - lo)
+        const Y = (h) => 4 + (depth - h) * k // h = 相对 B 煤底板的高差
+        let prev = -1e9
+        let svg = ""
+        for (const st of L.strata) {
+          const a = Math.max(prev, lo)
+          const b = Math.min(st.top, depth)
+          prev = st.top
+          if (b <= a) continue
+          svg += `<rect x="0" y="${Y(b)}" width="${CW}" height="${(b - a) * k}" fill="${st.color}"/>`
+          // 层理细线
+          for (let hh = a + 7; hh < b; hh += 9)
+            svg += `<line x1="0" x2="${CW}" y1="${Y(hh)}" y2="${Y(hh)}" stroke="rgba(0,0,0,.12)"/>`
+          if ((b - a) * k > 17)
+            svg += `<text x="${CW / 2}" y="${(Y(a) + Y(b)) / 2 + 4}" fill="#fff" font-size="12" text-anchor="middle" style="paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-width:3px">${st.name}</text>`
+        }
+        // 煤层：黑线（B 煤橙色高亮）+ 右侧标签，标签之间至少隔 17 px
+        for (const x of L.seams) {
+          const on = x.key === "B"
+          svg += `<rect x="0" y="${Y(x.base + x.thick) - (on ? 1.5 : 1)}" width="${CW}" height="${Math.max(on ? 4 : 2.5, x.thick * k)}" fill="${on ? "#ff9a3d" : "#0b0c0f"}" ${on ? 'style="filter:drop-shadow(0 0 4px #ff9a3d)"' : ""}/>`
+        }
+        const seams = L.seams
+          .filter((x) => ["B", "E", "F"].includes(x.key))
+          .map((x) => ({ ...x, y: Y(x.base + x.thick / 2) }))
+        seams.sort((p, q) => p.y - q.y)
+        const ys = seams.map((x) => x.y)
+        for (let it = 0; it < 20; it++)
+          for (let i = 1; i < ys.length; i++) {
+            const gap = ys[i] - ys[i - 1]
+            if (gap < 17) {
+              ys[i] += (17 - gap) / 2
+              ys[i - 1] -= (17 - gap) / 2
+            }
+          }
+        seams.forEach((x, i) => {
+          const on = x.key === "B"
+          const c = on ? "#ff9a3d" : "#cfe0f5"
+          const name = {
+            B: "B 煤 · 在采",
+            E: "E 煤 · 已采",
+            F: "F 煤 · 主平硐"
+          }[x.key]
+          svg += `<polyline points="${CW},${x.y} ${CW + 14},${ys[i]} ${CW + 22},${ys[i]}" fill="none" stroke="${c}" stroke-width="1"/>`
+          svg += `<text x="${CW + 26}" y="${ys[i] + 4}" fill="${c}" font-size="13">${name}</text>`
+          svg += `<text x="${W0}" y="${ys[i] + 4}" fill="${c}" font-size="14" text-anchor="end" font-family="DIN">${fmt(depth - x.base)} m</text>`
+        })
+        svg += `<text x="${CW + 26}" y="${Y(depth) + 10}" fill="#8ea6c8" font-size="12">地表 · 海拔 ${fmt(f.faceSurf)} m</text><text x="${W0}" y="${Y(depth) + 10}" fill="#8ea6c8" font-size="13" text-anchor="end" font-family="DIN">0 m</text>`
+        return `<svg class="chart" width="${W0}" height="${H + 8}">${svg}<rect x="0.5" y="4" width="${CW - 1}" height="${H}" fill="none" stroke="rgba(160,190,230,.35)"/></svg>`
+      }
+
+      function undergroundUI(f, L) {
+        const shields = Array.from(
+          { length: 61 },
+          (_, i) => `<i class="${i === 32 ? "sh" : i < 32 ? "adv" : ""}"></i>`
+        ).join("")
+        const left = [
+          panel(
+            "综采工作面 LW-B05",
+            "B 煤 · 后退式回采",
+            `<div class="kpis" style="grid-template-columns:1.5fr 1fr 1fr">
+              <div class="kpi"><span>已推进（共 ${fmt(f.panelLen)} m）</span><b>${fmt(f.advanced)}</b><i>m</i></div>
+              <div class="kpi"><span>今日推进</span><b>9.6</b><i>m</i></div>
+              <div class="kpi"><span>采高</span><b>3.6</b><i>m</i></div>
+            </div>
+            <div style="margin-top:10px;font-size:13px;color:var(--sub);display:flex;justify-content:space-between"><span>液压支架 182 架 · 面长 ${f.faceLen} m</span><span class="warn">采煤机 #96 ▶ 8.2 m/min</span></div>
+            <div class="shields">${shields}</div><div class="shields-axis"><span>1 机头</span><span>60</span><span>120</span><span>182 机尾</span></div>`
+          ),
+          panel("地层柱状", "LW-B05 工作面处（示意）", strataColumn(f, L)),
+          panel(
+            "采掘接续",
+            "2026 年度计划",
+            `${row("LW-B05 回采", "58", "%", 58, "#ff9a3d")}${row("LW-B06 顺槽", "100", "% 贯通", 100, "#36e0ff")}
+             ${row("LW-B07 掘进", "38", "%", 38, "#4c9dff")}${row("LW-B08 设计", "15", "%", 15, "#8ea6c8")}
+             <div style="margin-top:6px;font-size:13px;color:var(--sub)">LW-B05 预计 2027-02 回采结束，LW-B06 接续</div>`,
+            "grow"
+          )
+        ]
+        const right = [
+          panel(
+            "通风系统",
+            "抽出式 · 主扇 2 台（1 用 1 备）",
+            `${row("总进风量", "12,900", "m³/min", 86, "#4c9dff")}${row("总回风量", "12,600", "m³/min", 84, "#ff7a6a")}
+             ${row("主扇负压", "2.84", "kPa", 57, "#36e0ff")}${row("工作面风量", "2,850", "m³/min", 71, "#3ddc97")}
+             ${row("有效风量率", "91.2", "%", 91, "#3ddc97")}`
+          ),
+          panel(
+            "瓦斯监测",
+            "LW-B05 工作面",
+            `<div class="sensors">
+              ${sensor("T1 回风隅角", "0.82", "%", "warn")}${sensor("T0 工作面", "0.36", "%", "ok")}
+              ${sensor("T2 回风顺槽", "0.48", "%", "ok")}${sensor("CO", "6", "ppm", "ok")}
+            </div>
+            <div style="margin:8px 0 2px;font-size:13px;color:var(--sub)">T1 回风隅角瓦斯（%）· 24 h</div>${t1Chart}`
+          ),
+          panel(
+            "人员定位",
+            "井下 <b>46</b> 人 · 带班 <b>1</b> 人",
+            `${row("综采工作面", "18", "人", 90, "#ff9a3d")}${row("掘进工作面", "11", "人", 55, "#4c9dff")}
+             ${row("大巷运输", "7", "人", 35, "#36e0ff")}${row("机电硐室", "6", "人", 30, "#b8aef0")}
+             ${row("其他区域", "4", "人", 20, "#8ea6c8")}`,
+            "grow"
+          )
+        ]
+        return {
+          html: `${header()}<div class="col l">${left.join("")}</div><div class="col r">${right.join("")}</div>${footer("井下透视")}${toolbar("透视")}${legend(
+            [
+              ["#38c8ff", "进风巷道", "line"],
+              ["#ff6a5a", "回风巷道", "line"],
+              ["#8c7fb8", "采空区"],
+              ["#ff9a3d", "在采工作面"],
+              ["#53e8f0", "待采 / 规划"],
+              ["#c6ff5a", "抽采钻孔", "line"],
+              ["#3ddc97", "传感器（黄 = 预警）", "dot"]
+            ]
+          )}`,
+          tags: {
+            faceU: {
+              c: "#ff9a3d",
+              h: 150,
+              dx: "-78%",
+              cls: "big",
+              html: `<b>LW-B05 综采工作面</b><p>B 煤 · 埋深 <em>${f.faceDepth}</em> m · 推进 <em>${fmt(f.advanced)}</em> / ${fmt(f.panelLen)} m</p>`
+            },
+            T1: {
+              c: "#ffcf3a",
+              h: 78,
+              dx: "-6%",
+              html: `<b class="warn">T1 回风隅角</b><p>CH₄ <em>0.82</em> % 预警</p>`
+            },
+            goaf: {
+              c: "#b8aef0",
+              h: 30,
+              cls: "mini",
+              html: `采空区 LW-B01 ~ B04`
+            },
+            ready: {
+              c: "#53e8f0",
+              h: 18,
+              dx: "-104%",
+              cls: "mini",
+              html: `LW-B06 待采`
+            },
+            planned: {
+              c: "#53e8f0",
+              h: 18,
+              dx: "-104%",
+              cls: "mini",
+              html: `LW-B07 · B08 规划`
+            },
+            eold: {
+              c: "#8f8aa8",
+              h: 30,
+              cls: "mini",
+              html: `E 煤老采区（已闭）`
+            },
+            mains: { c: "#38c8ff", h: 34, cls: "mini", html: `B 煤南翼大巷` },
+            incline: { c: "#ffd23a", h: 30, cls: "mini", html: `主暗斜井` },
+            shaft: {
+              c: "#ff6a5a",
+              h: 70,
+              html: `<b>Deer Creek 回风井</b><p>回风 <em>12,600</em> m³/min</p>`
+            },
+            bleeder: {
+              c: "#ff6a5a",
+              h: 30,
+              cls: "mini",
+              html: `东翼回风联络巷`
+            },
+            plant: {
+              c: "#36e0ff",
+              h: 40,
+              cls: "mini",
+              html: `工业广场（地面）`
+            }
+          }
+        }
+      }
+
+      function closeupUI() {
+        return {
+          html: `${header()}<div class="caption">工业广场近景：由 <b>1 m 激光雷达高程</b> + <b>0.5 m 航拍影像</b> 直接生成，建筑与设备尚未单独建模（贴在地面上）</div>
+`,
+          tags: {
+            portal: {
+              c: "#ffd23a",
+              h: 60,
+              html: `<b>主平硐</b><p>F 煤 · 主运输皮带出口</p>`
+            },
+            prep: { c: "#36e0ff", h: 90, html: `<b>选煤厂</b>` },
+            rawpile: { c: "#36e0ff", h: 70, html: `<b>原煤堆场</b>` },
+            cleanpile: { c: "#36e0ff", h: 120, html: `<b>精煤堆场</b>` },
+            loadout: {
+              c: "#36e0ff",
+              h: 64,
+              html: `<b>铁路装车站</b><p>Union Pacific</p>`
+            },
+            office: {
+              c: "#8ea6c8",
+              h: 40,
+              cls: "mini",
+              html: `办公区 · 矿灯房`
+            },
+            yard: { c: "#8ea6c8", h: 34, cls: "mini", html: `材料设备库` },
+            refuse: { c: "#b8aef0", h: 56, html: `<b>矸石场</b>` },
+            river: { c: "#5aa8ff", cls: "mini flat", html: `北福克河` }
+          }
+        }
+      }
+
+      try {
+        const t0 = performance.now()
+        const r = await renderScene(document.getElementById("gl"), {
+          frame,
+          cam: q.get("cam") ? JSON.parse(q.get("cam")) : null
+        })
+        const ui = {
+          overview: overviewUI,
+          underground: undergroundUI,
+          closeup: closeupUI
+        }[frame](r.facts, r.layout)
+        document.getElementById("ui").innerHTML =
+          ui.html + (frame === "closeup" ? "" : compass(r.tags))
+        placeTags(r.tags, ui.tags)
+        await document.fonts.ready
+        window.__tags = r.tags
+        window.__info = {
+          ...r.info,
+          facts: r.facts,
+          ms: Math.round(performance.now() - t0)
+        }
+        window.__ready = true
+      } catch (e) {
+        window.__error = String(e && e.stack ? e.stack : e)
+        console.error(e)
+      }
+    </script>
+  </body>
+</html>

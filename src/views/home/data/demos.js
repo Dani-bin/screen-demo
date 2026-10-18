@@ -141,5 +141,25 @@ export const DEMOS = [
     // 取自页面的印章红
     accent: "#b8392b",
     preview: "home/hometown.webp"
+  },
+  {
+    key: "smart-mine",
+    path: "/smart-mine",
+    name: "智能矿山综合管控",
+    en: "SMART COAL MINE",
+    subTitle: "West Elk 煤矿 · 美国科罗拉多州",
+    category: "智慧矿山",
+    desc: "用 USGS 激光雷达高程与 NAIP 航拍直接生成真实地形沙盘；地表一键透视，露出井下长壁工作面、巷道风流与瓦斯抽采钻孔，还能沿在采工作面剖切看地层，工业广场近景看到 0.5 m 影像。",
+    tags: ["真实地形 + 航拍", "井下透视 / 剖切", "通风瓦斯监测"],
+    // 依据：smart-mine/data/layout.json 的 overview.size（12 000 × 10 000 m）与 wells（影像识别出的工作面上方钻场 85 处）；
+    // 高程为 USGS 3DEP 1 m 激光雷达 DEM（scripts/smart-mine/fetch_data.py）
+    stats: [
+      { value: "12×10", unit: "km", key: "真实地形" },
+      { value: "1", unit: "m", key: "激光雷达高程" },
+      { value: "85", unit: "处", key: "抽采钻场" }
+    ],
+    // 取自沙盘山林的苔绿
+    accent: "#5f8f3e",
+    preview: "home/smart-mine.webp"
   }
 ]

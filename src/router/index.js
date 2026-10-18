@@ -48,6 +48,12 @@ const routes = [
     component: () => import("@/views/hometown/index.vue")
   },
   {
+    // 智能矿山：West Elk 煤矿（美国科罗拉多州），真实高程 + 航拍影像沙盘，井下巷道 / 工作面透视与剖切
+    path: "/smart-mine",
+    name: "SmartMine",
+    component: () => import("@/views/smart-mine/index.vue")
+  },
+  {
     // 数字楼宇：城市（成都高新区）→ 园区 → 楼宇 → 楼层 → 房间 五级钻取
     path: "/building",
     name: "Building",
