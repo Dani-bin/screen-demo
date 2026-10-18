@@ -44,6 +44,7 @@ const READY_TIMEOUT = 60
  *   - 综合能源补给站：模型加载后播放约 8.6 s 的「航拍 → 规划」开场动画，面板再滑入 0.8 s，取 12 s
  *   - 院内导航：场景即时生成，人员约 5 s 走到中庭扶梯，取 6 s（拍到人员乘扶梯上楼）
  *   - 候诊大厅：开屏先停全景 4 s（216 诊室正在叫号、橙色光柱亮着），状态柱约 1.5 s 长满，取 2.5 s
+ *   - 智能矿山：无开场动画，地形加载后直接在综合态势视角，等 5 s 让标注、辉光与钻孔光点稳定
  * 新演示未配置时取 DEFAULT_SETTLE。
  */
 const DEFAULT_SETTLE = 5
@@ -55,7 +56,8 @@ const SETTLE = {
   energy: 16,
   hometown: 11,
   hospital: 6,
-  waiting: 2.5
+  waiting: 2.5,
+  "smart-mine": 5
 }
 
 /**

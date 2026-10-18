@@ -1,0 +1,843 @@
+/* West Elk 煤矿 大屏设计稿样式（文件名带 no-convert，vite 不做 px → rem 转换，设计稿固定 1920 × 1080） */
+@font-face {
+  font-family: "Alimama";
+  src: url("../../../src/assets/fonts/AlimamaShuHeiTi-Bold.ttf");
+}
+@font-face {
+  font-family: "SHS";
+  src: url("../../../src/assets/fonts/SourceHanSansCN-Regular.otf");
+}
+@font-face {
+  font-family: "DIN";
+  src: url("../../../src/assets/fonts/DIN-Bold.otf");
+}
+
+:root {
+  --panel: rgba(5, 14, 30, 0.74);
+  --panel-edge: rgba(70, 160, 255, 0.24);
+  --cyan: #36e0ff;
+  --blue: #4c9dff;
+  --green: #3ddc97;
+  --yellow: #ffcf3a;
+  --orange: #ff9a3d;
+  --red: #ff5a5f;
+  --violet: #b8aef0;
+  --lime: #c6ff5a;
+  --txt: #e6f0ff;
+  --sub: #8ea6c8;
+  --dim: #5d7393;
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html,
+body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #030912;
+}
+body {
+  font-family: "SHS", sans-serif;
+  color: var(--txt);
+  position: relative;
+}
+#gl {
+  position: absolute;
+  inset: 0;
+  width: 1920px;
+  height: 1080px;
+}
+.num {
+  font-family: "DIN", sans-serif;
+  letter-spacing: 0.5px;
+}
+.clean .ui {
+  display: none !important;
+}
+
+/* ---------- 顶栏 ---------- */
+.head {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 96px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(2, 8, 20, 0.92) 0%,
+    rgba(2, 8, 20, 0.55) 60%,
+    rgba(2, 8, 20, 0) 100%
+  );
+}
+.head .title {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  transform: translateX(-50%);
+  text-align: center;
+}
+.head .title h1 {
+  font-family: "Alimama";
+  font-weight: normal;
+  font-size: 38px;
+  letter-spacing: 5px;
+  line-height: 46px;
+  background: linear-gradient(180deg, #ffffff 20%, #9fe9ff 100%);
+  -webkit-background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 14px rgba(54, 224, 255, 0.45));
+}
+.head .title p {
+  font-size: 14px;
+  color: var(--sub);
+  letter-spacing: 6px;
+  margin-top: 2px;
+}
+.head .wing {
+  position: absolute;
+  top: 34px;
+  width: 230px;
+  height: 2px;
+}
+.head .wing.l {
+  right: calc(50% + 330px);
+  background: linear-gradient(
+    90deg,
+    rgba(54, 224, 255, 0),
+    rgba(54, 224, 255, 0.7)
+  );
+}
+.head .wing.r {
+  left: calc(50% + 330px);
+  background: linear-gradient(
+    270deg,
+    rgba(54, 224, 255, 0),
+    rgba(54, 224, 255, 0.7)
+  );
+}
+.head .wing::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  background: var(--cyan);
+  transform: rotate(45deg);
+  box-shadow: 0 0 10px var(--cyan);
+}
+.head .wing.l::after {
+  right: -4px;
+}
+.head .wing.r::after {
+  left: -4px;
+}
+.head .meta {
+  position: absolute;
+  top: 22px;
+  display: flex;
+  gap: 22px;
+  font-size: 15px;
+  color: var(--sub);
+  align-items: baseline;
+}
+.head .meta.l {
+  left: 28px;
+}
+.head .meta.r {
+  right: 28px;
+}
+.head .meta b {
+  font-family: "DIN";
+  font-weight: normal;
+  color: var(--txt);
+  font-size: 20px;
+  margin: 0 2px;
+}
+.head .meta .safe b {
+  color: var(--green);
+  font-size: 24px;
+}
+
+/* ---------- 面板 ---------- */
+.col {
+  position: absolute;
+  top: 96px;
+  bottom: 92px;
+  width: 404px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.col.l {
+  left: 22px;
+}
+.col.r {
+  right: 22px;
+}
+.panel {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+  padding: 12px 16px 14px;
+  backdrop-filter: blur(6px);
+  box-shadow: inset 0 0 24px rgba(30, 110, 220, 0.12);
+}
+.panel::before,
+.panel::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--cyan);
+  opacity: 0.8;
+}
+.panel::before {
+  left: -1px;
+  top: -1px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.panel::after {
+  right: -1px;
+  bottom: -1px;
+  border-left: 0;
+  border-top: 0;
+}
+.panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Alimama";
+  font-weight: normal;
+  font-size: 19px;
+  letter-spacing: 1px;
+  height: 30px;
+  margin-bottom: 10px;
+  padding-left: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(54, 160, 255, 0.28),
+    rgba(54, 160, 255, 0) 70%
+  );
+  border-left: 3px solid var(--cyan);
+}
+.panel h3 small {
+  margin-left: auto;
+  font-family: "SHS";
+  font-size: 13px;
+  color: var(--sub);
+  letter-spacing: 0;
+}
+.panel h3 small b {
+  color: var(--txt);
+  font-weight: normal;
+}
+.grow {
+  flex: 1;
+  min-height: 0;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 14px;
+  font-size: 14px;
+}
+.facts div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed rgba(120, 170, 230, 0.18);
+  padding: 3px 0;
+}
+.facts span {
+  color: var(--sub);
+  flex: none;
+  margin-right: 10px;
+}
+.facts .wide {
+  grid-column: span 2;
+}
+.facts b {
+  font-weight: normal;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.kpi {
+  background: linear-gradient(
+    180deg,
+    rgba(40, 110, 200, 0.2),
+    rgba(40, 110, 200, 0.05)
+  );
+  border: 1px solid rgba(80, 160, 255, 0.18);
+  border-radius: 3px;
+  padding: 7px 10px 6px;
+}
+.kpi span {
+  display: block;
+  font-size: 13px;
+  color: var(--sub);
+}
+.kpi b {
+  font-family: "DIN";
+  font-weight: normal;
+  font-size: 26px;
+  line-height: 32px;
+}
+.kpi i {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--sub);
+  margin-left: 3px;
+}
+.kpi .up {
+  color: var(--green);
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  padding: 4px 0;
+}
+.row .k {
+  color: var(--sub);
+  width: 96px;
+  flex: none;
+}
+.row .bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(80, 140, 220, 0.16);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.row .bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+.row .v {
+  min-width: 82px;
+  text-align: right;
+  white-space: nowrap;
+  font-family: "DIN";
+  font-size: 17px;
+  flex: none;
+}
+.row .v small {
+  font-family: "SHS";
+  font-size: 12px;
+  color: var(--sub);
+  margin-left: 2px;
+}
+
+.chart {
+  display: block;
+}
+.legend-inline {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--sub);
+  margin-top: 2px;
+}
+.legend-inline i {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.flow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0 10px;
+}
+.flow .node {
+  text-align: center;
+  width: 76px;
+}
+.flow .node .ic {
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 4px;
+  border-radius: 50%;
+  border: 1px solid rgba(54, 224, 255, 0.5);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: var(--cyan);
+  background: radial-gradient(
+    circle,
+    rgba(54, 224, 255, 0.22),
+    rgba(54, 224, 255, 0.02)
+  );
+  box-shadow: 0 0 12px rgba(54, 224, 255, 0.25);
+}
+.flow .node b {
+  display: block;
+  font-family: "DIN";
+  font-weight: normal;
+  font-size: 17px;
+}
+.flow .node span {
+  font-size: 12px;
+  color: var(--sub);
+}
+.flow .arrow {
+  flex: 1;
+  height: 2px;
+  margin: 0 -6px 34px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--cyan) 0 8px,
+    transparent 8px 14px
+  );
+  opacity: 0.7;
+}
+
+.sensors {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.sensor {
+  border: 1px solid rgba(80, 160, 255, 0.2);
+  border-radius: 3px;
+  padding: 6px 10px;
+  background: rgba(20, 60, 120, 0.12);
+  position: relative;
+}
+.sensor span {
+  font-size: 13px;
+  color: var(--sub);
+}
+.sensor b {
+  display: block;
+  font-family: "DIN";
+  font-weight: normal;
+  font-size: 24px;
+  line-height: 28px;
+}
+.sensor b small {
+  font-family: "SHS";
+  font-size: 12px;
+  color: var(--sub);
+  margin-left: 3px;
+}
+.sensor em {
+  position: absolute;
+  right: 8px;
+  top: 7px;
+  font-style: normal;
+  font-size: 12px;
+  padding: 0 6px;
+  border-radius: 2px;
+}
+.ok {
+  color: var(--green);
+}
+.warn {
+  color: var(--yellow);
+}
+.alarm {
+  color: var(--red);
+}
+.sensor em.ok {
+  background: rgba(61, 220, 151, 0.14);
+}
+.sensor em.warn {
+  background: rgba(255, 207, 58, 0.16);
+}
+.sensor.is-warn {
+  border-color: rgba(255, 207, 58, 0.55);
+  box-shadow: inset 0 0 14px rgba(255, 207, 58, 0.14);
+}
+
+.events {
+  list-style: none;
+  font-size: 14px;
+}
+.events li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(120, 170, 230, 0.16);
+}
+.events li time {
+  font-family: "DIN";
+  color: var(--sub);
+  width: 44px;
+  flex: none;
+}
+.events li .lv {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.events li p {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.events li em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--sub);
+  flex: none;
+}
+
+.ring {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.ring .txt {
+  font-size: 13px;
+  color: var(--sub);
+  line-height: 22px;
+}
+.ring .txt b {
+  color: var(--txt);
+  font-family: "DIN";
+  font-weight: normal;
+  font-size: 17px;
+  margin-left: 4px;
+}
+
+/* 综采工作面示意条：液压支架排成一列，采煤机位置高亮 */
+.shields {
+  display: flex;
+  gap: 1px;
+  height: 26px;
+  align-items: flex-end;
+  margin: 6px 0 4px;
+}
+.shields i {
+  flex: 1;
+  background: rgba(76, 157, 255, 0.55);
+  height: 70%;
+}
+.shields i.adv {
+  background: rgba(61, 220, 151, 0.75);
+  height: 100%;
+}
+.shields i.sh {
+  background: var(--orange);
+  height: 100%;
+  box-shadow: 0 0 10px var(--orange);
+}
+.shields-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--dim);
+  font-family: "DIN";
+}
+
+/* 地层柱状图 */
+.strata {
+  display: flex;
+  gap: 12px;
+}
+.strata .colm {
+  width: 46px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(160, 190, 230, 0.3);
+}
+.strata .colm i {
+  display: block;
+}
+.strata .names {
+  flex: 1;
+  position: relative;
+  font-size: 13px;
+}
+.strata .names div {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
+  color: var(--sub);
+}
+.strata .names div b {
+  font-weight: normal;
+  color: var(--txt);
+  font-family: "DIN";
+}
+.strata .names div.seam {
+  color: var(--txt);
+}
+.strata .names div.seam.on {
+  color: var(--orange);
+}
+.strata .names div.seam.on b {
+  color: var(--orange);
+}
+
+/* ---------- 底部 ---------- */
+.foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 92px;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgba(2, 8, 20, 0.9), rgba(2, 8, 20, 0));
+}
+.tabs {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+.tabs span {
+  width: 132px;
+  height: 42px;
+  line-height: 42px;
+  text-align: center;
+  font-size: 17px;
+  color: var(--sub);
+  background: linear-gradient(
+    180deg,
+    rgba(20, 60, 120, 0.5),
+    rgba(10, 30, 60, 0.6)
+  );
+  border: 1px solid rgba(80, 160, 255, 0.3);
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+.tabs span.on {
+  color: #fff;
+  background: linear-gradient(
+    180deg,
+    rgba(54, 224, 255, 0.55),
+    rgba(30, 110, 220, 0.5)
+  );
+  border-color: var(--cyan);
+  text-shadow: 0 0 8px rgba(54, 224, 255, 0.8);
+}
+.credit {
+  position: absolute;
+  left: 24px;
+  bottom: 12px;
+  font-size: 12px;
+  color: var(--dim);
+}
+.maplegend {
+  position: absolute;
+  right: 446px;
+  bottom: 104px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--sub);
+  background: rgba(3, 10, 22, 0.66);
+  border: 1px solid rgba(80, 160, 255, 0.2);
+  border-radius: 3px;
+  line-height: 22px;
+}
+.maplegend i {
+  display: inline-block;
+  width: 14px;
+  height: 8px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-radius: 1px;
+}
+.maplegend i.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin: 0 9px 0 3px;
+}
+.maplegend i.line {
+  height: 3px;
+}
+.toolbar {
+  position: absolute;
+  left: 446px;
+  bottom: 104px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toolbar span {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: var(--sub);
+  background: rgba(3, 10, 22, 0.66);
+  border: 1px solid rgba(80, 160, 255, 0.25);
+  border-radius: 3px;
+}
+.toolbar span.on {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+.compass {
+  position: absolute;
+  left: 446px;
+  top: 108px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid rgba(80, 160, 255, 0.35);
+  background: rgba(3, 10, 22, 0.6);
+}
+.compass b {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  color: #fff;
+  font-weight: normal;
+  font-family: "DIN";
+}
+.compass .rose {
+  position: absolute;
+  inset: 0;
+}
+.compass .rose i {
+  position: absolute;
+  left: 50%;
+  top: 20px;
+  width: 0;
+  height: 0;
+  margin-left: -6px;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 18px solid var(--red);
+}
+.compass .rose b {
+  top: 3px;
+  color: var(--red);
+}
+
+/* ---------- 场景标注 ---------- */
+.tags {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.tag {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.tag .pin {
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--c) 25%, transparent),
+    0 0 14px var(--c);
+}
+.tag .stem {
+  position: absolute;
+  left: -0.5px;
+  bottom: 0;
+  width: 1px;
+  height: var(--h);
+  background: linear-gradient(
+    0deg,
+    var(--c),
+    color-mix(in srgb, var(--c) 20%, transparent)
+  );
+}
+.tag .box {
+  position: absolute;
+  bottom: var(--h);
+  left: 0;
+  transform: translateX(var(--dx, -50%));
+  white-space: nowrap;
+  padding: 4px 10px 5px;
+  font-size: 14px;
+  background: rgba(3, 12, 26, 0.82);
+  border: 1px solid color-mix(in srgb, var(--c) 60%, transparent);
+  border-top: 2px solid var(--c);
+  border-radius: 2px;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--c) 22%, transparent);
+}
+.tag .box b {
+  font-weight: normal;
+}
+.tag .box p {
+  font-size: 12px;
+  color: var(--sub);
+  margin-top: 1px;
+}
+.tag .box p em {
+  font-style: normal;
+  font-family: "DIN";
+  color: var(--txt);
+  font-size: 14px;
+  margin: 0 1px;
+}
+.tag.big .box {
+  font-size: 17px;
+  padding: 6px 14px 7px;
+}
+.tag.big .box b {
+  font-family: "Alimama";
+  letter-spacing: 1px;
+}
+.tag.mini .box {
+  font-size: 13px;
+  padding: 2px 8px;
+  border-top-width: 1px;
+  background: rgba(3, 12, 26, 0.7);
+}
+.tag.flat .box {
+  bottom: auto;
+  top: 8px;
+  border-top-width: 1px;
+}
+.tag.flat .stem {
+  display: none;
+}
+
+/* 近景说明 */
+.caption {
+  position: absolute;
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%);
+  font-size: 15px;
+  color: var(--sub);
+  background: rgba(3, 10, 22, 0.72);
+  border: 1px solid rgba(80, 160, 255, 0.25);
+  border-radius: 3px;
+  padding: 8px 18px;
+}
+.caption b {
+  color: var(--txt);
+  font-weight: normal;
+}

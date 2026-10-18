@@ -1,0 +1,33 @@
+{
+  "_note": "镜头表：from / to 为 [口播段 key, 段内偏移秒]，END 表示片尾。kind = 3d 由 record.mjs 逐帧录页面，2d 由 compose.py 生成；相邻镜头交叠 0.5 s 叠化",
+  "fade": 0.5,
+  "shots": [
+    { "id": "hero", "kind": "3d", "from": ["ask", 0], "to": ["mine", 0] },
+    { "id": "reveal", "kind": "3d", "from": ["mine", 0], "to": ["terrain", 0] },
+    {
+      "id": "terrain",
+      "kind": "3d",
+      "from": ["terrain", 0],
+      "to": ["strata", 0]
+    },
+    { "id": "strata", "kind": "3d", "from": ["strata", 0], "to": ["pads", 0] },
+    { "id": "slope", "kind": "3d", "from": ["pads", 0], "to": ["pads", 5.4] },
+    { "id": "plan", "kind": "2d", "from": ["pads", 5.4], "to": ["xray", 0] },
+    { "id": "xray", "kind": "3d", "from": ["xray", 0], "to": ["live", 0] },
+    { "id": "night", "kind": "3d", "from": ["live", 0], "to": ["live", 5.2] },
+    {
+      "id": "timelapse",
+      "kind": "3d",
+      "from": ["live", 5.2],
+      "to": ["honest", 0]
+    },
+    {
+      "id": "recap",
+      "kind": "3d",
+      "from": ["honest", 0],
+      "to": ["honest", 4.3]
+    },
+    { "id": "plant", "kind": "3d", "from": ["honest", 4.3], "to": ["end", 0] },
+    { "id": "outro", "kind": "3d", "from": ["end", 0], "to": ["END", 0] }
+  ]
+}
