@@ -42,6 +42,7 @@ const READY_TIMEOUT = 60
  *   - 充电站：无巡览，模型加载后等 6 s，让辉光、告警波纹与能量节点连线稳定
  *   - 数字楼宇：地图资源加载后播放约 5 s 的入场动画（相机推近、街道弹起、光柱与园区卡片），取 8 s
  *   - 综合能源补给站：模型加载后播放约 8.6 s 的「航拍 → 规划」开场动画，面板再滑入 0.8 s，取 12 s
+ *   - 智能矿山：无开场动画，地形加载后直接在综合态势视角，等 5 s 让标注、辉光与钻孔光点稳定
  * 新演示未配置时取 DEFAULT_SETTLE。
  */
 const DEFAULT_SETTLE = 5
@@ -51,7 +52,8 @@ const SETTLE = {
   charging: 6,
   building: 8,
   energy: 16,
-  hometown: 11
+  hometown: 11,
+  "smart-mine": 5
 }
 
 /**
