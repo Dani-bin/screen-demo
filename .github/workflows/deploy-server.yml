@@ -1,0 +1,177 @@
+# 推送到 master 后自动构建，并通过 SSH（rsync）发布到自己的服务器（宝塔面板建的静态站点）
+# 与 deploy-pages.yml 并存、互不影响：两边按各自的访问路径分别构建一次
+# 服务器信息全部放在仓库 Settings → Secrets and variables → Actions，不写进仓库，配置步骤见 docs/deploy-baota.md：
+#   Secrets 必填    DEPLOY_HOST 服务器 IP 或域名 / DEPLOY_USER 部署用户 / DEPLOY_SSH_KEY 部署私钥 / DEPLOY_PATH 站点目录
+#   Secrets 可选    DEPLOY_PORT SSH 端口（默认 22）/ DEPLOY_KNOWN_HOSTS 服务器 SSH 公钥（ssh-keyscan 的输出）
+#   Variables 可选  DEPLOY_BASE_PATH 访问路径（默认 /；挂在已有站点的子目录下时填 /bi/ 这种形式）
+# 四个必填 Secret 都没配时整个发布自动跳过，不会报错；只配了一部分时报错并列出缺哪几个
+name: 部署到自有服务器
+
+on:
+  push:
+    branches: [master]
+  # 允许在 Actions 页面手动重新发布
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同一时间只发布一次：正在上传的不取消（避免传到一半），排队中的只保留最新一次
+concurrency:
+  group: deploy-server
+  cancel-in-progress: false
+
+defaults:
+  run:
+    # 显式指定 bash，让管道中任一命令失败都算失败（pipefail）
+    shell: bash
+
+jobs:
+  # 检查服务器 Secrets 是否配好，决定后面两个 job 跑不跑
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          required="DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_PATH"
+          missing=""
+          for name in $required; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -z "$missing" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          elif [ "${missing# }" = "$required" ]; then
+            echo "::notice::未配置服务器 Secrets，跳过发布（配置方法见 docs/deploy-baota.md）"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::服务器 Secrets 不完整，缺少：$missing"
+            exit 1
+          fi
+
+  # 构建与上传分成两个 job：装依赖、构建时会执行大量第三方 npm 代码，
+  # 这个 job 拿不到任何服务器 Secrets，私钥只出现在下面不跑 npm 代码的 deploy job 里
+  build:
+    needs: check
+    if: needs.check.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: 安装依赖
+        run: yarn install --frozen-lockfile
+
+      - name: 构建
+        run: yarn build
+        env:
+          # 独立站点（域名或 IP:端口 直接访问）用 /；挂在已有站点的子目录下时，
+          # 在仓库 Variables 里设 DEPLOY_BASE_PATH（如 /bi/），DEPLOY_PATH 也要指向对应的子目录
+          BASE_PATH: ${{ vars.DEPLOY_BASE_PATH || '/' }}
+
+      # 隐藏文件（如 public 里的 .DS_Store）默认不会被打包上传
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # 首次发布要把 ~70 MB 模型和贴图传到国内服务器，留足时间；之后只传有变化的文件
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+
+      - name: 配置 SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          port="${DEPLOY_PORT:-22}"
+          # 服务器公钥：优先用 Secret 里事先核对过的；没配时现场扫描（相当于首次连接直接信任）
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::未配置 DEPLOY_KNOWN_HOSTS，本次现场扫描服务器公钥，无法识别中间人；建议按 docs/deploy-baota.md 补上"
+            ssh-keyscan -p "$port" "$DEPLOY_HOST" > ~/.ssh/known_hosts
+          fi
+          # 连接参数集中写进 ssh 配置，后面的 rsync / ssh 统一用别名 server
+          cat > ~/.ssh/config <<EOF
+          Host server
+            HostName $DEPLOY_HOST
+            Port $port
+            User $DEPLOY_USER
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+            ConnectTimeout 20
+            ServerAliveInterval 30
+          EOF
+          # 先试连一次，顺便确认服务器装了 rsync
+          if ! ssh server 'command -v rsync >/dev/null && rsync --version | head -n 1'; then
+            echo "::error::连不上服务器，或服务器上没有 rsync（具体原因看上面 ssh 的输出，排查见 docs/deploy-baota.md）"
+            exit 1
+          fi
+
+      - name: 上传到服务器
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          target="${DEPLOY_PATH%/}"
+          # 防呆 1：只接受至少两级、只含常规字符的绝对路径（如 /www/wwwroot/bi-demo）
+          if ! [[ "$target" =~ ^/[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)+$ ]]; then
+            echo "::error::DEPLOY_PATH 必须是站点目录的绝对路径，如 /www/wwwroot/bi-demo"
+            exit 1
+          fi
+          # 防呆 2：目录必须已存在，且是空目录或站点目录（有 index.html，宝塔建站会放一个默认首页），
+          # 免得 DEPLOY_PATH 误填成家目录之类时被下面的 --delete 清空
+          if ! ssh server "test -d '$target' && { test -z \"\$(ls -A '$target')\" || test -f '$target/index.html'; }"; then
+            echo "::error::DEPLOY_PATH 指向的目录不存在，或既不是空目录也不是站点目录（没有 index.html），已停止发布"
+            exit 1
+          fi
+
+          # rsync 公共参数：
+          #   -c 按内容比对，没变的文件原样不动（服务器上的修改时间不变，浏览器缓存继续有效）
+          #   不带 -t：服务器上文件的修改时间 = 真正上传的时间，第 3 步的清理依赖这一点
+          #   --chmod 统一成 目录 755 / 文件 644，宝塔的 www 用户（Nginx）能读
+          opts=(-rlpcz --chmod=D755,F644 --timeout=120 --itemize-changes)
+
+          # 第 1 遍：传除入口页外的所有文件，并删掉服务器上多出来的旧文件。以下内容受保护不删：
+          #   宝塔建站生成的 .user.ini / .htaccess / 404.html、证书验证目录 .well-known，
+          #   以及 assets/ 下的旧构建产物（由第 3 步按时间清理）
+          rsync "${opts[@]}" --stats -h --delete-after \
+            --exclude='.DS_Store' --exclude='/index.html' \
+            --filter='P /.user.ini' --filter='P /.htaccess' --filter='P /404.html' \
+            --filter='P /.well-known/' --filter='P /assets/**' \
+            dist/ "server:$target/"
+
+          # 第 2 遍：最后再换入口页，新 index.html 生效时它引用的文件都已就位
+          rsync "${opts[@]}" dist/index.html "server:$target/"
+
+          # 第 3 步：清理 assets/ 里超过 30 天没再被引用的旧文件。
+          # 大屏页面可能连开很多天，发布后仍会按需加载旧版的 JS 分包，所以旧文件不能随发布立刻删；
+          # 先把本次构建用到的文件 touch 一下（修改时间 = 最后一次被引用的时间），再删 30 天前的
+          (cd dist/assets && ls) |
+            ssh server "cd '$target/assets' && xargs -r touch -c -- && find . -type f -mtime +30 -print -delete"
