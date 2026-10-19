@@ -75,6 +75,7 @@ docs/
   design/        各演示的设计稿、效果图与设计说明
   superpowers/   早期功能的设计文档（specs）与实现计划（plans）
 .github/workflows/deploy-pages.yml   GitHub Pages 自动部署
+.github/workflows/deploy-server.yml  自有服务器（宝塔面板）自动部署，配置步骤见 docs/deploy-baota.md
 city-lab.html    单地标调试页入口（仅开发环境）
 ```
 
@@ -135,8 +136,12 @@ city-lab.html    单地标调试页入口（仅开发环境）
 - **GitHub Pages**：推送到 master 后，`.github/workflows/deploy-pages.yml` 自动以 `BASE_PATH=/screen-demo/` 构建，
   并发布到 <https://dani-bin.github.io/screen-demo/>。进度在仓库的 Actions 页面查看，也可以在那里点 Run workflow 手动重新部署。
   仓库 Settings → Pages 的 Source 需设为 GitHub Actions。
-- **自有服务器**：默认部署在站点的 `/bi/` 路径下（由 `.env.production` 的 `VITE_APP_ENV=production` 决定）；
-  要部署到其他路径，构建时传入 `BASE_PATH`，例如 `BASE_PATH=/demo/ yarn build`。
+- **自有服务器（宝塔面板）**：同一次推送还会触发 `.github/workflows/deploy-server.yml`，以站点根路径 `/` 构建
+  （挂在子目录时用仓库变量 `DEPLOY_BASE_PATH` 指定），再通过 SSH + rsync 发布到服务器的站点目录。
+  服务器地址、部署用户、私钥、目录都放在 GitHub Secrets，没配置时自动跳过。建站、Nginx、密钥与 Secrets 的配置步骤见
+  [`docs/deploy-baota.md`](docs/deploy-baota.md)。
+- **手动部署**：本地 `yarn build` 默认部署路径为 `/bi/`（由 `.env.production` 的 `VITE_APP_ENV=production` 决定）；
+  要部署到其他路径，构建时传入 `BASE_PATH`，例如 `BASE_PATH=/demo/ yarn build`，再把 `dist/` 整个传到服务器对应目录。
 
 ## 数据来源
 
