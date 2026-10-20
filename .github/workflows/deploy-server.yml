@@ -154,23 +154,29 @@ jobs:
 
           # rsync 公共参数：
           #   -c 按内容比对，没变的文件原样不动（服务器上的修改时间不变，浏览器缓存继续有效）
-          #   不带 -t：服务器上文件的修改时间 = 真正上传的时间，第 3 步的清理依赖这一点
+          #   不带 -t：服务器上文件的修改时间 = 真正上传的时间，第 4 步的清理依赖这一点
           #   --chmod 统一成 目录 755 / 文件 644，宝塔的 www 用户（Nginx）能读
           opts=(-rlpcz --chmod=D755,F644 --timeout=120 --itemize-changes)
 
-          # 第 1 遍：传除入口页外的所有文件，并删掉服务器上多出来的旧文件。以下内容受保护不删：
-          #   宝塔建站生成的 .user.ini / .htaccess / 404.html、证书验证目录 .well-known，
-          #   以及 assets/ 下的旧构建产物（由第 3 步按时间清理）
+          # 注意：不要用 P（protect）过滤规则去保护会被上传的路径。服务器上打过安全补丁的旧版 rsync
+          # （如 CentOS 7 的 3.1.2）会把它当成排除规则，报 rejecting excluded file-list name 并以退出码 2 失败；
+          # 所以 assets/ 单独传，其余文件用 --exclude（排除的内容既不上传，也不会被 --delete 删掉）
+
+          # 第 1 遍：assets/（带哈希的构建产物）只增不删，旧文件由第 4 步按时间清理
+          rsync "${opts[@]}" dist/assets/ "server:$target/assets/"
+
+          # 第 2 遍：其余文件（模型、贴图、数据），并删掉服务器上多出来的旧文件。排除且不删的有：
+          #   assets/（上一遍已传）、入口页（最后再换）、
+          #   宝塔建站生成的 .user.ini / .htaccess / 404.html 和证书验证目录 .well-known
           rsync "${opts[@]}" --stats -h --delete-after \
-            --exclude='.DS_Store' --exclude='/index.html' \
-            --filter='P /.user.ini' --filter='P /.htaccess' --filter='P /404.html' \
-            --filter='P /.well-known/' --filter='P /assets/**' \
+            --exclude='/assets/' --exclude='/index.html' --exclude='.DS_Store' \
+            --exclude='/.user.ini' --exclude='/.htaccess' --exclude='/404.html' --exclude='/.well-known/' \
             dist/ "server:$target/"
 
-          # 第 2 遍：最后再换入口页，新 index.html 生效时它引用的文件都已就位
+          # 第 3 遍：最后再换入口页，新 index.html 生效时它引用的文件都已就位
           rsync "${opts[@]}" dist/index.html "server:$target/"
 
-          # 第 3 步：清理 assets/ 里超过 30 天没再被引用的旧文件。
+          # 第 4 步：清理 assets/ 里超过 30 天没再被引用的旧文件。
           # 大屏页面可能连开很多天，发布后仍会按需加载旧版的 JS 分包，所以旧文件不能随发布立刻删；
           # 先把本次构建用到的文件 touch 一下（修改时间 = 最后一次被引用的时间），再删 30 天前的
           (cd dist/assets && ls) |
