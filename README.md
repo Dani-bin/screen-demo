@@ -5,7 +5,10 @@
 
 所有演示都使用静态或仿真数据，不需要登录，不依赖地图 SDK、UI 组件库或后端接口。
 
-**在线访问**：<https://dani-bin.github.io/screen-demo/>（推送到 master 后自动更新）
+**在线访问**（推送到 master 后都会自动更新）：
+
+- GitHub Pages：<https://dani-bin.github.io/screen-demo/>
+- 自有服务器：<http://152.136.122.39:8892>
 
 > **强制要求（AI 助手协作）**：每次对话都必须使用**简体中文**回复，没有例外。
 > 中途的进度说明、调用工具前的一句话说明、最终汇报、提问、代码注释都要用中文，长时间连续工作或上下文压缩之后也一样。
@@ -137,7 +140,8 @@ city-lab.html    单地标调试页入口（仅开发环境）
   并发布到 <https://dani-bin.github.io/screen-demo/>。进度在仓库的 Actions 页面查看，也可以在那里点 Run workflow 手动重新部署。
   仓库 Settings → Pages 的 Source 需设为 GitHub Actions。
 - **自有服务器（宝塔面板）**：同一次推送还会触发 `.github/workflows/deploy-server.yml`，以站点根路径 `/` 构建
-  （挂在子目录时用仓库变量 `DEPLOY_BASE_PATH` 指定），再通过 SSH + rsync 发布到服务器的站点目录。
+  （挂在子目录时用仓库变量 `DEPLOY_BASE_PATH` 指定），再通过 SSH + rsync 发布到服务器的站点目录，
+  访问地址 <http://152.136.122.39:8892>。
   服务器地址、部署用户、私钥、目录都放在 GitHub Secrets，没配置时自动跳过。建站、Nginx、密钥与 Secrets 的配置步骤见
   [`docs/deploy-baota.md`](docs/deploy-baota.md)。
 - **手动部署**：本地 `yarn build` 默认部署路径为 `/bi/`（由 `.env.production` 的 `VITE_APP_ENV=production` 决定）；
