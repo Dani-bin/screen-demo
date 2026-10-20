@@ -1,5 +1,5 @@
 // 首页改版效果图用的演示数据（前 5 个取自 src/views/home/data/demos.js，后 3 个为「规划中」占位，演示容量）
-const P = "file:///Users/zhangjiabin/Desktop/Company/bi-demo/public/home/"
+const P = "file:///Users/zhangjiabin/Desktop/Company/screen-demo/public/home/"
 window.DEMOS = [
   { key: "school", name: "智慧校园三维导览", en: "SMART CAMPUS 3D", sub: "成都市实验小学西区分校", cat: "智慧教育", accent: "#a8432e",
     desc: "程序化建模还原红砖学院风校园，镜头沿南校门、中轴广场、钟楼、议事厅、运动场自动巡览。",
@@ -21,9 +21,9 @@ window.DEMOS = [
   { key: "p3", name: "规划中的演示", sub: "工厂 · 产线孪生", cat: "规划中", placeholder: true }
 ]
 window.FONTS = `
-@font-face { font-family: "ShuHei"; src: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/assets/fonts/AlimamaShuHeiTi-Bold.ttf"); }
-@font-face { font-family: "HanSans"; src: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/assets/fonts/SourceHanSansCN-Regular.otf"); }
-@font-face { font-family: "DIN"; src: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/assets/fonts/DIN-Bold.otf"); }`
+@font-face { font-family: "ShuHei"; src: url("file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/assets/fonts/AlimamaShuHeiTi-Bold.ttf"); }
+@font-face { font-family: "HanSans"; src: url("file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/assets/fonts/SourceHanSansCN-Regular.otf"); }
+@font-face { font-family: "DIN"; src: url("file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/assets/fonts/DIN-Bold.otf"); }`
 // 字体与图片加载完再置就绪信号（截图脚本等它）
 window.markReady = () =>
   Promise.all([document.fonts.ready, ...[...document.images].map((i) => i.decode().catch(() => {}))]).then(() => (window.__ready = true))

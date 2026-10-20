@@ -4,14 +4,14 @@
 <meta charset="utf-8" />
 <title>数字楼宇设计稿</title>
 <style>
-  @font-face { font-family: "Alimama ShuHeiTi"; src: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/assets/fonts/AlimamaShuHeiTi-Bold.ttf"); }
-  @font-face { font-family: "Source Han Sans CN"; src: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/assets/fonts/SourceHanSansCN-Regular.otf"); }
-  @font-face { font-family: "DIN"; src: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/assets/fonts/DIN-Bold.otf"); }
-  :root { --A: file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets; }
+  @font-face { font-family: "Alimama ShuHeiTi"; src: url("file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/assets/fonts/AlimamaShuHeiTi-Bold.ttf"); }
+  @font-face { font-family: "Source Han Sans CN"; src: url("file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/assets/fonts/SourceHanSansCN-Regular.otf"); }
+  @font-face { font-family: "DIN"; src: url("file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/assets/fonts/DIN-Bold.otf"); }
+  :root { --A: file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/views/building/assets; }
   * { box-sizing: border-box; }
   html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000b27; }
   body { position: relative; color: #e2ecf8; font: 14px "Source Han Sans CN", sans-serif;
-    background: #000b27 url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/content-bg.png") no-repeat center / 100% 100%; }
+    background: #000b27 url("file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/views/building/assets/content-bg.png") no-repeat center / 100% 100%; }
   .num { font-family: "DIN", sans-serif; font-variant-numeric: tabular-nums; }
 
   /* ---------- 顶栏（与城市级 BuildingHead 一致） ---------- */
@@ -41,8 +41,8 @@
   /* ---------- 两侧栏 ---------- */
   .side { position: absolute; top: 96px; bottom: 40px; width: 400px; z-index: 3; display: flex; flex-direction: column; justify-content: space-between; }
   .side::before { content: ""; position: absolute; top: -96px; width: 550px; height: 1080px; z-index: -1; background-size: 550px 1080px; }
-  .side.l { left: 46px; } .side.l::before { left: -46px; background-image: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/left-bg.svg"); }
-  .side.r { right: 46px; } .side.r::before { right: -46px; background-image: url("file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/right-bg.svg"); }
+  .side.l { left: 46px; } .side.l::before { left: -46px; background-image: url("file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/views/building/assets/left-bg.svg"); }
+  .side.r { right: 46px; } .side.r::before { right: -46px; background-image: url("file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/views/building/assets/right-bg.svg"); }
 
   /* 面板标题（与 PanelTitle.vue 一致） */
   .pt { position: relative; width: 400px; height: 30px; }
@@ -105,10 +105,10 @@
 </head>
 <body>
 <div class="head">
-  <img class="outer" src="file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/head-outer.svg" />
-  <img class="fill" src="file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/head-inner-fill.svg" />
-  <img class="border" src="file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/head-inner-border.svg" />
-  <img class="deco" src="file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/title-deco.png" />
+  <img class="outer" src="file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/views/building/assets/head-outer.svg" />
+  <img class="fill" src="file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/views/building/assets/head-inner-fill.svg" />
+  <img class="border" src="file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/views/building/assets/head-inner-border.svg" />
+  <img class="deco" src="file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/views/building/assets/title-deco.png" />
   <h1>高新区数字楼宇</h1>
   <div class="left"><span class="t num">2026-10-07 16:30</span><span class="w">星期三</span><span class="back">返回演示中心</span></div>
   <div class="levels" id="levels"></div>
@@ -121,8 +121,8 @@
 <div class="draft">DESIGN DRAFT v1</div>
 
 <script>
-const A = "file:///Users/zhangjiabin/Desktop/Company/bi-demo/src/views/building/assets/"
-const D = "file:///Users/zhangjiabin/Desktop/Company/bi-demo/docs/design/building/"
+const A = "file:///Users/zhangjiabin/Desktop/Company/screen-demo/src/views/building/assets/"
+const D = "file:///Users/zhangjiabin/Desktop/Company/screen-demo/docs/design/building/"
 const level = new URLSearchParams(location.search).get("level") || "park"
 const LV = [["city","城市"],["park","园区"],["building","楼宇"],["floor","楼层"],["room","房间"]]
 const cur = LV.findIndex(l => l[0] === level)
