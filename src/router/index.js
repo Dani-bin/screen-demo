@@ -66,6 +66,12 @@ const routes = [
     component: () => import("@/views/smart-mine/index.vue")
   },
   {
+    // 智慧牧场：呼伦贝尔莫日格勒河中游真实地形 + Sentinel-2 影像 / NDVI 沙盘，划区轮牧与畜群监管（牧场为虚构）
+    path: "/smart-ranch",
+    name: "SmartRanch",
+    component: () => import("@/views/smart-ranch/index.vue")
+  },
+  {
     // 数字楼宇：城市（成都高新区）→ 园区 → 楼宇 → 楼层 → 房间 五级钻取
     path: "/building",
     name: "Building",

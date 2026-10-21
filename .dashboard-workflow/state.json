@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "dashboards": {
+    "smart-ranch": {
+      "title": "智慧牧场（草原放牧）三维大屏",
+      "mode": "new",
+      "docsDir": "docs/design/smart-ranch",
+      "route": "/smart-ranch",
+      "stage": 11,
+      "stages": {
+        "1": {
+          "status": "done",
+          "output": "01-requirements-qa.md"
+        },
+        "2": {
+          "status": "done",
+          "output": "02-research.md"
+        },
+        "3": {
+          "status": "done",
+          "output": [
+            "03-scope.md",
+            "devices: 03-scope.md 对象清单（编号即模型节点名）"
+          ]
+        },
+        "4": {
+          "status": "done",
+          "output": [
+            "04-data-spec.md",
+            "mock/",
+            "05-requirement.md"
+          ],
+          "check": "data-check 通过（2026-10-20，需用 skill 真实路径运行）"
+        },
+        "5": {
+          "status": "done",
+          "output": [
+            "design/v1-a.png",
+            "design/v1-b.png",
+            "design/v1-c.png",
+            "design/v2-a.png",
+            "design/final.png",
+            "design/closeup-a/b/c.png",
+            "plan-v1.png",
+            "README.md"
+          ]
+        },
+        "6": {
+          "status": "done",
+          "output": "06-asset-map.md"
+        },
+        "7": {
+          "status": "done",
+          "output": "07-camera.json",
+          "note": "设计稿与页面共用场景代码，机位相同，残差 0"
+        },
+        "8": {
+          "status": "done",
+          "output": [
+            "scene/props.js",
+            "scene/animals.js"
+          ],
+          "note": "程序化 three.js（营地 / 场部 / 饮水点 / 基站 / 牛羊），未用 Blender"
+        },
+        "9": {
+          "status": "done",
+          "output": "src/views/smart-ranch/"
+        },
+        "10": {
+          "status": "done",
+          "note": "牛羊插值、告警光柱 / 扩散环 / 光墙按距离缩放、巡游、告警联动、月份过渡；切后台停渲染；60 fps（M2，2 倍像素密度）"
+        },
+        "11": {
+          "status": "in_progress",
+          "output": [
+            "compare/r3/report.md",
+            "11-review-report.md"
+          ]
+        }
+      },
+      "approvals": {
+        "requirements": {
+          "at": "2026-10-20",
+          "summary": "草原放牧（牛羊）；观众场长/生产主管 + 集团领导与访客；作品合集展示；真实场地呼伦贝尔·莫日格勒河中游（49.62N,120.00E，12×10 km，Copernicus GLO-30 + Sentinel-2 10 m，近景三维建模补）；虚构合作社/集团牧场约 10 万亩、几千头只；夏秋放牧期 7–8 月；主线 草畜平衡与轮牧 + 畜群定位与安全；交互 自动巡游、点选详情、告警联动、草场长势历史（真实 NDVI）；1920×1080；不做 生产经营/气象主线、四季切换、转场演示、24 h 回放"
+        },
+        "design": {
+          "at": "2026-10-20",
+          "summary": "选 A 晴空牧场的风格；用户嫌 v1 功能少、数据单一，出 A v2（功能导航 + 搜索、地图工具条、告警处置按钮；存栏结构、生产作业、气象、称重、告警统计、长势矩阵、转场甘特、设备在线、视频监控），再按要求两侧栏铺满到底，定稿 design/final.png"
+        }
+      },
+      "finalDesign": "docs/design/smart-ranch/design/final.png",
+      "camera": "docs/design/smart-ranch/07-camera.json",
+      "thresholds": null,
+      "rulings": [
+        {
+          "at": "2026-10-20",
+          "stage": 1,
+          "decision": "页面放进本仓库，路由 /smart-ranch、文档目录 docs/design/smart-ranch（跟随仓库惯例，与 /smart-mine 命名一致）"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 1,
+          "decision": "现场屏按 1920×1080 设计，rem 等比缩放（跟随仓库）"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 1,
+          "decision": "羊以群为单位显示（头羊项圈，调研依据），牛可显示到单头"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 1,
+          "decision": "产草量、载畜量只做示意（NDVI 真实，估产模型为假设），屏上不标实测"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 1,
+          "decision": "旧会话的调研子代理被中断、结果丢失，在本会话重新调研（业务 + 场地两份）"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 2,
+          "decision": "视觉调研给出三个方向：A 晴空牧场 / B 墨绿遥感 / C 金色牧歌，和现有 demo 的配色拉开"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 3,
+          "decision": "沙盘沿河谷走向切 12 × 8 km（不是正南北），40 块分区才能完整放下，河谷在主镜头里横贯画面；牧场面积按真实河道排出约 9.3 万亩"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 3,
+          "decision": "河道用地形谷底线定走向（10 m 影像上 10–20 m 宽的河断断续续，直接找水体会误认北边的湖泡子）"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 4,
+          "decision": "大屏日期映射到 2026-07/08（真实日期按一年中第几天对 62 取余），时刻用北京时间；NDVI 当季 2026、同比 2025"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 4,
+          "decision": "产草量 = K ×（NDVI − 0.15），K 按全场草畜平衡指数 +5% 标定（示意）；U03 / U06 / U08 超过 10% 用于演示"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 4,
+          "decision": "告警事件每 10 分钟一个时段、约三成时段出一个（全天约 30 条），正常放牧不会进保护带，越界只由事件制造"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 5,
+          "decision": "设计稿中央三维画面用真实数据实时渲染（同 /smart-mine，页面直接复用），AI 生图只用在近景概念（3 张，Figma 文件 8THisupHUFNcUtUneHraQh）"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 5,
+          "decision": "Sentinel-2 2026-04-03 偏移标记与数值不一致，跳过；缺 2026-04-11 / 09-23 / 10-03 三天（重跑 fetch_data.py 会补）"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 5,
+          "decision": "需求阶段排除的生产经营、气象两条线，按用户对 v1 的反馈在 v2 里做成辅助卡片；首页主线仍是草畜平衡 + 畜群定位"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 8,
+          "decision": "近景设施和牛羊用程序化 three.js 低模（造型参照 AI 近景概念图），显示放大 3 倍 / 2.2 倍；没走 Blender，因为单个物体在 1 km 视野里只有几十像素"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 9,
+          "decision": "地图工具条\"圈选\"改成\"复位\"（圈选没有实际用途）；底部加数据来源署名（Copernicus / Sentinel 许可要求）"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 10,
+          "decision": "地表网格降到 20 m（原始 DEM 30 m），三角形 195 万 → 51 万，帧率 40 → 60 fps"
+        }
+      ],
+      "openIssues": [
+        {
+          "at": "2026-10-20",
+          "issue": "《公开地图内容表示规范》（2023）限制境内公开地图高程精度不得优于 15 m；30 m DSM 标称精度优于此值，三维沙盘是否算公开地图未确认。对作品合集 demo 影响小，正式对外交付前需确认"
+        },
+        {
+          "at": "2026-10-20",
+          "issue": "业务调研存疑项：牛日行走距离、1 牛 = 5 羊单位未核对 NY/T 635-2015 原表、草畜平衡分级阈值、饮水点水位流量阈值（见 02-research.md）"
+        },
+        {
+          "at": "2026-10-20",
+          "issue": "skill 的 data-check.mjs / glb-check.mjs 从 ~/.claude/skills 软链接路径运行时入口判断失败、静默退出 0（import.meta.url 是真实路径，argv[1] 是软链接路径）；目前用 ~/src/build-3d-visual-dashboard 真实路径运行"
+        },
+        {
+          "at": "2026-10-20",
+          "issue": "OSM（道路、建筑）没下到：Overpass 主站和两个镜像都失败；道路暂不画"
+        },
+        {
+          "at": "2026-10-20",
+          "issue": "面板逐像素门槛（容差 24、超差 ≤ 3%）对 1 px 的字体基线偏移和实时数据（秒数、闪烁、按编号播种的距离）过于敏感：功能导航 / 右栏 / 底部 / 工具条 4.4–10.7%，肉眼一致。建议 skill 的 compare.py 加 1–2 px 位移容忍或文字区域掩膜（门槛校准）"
+        }
+      ]
+    }
+  }
+}
