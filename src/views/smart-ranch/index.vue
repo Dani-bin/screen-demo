@@ -259,7 +259,9 @@
   )
   const T_START = Date.now()
   const T_AT = AT ? msForDemo(AT[1], Number(AT[2]) + Number(AT[3]) / 60) : 0
-  const now = () => (AT ? T_AT + (Date.now() - T_START) : Date.now())
+  /** 仿真时钟的拨动量（毫秒）：只有开发模式的录屏接口 seek 会改它，平时恒为 0 */
+  let skew = 0
+  const now = () => (AT ? T_AT + (Date.now() - T_START) : Date.now()) + skew
 
   const sim = createRanchSim(layout)
   /** 面板数据：整份替换，不需要深层响应 */
@@ -734,6 +736,21 @@
   function onPageShow(e) {
     if (e.persisted) onResize()
   }
+
+  /*
+   * 开发模式的录屏接口（抖音视频分镜 docs/design/smart-ranch/douyin/shots.mjs 用，生产构建里没有）：
+   * seek 把仿真时钟拨到某一时刻、tick 立刻刷新一次，分镜分开录也能接在同一条时间轴上
+   */
+  if (import.meta.env.DEV)
+    window.__ranchPage = {
+      now,
+      sim,
+      seek: (ms) => (skew += ms - now()),
+      tick: () => tick(),
+      setMonth,
+      setTab,
+      select
+    }
 
   onMounted(async () => {
     fitRem()
