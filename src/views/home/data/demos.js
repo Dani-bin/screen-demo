@@ -201,5 +201,25 @@ export const DEMOS = [
     // 取自沙盘山林的苔绿
     accent: "#5f8f3e",
     preview: "home/smart-mine.webp"
+  },
+  {
+    key: "smart-ranch",
+    path: "/smart-ranch",
+    name: "智慧牧场 · 草畜平衡",
+    en: "SMART GRAZING RANCH",
+    subTitle: "呼伦贝尔 · 莫日格勒河示范牧场",
+    category: "智慧农牧",
+    desc: "用 Copernicus 地形和 Sentinel-2 卫星影像还原莫日格勒河谷，草场长势是真实的逐月 NDVI；10 个轮牧单元、40 块分区按河谷排开，项圈定位的羊群牛群在沙盘上实时走动，越界、离群、饮水点告警自动飞到现场。",
+    tags: ["真实地形 + 卫星 NDVI", "划区轮牧", "畜群定位告警"],
+    // 依据：smart-ranch/data/layout.json 的 sandbox.size（12 000 × 8 000 m）与 paddocks（40 块）；
+    // 存栏 = sim/simulator.js 的 FLOCK_HEADS + HERD_HEADS（羊 5 400 + 牛 380）
+    stats: [
+      { value: "12×8", unit: "km", key: "真实地形" },
+      { value: "40", unit: "块", key: "轮牧分区" },
+      { value: "5,780", unit: "头只", key: "项圈牛羊" }
+    ],
+    // 取自定稿的草原绿
+    accent: "#2f8f4e",
+    preview: "home/smart-ranch.webp"
   }
 ]

@@ -1,0 +1,126 @@
+{
+  "design": "docs/design/smart-ranch/design/final.png",
+  "impl": "/private/tmp/claude-501/-Users-zhangjiabin-Desktop-Company-screen-demo/9c8f7f25-0d09-462c-91a4-6cc8a6985329/scratchpad/impl-r4.png",
+  "resized": false,
+  "thresholds": {
+    "iou": 0.85,
+    "centerOffset": 0.02,
+    "deltaE": 5,
+    "panelTol": 24,
+    "panelPctOver": 0.03
+  },
+  "objects": [],
+  "regions": [
+    {
+      "name": "天空",
+      "deltaE": 0.01,
+      "design": [
+        204,
+        222,
+        238
+      ],
+      "impl": [
+        204,
+        222,
+        238
+      ],
+      "pass": true
+    },
+    {
+      "name": "沙盘中部",
+      "deltaE": 1.0,
+      "design": [
+        152,
+        180,
+        139
+      ],
+      "impl": [
+        149,
+        179,
+        138
+      ],
+      "pass": true
+    },
+    {
+      "name": "沙盘前沿",
+      "deltaE": 0.01,
+      "design": [
+        176,
+        180,
+        150
+      ],
+      "impl": [
+        176,
+        180,
+        150
+      ],
+      "pass": true
+    },
+    {
+      "name": "侧壁",
+      "deltaE": 0.0,
+      "design": [
+        214,
+        216,
+        205
+      ],
+      "impl": [
+        214,
+        216,
+        205
+      ],
+      "pass": true
+    }
+  ],
+  "panels": [
+    {
+      "name": "顶部指标卡",
+      "pctOver": 0.0209,
+      "pass": true
+    },
+    {
+      "name": "功能导航",
+      "pctOver": 0.0668,
+      "pass": false
+    },
+    {
+      "name": "左栏",
+      "pctOver": 0.025,
+      "pass": true
+    },
+    {
+      "name": "右栏",
+      "pctOver": 0.1135,
+      "pass": false
+    },
+    {
+      "name": "底部卡片",
+      "pctOver": 0.1083,
+      "pass": false
+    },
+    {
+      "name": "地图工具条",
+      "pctOver": 0.0438,
+      "pass": false
+    }
+  ],
+  "notes": [],
+  "worst": [
+    {
+      "kind": "panel",
+      "name": "右栏",
+      "severity": 2.783
+    },
+    {
+      "kind": "panel",
+      "name": "底部卡片",
+      "severity": 2.61
+    },
+    {
+      "kind": "panel",
+      "name": "功能导航",
+      "severity": 1.227
+    }
+  ],
+  "pass": false
+}

@@ -1,0 +1,48 @@
+{
+ "date": "2026-07-25",
+ "from": "13:00",
+ "to": "14:00",
+ "seed": "按日期字符串播种（simulator.js 的 rng）",
+ "events": [
+  {
+   "id": "20260725-076",
+   "kind": "offline",
+   "title": "项圈离线",
+   "level": "minor",
+   "target": "CL-0010",
+   "herder": "HD-04",
+   "from": "12:42",
+   "to": "13:06"
+  },
+  {
+   "id": "20260725-077",
+   "kind": "water",
+   "title": "饮水点水位低",
+   "level": "major",
+   "target": "WP-04",
+   "herder": "HD-04",
+   "from": "12:53",
+   "to": "13:19"
+  },
+  {
+   "id": "20260725-080",
+   "kind": "water",
+   "title": "饮水点水位低",
+   "level": "major",
+   "target": "WP-09",
+   "herder": "HD-08",
+   "from": "13:22",
+   "to": "14:04"
+  },
+  {
+   "id": "20260725-083",
+   "kind": "fence",
+   "title": "电子围栏越界",
+   "level": "urgent",
+   "target": "CH-03-095",
+   "herder": "HD-10",
+   "from": "13:53",
+   "to": "14:16"
+  }
+ ]
+}

@@ -1,0 +1,2751 @@
+[
+ {
+  "id": "RANCH.head",
+  "device": "RANCH",
+  "name": "存栏总数",
+  "unit": "头只",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "RANCH.sheepHead",
+  "device": "RANCH",
+  "name": "羊存栏",
+  "unit": "只",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "RANCH.cattleHead",
+  "device": "RANCH",
+  "name": "牛存栏",
+  "unit": "头",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "RANCH.su",
+  "device": "RANCH",
+  "name": "实际载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "RANCH.capacity",
+  "device": "RANCH",
+  "name": "合理载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "RANCH.loadRatio",
+  "device": "RANCH",
+  "name": "载畜比（实际 ÷ 合理）",
+  "unit": "",
+  "kind": "analog",
+  "min": 0,
+  "max": 3
+ },
+ {
+  "id": "RANCH.balance",
+  "device": "RANCH",
+  "name": "草畜平衡指数",
+  "unit": "%",
+  "kind": "analog",
+  "min": -100,
+  "max": 200
+ },
+ {
+  "id": "RANCH.ndvi",
+  "device": "RANCH",
+  "name": "草场 NDVI（面积加权）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "RANCH.collarsTotal",
+  "device": "RANCH",
+  "name": "项圈总数",
+  "unit": "个",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "RANCH.collarsOnline",
+  "device": "RANCH",
+  "name": "在线项圈",
+  "unit": "个",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "RANCH.onlineRate",
+  "device": "RANCH",
+  "name": "项圈在线率",
+  "unit": "",
+  "kind": "analog",
+  "min": 0,
+  "max": 1
+ },
+ {
+  "id": "RANCH.supplied",
+  "device": "RANCH",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "RANCH.alarmsActive",
+  "device": "RANCH",
+  "name": "未结束告警",
+  "unit": "条",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U01.su",
+  "device": "U01",
+  "name": "实际载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U01.capacity",
+  "device": "U01",
+  "name": "合理载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U01.balance",
+  "device": "U01",
+  "name": "草畜平衡指数",
+  "unit": "%",
+  "kind": "analog",
+  "min": -100,
+  "max": 200
+ },
+ {
+  "id": "U01.grazing",
+  "device": "U01",
+  "name": "当前放牧分区",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U02.su",
+  "device": "U02",
+  "name": "实际载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U02.capacity",
+  "device": "U02",
+  "name": "合理载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U02.balance",
+  "device": "U02",
+  "name": "草畜平衡指数",
+  "unit": "%",
+  "kind": "analog",
+  "min": -100,
+  "max": 200
+ },
+ {
+  "id": "U02.grazing",
+  "device": "U02",
+  "name": "当前放牧分区",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U03.su",
+  "device": "U03",
+  "name": "实际载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U03.capacity",
+  "device": "U03",
+  "name": "合理载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U03.balance",
+  "device": "U03",
+  "name": "草畜平衡指数",
+  "unit": "%",
+  "kind": "analog",
+  "min": -100,
+  "max": 200
+ },
+ {
+  "id": "U03.grazing",
+  "device": "U03",
+  "name": "当前放牧分区",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U04.su",
+  "device": "U04",
+  "name": "实际载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U04.capacity",
+  "device": "U04",
+  "name": "合理载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U04.balance",
+  "device": "U04",
+  "name": "草畜平衡指数",
+  "unit": "%",
+  "kind": "analog",
+  "min": -100,
+  "max": 200
+ },
+ {
+  "id": "U04.grazing",
+  "device": "U04",
+  "name": "当前放牧分区",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U05.su",
+  "device": "U05",
+  "name": "实际载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U05.capacity",
+  "device": "U05",
+  "name": "合理载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U05.balance",
+  "device": "U05",
+  "name": "草畜平衡指数",
+  "unit": "%",
+  "kind": "analog",
+  "min": -100,
+  "max": 200
+ },
+ {
+  "id": "U05.grazing",
+  "device": "U05",
+  "name": "当前放牧分区",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U06.su",
+  "device": "U06",
+  "name": "实际载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U06.capacity",
+  "device": "U06",
+  "name": "合理载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U06.balance",
+  "device": "U06",
+  "name": "草畜平衡指数",
+  "unit": "%",
+  "kind": "analog",
+  "min": -100,
+  "max": 200
+ },
+ {
+  "id": "U06.grazing",
+  "device": "U06",
+  "name": "当前放牧分区",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U07.su",
+  "device": "U07",
+  "name": "实际载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U07.capacity",
+  "device": "U07",
+  "name": "合理载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U07.balance",
+  "device": "U07",
+  "name": "草畜平衡指数",
+  "unit": "%",
+  "kind": "analog",
+  "min": -100,
+  "max": 200
+ },
+ {
+  "id": "U07.grazing",
+  "device": "U07",
+  "name": "当前放牧分区",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U08.su",
+  "device": "U08",
+  "name": "实际载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U08.capacity",
+  "device": "U08",
+  "name": "合理载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U08.balance",
+  "device": "U08",
+  "name": "草畜平衡指数",
+  "unit": "%",
+  "kind": "analog",
+  "min": -100,
+  "max": 200
+ },
+ {
+  "id": "U08.grazing",
+  "device": "U08",
+  "name": "当前放牧分区",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U09.su",
+  "device": "U09",
+  "name": "实际载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U09.capacity",
+  "device": "U09",
+  "name": "合理载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U09.balance",
+  "device": "U09",
+  "name": "草畜平衡指数",
+  "unit": "%",
+  "kind": "analog",
+  "min": -100,
+  "max": 200
+ },
+ {
+  "id": "U09.grazing",
+  "device": "U09",
+  "name": "当前放牧分区",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U10.su",
+  "device": "U10",
+  "name": "实际载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U10.capacity",
+  "device": "U10",
+  "name": "合理载畜量",
+  "unit": "羊单位",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "U10.balance",
+  "device": "U10",
+  "name": "草畜平衡指数",
+  "unit": "%",
+  "kind": "analog",
+  "min": -100,
+  "max": 200
+ },
+ {
+  "id": "U10.grazing",
+  "device": "U10",
+  "name": "当前放牧分区",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U01-1.status",
+  "device": "U01-1",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U01-1.ndvi",
+  "device": "U01-1",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U01-1.forage",
+  "device": "U01-1",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U01-1.restDays",
+  "device": "U01-1",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U01-2.status",
+  "device": "U01-2",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U01-2.ndvi",
+  "device": "U01-2",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U01-2.forage",
+  "device": "U01-2",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U01-2.restDays",
+  "device": "U01-2",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U01-3.status",
+  "device": "U01-3",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U01-3.ndvi",
+  "device": "U01-3",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U01-3.forage",
+  "device": "U01-3",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U01-3.restDays",
+  "device": "U01-3",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U01-4.status",
+  "device": "U01-4",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U01-4.ndvi",
+  "device": "U01-4",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U01-4.forage",
+  "device": "U01-4",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U01-4.restDays",
+  "device": "U01-4",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U02-1.status",
+  "device": "U02-1",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U02-1.ndvi",
+  "device": "U02-1",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U02-1.forage",
+  "device": "U02-1",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U02-1.restDays",
+  "device": "U02-1",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U02-2.status",
+  "device": "U02-2",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U02-2.ndvi",
+  "device": "U02-2",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U02-2.forage",
+  "device": "U02-2",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U02-2.restDays",
+  "device": "U02-2",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U02-3.status",
+  "device": "U02-3",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U02-3.ndvi",
+  "device": "U02-3",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U02-3.forage",
+  "device": "U02-3",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U02-3.restDays",
+  "device": "U02-3",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U02-4.status",
+  "device": "U02-4",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U02-4.ndvi",
+  "device": "U02-4",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U02-4.forage",
+  "device": "U02-4",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U02-4.restDays",
+  "device": "U02-4",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U03-1.status",
+  "device": "U03-1",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U03-1.ndvi",
+  "device": "U03-1",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U03-1.forage",
+  "device": "U03-1",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U03-1.restDays",
+  "device": "U03-1",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U03-2.status",
+  "device": "U03-2",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U03-2.ndvi",
+  "device": "U03-2",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U03-2.forage",
+  "device": "U03-2",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U03-2.restDays",
+  "device": "U03-2",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U03-3.status",
+  "device": "U03-3",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U03-3.ndvi",
+  "device": "U03-3",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U03-3.forage",
+  "device": "U03-3",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U03-3.restDays",
+  "device": "U03-3",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U03-4.status",
+  "device": "U03-4",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U03-4.ndvi",
+  "device": "U03-4",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U03-4.forage",
+  "device": "U03-4",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U03-4.restDays",
+  "device": "U03-4",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U04-1.status",
+  "device": "U04-1",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U04-1.ndvi",
+  "device": "U04-1",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U04-1.forage",
+  "device": "U04-1",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U04-1.restDays",
+  "device": "U04-1",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U04-2.status",
+  "device": "U04-2",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U04-2.ndvi",
+  "device": "U04-2",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U04-2.forage",
+  "device": "U04-2",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U04-2.restDays",
+  "device": "U04-2",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U04-3.status",
+  "device": "U04-3",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U04-3.ndvi",
+  "device": "U04-3",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U04-3.forage",
+  "device": "U04-3",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U04-3.restDays",
+  "device": "U04-3",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U04-4.status",
+  "device": "U04-4",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U04-4.ndvi",
+  "device": "U04-4",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U04-4.forage",
+  "device": "U04-4",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U04-4.restDays",
+  "device": "U04-4",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U05-1.status",
+  "device": "U05-1",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U05-1.ndvi",
+  "device": "U05-1",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U05-1.forage",
+  "device": "U05-1",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U05-1.restDays",
+  "device": "U05-1",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U05-2.status",
+  "device": "U05-2",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U05-2.ndvi",
+  "device": "U05-2",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U05-2.forage",
+  "device": "U05-2",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U05-2.restDays",
+  "device": "U05-2",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U05-3.status",
+  "device": "U05-3",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U05-3.ndvi",
+  "device": "U05-3",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U05-3.forage",
+  "device": "U05-3",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U05-3.restDays",
+  "device": "U05-3",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U05-4.status",
+  "device": "U05-4",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U05-4.ndvi",
+  "device": "U05-4",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U05-4.forage",
+  "device": "U05-4",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U05-4.restDays",
+  "device": "U05-4",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U06-1.status",
+  "device": "U06-1",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U06-1.ndvi",
+  "device": "U06-1",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U06-1.forage",
+  "device": "U06-1",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U06-1.restDays",
+  "device": "U06-1",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U06-2.status",
+  "device": "U06-2",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U06-2.ndvi",
+  "device": "U06-2",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U06-2.forage",
+  "device": "U06-2",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U06-2.restDays",
+  "device": "U06-2",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U06-3.status",
+  "device": "U06-3",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U06-3.ndvi",
+  "device": "U06-3",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U06-3.forage",
+  "device": "U06-3",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U06-3.restDays",
+  "device": "U06-3",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U06-4.status",
+  "device": "U06-4",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U06-4.ndvi",
+  "device": "U06-4",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U06-4.forage",
+  "device": "U06-4",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U06-4.restDays",
+  "device": "U06-4",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U07-1.status",
+  "device": "U07-1",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U07-1.ndvi",
+  "device": "U07-1",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U07-1.forage",
+  "device": "U07-1",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U07-1.restDays",
+  "device": "U07-1",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U07-2.status",
+  "device": "U07-2",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U07-2.ndvi",
+  "device": "U07-2",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U07-2.forage",
+  "device": "U07-2",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U07-2.restDays",
+  "device": "U07-2",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U07-3.status",
+  "device": "U07-3",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U07-3.ndvi",
+  "device": "U07-3",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U07-3.forage",
+  "device": "U07-3",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U07-3.restDays",
+  "device": "U07-3",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U07-4.status",
+  "device": "U07-4",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U07-4.ndvi",
+  "device": "U07-4",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U07-4.forage",
+  "device": "U07-4",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U07-4.restDays",
+  "device": "U07-4",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U08-1.status",
+  "device": "U08-1",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U08-1.ndvi",
+  "device": "U08-1",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U08-1.forage",
+  "device": "U08-1",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U08-1.restDays",
+  "device": "U08-1",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U08-2.status",
+  "device": "U08-2",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U08-2.ndvi",
+  "device": "U08-2",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U08-2.forage",
+  "device": "U08-2",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U08-2.restDays",
+  "device": "U08-2",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U08-3.status",
+  "device": "U08-3",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U08-3.ndvi",
+  "device": "U08-3",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U08-3.forage",
+  "device": "U08-3",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U08-3.restDays",
+  "device": "U08-3",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U08-4.status",
+  "device": "U08-4",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U08-4.ndvi",
+  "device": "U08-4",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U08-4.forage",
+  "device": "U08-4",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U08-4.restDays",
+  "device": "U08-4",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U09-1.status",
+  "device": "U09-1",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U09-1.ndvi",
+  "device": "U09-1",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U09-1.forage",
+  "device": "U09-1",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U09-1.restDays",
+  "device": "U09-1",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U09-2.status",
+  "device": "U09-2",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U09-2.ndvi",
+  "device": "U09-2",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U09-2.forage",
+  "device": "U09-2",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U09-2.restDays",
+  "device": "U09-2",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U09-3.status",
+  "device": "U09-3",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U09-3.ndvi",
+  "device": "U09-3",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U09-3.forage",
+  "device": "U09-3",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U09-3.restDays",
+  "device": "U09-3",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U09-4.status",
+  "device": "U09-4",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U09-4.ndvi",
+  "device": "U09-4",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U09-4.forage",
+  "device": "U09-4",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U09-4.restDays",
+  "device": "U09-4",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U10-1.status",
+  "device": "U10-1",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U10-1.ndvi",
+  "device": "U10-1",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U10-1.forage",
+  "device": "U10-1",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U10-1.restDays",
+  "device": "U10-1",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U10-2.status",
+  "device": "U10-2",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U10-2.ndvi",
+  "device": "U10-2",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U10-2.forage",
+  "device": "U10-2",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U10-2.restDays",
+  "device": "U10-2",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U10-3.status",
+  "device": "U10-3",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U10-3.ndvi",
+  "device": "U10-3",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U10-3.forage",
+  "device": "U10-3",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U10-3.restDays",
+  "device": "U10-3",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "U10-4.status",
+  "device": "U10-4",
+  "name": "分区状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "U10-4.ndvi",
+  "device": "U10-4",
+  "name": "NDVI（当月，真实）",
+  "unit": "",
+  "kind": "analog",
+  "min": -0.2,
+  "max": 1
+ },
+ {
+  "id": "U10-4.forage",
+  "device": "U10-4",
+  "name": "可食草量（示意）",
+  "unit": "kg/亩",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "U10-4.restDays",
+  "device": "U10-4",
+  "name": "休牧天数",
+  "unit": "天",
+  "kind": "analog",
+  "min": 0,
+  "max": 200
+ },
+ {
+  "id": "SF-01.head",
+  "device": "SF-01",
+  "name": "头数",
+  "unit": "只",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-01.x",
+  "device": "SF-01",
+  "name": "群中心 x",
+  "unit": "m",
+  "kind": "analog",
+  "min": -6000,
+  "max": 6000
+ },
+ {
+  "id": "SF-01.y",
+  "device": "SF-01",
+  "name": "群中心 y",
+  "unit": "m",
+  "kind": "analog",
+  "min": -5000,
+  "max": 5000
+ },
+ {
+  "id": "SF-01.walkKm",
+  "device": "SF-01",
+  "name": "今日行走",
+  "unit": "km",
+  "kind": "counter",
+  "min": 0,
+  "max": 30
+ },
+ {
+  "id": "SF-01.collarsOnline",
+  "device": "SF-01",
+  "name": "在线项圈",
+  "unit": "个",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-02.head",
+  "device": "SF-02",
+  "name": "头数",
+  "unit": "只",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-02.x",
+  "device": "SF-02",
+  "name": "群中心 x",
+  "unit": "m",
+  "kind": "analog",
+  "min": -6000,
+  "max": 6000
+ },
+ {
+  "id": "SF-02.y",
+  "device": "SF-02",
+  "name": "群中心 y",
+  "unit": "m",
+  "kind": "analog",
+  "min": -5000,
+  "max": 5000
+ },
+ {
+  "id": "SF-02.walkKm",
+  "device": "SF-02",
+  "name": "今日行走",
+  "unit": "km",
+  "kind": "counter",
+  "min": 0,
+  "max": 30
+ },
+ {
+  "id": "SF-02.collarsOnline",
+  "device": "SF-02",
+  "name": "在线项圈",
+  "unit": "个",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-03.head",
+  "device": "SF-03",
+  "name": "头数",
+  "unit": "只",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-03.x",
+  "device": "SF-03",
+  "name": "群中心 x",
+  "unit": "m",
+  "kind": "analog",
+  "min": -6000,
+  "max": 6000
+ },
+ {
+  "id": "SF-03.y",
+  "device": "SF-03",
+  "name": "群中心 y",
+  "unit": "m",
+  "kind": "analog",
+  "min": -5000,
+  "max": 5000
+ },
+ {
+  "id": "SF-03.walkKm",
+  "device": "SF-03",
+  "name": "今日行走",
+  "unit": "km",
+  "kind": "counter",
+  "min": 0,
+  "max": 30
+ },
+ {
+  "id": "SF-03.collarsOnline",
+  "device": "SF-03",
+  "name": "在线项圈",
+  "unit": "个",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-04.head",
+  "device": "SF-04",
+  "name": "头数",
+  "unit": "只",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-04.x",
+  "device": "SF-04",
+  "name": "群中心 x",
+  "unit": "m",
+  "kind": "analog",
+  "min": -6000,
+  "max": 6000
+ },
+ {
+  "id": "SF-04.y",
+  "device": "SF-04",
+  "name": "群中心 y",
+  "unit": "m",
+  "kind": "analog",
+  "min": -5000,
+  "max": 5000
+ },
+ {
+  "id": "SF-04.walkKm",
+  "device": "SF-04",
+  "name": "今日行走",
+  "unit": "km",
+  "kind": "counter",
+  "min": 0,
+  "max": 30
+ },
+ {
+  "id": "SF-04.collarsOnline",
+  "device": "SF-04",
+  "name": "在线项圈",
+  "unit": "个",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-05.head",
+  "device": "SF-05",
+  "name": "头数",
+  "unit": "只",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-05.x",
+  "device": "SF-05",
+  "name": "群中心 x",
+  "unit": "m",
+  "kind": "analog",
+  "min": -6000,
+  "max": 6000
+ },
+ {
+  "id": "SF-05.y",
+  "device": "SF-05",
+  "name": "群中心 y",
+  "unit": "m",
+  "kind": "analog",
+  "min": -5000,
+  "max": 5000
+ },
+ {
+  "id": "SF-05.walkKm",
+  "device": "SF-05",
+  "name": "今日行走",
+  "unit": "km",
+  "kind": "counter",
+  "min": 0,
+  "max": 30
+ },
+ {
+  "id": "SF-05.collarsOnline",
+  "device": "SF-05",
+  "name": "在线项圈",
+  "unit": "个",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-06.head",
+  "device": "SF-06",
+  "name": "头数",
+  "unit": "只",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-06.x",
+  "device": "SF-06",
+  "name": "群中心 x",
+  "unit": "m",
+  "kind": "analog",
+  "min": -6000,
+  "max": 6000
+ },
+ {
+  "id": "SF-06.y",
+  "device": "SF-06",
+  "name": "群中心 y",
+  "unit": "m",
+  "kind": "analog",
+  "min": -5000,
+  "max": 5000
+ },
+ {
+  "id": "SF-06.walkKm",
+  "device": "SF-06",
+  "name": "今日行走",
+  "unit": "km",
+  "kind": "counter",
+  "min": 0,
+  "max": 30
+ },
+ {
+  "id": "SF-06.collarsOnline",
+  "device": "SF-06",
+  "name": "在线项圈",
+  "unit": "个",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-07.head",
+  "device": "SF-07",
+  "name": "头数",
+  "unit": "只",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SF-07.x",
+  "device": "SF-07",
+  "name": "群中心 x",
+  "unit": "m",
+  "kind": "analog",
+  "min": -6000,
+  "max": 6000
+ },
+ {
+  "id": "SF-07.y",
+  "device": "SF-07",
+  "name": "群中心 y",
+  "unit": "m",
+  "kind": "analog",
+  "min": -5000,
+  "max": 5000
+ },
+ {
+  "id": "SF-07.walkKm",
+  "device": "SF-07",
+  "name": "今日行走",
+  "unit": "km",
+  "kind": "counter",
+  "min": 0,
+  "max": 30
+ },
+ {
+  "id": "SF-07.collarsOnline",
+  "device": "SF-07",
+  "name": "在线项圈",
+  "unit": "个",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "CH-01.head",
+  "device": "CH-01",
+  "name": "头数",
+  "unit": "头",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "CH-01.x",
+  "device": "CH-01",
+  "name": "群中心 x",
+  "unit": "m",
+  "kind": "analog",
+  "min": -6000,
+  "max": 6000
+ },
+ {
+  "id": "CH-01.y",
+  "device": "CH-01",
+  "name": "群中心 y",
+  "unit": "m",
+  "kind": "analog",
+  "min": -5000,
+  "max": 5000
+ },
+ {
+  "id": "CH-01.walkKm",
+  "device": "CH-01",
+  "name": "今日行走",
+  "unit": "km",
+  "kind": "counter",
+  "min": 0,
+  "max": 30
+ },
+ {
+  "id": "CH-01.collarsOnline",
+  "device": "CH-01",
+  "name": "在线项圈",
+  "unit": "个",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "CH-02.head",
+  "device": "CH-02",
+  "name": "头数",
+  "unit": "头",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "CH-02.x",
+  "device": "CH-02",
+  "name": "群中心 x",
+  "unit": "m",
+  "kind": "analog",
+  "min": -6000,
+  "max": 6000
+ },
+ {
+  "id": "CH-02.y",
+  "device": "CH-02",
+  "name": "群中心 y",
+  "unit": "m",
+  "kind": "analog",
+  "min": -5000,
+  "max": 5000
+ },
+ {
+  "id": "CH-02.walkKm",
+  "device": "CH-02",
+  "name": "今日行走",
+  "unit": "km",
+  "kind": "counter",
+  "min": 0,
+  "max": 30
+ },
+ {
+  "id": "CH-02.collarsOnline",
+  "device": "CH-02",
+  "name": "在线项圈",
+  "unit": "个",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "CH-03.head",
+  "device": "CH-03",
+  "name": "头数",
+  "unit": "头",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "CH-03.x",
+  "device": "CH-03",
+  "name": "群中心 x",
+  "unit": "m",
+  "kind": "analog",
+  "min": -6000,
+  "max": 6000
+ },
+ {
+  "id": "CH-03.y",
+  "device": "CH-03",
+  "name": "群中心 y",
+  "unit": "m",
+  "kind": "analog",
+  "min": -5000,
+  "max": 5000
+ },
+ {
+  "id": "CH-03.walkKm",
+  "device": "CH-03",
+  "name": "今日行走",
+  "unit": "km",
+  "kind": "counter",
+  "min": 0,
+  "max": 30
+ },
+ {
+  "id": "CH-03.collarsOnline",
+  "device": "CH-03",
+  "name": "在线项圈",
+  "unit": "个",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "WP-01.level",
+  "device": "WP-01",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-01.supplied",
+  "device": "WP-01",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-01.pump",
+  "device": "WP-01",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-02.level",
+  "device": "WP-02",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-02.supplied",
+  "device": "WP-02",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-02.pump",
+  "device": "WP-02",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-03.level",
+  "device": "WP-03",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-03.supplied",
+  "device": "WP-03",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-03.pump",
+  "device": "WP-03",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-04.level",
+  "device": "WP-04",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-04.supplied",
+  "device": "WP-04",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-04.pump",
+  "device": "WP-04",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-05.level",
+  "device": "WP-05",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-05.supplied",
+  "device": "WP-05",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-05.pump",
+  "device": "WP-05",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-06.level",
+  "device": "WP-06",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-06.supplied",
+  "device": "WP-06",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-06.pump",
+  "device": "WP-06",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-07.level",
+  "device": "WP-07",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-07.supplied",
+  "device": "WP-07",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-07.pump",
+  "device": "WP-07",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-08.level",
+  "device": "WP-08",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-08.supplied",
+  "device": "WP-08",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-08.pump",
+  "device": "WP-08",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-09.level",
+  "device": "WP-09",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-09.supplied",
+  "device": "WP-09",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-09.pump",
+  "device": "WP-09",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-10.level",
+  "device": "WP-10",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-10.supplied",
+  "device": "WP-10",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-10.pump",
+  "device": "WP-10",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-11.level",
+  "device": "WP-11",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-11.supplied",
+  "device": "WP-11",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-11.pump",
+  "device": "WP-11",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-12.level",
+  "device": "WP-12",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-12.supplied",
+  "device": "WP-12",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-12.pump",
+  "device": "WP-12",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-13.level",
+  "device": "WP-13",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-13.supplied",
+  "device": "WP-13",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-13.pump",
+  "device": "WP-13",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-14.level",
+  "device": "WP-14",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-14.supplied",
+  "device": "WP-14",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-14.pump",
+  "device": "WP-14",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-15.level",
+  "device": "WP-15",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-15.supplied",
+  "device": "WP-15",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-15.pump",
+  "device": "WP-15",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "WP-16.level",
+  "device": "WP-16",
+  "name": "水罐液位",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "WP-16.supplied",
+  "device": "WP-16",
+  "name": "今日供水",
+  "unit": "m³",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "WP-16.pump",
+  "device": "WP-16",
+  "name": "提水泵",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0001.online",
+  "device": "CL-0001",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0002.online",
+  "device": "CL-0002",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0003.online",
+  "device": "CL-0003",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0004.online",
+  "device": "CL-0004",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0005.online",
+  "device": "CL-0005",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0006.online",
+  "device": "CL-0006",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0007.online",
+  "device": "CL-0007",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0008.online",
+  "device": "CL-0008",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0009.online",
+  "device": "CL-0009",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0010.online",
+  "device": "CL-0010",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0011.online",
+  "device": "CL-0011",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0012.online",
+  "device": "CL-0012",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0013.online",
+  "device": "CL-0013",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0014.online",
+  "device": "CL-0014",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0015.online",
+  "device": "CL-0015",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0016.online",
+  "device": "CL-0016",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0017.online",
+  "device": "CL-0017",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0018.online",
+  "device": "CL-0018",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0019.online",
+  "device": "CL-0019",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0020.online",
+  "device": "CL-0020",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "CL-0021.online",
+  "device": "CL-0021",
+  "name": "项圈在线",
+  "unit": "",
+  "kind": "state"
+ }
+]

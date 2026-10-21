@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>智慧牧场 · 设计稿</title>
+    <!--
+      经开发服务器打开：/docs/design/smart-ranch/drafts-source.html?dir=a|b|c
+      ?clean=1 去掉面板，只看三维画面；?t=HH:MM 改时刻；?date=2026-07-25 改日期
+      三维部分是 three.js 用真实地形 / 影像 / NDVI 实时渲染（src/views/smart-ranch/scene/），
+      面板数字全部来自仿真器（src/views/smart-ranch/sim/simulator.js），和模拟数据快照同一份逻辑。
+      样式在 drafts.no-convert.css（vite 会把内联 <style> 里的 px 转成 rem）。
+    -->
+    <link rel="stylesheet" href="./drafts.no-convert.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="stage"></div>
+      <div id="labels"></div>
+      <div id="ui"></div>
+    </div>
+    <script type="module">
+      import { RanchScene } from "/src/views/smart-ranch/scene/RanchScene.js"
+      import { THEMES } from "/src/views/smart-ranch/scene/theme.js"
+      import { createRanchSim, msForDemo } from "/src/views/smart-ranch/sim/simulator.js"
+      import layout from "/src/views/smart-ranch/data/layout.json"
+      import { buildUi, placeLabels, VIEWS, pickAlarm } from "./drafts-ui.js"
+      import { buildUiA2 } from "./drafts-a2.js"
+
+      const q = new URLSearchParams(location.search)
+      const dir = q.get("dir") || "a"
+      const clean = q.get("clean") === "1"
+      document.body.dataset.dir = dir
+      if (clean) document.body.classList.add("clean")
+      const theme = THEMES[dir]
+      const view = VIEWS[dir]
+
+      try {
+        const sim = createRanchSim(layout)
+        const [hh, mm] = (q.get("t") || view.time).split(":").map(Number)
+        const ms = msForDemo(q.get("date") || view.date, hh + mm / 60)
+        const state = sim.at(ms)
+        const alarm = pickAlarm(state, layout)
+
+        const scene = new RanchScene(document.getElementById("stage"), {
+          layout,
+          theme,
+          baseUrl: "/"
+        })
+        await scene.load()
+        // 先把三种字体加载完再画叠加图层和面板（只等 fonts.ready 不够：面板插进来后字体才开始下载）
+        await Promise.all(
+          ["16px SHS", "16px Alimama", "16px DIN", '16px "Source Han Sans CN"'].map((f) => document.fonts.load(f, "牧场0"))
+        )
+        const trailHerd = view.trailHerd
+        scene.setState(state, {
+          alarm,
+          trail: trailHerd ? sim.track(trailHerd, ms, 6) : null,
+          next: view.next,
+          month: state.t.month + (state.t.day - 1) / 31
+        })
+        // A 方向默认是 v2 版式（?v=1 看最初的 A），镜头也跟着换
+        const isV2 = dir === "a" && q.get("v") !== "1"
+        scene.setView(isV2 && view.cameraV2 ? view.cameraV2 : view.camera)
+        scene.render()
+        if (!clean) {
+          // A 方向用 v2 版式（用户选了 A 的风格，要求功能更多、数据更丰富）；?v=1 看最初的 A
+          if (isV2) document.body.classList.add("v2")
+          document.getElementById("ui").innerHTML = isV2
+            ? buildUiA2(state, layout, alarm, sim, ms)
+            : buildUi(dir, state, layout, alarm, sim, ms)
+          placeLabels(document.getElementById("labels"), scene, state, layout, alarm, dir)
+          await document.fonts.ready
+        }
+        window.__info = { renderer: scene.renderer.getContext().getParameter(0x1f01), alarm }
+        window.__scene = scene
+        window.__ready = true
+      } catch (e) {
+        console.error(e)
+        window.__error = String(e?.stack || e)
+        document.body.insertAdjacentHTML("beforeend", `<pre class="err">${window.__error}</pre>`)
+      }
+    </script>
+  </body>
+</html>
