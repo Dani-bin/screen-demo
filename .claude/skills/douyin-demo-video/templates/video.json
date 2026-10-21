@@ -1,0 +1,54 @@
+{
+  "name": "<demo 中文名，成片文件名前缀>",
+  "label": "30秒",
+  "target": 30,
+  "rate": 5.0,
+  "gap": 0.2,
+  "tail": 1.0,
+  "size": [1920, 1080],
+  "fps": 30,
+  "clips": "clips",
+  "segments": [
+    {
+      "shot": "hook",
+      "plan": 3.6,
+      "offset": 0.3,
+      "picture": "招牌效果：第 0 帧就是成品，0.3 秒开始，3 秒内到高潮",
+      "text": "<开头那句：结果。>"
+    },
+    {
+      "shot": "pain",
+      "plan": 4.6,
+      "picture": "普通做法的样子",
+      "text": "<痛点。>"
+    },
+    {
+      "still": "stills/<设计稿或卫星图>.png",
+      "name": "draft",
+      "plan": 3.0,
+      "zoom": [1.0, 1.12],
+      "from": [0.5, 0.5],
+      "to": [0.55, 0.45],
+      "picture": "可选：2D 静帧推镜（不要就删掉这一段）",
+      "text": ""
+    },
+    {
+      "shot": "what",
+      "plan": 9.0,
+      "picture": "全景 + 第一个看点",
+      "text": "<我用 AI 把……做成了 3D：……。>"
+    },
+    {
+      "shot": "point2",
+      "plan": 5.8,
+      "picture": "交互 / 联动",
+      "text": "<第二个看点。>"
+    },
+    {
+      "shot": "end",
+      "plan": 3.4,
+      "picture": "拉回全景定格",
+      "text": "<问题？评论区说说。>"
+    }
+  ]
+}
