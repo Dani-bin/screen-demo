@@ -1,0 +1,120 @@
+[
+ {
+  "type": "sum",
+  "target": "RANCH.sheepHead",
+  "of": [
+   "SF-01.head",
+   "SF-02.head",
+   "SF-03.head",
+   "SF-04.head",
+   "SF-05.head",
+   "SF-06.head",
+   "SF-07.head"
+  ]
+ },
+ {
+  "type": "sum",
+  "target": "RANCH.cattleHead",
+  "of": [
+   "CH-01.head",
+   "CH-02.head",
+   "CH-03.head"
+  ]
+ },
+ {
+  "type": "sum",
+  "target": "RANCH.head",
+  "of": [
+   "RANCH.sheepHead",
+   "RANCH.cattleHead"
+  ]
+ },
+ {
+  "type": "sum",
+  "target": "RANCH.su",
+  "of": [
+   "U01.su",
+   "U02.su",
+   "U03.su",
+   "U04.su",
+   "U05.su",
+   "U06.su",
+   "U07.su",
+   "U08.su",
+   "U09.su",
+   "U10.su"
+  ]
+ },
+ {
+  "type": "sum",
+  "target": "RANCH.capacity",
+  "of": [
+   "U01.capacity",
+   "U02.capacity",
+   "U03.capacity",
+   "U04.capacity",
+   "U05.capacity",
+   "U06.capacity",
+   "U07.capacity",
+   "U08.capacity",
+   "U09.capacity",
+   "U10.capacity"
+  ],
+  "tol": 0.0001
+ },
+ {
+  "type": "ratio",
+  "target": "RANCH.loadRatio",
+  "num": "RANCH.su",
+  "den": "RANCH.capacity"
+ },
+ {
+  "type": "sum",
+  "target": "RANCH.collarsOnline",
+  "of": [
+   "SF-01.collarsOnline",
+   "SF-02.collarsOnline",
+   "SF-03.collarsOnline",
+   "SF-04.collarsOnline",
+   "SF-05.collarsOnline",
+   "SF-06.collarsOnline",
+   "SF-07.collarsOnline",
+   "CH-01.collarsOnline",
+   "CH-02.collarsOnline",
+   "CH-03.collarsOnline"
+  ]
+ },
+ {
+  "type": "ratio",
+  "target": "RANCH.onlineRate",
+  "num": "RANCH.collarsOnline",
+  "den": "RANCH.collarsTotal"
+ },
+ {
+  "type": "sum",
+  "target": "RANCH.supplied",
+  "of": [
+   "WP-01.supplied",
+   "WP-02.supplied",
+   "WP-03.supplied",
+   "WP-04.supplied",
+   "WP-05.supplied",
+   "WP-06.supplied",
+   "WP-07.supplied",
+   "WP-08.supplied",
+   "WP-09.supplied",
+   "WP-10.supplied",
+   "WP-11.supplied",
+   "WP-12.supplied",
+   "WP-13.supplied",
+   "WP-14.supplied",
+   "WP-15.supplied",
+   "WP-16.supplied"
+  ],
+  "tol": 0.001
+ },
+ {
+  "type": "stale",
+  "maxAgeSec": 3600
+ }
+]

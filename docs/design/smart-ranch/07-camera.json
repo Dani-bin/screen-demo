@@ -1,0 +1,10 @@
+{
+  "_note": "定稿 design/final.png 的机位。设计稿和页面用同一套场景代码（src/views/smart-ranch/scene/RanchScene.js 的 setView），不需要反求标定，残差为 0。",
+  "target": [150, 100],
+  "dist": 31500,
+  "yaw": -5,
+  "pitch": 42,
+  "fov": 27,
+  "shift": [-30, -24],
+  "units": "沙盘坐标（米）：X 沿河谷指向东北、Y 跨河谷指向西北；yaw = 0 时从东南岸往西北看；shift 为设计稿像素"
+}
