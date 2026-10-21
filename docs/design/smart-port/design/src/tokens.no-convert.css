@@ -1,0 +1,67 @@
+/*
+ * 智慧港口 设计令牌（skill 里的 tokens.css；文件名带 no-convert 是为了让 vite 不把 px 转成 rem）
+ * ----------------------------------------------------------
+ * 风格：A 全息孪生 · 深海科技蓝（ui-ux-pro-max: hud-sci-fi-fui，--design-system --density 8 --motion 6）
+ * 整屏唯一的色值、字号、间距来源；设计稿 HTML 只引用这些变量。阶段 9 页面主题照搬这份文件。
+ * 图表分类色经 dataviz 的 validate_palette.js 校验（深色、底 #071A30）：明度带、色度、色觉、对比全部通过。
+ */
+:root {
+  /* 底色与面板 */
+  --bg: #030a16;
+  --bg-2: #061326;
+  --panel: rgba(6, 20, 40, 0.78);
+  --panel-solid: #071a30;
+  --panel-inner: rgba(10, 32, 60, 0.55);
+  --hair: rgba(25, 227, 255, 0.22); /* 发丝线 */
+  --hair-strong: rgba(25, 227, 255, 0.55);
+  --hair-soft: rgba(148, 190, 230, 0.12);
+
+  /* 品牌色：霓虹青只用于线条、发光、强调文字；数据图形用下面的分类色 */
+  --brand: #19e3ff;
+  --brand-2: #2f7bff;
+  --accent: #ffc53d; /* 船舶、跟踪、当前时刻 */
+  --glow: 0 0 8px rgba(25, 227, 255, 0.55);
+  --glow-soft: 0 0 18px rgba(25, 227, 255, 0.25);
+
+  /* 图表分类色（校验通过：L 0.48–0.67、色度 ≥ 0.1、相邻 ΔE ≥ 20） */
+  --cat-1: #0b9fc2;
+  --cat-2: #c2881f;
+  --cat-3: #7180ff;
+
+  /* 状态色（只表示状态，配图标 + 文字，不拿来当系列色） */
+  --ok: #2ef2a0;
+  --warn: #ffb020;
+  --fault: #ff3b5c;
+  --off: #5b6b82;
+  --idle: #34506f;
+
+  /* 文字 */
+  --text: #e6f4ff;
+  --text-2: #a9c3df;
+  --text-3: #6f8db0;
+
+  /* 字体：标题 / 正文 / 数字各一种，本地字体文件 */
+  --font-title: "Alimama", "SHS", sans-serif;
+  --font-body: "SHS", "PingFang SC", sans-serif;
+  --font-num: "DIN", "SHS", sans-serif;
+
+  /* 字号（3–5 m 外观看：正文 ≥ 14、标签 ≥ 12、关键数字 ≥ 24） */
+  --fs-hero: 34px;
+  --fs-kpi: 30px;
+  --fs-panel: 17px;
+  --fs-body: 14px;
+  --fs-label: 13px;
+  --fs-micro: 12px;
+
+  /* 间距（density 8：8–32 px 档） */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  /* 形状：HUD 不用圆角，用切角 */
+  --cut: 10px;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>智慧港口 · 设计稿 v1（全息孪生）</title>
+    <!--
+      经开发服务器打开：/docs/design/smart-port/design/src/v1.html
+      中央是 Figma 概念图 concept.png（全屏铺底，面板压在上面）；面板由 v1.js 用仿真器 2026-10-24 16:34 的状态生成。
+      色值 / 字号 / 间距只来自 tokens.no-convert.css（skill 里的 tokens.css）。
+      截图：node scripts/smart-port/capture.mjs "<开发服务器>/docs/design/smart-port/design/src/v1.html" docs/design/smart-port/design/v1.png
+    -->
+    <link rel="stylesheet" href="./tokens.no-convert.css" />
+    <link rel="stylesheet" href="./v1.no-convert.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="scene"><img src="./concept.png" alt="" /></div>
+      <div class="vignette"></div>
+      <div class="scan"></div>
+      <div id="ui"></div>
+    </div>
+    <script type="module">
+      import { prepare, render } from "./v1.js"
+      try {
+        const d = prepare()
+        await Promise.all(["16px SHS", "16px Alimama", "16px DIN"].map((f) => document.fonts.load(f, "港口0")))
+        document.getElementById("ui").innerHTML = render(d)
+        await document.querySelector(".scene img").decode()
+        await document.fonts.ready
+        window.__info = { time: d.state.clock.hms, alarms: d.state.kpi.alarmsActive }
+        window.__ready = true
+      } catch (e) {
+        console.error(e)
+        window.__error = String(e?.stack || e)
+        document.body.insertAdjacentHTML("beforeend", `<pre class="err">${window.__error}</pre>`)
+      }
+    </script>
+  </body>
+</html>

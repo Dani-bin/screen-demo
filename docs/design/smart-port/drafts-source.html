@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>智慧港口 · 设计稿</title>
+    <!--
+      经开发服务器打开：/docs/design/smart-port/drafts-source.html?dir=a|b|c
+      ?clean=1 去掉面板，只看三维画面；?t=HH:MM 改时刻；?date=2026-10-24 改日期；?cam=u,v,dist,yaw,pitch,fov 临时改镜头
+      三维部分是页面同一份场景代码（src/views/smart-port/scene/），按真实布局和仿真状态实时渲染；
+      面板数字全部来自仿真器（src/views/smart-port/sim/simulator.js），和模拟数据快照同一份逻辑。
+      样式在 drafts.no-convert.css（vite 会把内联 <style> 里的 px 转成 rem）。
+    -->
+    <link rel="stylesheet" href="./drafts.no-convert.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="stage"></div>
+      <div id="labels"></div>
+      <div id="ui"></div>
+    </div>
+    <script type="module">
+      import { PortScene } from "/src/views/smart-port/scene/PortScene.js"
+      import { THEMES } from "/src/views/smart-port/scene/theme.js"
+      import { createPortSim, msForBeijing } from "/src/views/smart-port/sim/simulator.js"
+      import layout from "/src/views/smart-port/data/layout.json"
+      import site from "/src/views/smart-port/data/site.json"
+      import context from "/src/views/smart-port/data/context.json"
+      import { VIEWS, buildUi, placeLabels, pickAlarm } from "./drafts-ui.js"
+
+      const q = new URLSearchParams(location.search)
+      const dir = q.get("dir") || "a"
+      const clean = q.get("clean") === "1"
+      document.body.dataset.dir = dir
+      if (clean) document.body.classList.add("clean")
+      const theme = THEMES[dir]
+      const view = { ...VIEWS[dir] }
+      if (q.get("cam")) {
+        const [u, v, dist, yaw, pitch, fov] = q.get("cam").split(",").map(Number)
+        view.camera = { target: [u, v], dist, yaw, pitch, fov }
+      }
+
+      try {
+        const sim = createPortSim(layout)
+        const [hh, mm] = (q.get("t") || view.time).split(":").map(Number)
+        const ms = msForBeijing(q.get("date") || view.date, hh + mm / 60)
+        const state = sim.at(ms)
+        const poses = sim.agvPoses(ms)
+        const alarm = pickAlarm(state, layout)
+
+        const scene = new PortScene(document.getElementById("stage"), { layout, site, context, theme, baseUrl: "/" })
+        await scene.load()
+        await Promise.all(
+          ["16px SHS", "16px Alimama", "16px DIN"].map((f) => document.fonts.load(f, "港口0"))
+        )
+        const track = view.track ? state.vessels.find((v) => v.stage === "working" && v.cls === view.track)?.id : null
+        scene.setState(state, { poses, alarm: alarm?.fx, track })
+        scene.setView(view.camera)
+        scene.render(ms / 1000)
+        if (!clean) {
+          document.getElementById("ui").innerHTML = buildUi(dir, state, layout, alarm, sim, ms, track)
+          placeLabels(document.getElementById("labels"), scene, state, layout, alarm, dir, track)
+          await document.fonts.ready
+        }
+        window.__info = { renderer: scene.renderer.getContext().getParameter(0x1f01), alarm: alarm?.event?.title }
+        window.__scene = scene
+        window.__state = state
+        window.__ready = true
+      } catch (e) {
+        console.error(e)
+        window.__error = String(e?.stack || e)
+        document.body.insertAdjacentHTML("beforeend", `<pre class="err">${window.__error}</pre>`)
+      }
+    </script>
+  </body>
+</html>

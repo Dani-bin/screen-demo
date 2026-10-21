@@ -1,0 +1,2553 @@
+[
+ {
+  "id": "B01",
+  "name": "1 号泊位",
+  "kind": "berth",
+  "node": "B01",
+  "grade": "5 万吨级"
+ },
+ {
+  "id": "B02",
+  "name": "2 号泊位",
+  "kind": "berth",
+  "node": "B02",
+  "grade": "5 万吨级"
+ },
+ {
+  "id": "B03",
+  "name": "3 号泊位",
+  "kind": "berth",
+  "node": "B03",
+  "grade": "7 万吨级"
+ },
+ {
+  "id": "B04",
+  "name": "4 号泊位",
+  "kind": "berth",
+  "node": "B04",
+  "grade": "7 万吨级"
+ },
+ {
+  "id": "B05",
+  "name": "5 号泊位",
+  "kind": "berth",
+  "node": "B05",
+  "grade": "5 万吨级"
+ },
+ {
+  "id": "B06",
+  "name": "6 号泊位",
+  "kind": "berth",
+  "node": "B06",
+  "grade": "5 万吨级"
+ },
+ {
+  "id": "B07",
+  "name": "7 号泊位",
+  "kind": "berth",
+  "node": "B07",
+  "grade": "5 万吨级"
+ },
+ {
+  "id": "QC01",
+  "name": "1 号岸桥",
+  "kind": "sts",
+  "node": "QC01"
+ },
+ {
+  "id": "QC02",
+  "name": "2 号岸桥",
+  "kind": "sts",
+  "node": "QC02"
+ },
+ {
+  "id": "QC03",
+  "name": "3 号岸桥",
+  "kind": "sts",
+  "node": "QC03"
+ },
+ {
+  "id": "QC04",
+  "name": "4 号岸桥",
+  "kind": "sts",
+  "node": "QC04"
+ },
+ {
+  "id": "QC05",
+  "name": "5 号岸桥",
+  "kind": "sts",
+  "node": "QC05"
+ },
+ {
+  "id": "QC06",
+  "name": "6 号岸桥",
+  "kind": "sts",
+  "node": "QC06"
+ },
+ {
+  "id": "QC07",
+  "name": "7 号岸桥",
+  "kind": "sts",
+  "node": "QC07"
+ },
+ {
+  "id": "QC08",
+  "name": "8 号岸桥",
+  "kind": "sts",
+  "node": "QC08"
+ },
+ {
+  "id": "QC09",
+  "name": "9 号岸桥",
+  "kind": "sts",
+  "node": "QC09"
+ },
+ {
+  "id": "QC10",
+  "name": "10 号岸桥",
+  "kind": "sts",
+  "node": "QC10"
+ },
+ {
+  "id": "QC11",
+  "name": "11 号岸桥",
+  "kind": "sts",
+  "node": "QC11"
+ },
+ {
+  "id": "QC12",
+  "name": "12 号岸桥",
+  "kind": "sts",
+  "node": "QC12"
+ },
+ {
+  "id": "QC13",
+  "name": "13 号岸桥",
+  "kind": "sts",
+  "node": "QC13"
+ },
+ {
+  "id": "QC14",
+  "name": "14 号岸桥",
+  "kind": "sts",
+  "node": "QC14"
+ },
+ {
+  "id": "QC15",
+  "name": "15 号岸桥",
+  "kind": "sts",
+  "node": "QC15"
+ },
+ {
+  "id": "QC16",
+  "name": "16 号岸桥",
+  "kind": "sts",
+  "node": "QC16"
+ },
+ {
+  "id": "QC17",
+  "name": "17 号岸桥",
+  "kind": "sts",
+  "node": "QC17"
+ },
+ {
+  "id": "QC18",
+  "name": "18 号岸桥",
+  "kind": "sts",
+  "node": "QC18"
+ },
+ {
+  "id": "QC19",
+  "name": "19 号岸桥",
+  "kind": "sts",
+  "node": "QC19"
+ },
+ {
+  "id": "QC20",
+  "name": "20 号岸桥",
+  "kind": "sts",
+  "node": "QC20"
+ },
+ {
+  "id": "QC21",
+  "name": "21 号岸桥",
+  "kind": "sts",
+  "node": "QC21"
+ },
+ {
+  "id": "QC22",
+  "name": "22 号岸桥",
+  "kind": "sts",
+  "node": "QC22"
+ },
+ {
+  "id": "QC23",
+  "name": "23 号岸桥",
+  "kind": "sts",
+  "node": "QC23"
+ },
+ {
+  "id": "QC24",
+  "name": "24 号岸桥",
+  "kind": "sts",
+  "node": "QC24"
+ },
+ {
+  "id": "QC25",
+  "name": "25 号岸桥",
+  "kind": "sts",
+  "node": "QC25"
+ },
+ {
+  "id": "QC26",
+  "name": "26 号岸桥",
+  "kind": "sts",
+  "node": "QC26"
+ },
+ {
+  "id": "QC27",
+  "name": "27 号岸桥",
+  "kind": "sts",
+  "node": "QC27"
+ },
+ {
+  "id": "QC28",
+  "name": "28 号岸桥",
+  "kind": "sts",
+  "node": "QC28"
+ },
+ {
+  "id": "Y01",
+  "name": "Y01 箱区",
+  "kind": "block",
+  "node": "Y01",
+  "group": 0
+ },
+ {
+  "id": "Y02",
+  "name": "Y02 箱区",
+  "kind": "block",
+  "node": "Y02",
+  "group": 1
+ },
+ {
+  "id": "Y03",
+  "name": "Y03 箱区",
+  "kind": "block",
+  "node": "Y03",
+  "group": 1
+ },
+ {
+  "id": "Y04",
+  "name": "Y04 箱区",
+  "kind": "block",
+  "node": "Y04",
+  "group": 1
+ },
+ {
+  "id": "Y05",
+  "name": "Y05 箱区",
+  "kind": "block",
+  "node": "Y05",
+  "group": 1
+ },
+ {
+  "id": "Y06",
+  "name": "Y06 箱区",
+  "kind": "block",
+  "node": "Y06",
+  "group": 2
+ },
+ {
+  "id": "Y07",
+  "name": "Y07 箱区",
+  "kind": "block",
+  "node": "Y07",
+  "group": 2
+ },
+ {
+  "id": "Y08",
+  "name": "Y08 箱区",
+  "kind": "block",
+  "node": "Y08",
+  "group": 2
+ },
+ {
+  "id": "Y09",
+  "name": "Y09 箱区",
+  "kind": "block",
+  "node": "Y09",
+  "group": 2
+ },
+ {
+  "id": "Y10",
+  "name": "Y10 箱区",
+  "kind": "block",
+  "node": "Y10",
+  "group": 3
+ },
+ {
+  "id": "Y11",
+  "name": "Y11 箱区",
+  "kind": "block",
+  "node": "Y11",
+  "group": 3
+ },
+ {
+  "id": "Y12",
+  "name": "Y12 箱区",
+  "kind": "block",
+  "node": "Y12",
+  "group": 3
+ },
+ {
+  "id": "Y13",
+  "name": "Y13 箱区",
+  "kind": "block",
+  "node": "Y13",
+  "group": 3
+ },
+ {
+  "id": "Y14",
+  "name": "Y14 箱区",
+  "kind": "block",
+  "node": "Y14",
+  "group": 3
+ },
+ {
+  "id": "Y15",
+  "name": "Y15 箱区",
+  "kind": "block",
+  "node": "Y15",
+  "group": 3
+ },
+ {
+  "id": "Y16",
+  "name": "Y16 箱区",
+  "kind": "block",
+  "node": "Y16",
+  "group": 4
+ },
+ {
+  "id": "Y17",
+  "name": "Y17 箱区",
+  "kind": "block",
+  "node": "Y17",
+  "group": 4
+ },
+ {
+  "id": "Y18",
+  "name": "Y18 箱区",
+  "kind": "block",
+  "node": "Y18",
+  "group": 4
+ },
+ {
+  "id": "Y19",
+  "name": "Y19 箱区",
+  "kind": "block",
+  "node": "Y19",
+  "group": 4,
+  "reefer": true
+ },
+ {
+  "id": "Y20",
+  "name": "Y20 箱区",
+  "kind": "block",
+  "node": "Y20",
+  "group": 4,
+  "reefer": true
+ },
+ {
+  "id": "Y21",
+  "name": "Y21 箱区",
+  "kind": "block",
+  "node": "Y21",
+  "group": 4
+ },
+ {
+  "id": "Y22",
+  "name": "Y22 箱区",
+  "kind": "block",
+  "node": "Y22",
+  "group": 4
+ },
+ {
+  "id": "Y23",
+  "name": "Y23 箱区",
+  "kind": "block",
+  "node": "Y23",
+  "group": 4
+ },
+ {
+  "id": "Y24",
+  "name": "Y24 箱区",
+  "kind": "block",
+  "node": "Y24",
+  "group": 5
+ },
+ {
+  "id": "Y25",
+  "name": "Y25 箱区",
+  "kind": "block",
+  "node": "Y25",
+  "group": 5
+ },
+ {
+  "id": "Y26",
+  "name": "Y26 箱区",
+  "kind": "block",
+  "node": "Y26",
+  "group": 5
+ },
+ {
+  "id": "Y27",
+  "name": "Y27 箱区",
+  "kind": "block",
+  "node": "Y27",
+  "group": 5
+ },
+ {
+  "id": "Y28",
+  "name": "Y28 箱区",
+  "kind": "block",
+  "node": "Y28",
+  "group": 5
+ },
+ {
+  "id": "Y29",
+  "name": "Y29 箱区",
+  "kind": "block",
+  "node": "Y29",
+  "group": 5
+ },
+ {
+  "id": "Y30",
+  "name": "Y30 箱区",
+  "kind": "block",
+  "node": "Y30",
+  "group": 5
+ },
+ {
+  "id": "Y31",
+  "name": "Y31 箱区",
+  "kind": "block",
+  "node": "Y31",
+  "group": 5,
+  "reefer": true
+ },
+ {
+  "id": "Y32",
+  "name": "Y32 箱区",
+  "kind": "block",
+  "node": "Y32",
+  "group": 6
+ },
+ {
+  "id": "Y33",
+  "name": "Y33 箱区",
+  "kind": "block",
+  "node": "Y33",
+  "group": 6
+ },
+ {
+  "id": "Y34",
+  "name": "Y34 箱区",
+  "kind": "block",
+  "node": "Y34",
+  "group": 6
+ },
+ {
+  "id": "Y35",
+  "name": "Y35 箱区",
+  "kind": "block",
+  "node": "Y35",
+  "group": 6
+ },
+ {
+  "id": "Y36",
+  "name": "Y36 箱区",
+  "kind": "block",
+  "node": "Y36",
+  "group": 6
+ },
+ {
+  "id": "Y37",
+  "name": "Y37 箱区",
+  "kind": "block",
+  "node": "Y37",
+  "group": 6
+ },
+ {
+  "id": "Y38",
+  "name": "Y38 箱区",
+  "kind": "block",
+  "node": "Y38",
+  "group": 6
+ },
+ {
+  "id": "Y39",
+  "name": "Y39 箱区",
+  "kind": "block",
+  "node": "Y39",
+  "group": 6
+ },
+ {
+  "id": "Y40",
+  "name": "Y40 箱区",
+  "kind": "block",
+  "node": "Y40",
+  "group": 7
+ },
+ {
+  "id": "Y41",
+  "name": "Y41 箱区",
+  "kind": "block",
+  "node": "Y41",
+  "group": 7
+ },
+ {
+  "id": "Y42",
+  "name": "Y42 箱区",
+  "kind": "block",
+  "node": "Y42",
+  "group": 7
+ },
+ {
+  "id": "Y43",
+  "name": "Y43 箱区",
+  "kind": "block",
+  "node": "Y43",
+  "group": 7
+ },
+ {
+  "id": "Y44",
+  "name": "Y44 箱区",
+  "kind": "block",
+  "node": "Y44",
+  "group": 7
+ },
+ {
+  "id": "Y45",
+  "name": "Y45 箱区",
+  "kind": "block",
+  "node": "Y45",
+  "group": 7
+ },
+ {
+  "id": "Y46",
+  "name": "Y46 箱区",
+  "kind": "block",
+  "node": "Y46",
+  "group": 7
+ },
+ {
+  "id": "Y47",
+  "name": "Y47 箱区",
+  "kind": "block",
+  "node": "Y47",
+  "group": 7
+ },
+ {
+  "id": "Y48",
+  "name": "Y48 箱区",
+  "kind": "block",
+  "node": "Y48",
+  "group": 8
+ },
+ {
+  "id": "Y49",
+  "name": "Y49 箱区",
+  "kind": "block",
+  "node": "Y49",
+  "group": 8
+ },
+ {
+  "id": "Y50",
+  "name": "Y50 箱区",
+  "kind": "block",
+  "node": "Y50",
+  "group": 8
+ },
+ {
+  "id": "Y51",
+  "name": "Y51 箱区",
+  "kind": "block",
+  "node": "Y51",
+  "group": 8
+ },
+ {
+  "id": "Y52",
+  "name": "Y52 箱区",
+  "kind": "block",
+  "node": "Y52",
+  "group": 8
+ },
+ {
+  "id": "Y53",
+  "name": "Y53 箱区",
+  "kind": "block",
+  "node": "Y53",
+  "group": 8
+ },
+ {
+  "id": "Y54",
+  "name": "Y54 箱区",
+  "kind": "block",
+  "node": "Y54",
+  "group": 9
+ },
+ {
+  "id": "Y55",
+  "name": "Y55 箱区",
+  "kind": "block",
+  "node": "Y55",
+  "group": 9
+ },
+ {
+  "id": "Y56",
+  "name": "Y56 箱区",
+  "kind": "block",
+  "node": "Y56",
+  "group": 9
+ },
+ {
+  "id": "Y57",
+  "name": "Y57 箱区",
+  "kind": "block",
+  "node": "Y57",
+  "group": 9
+ },
+ {
+  "id": "Y58",
+  "name": "Y58 箱区",
+  "kind": "block",
+  "node": "Y58",
+  "group": 9
+ },
+ {
+  "id": "Y59",
+  "name": "Y59 箱区",
+  "kind": "block",
+  "node": "Y59",
+  "group": 9
+ },
+ {
+  "id": "Y60",
+  "name": "Y60 箱区",
+  "kind": "block",
+  "node": "Y60",
+  "group": 9
+ },
+ {
+  "id": "Y61",
+  "name": "Y61 箱区",
+  "kind": "block",
+  "node": "Y61",
+  "group": 10
+ },
+ {
+  "id": "Y01-S",
+  "name": "Y01 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y01-S",
+  "block": "Y01"
+ },
+ {
+  "id": "Y02-S",
+  "name": "Y02 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y02-S",
+  "block": "Y02"
+ },
+ {
+  "id": "Y02-L",
+  "name": "Y02 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y02-L",
+  "block": "Y02"
+ },
+ {
+  "id": "Y03-S",
+  "name": "Y03 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y03-S",
+  "block": "Y03"
+ },
+ {
+  "id": "Y03-L",
+  "name": "Y03 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y03-L",
+  "block": "Y03"
+ },
+ {
+  "id": "Y04-S",
+  "name": "Y04 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y04-S",
+  "block": "Y04"
+ },
+ {
+  "id": "Y04-L",
+  "name": "Y04 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y04-L",
+  "block": "Y04"
+ },
+ {
+  "id": "Y05-S",
+  "name": "Y05 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y05-S",
+  "block": "Y05"
+ },
+ {
+  "id": "Y05-L",
+  "name": "Y05 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y05-L",
+  "block": "Y05"
+ },
+ {
+  "id": "Y06-S",
+  "name": "Y06 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y06-S",
+  "block": "Y06"
+ },
+ {
+  "id": "Y06-L",
+  "name": "Y06 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y06-L",
+  "block": "Y06"
+ },
+ {
+  "id": "Y07-S",
+  "name": "Y07 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y07-S",
+  "block": "Y07"
+ },
+ {
+  "id": "Y07-L",
+  "name": "Y07 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y07-L",
+  "block": "Y07"
+ },
+ {
+  "id": "Y08-S",
+  "name": "Y08 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y08-S",
+  "block": "Y08"
+ },
+ {
+  "id": "Y08-L",
+  "name": "Y08 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y08-L",
+  "block": "Y08"
+ },
+ {
+  "id": "Y09-S",
+  "name": "Y09 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y09-S",
+  "block": "Y09"
+ },
+ {
+  "id": "Y09-L",
+  "name": "Y09 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y09-L",
+  "block": "Y09"
+ },
+ {
+  "id": "Y10-S",
+  "name": "Y10 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y10-S",
+  "block": "Y10"
+ },
+ {
+  "id": "Y10-L",
+  "name": "Y10 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y10-L",
+  "block": "Y10"
+ },
+ {
+  "id": "Y11-S",
+  "name": "Y11 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y11-S",
+  "block": "Y11"
+ },
+ {
+  "id": "Y11-L",
+  "name": "Y11 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y11-L",
+  "block": "Y11"
+ },
+ {
+  "id": "Y12-S",
+  "name": "Y12 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y12-S",
+  "block": "Y12"
+ },
+ {
+  "id": "Y12-L",
+  "name": "Y12 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y12-L",
+  "block": "Y12"
+ },
+ {
+  "id": "Y13-S",
+  "name": "Y13 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y13-S",
+  "block": "Y13"
+ },
+ {
+  "id": "Y13-L",
+  "name": "Y13 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y13-L",
+  "block": "Y13"
+ },
+ {
+  "id": "Y14-S",
+  "name": "Y14 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y14-S",
+  "block": "Y14"
+ },
+ {
+  "id": "Y14-L",
+  "name": "Y14 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y14-L",
+  "block": "Y14"
+ },
+ {
+  "id": "Y15-S",
+  "name": "Y15 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y15-S",
+  "block": "Y15"
+ },
+ {
+  "id": "Y15-L",
+  "name": "Y15 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y15-L",
+  "block": "Y15"
+ },
+ {
+  "id": "Y16-S",
+  "name": "Y16 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y16-S",
+  "block": "Y16"
+ },
+ {
+  "id": "Y16-L",
+  "name": "Y16 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y16-L",
+  "block": "Y16"
+ },
+ {
+  "id": "Y17-S",
+  "name": "Y17 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y17-S",
+  "block": "Y17"
+ },
+ {
+  "id": "Y17-L",
+  "name": "Y17 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y17-L",
+  "block": "Y17"
+ },
+ {
+  "id": "Y18-S",
+  "name": "Y18 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y18-S",
+  "block": "Y18"
+ },
+ {
+  "id": "Y18-L",
+  "name": "Y18 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y18-L",
+  "block": "Y18"
+ },
+ {
+  "id": "Y19-S",
+  "name": "Y19 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y19-S",
+  "block": "Y19"
+ },
+ {
+  "id": "Y19-L",
+  "name": "Y19 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y19-L",
+  "block": "Y19"
+ },
+ {
+  "id": "Y20-S",
+  "name": "Y20 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y20-S",
+  "block": "Y20"
+ },
+ {
+  "id": "Y20-L",
+  "name": "Y20 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y20-L",
+  "block": "Y20"
+ },
+ {
+  "id": "Y21-S",
+  "name": "Y21 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y21-S",
+  "block": "Y21"
+ },
+ {
+  "id": "Y21-L",
+  "name": "Y21 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y21-L",
+  "block": "Y21"
+ },
+ {
+  "id": "Y22-S",
+  "name": "Y22 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y22-S",
+  "block": "Y22"
+ },
+ {
+  "id": "Y22-L",
+  "name": "Y22 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y22-L",
+  "block": "Y22"
+ },
+ {
+  "id": "Y23-S",
+  "name": "Y23 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y23-S",
+  "block": "Y23"
+ },
+ {
+  "id": "Y23-L",
+  "name": "Y23 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y23-L",
+  "block": "Y23"
+ },
+ {
+  "id": "Y24-S",
+  "name": "Y24 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y24-S",
+  "block": "Y24"
+ },
+ {
+  "id": "Y24-L",
+  "name": "Y24 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y24-L",
+  "block": "Y24"
+ },
+ {
+  "id": "Y25-S",
+  "name": "Y25 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y25-S",
+  "block": "Y25"
+ },
+ {
+  "id": "Y25-L",
+  "name": "Y25 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y25-L",
+  "block": "Y25"
+ },
+ {
+  "id": "Y26-S",
+  "name": "Y26 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y26-S",
+  "block": "Y26"
+ },
+ {
+  "id": "Y26-L",
+  "name": "Y26 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y26-L",
+  "block": "Y26"
+ },
+ {
+  "id": "Y27-S",
+  "name": "Y27 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y27-S",
+  "block": "Y27"
+ },
+ {
+  "id": "Y27-L",
+  "name": "Y27 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y27-L",
+  "block": "Y27"
+ },
+ {
+  "id": "Y28-S",
+  "name": "Y28 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y28-S",
+  "block": "Y28"
+ },
+ {
+  "id": "Y28-L",
+  "name": "Y28 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y28-L",
+  "block": "Y28"
+ },
+ {
+  "id": "Y29-S",
+  "name": "Y29 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y29-S",
+  "block": "Y29"
+ },
+ {
+  "id": "Y29-L",
+  "name": "Y29 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y29-L",
+  "block": "Y29"
+ },
+ {
+  "id": "Y30-S",
+  "name": "Y30 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y30-S",
+  "block": "Y30"
+ },
+ {
+  "id": "Y30-L",
+  "name": "Y30 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y30-L",
+  "block": "Y30"
+ },
+ {
+  "id": "Y31-S",
+  "name": "Y31 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y31-S",
+  "block": "Y31"
+ },
+ {
+  "id": "Y31-L",
+  "name": "Y31 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y31-L",
+  "block": "Y31"
+ },
+ {
+  "id": "Y32-S",
+  "name": "Y32 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y32-S",
+  "block": "Y32"
+ },
+ {
+  "id": "Y32-L",
+  "name": "Y32 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y32-L",
+  "block": "Y32"
+ },
+ {
+  "id": "Y33-S",
+  "name": "Y33 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y33-S",
+  "block": "Y33"
+ },
+ {
+  "id": "Y33-L",
+  "name": "Y33 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y33-L",
+  "block": "Y33"
+ },
+ {
+  "id": "Y34-S",
+  "name": "Y34 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y34-S",
+  "block": "Y34"
+ },
+ {
+  "id": "Y34-L",
+  "name": "Y34 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y34-L",
+  "block": "Y34"
+ },
+ {
+  "id": "Y35-S",
+  "name": "Y35 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y35-S",
+  "block": "Y35"
+ },
+ {
+  "id": "Y35-L",
+  "name": "Y35 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y35-L",
+  "block": "Y35"
+ },
+ {
+  "id": "Y36-S",
+  "name": "Y36 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y36-S",
+  "block": "Y36"
+ },
+ {
+  "id": "Y36-L",
+  "name": "Y36 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y36-L",
+  "block": "Y36"
+ },
+ {
+  "id": "Y37-S",
+  "name": "Y37 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y37-S",
+  "block": "Y37"
+ },
+ {
+  "id": "Y37-L",
+  "name": "Y37 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y37-L",
+  "block": "Y37"
+ },
+ {
+  "id": "Y38-S",
+  "name": "Y38 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y38-S",
+  "block": "Y38"
+ },
+ {
+  "id": "Y38-L",
+  "name": "Y38 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y38-L",
+  "block": "Y38"
+ },
+ {
+  "id": "Y39-S",
+  "name": "Y39 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y39-S",
+  "block": "Y39"
+ },
+ {
+  "id": "Y39-L",
+  "name": "Y39 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y39-L",
+  "block": "Y39"
+ },
+ {
+  "id": "Y40-S",
+  "name": "Y40 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y40-S",
+  "block": "Y40"
+ },
+ {
+  "id": "Y40-L",
+  "name": "Y40 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y40-L",
+  "block": "Y40"
+ },
+ {
+  "id": "Y41-S",
+  "name": "Y41 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y41-S",
+  "block": "Y41"
+ },
+ {
+  "id": "Y41-L",
+  "name": "Y41 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y41-L",
+  "block": "Y41"
+ },
+ {
+  "id": "Y42-S",
+  "name": "Y42 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y42-S",
+  "block": "Y42"
+ },
+ {
+  "id": "Y42-L",
+  "name": "Y42 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y42-L",
+  "block": "Y42"
+ },
+ {
+  "id": "Y43-S",
+  "name": "Y43 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y43-S",
+  "block": "Y43"
+ },
+ {
+  "id": "Y43-L",
+  "name": "Y43 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y43-L",
+  "block": "Y43"
+ },
+ {
+  "id": "Y44-S",
+  "name": "Y44 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y44-S",
+  "block": "Y44"
+ },
+ {
+  "id": "Y44-L",
+  "name": "Y44 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y44-L",
+  "block": "Y44"
+ },
+ {
+  "id": "Y45-S",
+  "name": "Y45 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y45-S",
+  "block": "Y45"
+ },
+ {
+  "id": "Y45-L",
+  "name": "Y45 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y45-L",
+  "block": "Y45"
+ },
+ {
+  "id": "Y46-S",
+  "name": "Y46 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y46-S",
+  "block": "Y46"
+ },
+ {
+  "id": "Y46-L",
+  "name": "Y46 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y46-L",
+  "block": "Y46"
+ },
+ {
+  "id": "Y47-S",
+  "name": "Y47 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y47-S",
+  "block": "Y47"
+ },
+ {
+  "id": "Y47-L",
+  "name": "Y47 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y47-L",
+  "block": "Y47"
+ },
+ {
+  "id": "Y48-S",
+  "name": "Y48 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y48-S",
+  "block": "Y48"
+ },
+ {
+  "id": "Y48-L",
+  "name": "Y48 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y48-L",
+  "block": "Y48"
+ },
+ {
+  "id": "Y49-S",
+  "name": "Y49 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y49-S",
+  "block": "Y49"
+ },
+ {
+  "id": "Y49-L",
+  "name": "Y49 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y49-L",
+  "block": "Y49"
+ },
+ {
+  "id": "Y50-S",
+  "name": "Y50 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y50-S",
+  "block": "Y50"
+ },
+ {
+  "id": "Y50-L",
+  "name": "Y50 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y50-L",
+  "block": "Y50"
+ },
+ {
+  "id": "Y51-S",
+  "name": "Y51 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y51-S",
+  "block": "Y51"
+ },
+ {
+  "id": "Y51-L",
+  "name": "Y51 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y51-L",
+  "block": "Y51"
+ },
+ {
+  "id": "Y52-S",
+  "name": "Y52 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y52-S",
+  "block": "Y52"
+ },
+ {
+  "id": "Y52-L",
+  "name": "Y52 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y52-L",
+  "block": "Y52"
+ },
+ {
+  "id": "Y53-S",
+  "name": "Y53 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y53-S",
+  "block": "Y53"
+ },
+ {
+  "id": "Y53-L",
+  "name": "Y53 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y53-L",
+  "block": "Y53"
+ },
+ {
+  "id": "Y54-S",
+  "name": "Y54 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y54-S",
+  "block": "Y54"
+ },
+ {
+  "id": "Y54-L",
+  "name": "Y54 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y54-L",
+  "block": "Y54"
+ },
+ {
+  "id": "Y55-S",
+  "name": "Y55 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y55-S",
+  "block": "Y55"
+ },
+ {
+  "id": "Y55-L",
+  "name": "Y55 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y55-L",
+  "block": "Y55"
+ },
+ {
+  "id": "Y56-S",
+  "name": "Y56 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y56-S",
+  "block": "Y56"
+ },
+ {
+  "id": "Y56-L",
+  "name": "Y56 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y56-L",
+  "block": "Y56"
+ },
+ {
+  "id": "Y57-S",
+  "name": "Y57 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y57-S",
+  "block": "Y57"
+ },
+ {
+  "id": "Y57-L",
+  "name": "Y57 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y57-L",
+  "block": "Y57"
+ },
+ {
+  "id": "Y58-S",
+  "name": "Y58 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y58-S",
+  "block": "Y58"
+ },
+ {
+  "id": "Y58-L",
+  "name": "Y58 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y58-L",
+  "block": "Y58"
+ },
+ {
+  "id": "Y59-S",
+  "name": "Y59 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y59-S",
+  "block": "Y59"
+ },
+ {
+  "id": "Y59-L",
+  "name": "Y59 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y59-L",
+  "block": "Y59"
+ },
+ {
+  "id": "Y60-S",
+  "name": "Y60 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y60-S",
+  "block": "Y60"
+ },
+ {
+  "id": "Y60-L",
+  "name": "Y60 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y60-L",
+  "block": "Y60"
+ },
+ {
+  "id": "Y61-S",
+  "name": "Y61 海侧轨道吊",
+  "kind": "armg",
+  "node": "Y61-S",
+  "block": "Y61"
+ },
+ {
+  "id": "Y61-L",
+  "name": "Y61 陆侧轨道吊",
+  "kind": "armg",
+  "node": "Y61-L",
+  "block": "Y61"
+ },
+ {
+  "id": "AGV001",
+  "name": "AGV 001",
+  "kind": "agv",
+  "node": "AGV001",
+  "instanced": true
+ },
+ {
+  "id": "AGV002",
+  "name": "AGV 002",
+  "kind": "agv",
+  "node": "AGV002",
+  "instanced": true
+ },
+ {
+  "id": "AGV003",
+  "name": "AGV 003",
+  "kind": "agv",
+  "node": "AGV003",
+  "instanced": true
+ },
+ {
+  "id": "AGV004",
+  "name": "AGV 004",
+  "kind": "agv",
+  "node": "AGV004",
+  "instanced": true
+ },
+ {
+  "id": "AGV005",
+  "name": "AGV 005",
+  "kind": "agv",
+  "node": "AGV005",
+  "instanced": true
+ },
+ {
+  "id": "AGV006",
+  "name": "AGV 006",
+  "kind": "agv",
+  "node": "AGV006",
+  "instanced": true
+ },
+ {
+  "id": "AGV007",
+  "name": "AGV 007",
+  "kind": "agv",
+  "node": "AGV007",
+  "instanced": true
+ },
+ {
+  "id": "AGV008",
+  "name": "AGV 008",
+  "kind": "agv",
+  "node": "AGV008",
+  "instanced": true
+ },
+ {
+  "id": "AGV009",
+  "name": "AGV 009",
+  "kind": "agv",
+  "node": "AGV009",
+  "instanced": true
+ },
+ {
+  "id": "AGV010",
+  "name": "AGV 010",
+  "kind": "agv",
+  "node": "AGV010",
+  "instanced": true
+ },
+ {
+  "id": "AGV011",
+  "name": "AGV 011",
+  "kind": "agv",
+  "node": "AGV011",
+  "instanced": true
+ },
+ {
+  "id": "AGV012",
+  "name": "AGV 012",
+  "kind": "agv",
+  "node": "AGV012",
+  "instanced": true
+ },
+ {
+  "id": "AGV013",
+  "name": "AGV 013",
+  "kind": "agv",
+  "node": "AGV013",
+  "instanced": true
+ },
+ {
+  "id": "AGV014",
+  "name": "AGV 014",
+  "kind": "agv",
+  "node": "AGV014",
+  "instanced": true
+ },
+ {
+  "id": "AGV015",
+  "name": "AGV 015",
+  "kind": "agv",
+  "node": "AGV015",
+  "instanced": true
+ },
+ {
+  "id": "AGV016",
+  "name": "AGV 016",
+  "kind": "agv",
+  "node": "AGV016",
+  "instanced": true
+ },
+ {
+  "id": "AGV017",
+  "name": "AGV 017",
+  "kind": "agv",
+  "node": "AGV017",
+  "instanced": true
+ },
+ {
+  "id": "AGV018",
+  "name": "AGV 018",
+  "kind": "agv",
+  "node": "AGV018",
+  "instanced": true
+ },
+ {
+  "id": "AGV019",
+  "name": "AGV 019",
+  "kind": "agv",
+  "node": "AGV019",
+  "instanced": true
+ },
+ {
+  "id": "AGV020",
+  "name": "AGV 020",
+  "kind": "agv",
+  "node": "AGV020",
+  "instanced": true
+ },
+ {
+  "id": "AGV021",
+  "name": "AGV 021",
+  "kind": "agv",
+  "node": "AGV021",
+  "instanced": true
+ },
+ {
+  "id": "AGV022",
+  "name": "AGV 022",
+  "kind": "agv",
+  "node": "AGV022",
+  "instanced": true
+ },
+ {
+  "id": "AGV023",
+  "name": "AGV 023",
+  "kind": "agv",
+  "node": "AGV023",
+  "instanced": true
+ },
+ {
+  "id": "AGV024",
+  "name": "AGV 024",
+  "kind": "agv",
+  "node": "AGV024",
+  "instanced": true
+ },
+ {
+  "id": "AGV025",
+  "name": "AGV 025",
+  "kind": "agv",
+  "node": "AGV025",
+  "instanced": true
+ },
+ {
+  "id": "AGV026",
+  "name": "AGV 026",
+  "kind": "agv",
+  "node": "AGV026",
+  "instanced": true
+ },
+ {
+  "id": "AGV027",
+  "name": "AGV 027",
+  "kind": "agv",
+  "node": "AGV027",
+  "instanced": true
+ },
+ {
+  "id": "AGV028",
+  "name": "AGV 028",
+  "kind": "agv",
+  "node": "AGV028",
+  "instanced": true
+ },
+ {
+  "id": "AGV029",
+  "name": "AGV 029",
+  "kind": "agv",
+  "node": "AGV029",
+  "instanced": true
+ },
+ {
+  "id": "AGV030",
+  "name": "AGV 030",
+  "kind": "agv",
+  "node": "AGV030",
+  "instanced": true
+ },
+ {
+  "id": "AGV031",
+  "name": "AGV 031",
+  "kind": "agv",
+  "node": "AGV031",
+  "instanced": true
+ },
+ {
+  "id": "AGV032",
+  "name": "AGV 032",
+  "kind": "agv",
+  "node": "AGV032",
+  "instanced": true
+ },
+ {
+  "id": "AGV033",
+  "name": "AGV 033",
+  "kind": "agv",
+  "node": "AGV033",
+  "instanced": true
+ },
+ {
+  "id": "AGV034",
+  "name": "AGV 034",
+  "kind": "agv",
+  "node": "AGV034",
+  "instanced": true
+ },
+ {
+  "id": "AGV035",
+  "name": "AGV 035",
+  "kind": "agv",
+  "node": "AGV035",
+  "instanced": true
+ },
+ {
+  "id": "AGV036",
+  "name": "AGV 036",
+  "kind": "agv",
+  "node": "AGV036",
+  "instanced": true
+ },
+ {
+  "id": "AGV037",
+  "name": "AGV 037",
+  "kind": "agv",
+  "node": "AGV037",
+  "instanced": true
+ },
+ {
+  "id": "AGV038",
+  "name": "AGV 038",
+  "kind": "agv",
+  "node": "AGV038",
+  "instanced": true
+ },
+ {
+  "id": "AGV039",
+  "name": "AGV 039",
+  "kind": "agv",
+  "node": "AGV039",
+  "instanced": true
+ },
+ {
+  "id": "AGV040",
+  "name": "AGV 040",
+  "kind": "agv",
+  "node": "AGV040",
+  "instanced": true
+ },
+ {
+  "id": "AGV041",
+  "name": "AGV 041",
+  "kind": "agv",
+  "node": "AGV041",
+  "instanced": true
+ },
+ {
+  "id": "AGV042",
+  "name": "AGV 042",
+  "kind": "agv",
+  "node": "AGV042",
+  "instanced": true
+ },
+ {
+  "id": "AGV043",
+  "name": "AGV 043",
+  "kind": "agv",
+  "node": "AGV043",
+  "instanced": true
+ },
+ {
+  "id": "AGV044",
+  "name": "AGV 044",
+  "kind": "agv",
+  "node": "AGV044",
+  "instanced": true
+ },
+ {
+  "id": "AGV045",
+  "name": "AGV 045",
+  "kind": "agv",
+  "node": "AGV045",
+  "instanced": true
+ },
+ {
+  "id": "AGV046",
+  "name": "AGV 046",
+  "kind": "agv",
+  "node": "AGV046",
+  "instanced": true
+ },
+ {
+  "id": "AGV047",
+  "name": "AGV 047",
+  "kind": "agv",
+  "node": "AGV047",
+  "instanced": true
+ },
+ {
+  "id": "AGV048",
+  "name": "AGV 048",
+  "kind": "agv",
+  "node": "AGV048",
+  "instanced": true
+ },
+ {
+  "id": "AGV049",
+  "name": "AGV 049",
+  "kind": "agv",
+  "node": "AGV049",
+  "instanced": true
+ },
+ {
+  "id": "AGV050",
+  "name": "AGV 050",
+  "kind": "agv",
+  "node": "AGV050",
+  "instanced": true
+ },
+ {
+  "id": "AGV051",
+  "name": "AGV 051",
+  "kind": "agv",
+  "node": "AGV051",
+  "instanced": true
+ },
+ {
+  "id": "AGV052",
+  "name": "AGV 052",
+  "kind": "agv",
+  "node": "AGV052",
+  "instanced": true
+ },
+ {
+  "id": "AGV053",
+  "name": "AGV 053",
+  "kind": "agv",
+  "node": "AGV053",
+  "instanced": true
+ },
+ {
+  "id": "AGV054",
+  "name": "AGV 054",
+  "kind": "agv",
+  "node": "AGV054",
+  "instanced": true
+ },
+ {
+  "id": "AGV055",
+  "name": "AGV 055",
+  "kind": "agv",
+  "node": "AGV055",
+  "instanced": true
+ },
+ {
+  "id": "AGV056",
+  "name": "AGV 056",
+  "kind": "agv",
+  "node": "AGV056",
+  "instanced": true
+ },
+ {
+  "id": "AGV057",
+  "name": "AGV 057",
+  "kind": "agv",
+  "node": "AGV057",
+  "instanced": true
+ },
+ {
+  "id": "AGV058",
+  "name": "AGV 058",
+  "kind": "agv",
+  "node": "AGV058",
+  "instanced": true
+ },
+ {
+  "id": "AGV059",
+  "name": "AGV 059",
+  "kind": "agv",
+  "node": "AGV059",
+  "instanced": true
+ },
+ {
+  "id": "AGV060",
+  "name": "AGV 060",
+  "kind": "agv",
+  "node": "AGV060",
+  "instanced": true
+ },
+ {
+  "id": "AGV061",
+  "name": "AGV 061",
+  "kind": "agv",
+  "node": "AGV061",
+  "instanced": true
+ },
+ {
+  "id": "AGV062",
+  "name": "AGV 062",
+  "kind": "agv",
+  "node": "AGV062",
+  "instanced": true
+ },
+ {
+  "id": "AGV063",
+  "name": "AGV 063",
+  "kind": "agv",
+  "node": "AGV063",
+  "instanced": true
+ },
+ {
+  "id": "AGV064",
+  "name": "AGV 064",
+  "kind": "agv",
+  "node": "AGV064",
+  "instanced": true
+ },
+ {
+  "id": "AGV065",
+  "name": "AGV 065",
+  "kind": "agv",
+  "node": "AGV065",
+  "instanced": true
+ },
+ {
+  "id": "AGV066",
+  "name": "AGV 066",
+  "kind": "agv",
+  "node": "AGV066",
+  "instanced": true
+ },
+ {
+  "id": "AGV067",
+  "name": "AGV 067",
+  "kind": "agv",
+  "node": "AGV067",
+  "instanced": true
+ },
+ {
+  "id": "AGV068",
+  "name": "AGV 068",
+  "kind": "agv",
+  "node": "AGV068",
+  "instanced": true
+ },
+ {
+  "id": "AGV069",
+  "name": "AGV 069",
+  "kind": "agv",
+  "node": "AGV069",
+  "instanced": true
+ },
+ {
+  "id": "AGV070",
+  "name": "AGV 070",
+  "kind": "agv",
+  "node": "AGV070",
+  "instanced": true
+ },
+ {
+  "id": "AGV071",
+  "name": "AGV 071",
+  "kind": "agv",
+  "node": "AGV071",
+  "instanced": true
+ },
+ {
+  "id": "AGV072",
+  "name": "AGV 072",
+  "kind": "agv",
+  "node": "AGV072",
+  "instanced": true
+ },
+ {
+  "id": "AGV073",
+  "name": "AGV 073",
+  "kind": "agv",
+  "node": "AGV073",
+  "instanced": true
+ },
+ {
+  "id": "AGV074",
+  "name": "AGV 074",
+  "kind": "agv",
+  "node": "AGV074",
+  "instanced": true
+ },
+ {
+  "id": "AGV075",
+  "name": "AGV 075",
+  "kind": "agv",
+  "node": "AGV075",
+  "instanced": true
+ },
+ {
+  "id": "AGV076",
+  "name": "AGV 076",
+  "kind": "agv",
+  "node": "AGV076",
+  "instanced": true
+ },
+ {
+  "id": "AGV077",
+  "name": "AGV 077",
+  "kind": "agv",
+  "node": "AGV077",
+  "instanced": true
+ },
+ {
+  "id": "AGV078",
+  "name": "AGV 078",
+  "kind": "agv",
+  "node": "AGV078",
+  "instanced": true
+ },
+ {
+  "id": "AGV079",
+  "name": "AGV 079",
+  "kind": "agv",
+  "node": "AGV079",
+  "instanced": true
+ },
+ {
+  "id": "AGV080",
+  "name": "AGV 080",
+  "kind": "agv",
+  "node": "AGV080",
+  "instanced": true
+ },
+ {
+  "id": "AGV081",
+  "name": "AGV 081",
+  "kind": "agv",
+  "node": "AGV081",
+  "instanced": true
+ },
+ {
+  "id": "AGV082",
+  "name": "AGV 082",
+  "kind": "agv",
+  "node": "AGV082",
+  "instanced": true
+ },
+ {
+  "id": "AGV083",
+  "name": "AGV 083",
+  "kind": "agv",
+  "node": "AGV083",
+  "instanced": true
+ },
+ {
+  "id": "AGV084",
+  "name": "AGV 084",
+  "kind": "agv",
+  "node": "AGV084",
+  "instanced": true
+ },
+ {
+  "id": "AGV085",
+  "name": "AGV 085",
+  "kind": "agv",
+  "node": "AGV085",
+  "instanced": true
+ },
+ {
+  "id": "AGV086",
+  "name": "AGV 086",
+  "kind": "agv",
+  "node": "AGV086",
+  "instanced": true
+ },
+ {
+  "id": "AGV087",
+  "name": "AGV 087",
+  "kind": "agv",
+  "node": "AGV087",
+  "instanced": true
+ },
+ {
+  "id": "AGV088",
+  "name": "AGV 088",
+  "kind": "agv",
+  "node": "AGV088",
+  "instanced": true
+ },
+ {
+  "id": "AGV089",
+  "name": "AGV 089",
+  "kind": "agv",
+  "node": "AGV089",
+  "instanced": true
+ },
+ {
+  "id": "AGV090",
+  "name": "AGV 090",
+  "kind": "agv",
+  "node": "AGV090",
+  "instanced": true
+ },
+ {
+  "id": "AGV091",
+  "name": "AGV 091",
+  "kind": "agv",
+  "node": "AGV091",
+  "instanced": true
+ },
+ {
+  "id": "AGV092",
+  "name": "AGV 092",
+  "kind": "agv",
+  "node": "AGV092",
+  "instanced": true
+ },
+ {
+  "id": "AGV093",
+  "name": "AGV 093",
+  "kind": "agv",
+  "node": "AGV093",
+  "instanced": true
+ },
+ {
+  "id": "AGV094",
+  "name": "AGV 094",
+  "kind": "agv",
+  "node": "AGV094",
+  "instanced": true
+ },
+ {
+  "id": "AGV095",
+  "name": "AGV 095",
+  "kind": "agv",
+  "node": "AGV095",
+  "instanced": true
+ },
+ {
+  "id": "AGV096",
+  "name": "AGV 096",
+  "kind": "agv",
+  "node": "AGV096",
+  "instanced": true
+ },
+ {
+  "id": "AGV097",
+  "name": "AGV 097",
+  "kind": "agv",
+  "node": "AGV097",
+  "instanced": true
+ },
+ {
+  "id": "AGV098",
+  "name": "AGV 098",
+  "kind": "agv",
+  "node": "AGV098",
+  "instanced": true
+ },
+ {
+  "id": "AGV099",
+  "name": "AGV 099",
+  "kind": "agv",
+  "node": "AGV099",
+  "instanced": true
+ },
+ {
+  "id": "AGV100",
+  "name": "AGV 100",
+  "kind": "agv",
+  "node": "AGV100",
+  "instanced": true
+ },
+ {
+  "id": "AGV101",
+  "name": "AGV 101",
+  "kind": "agv",
+  "node": "AGV101",
+  "instanced": true
+ },
+ {
+  "id": "AGV102",
+  "name": "AGV 102",
+  "kind": "agv",
+  "node": "AGV102",
+  "instanced": true
+ },
+ {
+  "id": "AGV103",
+  "name": "AGV 103",
+  "kind": "agv",
+  "node": "AGV103",
+  "instanced": true
+ },
+ {
+  "id": "AGV104",
+  "name": "AGV 104",
+  "kind": "agv",
+  "node": "AGV104",
+  "instanced": true
+ },
+ {
+  "id": "AGV105",
+  "name": "AGV 105",
+  "kind": "agv",
+  "node": "AGV105",
+  "instanced": true
+ },
+ {
+  "id": "AGV106",
+  "name": "AGV 106",
+  "kind": "agv",
+  "node": "AGV106",
+  "instanced": true
+ },
+ {
+  "id": "AGV107",
+  "name": "AGV 107",
+  "kind": "agv",
+  "node": "AGV107",
+  "instanced": true
+ },
+ {
+  "id": "AGV108",
+  "name": "AGV 108",
+  "kind": "agv",
+  "node": "AGV108",
+  "instanced": true
+ },
+ {
+  "id": "AGV109",
+  "name": "AGV 109",
+  "kind": "agv",
+  "node": "AGV109",
+  "instanced": true
+ },
+ {
+  "id": "AGV110",
+  "name": "AGV 110",
+  "kind": "agv",
+  "node": "AGV110",
+  "instanced": true
+ },
+ {
+  "id": "AGV111",
+  "name": "AGV 111",
+  "kind": "agv",
+  "node": "AGV111",
+  "instanced": true
+ },
+ {
+  "id": "AGV112",
+  "name": "AGV 112",
+  "kind": "agv",
+  "node": "AGV112",
+  "instanced": true
+ },
+ {
+  "id": "AGV113",
+  "name": "AGV 113",
+  "kind": "agv",
+  "node": "AGV113",
+  "instanced": true
+ },
+ {
+  "id": "AGV114",
+  "name": "AGV 114",
+  "kind": "agv",
+  "node": "AGV114",
+  "instanced": true
+ },
+ {
+  "id": "AGV115",
+  "name": "AGV 115",
+  "kind": "agv",
+  "node": "AGV115",
+  "instanced": true
+ },
+ {
+  "id": "AGV116",
+  "name": "AGV 116",
+  "kind": "agv",
+  "node": "AGV116",
+  "instanced": true
+ },
+ {
+  "id": "AGV117",
+  "name": "AGV 117",
+  "kind": "agv",
+  "node": "AGV117",
+  "instanced": true
+ },
+ {
+  "id": "AGV118",
+  "name": "AGV 118",
+  "kind": "agv",
+  "node": "AGV118",
+  "instanced": true
+ },
+ {
+  "id": "AGV119",
+  "name": "AGV 119",
+  "kind": "agv",
+  "node": "AGV119",
+  "instanced": true
+ },
+ {
+  "id": "AGV120",
+  "name": "AGV 120",
+  "kind": "agv",
+  "node": "AGV120",
+  "instanced": true
+ },
+ {
+  "id": "AGV121",
+  "name": "AGV 121",
+  "kind": "agv",
+  "node": "AGV121",
+  "instanced": true
+ },
+ {
+  "id": "AGV122",
+  "name": "AGV 122",
+  "kind": "agv",
+  "node": "AGV122",
+  "instanced": true
+ },
+ {
+  "id": "AGV123",
+  "name": "AGV 123",
+  "kind": "agv",
+  "node": "AGV123",
+  "instanced": true
+ },
+ {
+  "id": "AGV124",
+  "name": "AGV 124",
+  "kind": "agv",
+  "node": "AGV124",
+  "instanced": true
+ },
+ {
+  "id": "AGV125",
+  "name": "AGV 125",
+  "kind": "agv",
+  "node": "AGV125",
+  "instanced": true
+ },
+ {
+  "id": "AGV126",
+  "name": "AGV 126",
+  "kind": "agv",
+  "node": "AGV126",
+  "instanced": true
+ },
+ {
+  "id": "AGV127",
+  "name": "AGV 127",
+  "kind": "agv",
+  "node": "AGV127",
+  "instanced": true
+ },
+ {
+  "id": "AGV128",
+  "name": "AGV 128",
+  "kind": "agv",
+  "node": "AGV128",
+  "instanced": true
+ },
+ {
+  "id": "AGV129",
+  "name": "AGV 129",
+  "kind": "agv",
+  "node": "AGV129",
+  "instanced": true
+ },
+ {
+  "id": "AGV130",
+  "name": "AGV 130",
+  "kind": "agv",
+  "node": "AGV130",
+  "instanced": true
+ },
+ {
+  "id": "AGV131",
+  "name": "AGV 131",
+  "kind": "agv",
+  "node": "AGV131",
+  "instanced": true
+ },
+ {
+  "id": "AGV132",
+  "name": "AGV 132",
+  "kind": "agv",
+  "node": "AGV132",
+  "instanced": true
+ },
+ {
+  "id": "AGV133",
+  "name": "AGV 133",
+  "kind": "agv",
+  "node": "AGV133",
+  "instanced": true
+ },
+ {
+  "id": "AGV134",
+  "name": "AGV 134",
+  "kind": "agv",
+  "node": "AGV134",
+  "instanced": true
+ },
+ {
+  "id": "AGV135",
+  "name": "AGV 135",
+  "kind": "agv",
+  "node": "AGV135",
+  "instanced": true
+ },
+ {
+  "id": "AGV136",
+  "name": "AGV 136",
+  "kind": "agv",
+  "node": "AGV136",
+  "instanced": true
+ },
+ {
+  "id": "AGV137",
+  "name": "AGV 137",
+  "kind": "agv",
+  "node": "AGV137",
+  "instanced": true
+ },
+ {
+  "id": "AGV138",
+  "name": "AGV 138",
+  "kind": "agv",
+  "node": "AGV138",
+  "instanced": true
+ },
+ {
+  "id": "AGV139",
+  "name": "AGV 139",
+  "kind": "agv",
+  "node": "AGV139",
+  "instanced": true
+ },
+ {
+  "id": "AGV140",
+  "name": "AGV 140",
+  "kind": "agv",
+  "node": "AGV140",
+  "instanced": true
+ },
+ {
+  "id": "AGV141",
+  "name": "AGV 141",
+  "kind": "agv",
+  "node": "AGV141",
+  "instanced": true
+ },
+ {
+  "id": "AGV142",
+  "name": "AGV 142",
+  "kind": "agv",
+  "node": "AGV142",
+  "instanced": true
+ },
+ {
+  "id": "AGV143",
+  "name": "AGV 143",
+  "kind": "agv",
+  "node": "AGV143",
+  "instanced": true
+ },
+ {
+  "id": "AGV144",
+  "name": "AGV 144",
+  "kind": "agv",
+  "node": "AGV144",
+  "instanced": true
+ },
+ {
+  "id": "AGV145",
+  "name": "AGV 145",
+  "kind": "agv",
+  "node": "AGV145",
+  "instanced": true
+ },
+ {
+  "id": "BS-1",
+  "name": "东端换电站",
+  "kind": "swap",
+  "node": "BS-1"
+ },
+ {
+  "id": "BS-2",
+  "name": "西端换电站",
+  "kind": "swap",
+  "node": "BS-2"
+ },
+ {
+  "id": "DG-01",
+  "name": "危险品 / 超限箱区",
+  "kind": "special",
+  "node": "DG-01"
+ },
+ {
+  "id": "MET-01",
+  "name": "码头气象站",
+  "kind": "met",
+  "node": "MET-01"
+ },
+ {
+  "id": "CC-01",
+  "name": "生产指挥中心",
+  "kind": "building",
+  "node": "CC-01"
+ },
+ {
+  "id": "GATE-E",
+  "name": "东闸口",
+  "kind": "gate",
+  "node": "GATE-E"
+ },
+ {
+  "id": "GATE-W",
+  "name": "西闸口",
+  "kind": "gate",
+  "node": "GATE-W"
+ }
+]

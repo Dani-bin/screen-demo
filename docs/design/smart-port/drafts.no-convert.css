@@ -1,0 +1,991 @@
+/* 智慧港口 设计稿样式（文件名带 no-convert，vite 不把 px 转成 rem）
+ * 三套方向共用一套版式结构，按 body[data-dir] 换皮肤：
+ *   a 海图·日间：白色实底 + 1 px 墨线 + 四角海图刻度，不用玻璃、不发光
+ *   b 夜班·钠灯冷白：石墨实底 + 顶部 2 px 琥珀条，不发光
+ *   c 晨雾·蓝灰 + 安全橙：浅色磨砂半透明，指标条深色实底，橙色只给跟踪对象
+ */
+@font-face {
+  font-family: "Alimama";
+  src: url("../../../src/assets/fonts/AlimamaShuHeiTi-Bold.ttf");
+}
+@font-face {
+  font-family: "SHS";
+  src: url("../../../src/assets/fonts/SourceHanSansCN-Regular.otf");
+}
+@font-face {
+  font-family: "DIN";
+  src: url("../../../src/assets/fonts/DIN-Bold.otf");
+}
+html,
+body {
+  margin: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  font-family: "SHS", "PingFang SC", sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+#app {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--sky0), var(--sky1));
+}
+#stage,
+#labels,
+#ui {
+  position: absolute;
+  inset: 0;
+}
+#stage canvas {
+  width: 1920px !important;
+  height: 1080px !important;
+  display: block;
+}
+#labels,
+#ui {
+  pointer-events: none;
+}
+.clean #labels,
+.clean #ui {
+  display: none;
+}
+.err {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  color: #c00;
+  background: #fff;
+  padding: 12px;
+  white-space: pre-wrap;
+  z-index: 9;
+}
+
+/* ---------------- 主题变量 ---------------- */
+body[data-dir="a"] #app {
+  --sky0: #eef4f5;
+  --sky1: #d6e6ea;
+  --ink: #1b2a33;
+  --sub: #5b6b73;
+  --faint: #8d9aa0;
+  --line: rgba(27, 42, 51, 0.16);
+  --panel: #ffffff;
+  --panel-bd: 1px solid #1b2a33;
+  --accent: #1f4fa3;
+  --accent2: #6f8fc4;
+  --fault: #e0362c;
+  --idle: #b7c1c5;
+  --maint: #f4da48;
+  --swap: #c545c3;
+  --stale: #b0b8bb;
+  --queue: #8fa9d6;
+  --track: #e6eaec;
+}
+body[data-dir="b"] #app {
+  --sky0: #0d1517;
+  --sky1: #060b0c;
+  --ink: #e6eef7;
+  --sub: #9aa6ae;
+  --faint: #66727a;
+  --line: rgba(230, 238, 247, 0.1);
+  --panel: rgba(16, 20, 24, 0.94);
+  --panel-bd: 1px solid rgba(230, 238, 247, 0.08);
+  --accent: #ffa63d;
+  --accent2: #c98a46;
+  --fault: #ff3b30;
+  --idle: #4c565b;
+  --maint: #b5e655;
+  --swap: #b5e655;
+  --stale: #5a656b;
+  --queue: #e6eef7;
+  --track: rgba(230, 238, 247, 0.08);
+}
+body[data-dir="c"] #app {
+  --sky0: #d9e0e4;
+  --sky1: #c3cdd3;
+  --ink: #26323a;
+  --sub: #5a6870;
+  --faint: #86939a;
+  --line: rgba(38, 50, 58, 0.12);
+  --panel: rgba(238, 242, 244, 0.78);
+  --panel-bd: 1px solid rgba(255, 255, 255, 0.7);
+  --accent: #ff5a1f;
+  --accent2: #3f6e8c;
+  --fault: #c8102e;
+  --idle: #a7b2b8;
+  --maint: #f2b38b;
+  --swap: #3f6e8c;
+  --stale: #b4bdc2;
+  --queue: #7fa3ba;
+  --track: rgba(38, 50, 58, 0.08);
+}
+
+/* ---------------- 顶栏 ---------------- */
+.hd {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 14px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hd h1 {
+  margin: 0;
+  font: 34px/1 "Alimama";
+  letter-spacing: 2px;
+}
+.hd p {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--sub);
+  letter-spacing: 3px;
+}
+.hd-right {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+.hd-met span,
+.hd-clock span {
+  font-size: 13px;
+  color: var(--sub);
+  margin-right: 6px;
+}
+.hd-met b {
+  font: 24px "DIN";
+}
+.hd-met i {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--sub);
+  margin-left: 3px;
+}
+.hd-met em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--faint);
+  margin-left: 8px;
+}
+.hd-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.hd-clock b {
+  font: 30px/1 "DIN";
+}
+.hd-clock span {
+  margin: 4px 0 0;
+}
+
+/* ---------------- 指标条 ---------------- */
+.kpis {
+  position: absolute;
+  top: 92px;
+  left: 452px;
+  right: 452px;
+  display: flex;
+  gap: 10px;
+}
+.kpi {
+  flex: 1;
+  padding: 10px 12px 9px;
+  background: var(--panel);
+  border: var(--panel-bd);
+}
+.kpi-name {
+  font-size: 13px;
+  color: var(--sub);
+}
+.kpi-val b {
+  font: 30px/1.15 "DIN";
+}
+.kpi-val i {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--sub);
+  margin-left: 4px;
+}
+.kpi-note {
+  font-size: 11px;
+  color: var(--faint);
+}
+.kpi.warn b {
+  color: var(--fault);
+}
+
+/* ---------------- 侧栏与面板 ---------------- */
+.side {
+  position: absolute;
+  top: 92px;
+  bottom: 20px;
+  width: 410px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.side.left {
+  left: 24px;
+}
+.side.right {
+  right: 24px;
+}
+.side.narrow {
+  width: 372px;
+}
+.side.wide {
+  width: 470px;
+}
+.pn {
+  position: relative;
+  background: var(--panel);
+  border: var(--panel-bd);
+  padding: 12px 14px 12px;
+  flex: none;
+}
+.pn:last-child {
+  flex: 1;
+}
+.pn h3 {
+  margin: 0 0 10px;
+  font: 17px/1 "Alimama";
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pn h3::before {
+  content: "";
+  width: 4px;
+  height: 15px;
+  background: var(--accent);
+}
+.pn-body {
+  font-size: 13px;
+}
+
+/* 在泊船舶 */
+.vs {
+  padding: 8px 0 9px;
+  border-bottom: 1px solid var(--line);
+}
+.vs:last-child {
+  border-bottom: 0;
+}
+.vs-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.vs-name b {
+  font-size: 15px;
+}
+.vs-name span {
+  font: 12px "DIN";
+  color: var(--sub);
+  margin-left: 6px;
+}
+.vs-name .cls {
+  font-style: normal;
+  font-size: 11px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  border: 1px solid var(--line);
+  color: var(--sub);
+}
+.vs-berth {
+  font: 12px "DIN";
+  color: var(--sub);
+}
+.vs-bars {
+  margin-top: 6px;
+  display: grid;
+  gap: 4px;
+}
+.bar {
+  display: grid;
+  grid-template-columns: 18px 1fr 84px;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.bar label {
+  color: var(--sub);
+}
+.bar span {
+  font: 12px "DIN";
+  text-align: right;
+  color: var(--sub);
+}
+.track {
+  position: relative;
+  height: 6px;
+  background: var(--track);
+}
+.track s {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent2);
+}
+.bar.load .track s {
+  background: var(--accent);
+}
+/* 船形图标走在进度条上 */
+.bar .track s::after {
+  content: "";
+  position: absolute;
+  right: -7px;
+  top: -4px;
+  width: 14px;
+  height: 14px;
+  background: var(--ink);
+  clip-path: polygon(0 35%, 70% 35%, 100% 50%, 70% 65%, 0 65%, 8% 50%);
+}
+.vs-foot {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--sub);
+}
+.vs-foot b {
+  font: 13px "DIN";
+  color: var(--ink);
+}
+.vs-foot .bad,
+.vs.late .vs-name b {
+  color: var(--fault);
+}
+.vs.tracked {
+  margin: 0 -14px;
+  padding: 8px 14px 9px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.vs.tracked .track s {
+  background: var(--accent);
+}
+
+/* 甘特与图表 */
+svg text {
+  font-family: "DIN", "SHS";
+}
+.g-grid {
+  stroke: var(--line);
+}
+.g-axis {
+  font-size: 11px;
+  fill: var(--faint);
+}
+.g-val {
+  font-size: 11px;
+  fill: var(--sub);
+}
+.g-label {
+  font-family: "SHS";
+  font-size: 11px;
+  fill: var(--panel);
+}
+body[data-dir="c"] .g-label {
+  fill: #fff;
+}
+.g-done {
+  fill: var(--idle);
+}
+.g-now {
+  fill: var(--accent2);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+line.g-now {
+  stroke: var(--fault);
+  stroke-dasharray: 3 3;
+  stroke-width: 1.2;
+}
+.g-plan {
+  fill: none;
+  stroke: var(--accent2);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 2;
+}
+.g-late {
+  fill: var(--fault);
+  opacity: 0.75;
+}
+body[data-dir="a"] .g-label {
+  fill: #fff;
+}
+body[data-dir="a"] rect.g-now {
+  fill: var(--accent);
+}
+.b-bar {
+  fill: var(--accent2);
+}
+.b-now {
+  fill: var(--accent);
+}
+.b-empty {
+  fill: var(--line);
+}
+
+/* 设备运行 */
+.eq {
+  margin-bottom: 10px;
+}
+.eq:last-child {
+  margin-bottom: 0;
+}
+.eq-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+.eq-head span {
+  font: 13px "DIN";
+  color: var(--sub);
+}
+.seg {
+  display: flex;
+  height: 10px;
+  margin: 5px 0 4px;
+  gap: 2px;
+}
+.eq-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12px;
+  color: var(--sub);
+}
+.eq-legend b {
+  font: 13px "DIN";
+  color: var(--ink);
+}
+.eq-legend i,
+.legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 4px;
+}
+.s-work {
+  background: var(--accent);
+}
+.s-work2 {
+  background: var(--accent2);
+}
+.s-queue {
+  background: var(--queue);
+}
+.s-idle {
+  background: var(--idle);
+}
+.s-fault {
+  background: var(--fault);
+}
+.s-maint {
+  background: repeating-linear-gradient(45deg, var(--maint) 0 3px, var(--idle) 3px 6px);
+}
+.s-swap {
+  background: var(--swap);
+}
+.s-stale {
+  background: var(--stale);
+  outline: 1px dashed var(--sub);
+}
+
+/* 作业路协同 */
+.lines {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.lines th {
+  text-align: left;
+  font-weight: normal;
+  color: var(--faint);
+  padding: 0 4px 5px;
+  border-bottom: 1px solid var(--line);
+}
+.lines td {
+  padding: 5px 4px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.lines td b {
+  font: 13px "DIN";
+}
+.lines td:nth-child(4),
+.lines td:nth-child(5) {
+  font-family: "DIN";
+}
+.lines em {
+  font-style: normal;
+  font-size: 11px;
+  margin-left: 6px;
+  padding: 0 4px;
+  color: #fff;
+  background: var(--fault);
+}
+.lines tr.fault td {
+  color: var(--fault);
+}
+.lines tr.tracked {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.rate {
+  position: relative;
+  width: 96px;
+  height: 14px;
+  background: var(--track);
+}
+.rate s {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent2);
+}
+.lines tr.tracked .rate s {
+  background: var(--accent);
+}
+.rate span {
+  position: absolute;
+  right: 4px;
+  top: 0;
+  font: 11px/14px "DIN";
+}
+
+/* AGV 电量与换电 */
+.soc-bar {
+  fill: var(--accent2);
+}
+.soc-low {
+  fill: var(--swap);
+}
+.swap {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--sub);
+  margin-top: 6px;
+}
+.swap b {
+  font: 13px "DIN";
+  color: var(--ink);
+}
+.swap i {
+  font: normal 13px "DIN";
+  color: var(--ink);
+}
+
+/* 告警与事件 */
+.ev {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 8px;
+  align-items: start;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ev:last-child {
+  border-bottom: 0;
+}
+.ev .dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+.ev.major .dot {
+  background: var(--fault);
+}
+.ev.resolved {
+  opacity: 0.55;
+}
+.ev-main b {
+  font-size: 13px;
+  display: block;
+}
+.ev-main span {
+  font-size: 12px;
+  color: var(--sub);
+}
+.ev-side {
+  text-align: right;
+  font-size: 12px;
+}
+.ev-side em {
+  display: block;
+  font-style: normal;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+}
+.ev.pending .ev-side em {
+  color: #fff;
+  background: var(--fault);
+  border-color: var(--fault);
+}
+.ev-side span {
+  font: 12px "DIN";
+  color: var(--faint);
+}
+
+/* 图例与视图切换 */
+.legend {
+  position: absolute;
+  bottom: 20px;
+  left: 452px;
+  right: 452px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 14px;
+  font-size: 12px;
+  color: var(--sub);
+  background: var(--panel);
+  border: var(--panel-bd);
+}
+.legend .tabs {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+.legend .tabs * {
+  font-weight: normal;
+  font-size: 13px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+}
+.legend .tabs b {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ---------------- 三维标签 ---------------- */
+.lb {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+  font-size: 12px;
+}
+.lb.berth b {
+  display: block;
+  transform: translateY(100%);
+  font: 13px "DIN";
+  padding: 1px 6px;
+  color: var(--ink);
+  background: var(--panel);
+  border: var(--panel-bd);
+}
+.lb.ship {
+  padding: 5px 9px 7px;
+  background: var(--panel);
+  border: var(--panel-bd);
+  min-width: 108px;
+}
+.lb.ship b {
+  font-size: 14px;
+  display: block;
+}
+.lb.ship span {
+  font-size: 11px;
+  color: var(--sub);
+}
+.lb.ship i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--accent2);
+}
+.lb.ship.tracked {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.lb.ship.tracked i {
+  background: var(--accent);
+}
+.lb.ship::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 1px;
+  height: 26px;
+  background: var(--ink);
+  opacity: 0.6;
+}
+.lb.crane {
+  font: 11px "DIN";
+  padding: 1px 5px;
+  color: var(--ink);
+  background: var(--panel);
+  border: var(--panel-bd);
+}
+.lb.crane span {
+  margin-left: 4px;
+  color: var(--accent);
+}
+.lb.alarm .al-card {
+  position: relative;
+  padding: 8px 12px;
+  color: #fff;
+  background: var(--fault);
+  min-width: 220px;
+}
+.lead {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+}
+.lead line {
+  stroke: var(--fault);
+  stroke-width: 1.5;
+}
+.lead circle {
+  fill: var(--fault);
+}
+.lb.alarm .al-card::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  border: 8px solid transparent;
+  border-top-color: var(--fault);
+  transform: translateX(-50%);
+}
+.al-card em {
+  font-style: normal;
+  font-size: 11px;
+  padding: 0 5px;
+  background: rgba(255, 255, 255, 0.22);
+  margin-right: 6px;
+}
+.al-card b {
+  font-size: 15px;
+}
+.al-card span {
+  display: block;
+  font-size: 12px;
+  opacity: 0.92;
+  margin-top: 2px;
+}
+.lb.stale {
+  padding: 3px 7px;
+  color: var(--sub);
+  background: var(--panel);
+  border: 1px dashed var(--sub);
+}
+.lb.stale b {
+  font: 12px "DIN";
+  margin-right: 5px;
+  color: var(--ink);
+}
+
+/* ---------------- 方向 A：海图图框刻度 ---------------- */
+body[data-dir="a"] .pn::before,
+body[data-dir="a"] .pn::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 0 solid var(--ink);
+}
+body[data-dir="a"] .pn::before {
+  left: -5px;
+  top: -5px;
+  border-width: 2px 0 0 2px;
+}
+body[data-dir="a"] .pn::after {
+  right: -5px;
+  bottom: -5px;
+  border-width: 0 2px 2px 0;
+}
+body[data-dir="a"] .pn h3 {
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 8px;
+}
+body[data-dir="a"] .pn h3::before {
+  width: 0;
+}
+body[data-dir="a"] .pn h3 span::before {
+  content: "◇ ";
+  font-size: 12px;
+  color: var(--accent);
+}
+/* 画面四周的海图经纬刻度（只是装饰刻度，不标经纬度数值） */
+.frame-ticks {
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(27, 42, 51, 0.35);
+  background:
+    repeating-linear-gradient(90deg, rgba(27, 42, 51, 0.45) 0 1px, transparent 1px 48px) top / 100% 5px no-repeat,
+    repeating-linear-gradient(90deg, rgba(27, 42, 51, 0.45) 0 1px, transparent 1px 48px) bottom / 100% 5px no-repeat,
+    repeating-linear-gradient(0deg, rgba(27, 42, 51, 0.45) 0 1px, transparent 1px 48px) left / 5px 100% no-repeat,
+    repeating-linear-gradient(0deg, rgba(27, 42, 51, 0.45) 0 1px, transparent 1px 48px) right / 5px 100% no-repeat;
+}
+
+/* ---------------- 方向 B：石墨实底 + 琥珀顶条 ---------------- */
+body[data-dir="b"] .pn,
+body[data-dir="b"] .kpi,
+body[data-dir="b"] .legend {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+body[data-dir="b"] .hd h1 {
+  font-family: "Alimama";
+  letter-spacing: 1px;
+}
+body[data-dir="b"] .kpi-val b {
+  color: var(--accent);
+}
+body[data-dir="b"] .kpi.warn b {
+  color: var(--fault);
+}
+body[data-dir="b"] .pn h3::before {
+  background: var(--accent);
+}
+body[data-dir="b"] .legend .tabs b {
+  color: #101418;
+}
+body[data-dir="b"] .lines td {
+  padding: 6px 4px;
+}
+
+/* ---------------- 方向 C：浅色磨砂 + 深色指标条 ---------------- */
+body[data-dir="c"] .pn,
+body[data-dir="c"] .legend {
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+}
+body[data-dir="c"] .kpi {
+  background: #26323a;
+  color: #eef2f4;
+  border: 0;
+}
+body[data-dir="c"] .kpi-name,
+body[data-dir="c"] .kpi-val i,
+body[data-dir="c"] .kpi-note {
+  color: #a9b6bd;
+}
+body[data-dir="c"] .kpi.warn b {
+  color: #ff7b5a;
+}
+body[data-dir="c"] .pn h3::before {
+  background: var(--accent2);
+}
+.ts {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.ring-bg {
+  fill: none;
+  stroke: var(--track);
+  stroke-width: 10;
+}
+.ring-fg {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 10;
+}
+.ring-val {
+  font: 26px "DIN";
+  fill: var(--ink);
+}
+.ring-sub {
+  font-size: 11px;
+  fill: var(--sub);
+}
+.ts-info {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+.ts-info span {
+  color: var(--sub);
+  margin-right: 6px;
+}
+.ts-info b {
+  margin-right: 10px;
+  font-weight: normal;
+}
+.ts-sub {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  color: var(--faint);
+}
+.bay {
+  display: grid;
+  grid-template-columns: 110px 1fr 80px;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+.bay b {
+  font: 12px "DIN";
+  text-align: right;
+  font-weight: normal;
+}
+.bay.on .track s {
+  background: var(--accent);
+}
+.flow {
+  position: absolute;
+  bottom: 20px;
+  left: 452px;
+  right: 452px;
+  height: 74px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  background: var(--panel);
+  border: var(--panel-bd);
+  backdrop-filter: blur(14px);
+}
+.flow .step {
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 8px;
+}
+.flow .step span {
+  grid-row: span 2;
+  font: 15px "Alimama";
+  color: var(--accent);
+  align-self: center;
+}
+.flow .step b {
+  font: 18px "DIN";
+}
+.flow .step em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--sub);
+}
+.flow .arrow {
+  width: 22px;
+  height: 12px;
+  background: var(--accent);
+  clip-path: polygon(0 35%, 60% 35%, 60% 0, 100% 50%, 60% 100%, 60% 65%, 0 65%);
+}
+.exit-track {
+  position: absolute;
+  top: 176px;
+  right: 452px;
+  padding: 6px 14px;
+  font: 13px "SHS";
+  color: #fff;
+  background: var(--accent);
+  border: 0;
+}

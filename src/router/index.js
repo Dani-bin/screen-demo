@@ -72,6 +72,12 @@ const routes = [
     component: () => import("@/views/smart-ranch/index.vue")
   },
   {
+    // 智慧港口：上海洋山四期全自动化集装箱码头（真实布局示意 + 周边 Sentinel-2 影像），全息孪生风格，船舶装卸与设备协同
+    path: "/smart-port",
+    name: "SmartPort",
+    component: () => import("@/views/smart-port/index.vue")
+  },
+  {
     // 数字楼宇：城市（成都高新区）→ 园区 → 楼宇 → 楼层 → 房间 五级钻取
     path: "/building",
     name: "Building",

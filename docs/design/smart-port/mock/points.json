@@ -1,0 +1,6502 @@
+[
+ {
+  "id": "PORT.movesToday",
+  "device": "PORT",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "PORT.teuToday",
+  "device": "PORT",
+  "name": "今日吞吐量",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "PORT.qcHours",
+  "device": "PORT",
+  "name": "今日岸桥作业时长合计",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "PORT.qcTph",
+  "device": "PORT",
+  "name": "岸桥平均台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "PORT.vesselsAtBerth",
+  "device": "PORT",
+  "name": "在泊作业船舶",
+  "unit": "艘",
+  "kind": "analog",
+  "min": 0,
+  "max": 7
+ },
+ {
+  "id": "PORT.vesselRate",
+  "device": "PORT",
+  "name": "平均船时效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "PORT.qc.total",
+  "device": "PORT",
+  "name": "岸桥 total",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 28
+ },
+ {
+  "id": "PORT.qc.work",
+  "device": "PORT",
+  "name": "岸桥 work",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 28
+ },
+ {
+  "id": "PORT.qc.idle",
+  "device": "PORT",
+  "name": "岸桥 idle",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 28
+ },
+ {
+  "id": "PORT.qc.fault",
+  "device": "PORT",
+  "name": "岸桥 fault",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 28
+ },
+ {
+  "id": "PORT.qc.maint",
+  "device": "PORT",
+  "name": "岸桥 maint",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 28
+ },
+ {
+  "id": "PORT.rmg.total",
+  "device": "PORT",
+  "name": "轨道吊 total",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 121
+ },
+ {
+  "id": "PORT.rmg.work",
+  "device": "PORT",
+  "name": "轨道吊 work",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 121
+ },
+ {
+  "id": "PORT.rmg.idle",
+  "device": "PORT",
+  "name": "轨道吊 idle",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 121
+ },
+ {
+  "id": "PORT.rmg.fault",
+  "device": "PORT",
+  "name": "轨道吊 fault",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 121
+ },
+ {
+  "id": "PORT.agv.total",
+  "device": "PORT",
+  "name": "AGV total",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 145
+ },
+ {
+  "id": "PORT.agv.laden",
+  "device": "PORT",
+  "name": "AGV laden",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 145
+ },
+ {
+  "id": "PORT.agv.empty",
+  "device": "PORT",
+  "name": "AGV empty",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 145
+ },
+ {
+  "id": "PORT.agv.queue",
+  "device": "PORT",
+  "name": "AGV queue",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 145
+ },
+ {
+  "id": "PORT.agv.idle",
+  "device": "PORT",
+  "name": "AGV idle",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 145
+ },
+ {
+  "id": "PORT.agv.swap",
+  "device": "PORT",
+  "name": "AGV swap",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 145
+ },
+ {
+  "id": "PORT.agv.fault",
+  "device": "PORT",
+  "name": "AGV fault",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 145
+ },
+ {
+  "id": "PORT.yardTeu",
+  "device": "PORT",
+  "name": "堆场在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "PORT.yardCap",
+  "device": "PORT",
+  "name": "堆场容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "PORT.yardFill",
+  "device": "PORT",
+  "name": "堆场利用率",
+  "unit": "",
+  "kind": "analog",
+  "min": 0,
+  "max": 1
+ },
+ {
+  "id": "PORT.alarmsActive",
+  "device": "PORT",
+  "name": "未结束告警",
+  "unit": "条",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "QC01.state",
+  "device": "QC01",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC01.vessel",
+  "device": "QC01",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC01.rate",
+  "device": "QC01",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC01.movesToday",
+  "device": "QC01",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC01.teuToday",
+  "device": "QC01",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC01.hoursToday",
+  "device": "QC01",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC01.tph",
+  "device": "QC01",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC01.wind",
+  "device": "QC01",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC02.state",
+  "device": "QC02",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC02.vessel",
+  "device": "QC02",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC02.rate",
+  "device": "QC02",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC02.movesToday",
+  "device": "QC02",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC02.teuToday",
+  "device": "QC02",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC02.hoursToday",
+  "device": "QC02",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC02.tph",
+  "device": "QC02",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC02.wind",
+  "device": "QC02",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC03.state",
+  "device": "QC03",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC03.vessel",
+  "device": "QC03",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC03.rate",
+  "device": "QC03",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC03.movesToday",
+  "device": "QC03",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC03.teuToday",
+  "device": "QC03",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC03.hoursToday",
+  "device": "QC03",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC03.tph",
+  "device": "QC03",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC03.wind",
+  "device": "QC03",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC04.state",
+  "device": "QC04",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC04.vessel",
+  "device": "QC04",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC04.rate",
+  "device": "QC04",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC04.movesToday",
+  "device": "QC04",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC04.teuToday",
+  "device": "QC04",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC04.hoursToday",
+  "device": "QC04",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC04.tph",
+  "device": "QC04",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC04.wind",
+  "device": "QC04",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC05.state",
+  "device": "QC05",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC05.vessel",
+  "device": "QC05",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC05.rate",
+  "device": "QC05",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC05.movesToday",
+  "device": "QC05",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC05.teuToday",
+  "device": "QC05",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC05.hoursToday",
+  "device": "QC05",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC05.tph",
+  "device": "QC05",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC05.wind",
+  "device": "QC05",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC06.state",
+  "device": "QC06",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC06.vessel",
+  "device": "QC06",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC06.rate",
+  "device": "QC06",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC06.movesToday",
+  "device": "QC06",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC06.teuToday",
+  "device": "QC06",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC06.hoursToday",
+  "device": "QC06",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC06.tph",
+  "device": "QC06",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC06.wind",
+  "device": "QC06",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC07.state",
+  "device": "QC07",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC07.vessel",
+  "device": "QC07",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC07.rate",
+  "device": "QC07",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC07.movesToday",
+  "device": "QC07",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC07.teuToday",
+  "device": "QC07",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC07.hoursToday",
+  "device": "QC07",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC07.tph",
+  "device": "QC07",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC07.wind",
+  "device": "QC07",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC08.state",
+  "device": "QC08",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC08.vessel",
+  "device": "QC08",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC08.rate",
+  "device": "QC08",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC08.movesToday",
+  "device": "QC08",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC08.teuToday",
+  "device": "QC08",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC08.hoursToday",
+  "device": "QC08",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC08.tph",
+  "device": "QC08",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC08.wind",
+  "device": "QC08",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC09.state",
+  "device": "QC09",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC09.vessel",
+  "device": "QC09",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC09.rate",
+  "device": "QC09",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC09.movesToday",
+  "device": "QC09",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC09.teuToday",
+  "device": "QC09",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC09.hoursToday",
+  "device": "QC09",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC09.tph",
+  "device": "QC09",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC09.wind",
+  "device": "QC09",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC10.state",
+  "device": "QC10",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC10.vessel",
+  "device": "QC10",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC10.rate",
+  "device": "QC10",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC10.movesToday",
+  "device": "QC10",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC10.teuToday",
+  "device": "QC10",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC10.hoursToday",
+  "device": "QC10",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC10.tph",
+  "device": "QC10",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC10.wind",
+  "device": "QC10",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC11.state",
+  "device": "QC11",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC11.vessel",
+  "device": "QC11",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC11.rate",
+  "device": "QC11",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC11.movesToday",
+  "device": "QC11",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC11.teuToday",
+  "device": "QC11",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC11.hoursToday",
+  "device": "QC11",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC11.tph",
+  "device": "QC11",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC11.wind",
+  "device": "QC11",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC12.state",
+  "device": "QC12",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC12.vessel",
+  "device": "QC12",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC12.rate",
+  "device": "QC12",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC12.movesToday",
+  "device": "QC12",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC12.teuToday",
+  "device": "QC12",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC12.hoursToday",
+  "device": "QC12",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC12.tph",
+  "device": "QC12",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC12.wind",
+  "device": "QC12",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC13.state",
+  "device": "QC13",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC13.vessel",
+  "device": "QC13",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC13.rate",
+  "device": "QC13",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC13.movesToday",
+  "device": "QC13",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC13.teuToday",
+  "device": "QC13",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC13.hoursToday",
+  "device": "QC13",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC13.tph",
+  "device": "QC13",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC13.wind",
+  "device": "QC13",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC14.state",
+  "device": "QC14",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC14.vessel",
+  "device": "QC14",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC14.rate",
+  "device": "QC14",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC14.movesToday",
+  "device": "QC14",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC14.teuToday",
+  "device": "QC14",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC14.hoursToday",
+  "device": "QC14",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC14.tph",
+  "device": "QC14",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC14.wind",
+  "device": "QC14",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC15.state",
+  "device": "QC15",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC15.vessel",
+  "device": "QC15",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC15.rate",
+  "device": "QC15",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC15.movesToday",
+  "device": "QC15",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC15.teuToday",
+  "device": "QC15",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC15.hoursToday",
+  "device": "QC15",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC15.tph",
+  "device": "QC15",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC15.wind",
+  "device": "QC15",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC16.state",
+  "device": "QC16",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC16.vessel",
+  "device": "QC16",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC16.rate",
+  "device": "QC16",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC16.movesToday",
+  "device": "QC16",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC16.teuToday",
+  "device": "QC16",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC16.hoursToday",
+  "device": "QC16",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC16.tph",
+  "device": "QC16",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC16.wind",
+  "device": "QC16",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC17.state",
+  "device": "QC17",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC17.vessel",
+  "device": "QC17",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC17.rate",
+  "device": "QC17",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC17.movesToday",
+  "device": "QC17",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC17.teuToday",
+  "device": "QC17",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC17.hoursToday",
+  "device": "QC17",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC17.tph",
+  "device": "QC17",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC17.wind",
+  "device": "QC17",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC18.state",
+  "device": "QC18",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC18.vessel",
+  "device": "QC18",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC18.rate",
+  "device": "QC18",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC18.movesToday",
+  "device": "QC18",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC18.teuToday",
+  "device": "QC18",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC18.hoursToday",
+  "device": "QC18",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC18.tph",
+  "device": "QC18",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC18.wind",
+  "device": "QC18",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC19.state",
+  "device": "QC19",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC19.vessel",
+  "device": "QC19",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC19.rate",
+  "device": "QC19",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC19.movesToday",
+  "device": "QC19",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC19.teuToday",
+  "device": "QC19",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC19.hoursToday",
+  "device": "QC19",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC19.tph",
+  "device": "QC19",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC19.wind",
+  "device": "QC19",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC20.state",
+  "device": "QC20",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC20.vessel",
+  "device": "QC20",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC20.rate",
+  "device": "QC20",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC20.movesToday",
+  "device": "QC20",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC20.teuToday",
+  "device": "QC20",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC20.hoursToday",
+  "device": "QC20",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC20.tph",
+  "device": "QC20",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC20.wind",
+  "device": "QC20",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC21.state",
+  "device": "QC21",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC21.vessel",
+  "device": "QC21",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC21.rate",
+  "device": "QC21",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC21.movesToday",
+  "device": "QC21",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC21.teuToday",
+  "device": "QC21",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC21.hoursToday",
+  "device": "QC21",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC21.tph",
+  "device": "QC21",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC21.wind",
+  "device": "QC21",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC22.state",
+  "device": "QC22",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC22.vessel",
+  "device": "QC22",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC22.rate",
+  "device": "QC22",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC22.movesToday",
+  "device": "QC22",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC22.teuToday",
+  "device": "QC22",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC22.hoursToday",
+  "device": "QC22",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC22.tph",
+  "device": "QC22",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC22.wind",
+  "device": "QC22",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC23.state",
+  "device": "QC23",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC23.vessel",
+  "device": "QC23",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC23.rate",
+  "device": "QC23",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC23.movesToday",
+  "device": "QC23",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC23.teuToday",
+  "device": "QC23",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC23.hoursToday",
+  "device": "QC23",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC23.tph",
+  "device": "QC23",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC23.wind",
+  "device": "QC23",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC24.state",
+  "device": "QC24",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC24.vessel",
+  "device": "QC24",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC24.rate",
+  "device": "QC24",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC24.movesToday",
+  "device": "QC24",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC24.teuToday",
+  "device": "QC24",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC24.hoursToday",
+  "device": "QC24",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC24.tph",
+  "device": "QC24",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC24.wind",
+  "device": "QC24",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC25.state",
+  "device": "QC25",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC25.vessel",
+  "device": "QC25",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC25.rate",
+  "device": "QC25",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC25.movesToday",
+  "device": "QC25",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC25.teuToday",
+  "device": "QC25",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC25.hoursToday",
+  "device": "QC25",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC25.tph",
+  "device": "QC25",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC25.wind",
+  "device": "QC25",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC26.state",
+  "device": "QC26",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC26.vessel",
+  "device": "QC26",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC26.rate",
+  "device": "QC26",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC26.movesToday",
+  "device": "QC26",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC26.teuToday",
+  "device": "QC26",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC26.hoursToday",
+  "device": "QC26",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC26.tph",
+  "device": "QC26",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC26.wind",
+  "device": "QC26",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC27.state",
+  "device": "QC27",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC27.vessel",
+  "device": "QC27",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC27.rate",
+  "device": "QC27",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC27.movesToday",
+  "device": "QC27",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC27.teuToday",
+  "device": "QC27",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC27.hoursToday",
+  "device": "QC27",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC27.tph",
+  "device": "QC27",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC27.wind",
+  "device": "QC27",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "QC28.state",
+  "device": "QC28",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC28.vessel",
+  "device": "QC28",
+  "name": "作业船舶",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "QC28.rate",
+  "device": "QC28",
+  "name": "当前效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC28.movesToday",
+  "device": "QC28",
+  "name": "今日作业量",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC28.teuToday",
+  "device": "QC28",
+  "name": "今日 TEU",
+  "unit": "TEU",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "QC28.hoursToday",
+  "device": "QC28",
+  "name": "今日作业时长",
+  "unit": "h",
+  "kind": "counter",
+  "min": 0,
+  "max": 24
+ },
+ {
+  "id": "QC28.tph",
+  "device": "QC28",
+  "name": "今日台时量",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 80
+ },
+ {
+  "id": "QC28.wind",
+  "device": "QC28",
+  "name": "风速",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "Y01.teu",
+  "device": "Y01",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 1950
+ },
+ {
+  "id": "Y01.cap",
+  "device": "Y01",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y01-S.state",
+  "device": "Y01-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y02.teu",
+  "device": "Y02",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2000
+ },
+ {
+  "id": "Y02.cap",
+  "device": "Y02",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y02-S.state",
+  "device": "Y02-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y02-L.state",
+  "device": "Y02-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y03.teu",
+  "device": "Y03",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2000
+ },
+ {
+  "id": "Y03.cap",
+  "device": "Y03",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y03-S.state",
+  "device": "Y03-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y03-L.state",
+  "device": "Y03-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y04.teu",
+  "device": "Y04",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2000
+ },
+ {
+  "id": "Y04.cap",
+  "device": "Y04",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y04-S.state",
+  "device": "Y04-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y04-L.state",
+  "device": "Y04-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y05.teu",
+  "device": "Y05",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2000
+ },
+ {
+  "id": "Y05.cap",
+  "device": "Y05",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y05-S.state",
+  "device": "Y05-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y05-L.state",
+  "device": "Y05-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y06.teu",
+  "device": "Y06",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2000
+ },
+ {
+  "id": "Y06.cap",
+  "device": "Y06",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y06-S.state",
+  "device": "Y06-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y06-L.state",
+  "device": "Y06-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y07.teu",
+  "device": "Y07",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2000
+ },
+ {
+  "id": "Y07.cap",
+  "device": "Y07",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y07-S.state",
+  "device": "Y07-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y07-L.state",
+  "device": "Y07-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y08.teu",
+  "device": "Y08",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2000
+ },
+ {
+  "id": "Y08.cap",
+  "device": "Y08",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y08-S.state",
+  "device": "Y08-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y08-L.state",
+  "device": "Y08-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y09.teu",
+  "device": "Y09",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2000
+ },
+ {
+  "id": "Y09.cap",
+  "device": "Y09",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y09-S.state",
+  "device": "Y09-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y09-L.state",
+  "device": "Y09-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y10.teu",
+  "device": "Y10",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y10.cap",
+  "device": "Y10",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y10-S.state",
+  "device": "Y10-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y10-L.state",
+  "device": "Y10-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y11.teu",
+  "device": "Y11",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y11.cap",
+  "device": "Y11",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y11-S.state",
+  "device": "Y11-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y11-L.state",
+  "device": "Y11-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y12.teu",
+  "device": "Y12",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y12.cap",
+  "device": "Y12",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y12-S.state",
+  "device": "Y12-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y12-L.state",
+  "device": "Y12-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y13.teu",
+  "device": "Y13",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y13.cap",
+  "device": "Y13",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y13-S.state",
+  "device": "Y13-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y13-L.state",
+  "device": "Y13-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y14.teu",
+  "device": "Y14",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y14.cap",
+  "device": "Y14",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y14-S.state",
+  "device": "Y14-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y14-L.state",
+  "device": "Y14-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y15.teu",
+  "device": "Y15",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y15.cap",
+  "device": "Y15",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y15-S.state",
+  "device": "Y15-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y15-L.state",
+  "device": "Y15-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y16.teu",
+  "device": "Y16",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y16.cap",
+  "device": "Y16",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y16-S.state",
+  "device": "Y16-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y16-L.state",
+  "device": "Y16-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y17.teu",
+  "device": "Y17",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y17.cap",
+  "device": "Y17",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y17-S.state",
+  "device": "Y17-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y17-L.state",
+  "device": "Y17-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y18.teu",
+  "device": "Y18",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y18.cap",
+  "device": "Y18",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y18-S.state",
+  "device": "Y18-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y18-L.state",
+  "device": "Y18-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y19.teu",
+  "device": "Y19",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y19.cap",
+  "device": "Y19",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y19-S.state",
+  "device": "Y19-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y19-L.state",
+  "device": "Y19-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y20.teu",
+  "device": "Y20",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y20.cap",
+  "device": "Y20",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y20-S.state",
+  "device": "Y20-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y20-L.state",
+  "device": "Y20-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y21.teu",
+  "device": "Y21",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y21.cap",
+  "device": "Y21",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y21-S.state",
+  "device": "Y21-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y21-L.state",
+  "device": "Y21-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y22.teu",
+  "device": "Y22",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y22.cap",
+  "device": "Y22",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y22-S.state",
+  "device": "Y22-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y22-L.state",
+  "device": "Y22-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y23.teu",
+  "device": "Y23",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y23.cap",
+  "device": "Y23",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y23-S.state",
+  "device": "Y23-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y23-L.state",
+  "device": "Y23-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y24.teu",
+  "device": "Y24",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y24.cap",
+  "device": "Y24",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y24-S.state",
+  "device": "Y24-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y24-L.state",
+  "device": "Y24-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y25.teu",
+  "device": "Y25",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y25.cap",
+  "device": "Y25",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y25-S.state",
+  "device": "Y25-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y25-L.state",
+  "device": "Y25-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y26.teu",
+  "device": "Y26",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y26.cap",
+  "device": "Y26",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y26-S.state",
+  "device": "Y26-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y26-L.state",
+  "device": "Y26-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y27.teu",
+  "device": "Y27",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y27.cap",
+  "device": "Y27",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y27-S.state",
+  "device": "Y27-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y27-L.state",
+  "device": "Y27-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y28.teu",
+  "device": "Y28",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y28.cap",
+  "device": "Y28",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y28-S.state",
+  "device": "Y28-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y28-L.state",
+  "device": "Y28-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y29.teu",
+  "device": "Y29",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y29.cap",
+  "device": "Y29",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y29-S.state",
+  "device": "Y29-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y29-L.state",
+  "device": "Y29-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y30.teu",
+  "device": "Y30",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y30.cap",
+  "device": "Y30",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y30-S.state",
+  "device": "Y30-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y30-L.state",
+  "device": "Y30-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y31.teu",
+  "device": "Y31",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2500
+ },
+ {
+  "id": "Y31.cap",
+  "device": "Y31",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y31-S.state",
+  "device": "Y31-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y31-L.state",
+  "device": "Y31-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y32.teu",
+  "device": "Y32",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y32.cap",
+  "device": "Y32",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y32-S.state",
+  "device": "Y32-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y32-L.state",
+  "device": "Y32-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y33.teu",
+  "device": "Y33",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y33.cap",
+  "device": "Y33",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y33-S.state",
+  "device": "Y33-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y33-L.state",
+  "device": "Y33-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y34.teu",
+  "device": "Y34",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y34.cap",
+  "device": "Y34",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y34-S.state",
+  "device": "Y34-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y34-L.state",
+  "device": "Y34-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y35.teu",
+  "device": "Y35",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y35.cap",
+  "device": "Y35",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y35-S.state",
+  "device": "Y35-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y35-L.state",
+  "device": "Y35-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y36.teu",
+  "device": "Y36",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y36.cap",
+  "device": "Y36",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y36-S.state",
+  "device": "Y36-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y36-L.state",
+  "device": "Y36-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y37.teu",
+  "device": "Y37",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y37.cap",
+  "device": "Y37",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y37-S.state",
+  "device": "Y37-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y37-L.state",
+  "device": "Y37-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y38.teu",
+  "device": "Y38",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y38.cap",
+  "device": "Y38",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y38-S.state",
+  "device": "Y38-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y38-L.state",
+  "device": "Y38-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y39.teu",
+  "device": "Y39",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y39.cap",
+  "device": "Y39",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y39-S.state",
+  "device": "Y39-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y39-L.state",
+  "device": "Y39-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y40.teu",
+  "device": "Y40",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y40.cap",
+  "device": "Y40",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y40-S.state",
+  "device": "Y40-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y40-L.state",
+  "device": "Y40-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y41.teu",
+  "device": "Y41",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y41.cap",
+  "device": "Y41",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y41-S.state",
+  "device": "Y41-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y41-L.state",
+  "device": "Y41-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y42.teu",
+  "device": "Y42",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y42.cap",
+  "device": "Y42",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y42-S.state",
+  "device": "Y42-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y42-L.state",
+  "device": "Y42-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y43.teu",
+  "device": "Y43",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y43.cap",
+  "device": "Y43",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y43-S.state",
+  "device": "Y43-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y43-L.state",
+  "device": "Y43-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y44.teu",
+  "device": "Y44",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y44.cap",
+  "device": "Y44",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y44-S.state",
+  "device": "Y44-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y44-L.state",
+  "device": "Y44-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y45.teu",
+  "device": "Y45",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y45.cap",
+  "device": "Y45",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y45-S.state",
+  "device": "Y45-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y45-L.state",
+  "device": "Y45-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y46.teu",
+  "device": "Y46",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y46.cap",
+  "device": "Y46",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y46-S.state",
+  "device": "Y46-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y46-L.state",
+  "device": "Y46-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y47.teu",
+  "device": "Y47",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y47.cap",
+  "device": "Y47",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y47-S.state",
+  "device": "Y47-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y47-L.state",
+  "device": "Y47-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y48.teu",
+  "device": "Y48",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y48.cap",
+  "device": "Y48",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y48-S.state",
+  "device": "Y48-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y48-L.state",
+  "device": "Y48-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y49.teu",
+  "device": "Y49",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y49.cap",
+  "device": "Y49",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y49-S.state",
+  "device": "Y49-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y49-L.state",
+  "device": "Y49-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y50.teu",
+  "device": "Y50",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y50.cap",
+  "device": "Y50",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y50-S.state",
+  "device": "Y50-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y50-L.state",
+  "device": "Y50-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y51.teu",
+  "device": "Y51",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y51.cap",
+  "device": "Y51",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y51-S.state",
+  "device": "Y51-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y51-L.state",
+  "device": "Y51-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y52.teu",
+  "device": "Y52",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y52.cap",
+  "device": "Y52",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y52-S.state",
+  "device": "Y52-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y52-L.state",
+  "device": "Y52-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y53.teu",
+  "device": "Y53",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 2900
+ },
+ {
+  "id": "Y53.cap",
+  "device": "Y53",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y53-S.state",
+  "device": "Y53-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y53-L.state",
+  "device": "Y53-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y54.teu",
+  "device": "Y54",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 1950
+ },
+ {
+  "id": "Y54.cap",
+  "device": "Y54",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y54-S.state",
+  "device": "Y54-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y54-L.state",
+  "device": "Y54-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y55.teu",
+  "device": "Y55",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 1950
+ },
+ {
+  "id": "Y55.cap",
+  "device": "Y55",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y55-S.state",
+  "device": "Y55-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y55-L.state",
+  "device": "Y55-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y56.teu",
+  "device": "Y56",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 1950
+ },
+ {
+  "id": "Y56.cap",
+  "device": "Y56",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y56-S.state",
+  "device": "Y56-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y56-L.state",
+  "device": "Y56-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y57.teu",
+  "device": "Y57",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 1950
+ },
+ {
+  "id": "Y57.cap",
+  "device": "Y57",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y57-S.state",
+  "device": "Y57-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y57-L.state",
+  "device": "Y57-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y58.teu",
+  "device": "Y58",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 1950
+ },
+ {
+  "id": "Y58.cap",
+  "device": "Y58",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y58-S.state",
+  "device": "Y58-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y58-L.state",
+  "device": "Y58-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y59.teu",
+  "device": "Y59",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 1950
+ },
+ {
+  "id": "Y59.cap",
+  "device": "Y59",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y59-S.state",
+  "device": "Y59-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y59-L.state",
+  "device": "Y59-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y60.teu",
+  "device": "Y60",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 1950
+ },
+ {
+  "id": "Y60.cap",
+  "device": "Y60",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y60-S.state",
+  "device": "Y60-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y60-L.state",
+  "device": "Y60-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y61.teu",
+  "device": "Y61",
+  "name": "在场箱量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0,
+  "max": 1950
+ },
+ {
+  "id": "Y61.cap",
+  "device": "Y61",
+  "name": "箱区容量",
+  "unit": "TEU",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "Y61-S.state",
+  "device": "Y61-S",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "Y61-L.state",
+  "device": "Y61-L",
+  "name": "作业状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV001.state",
+  "device": "AGV001",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV001.soc",
+  "device": "AGV001",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV002.state",
+  "device": "AGV002",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV002.soc",
+  "device": "AGV002",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV003.state",
+  "device": "AGV003",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV003.soc",
+  "device": "AGV003",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV004.state",
+  "device": "AGV004",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV004.soc",
+  "device": "AGV004",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV005.state",
+  "device": "AGV005",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV005.soc",
+  "device": "AGV005",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV006.state",
+  "device": "AGV006",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV006.soc",
+  "device": "AGV006",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV007.state",
+  "device": "AGV007",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV007.soc",
+  "device": "AGV007",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV008.state",
+  "device": "AGV008",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV008.soc",
+  "device": "AGV008",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV009.state",
+  "device": "AGV009",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV009.soc",
+  "device": "AGV009",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV010.state",
+  "device": "AGV010",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV010.soc",
+  "device": "AGV010",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV011.state",
+  "device": "AGV011",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV011.soc",
+  "device": "AGV011",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV012.state",
+  "device": "AGV012",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV012.soc",
+  "device": "AGV012",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV013.state",
+  "device": "AGV013",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV013.soc",
+  "device": "AGV013",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV014.state",
+  "device": "AGV014",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV014.soc",
+  "device": "AGV014",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV015.state",
+  "device": "AGV015",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV015.soc",
+  "device": "AGV015",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV016.state",
+  "device": "AGV016",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV016.soc",
+  "device": "AGV016",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV017.state",
+  "device": "AGV017",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV017.soc",
+  "device": "AGV017",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV018.state",
+  "device": "AGV018",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV018.soc",
+  "device": "AGV018",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV019.state",
+  "device": "AGV019",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV019.soc",
+  "device": "AGV019",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV020.state",
+  "device": "AGV020",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV020.soc",
+  "device": "AGV020",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV021.state",
+  "device": "AGV021",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV021.soc",
+  "device": "AGV021",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV022.state",
+  "device": "AGV022",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV022.soc",
+  "device": "AGV022",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV023.state",
+  "device": "AGV023",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV023.soc",
+  "device": "AGV023",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV024.state",
+  "device": "AGV024",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV024.soc",
+  "device": "AGV024",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV025.state",
+  "device": "AGV025",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV025.soc",
+  "device": "AGV025",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV026.state",
+  "device": "AGV026",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV026.soc",
+  "device": "AGV026",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV027.state",
+  "device": "AGV027",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV027.soc",
+  "device": "AGV027",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV028.state",
+  "device": "AGV028",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV028.soc",
+  "device": "AGV028",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV029.state",
+  "device": "AGV029",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV029.soc",
+  "device": "AGV029",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV030.state",
+  "device": "AGV030",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV030.soc",
+  "device": "AGV030",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV031.state",
+  "device": "AGV031",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV031.soc",
+  "device": "AGV031",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV032.state",
+  "device": "AGV032",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV032.soc",
+  "device": "AGV032",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV033.state",
+  "device": "AGV033",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV033.soc",
+  "device": "AGV033",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV034.state",
+  "device": "AGV034",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV034.soc",
+  "device": "AGV034",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV035.state",
+  "device": "AGV035",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV035.soc",
+  "device": "AGV035",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV036.state",
+  "device": "AGV036",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV036.soc",
+  "device": "AGV036",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV037.state",
+  "device": "AGV037",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV037.soc",
+  "device": "AGV037",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV038.state",
+  "device": "AGV038",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV038.soc",
+  "device": "AGV038",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV039.state",
+  "device": "AGV039",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV039.soc",
+  "device": "AGV039",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV040.state",
+  "device": "AGV040",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV040.soc",
+  "device": "AGV040",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV041.state",
+  "device": "AGV041",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV041.soc",
+  "device": "AGV041",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV042.state",
+  "device": "AGV042",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV042.soc",
+  "device": "AGV042",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV043.state",
+  "device": "AGV043",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV043.soc",
+  "device": "AGV043",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV044.state",
+  "device": "AGV044",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV044.soc",
+  "device": "AGV044",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV045.state",
+  "device": "AGV045",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV045.soc",
+  "device": "AGV045",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV046.state",
+  "device": "AGV046",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV046.soc",
+  "device": "AGV046",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV047.state",
+  "device": "AGV047",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV047.soc",
+  "device": "AGV047",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV048.state",
+  "device": "AGV048",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV048.soc",
+  "device": "AGV048",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV049.state",
+  "device": "AGV049",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV049.soc",
+  "device": "AGV049",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV050.state",
+  "device": "AGV050",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV050.soc",
+  "device": "AGV050",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV051.state",
+  "device": "AGV051",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV051.soc",
+  "device": "AGV051",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV052.state",
+  "device": "AGV052",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV052.soc",
+  "device": "AGV052",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV053.state",
+  "device": "AGV053",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV053.soc",
+  "device": "AGV053",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV054.state",
+  "device": "AGV054",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV054.soc",
+  "device": "AGV054",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV055.state",
+  "device": "AGV055",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV055.soc",
+  "device": "AGV055",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV056.state",
+  "device": "AGV056",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV056.soc",
+  "device": "AGV056",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV057.state",
+  "device": "AGV057",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV057.soc",
+  "device": "AGV057",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV058.state",
+  "device": "AGV058",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV058.soc",
+  "device": "AGV058",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV059.state",
+  "device": "AGV059",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV059.soc",
+  "device": "AGV059",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV060.state",
+  "device": "AGV060",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV060.soc",
+  "device": "AGV060",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV061.state",
+  "device": "AGV061",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV061.soc",
+  "device": "AGV061",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV062.state",
+  "device": "AGV062",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV062.soc",
+  "device": "AGV062",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV063.state",
+  "device": "AGV063",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV063.soc",
+  "device": "AGV063",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV064.state",
+  "device": "AGV064",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV064.soc",
+  "device": "AGV064",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV065.state",
+  "device": "AGV065",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV065.soc",
+  "device": "AGV065",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV066.state",
+  "device": "AGV066",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV066.soc",
+  "device": "AGV066",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV067.state",
+  "device": "AGV067",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV067.soc",
+  "device": "AGV067",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV068.state",
+  "device": "AGV068",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV068.soc",
+  "device": "AGV068",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV069.state",
+  "device": "AGV069",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV069.soc",
+  "device": "AGV069",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV070.state",
+  "device": "AGV070",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV070.soc",
+  "device": "AGV070",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV071.state",
+  "device": "AGV071",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV071.soc",
+  "device": "AGV071",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV072.state",
+  "device": "AGV072",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV072.soc",
+  "device": "AGV072",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV073.state",
+  "device": "AGV073",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV073.soc",
+  "device": "AGV073",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV074.state",
+  "device": "AGV074",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV074.soc",
+  "device": "AGV074",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV075.state",
+  "device": "AGV075",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV075.soc",
+  "device": "AGV075",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV076.state",
+  "device": "AGV076",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV076.soc",
+  "device": "AGV076",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV077.state",
+  "device": "AGV077",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV077.soc",
+  "device": "AGV077",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV078.state",
+  "device": "AGV078",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV078.soc",
+  "device": "AGV078",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV079.state",
+  "device": "AGV079",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV079.soc",
+  "device": "AGV079",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV080.state",
+  "device": "AGV080",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV080.soc",
+  "device": "AGV080",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV081.state",
+  "device": "AGV081",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV081.soc",
+  "device": "AGV081",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV082.state",
+  "device": "AGV082",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV082.soc",
+  "device": "AGV082",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV083.state",
+  "device": "AGV083",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV083.soc",
+  "device": "AGV083",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV084.state",
+  "device": "AGV084",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV084.soc",
+  "device": "AGV084",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV085.state",
+  "device": "AGV085",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV085.soc",
+  "device": "AGV085",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV086.state",
+  "device": "AGV086",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV086.soc",
+  "device": "AGV086",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV087.state",
+  "device": "AGV087",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV087.soc",
+  "device": "AGV087",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV088.state",
+  "device": "AGV088",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV088.soc",
+  "device": "AGV088",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV089.state",
+  "device": "AGV089",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV089.soc",
+  "device": "AGV089",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV090.state",
+  "device": "AGV090",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV090.soc",
+  "device": "AGV090",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV091.state",
+  "device": "AGV091",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV091.soc",
+  "device": "AGV091",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV092.state",
+  "device": "AGV092",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV092.soc",
+  "device": "AGV092",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV093.state",
+  "device": "AGV093",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV093.soc",
+  "device": "AGV093",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV094.state",
+  "device": "AGV094",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV094.soc",
+  "device": "AGV094",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV095.state",
+  "device": "AGV095",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV095.soc",
+  "device": "AGV095",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV096.state",
+  "device": "AGV096",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV096.soc",
+  "device": "AGV096",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV097.state",
+  "device": "AGV097",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV097.soc",
+  "device": "AGV097",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV098.state",
+  "device": "AGV098",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV098.soc",
+  "device": "AGV098",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV099.state",
+  "device": "AGV099",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV099.soc",
+  "device": "AGV099",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV100.state",
+  "device": "AGV100",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV100.soc",
+  "device": "AGV100",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV101.state",
+  "device": "AGV101",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV101.soc",
+  "device": "AGV101",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV102.state",
+  "device": "AGV102",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV102.soc",
+  "device": "AGV102",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV103.state",
+  "device": "AGV103",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV103.soc",
+  "device": "AGV103",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV104.state",
+  "device": "AGV104",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV104.soc",
+  "device": "AGV104",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV105.state",
+  "device": "AGV105",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV105.soc",
+  "device": "AGV105",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV106.state",
+  "device": "AGV106",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV106.soc",
+  "device": "AGV106",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV107.state",
+  "device": "AGV107",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV107.soc",
+  "device": "AGV107",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV108.state",
+  "device": "AGV108",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV108.soc",
+  "device": "AGV108",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV109.state",
+  "device": "AGV109",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV109.soc",
+  "device": "AGV109",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV110.state",
+  "device": "AGV110",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV110.soc",
+  "device": "AGV110",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV111.state",
+  "device": "AGV111",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV111.soc",
+  "device": "AGV111",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV112.state",
+  "device": "AGV112",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV112.soc",
+  "device": "AGV112",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV113.state",
+  "device": "AGV113",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV113.soc",
+  "device": "AGV113",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV114.state",
+  "device": "AGV114",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV114.soc",
+  "device": "AGV114",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV115.state",
+  "device": "AGV115",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV115.soc",
+  "device": "AGV115",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV116.state",
+  "device": "AGV116",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV116.soc",
+  "device": "AGV116",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV117.state",
+  "device": "AGV117",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV117.soc",
+  "device": "AGV117",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV118.state",
+  "device": "AGV118",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV118.soc",
+  "device": "AGV118",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV119.state",
+  "device": "AGV119",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV119.soc",
+  "device": "AGV119",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV120.state",
+  "device": "AGV120",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV120.soc",
+  "device": "AGV120",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV121.state",
+  "device": "AGV121",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV121.soc",
+  "device": "AGV121",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV122.state",
+  "device": "AGV122",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV122.soc",
+  "device": "AGV122",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV123.state",
+  "device": "AGV123",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV123.soc",
+  "device": "AGV123",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV124.state",
+  "device": "AGV124",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV124.soc",
+  "device": "AGV124",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV125.state",
+  "device": "AGV125",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV125.soc",
+  "device": "AGV125",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV126.state",
+  "device": "AGV126",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV126.soc",
+  "device": "AGV126",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV127.state",
+  "device": "AGV127",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV127.soc",
+  "device": "AGV127",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV128.state",
+  "device": "AGV128",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV128.soc",
+  "device": "AGV128",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV129.state",
+  "device": "AGV129",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV129.soc",
+  "device": "AGV129",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV130.state",
+  "device": "AGV130",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV130.soc",
+  "device": "AGV130",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV131.state",
+  "device": "AGV131",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV131.soc",
+  "device": "AGV131",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV132.state",
+  "device": "AGV132",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV132.soc",
+  "device": "AGV132",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV133.state",
+  "device": "AGV133",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV133.soc",
+  "device": "AGV133",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV134.state",
+  "device": "AGV134",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV134.soc",
+  "device": "AGV134",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV135.state",
+  "device": "AGV135",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV135.soc",
+  "device": "AGV135",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV136.state",
+  "device": "AGV136",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV136.soc",
+  "device": "AGV136",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV137.state",
+  "device": "AGV137",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV137.soc",
+  "device": "AGV137",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV138.state",
+  "device": "AGV138",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV138.soc",
+  "device": "AGV138",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV139.state",
+  "device": "AGV139",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV139.soc",
+  "device": "AGV139",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV140.state",
+  "device": "AGV140",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV140.soc",
+  "device": "AGV140",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV141.state",
+  "device": "AGV141",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV141.soc",
+  "device": "AGV141",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV142.state",
+  "device": "AGV142",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV142.soc",
+  "device": "AGV142",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV143.state",
+  "device": "AGV143",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV143.soc",
+  "device": "AGV143",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV144.state",
+  "device": "AGV144",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV144.soc",
+  "device": "AGV144",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "AGV145.state",
+  "device": "AGV145",
+  "name": "状态",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "AGV145.soc",
+  "device": "AGV145",
+  "name": "电量",
+  "unit": "%",
+  "kind": "analog",
+  "min": 0,
+  "max": 100
+ },
+ {
+  "id": "BS-1.swapping",
+  "device": "BS-1",
+  "name": "换电中",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 16
+ },
+ {
+  "id": "BS-1.queue",
+  "device": "BS-1",
+  "name": "往返 / 排队",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 145
+ },
+ {
+  "id": "BS-1.swapsToday",
+  "device": "BS-1",
+  "name": "今日换电次数",
+  "unit": "次",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "BS-2.swapping",
+  "device": "BS-2",
+  "name": "换电中",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 16
+ },
+ {
+  "id": "BS-2.queue",
+  "device": "BS-2",
+  "name": "往返 / 排队",
+  "unit": "台",
+  "kind": "analog",
+  "min": 0,
+  "max": 145
+ },
+ {
+  "id": "BS-2.swapsToday",
+  "device": "BS-2",
+  "name": "今日换电次数",
+  "unit": "次",
+  "kind": "counter",
+  "min": 0
+ },
+ {
+  "id": "MET-01.wind",
+  "device": "MET-01",
+  "name": "风速（10 分钟平均）",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 40
+ },
+ {
+  "id": "MET-01.gust",
+  "device": "MET-01",
+  "name": "阵风",
+  "unit": "m/s",
+  "kind": "analog",
+  "min": 0,
+  "max": 50
+ },
+ {
+  "id": "MET-01.dir",
+  "device": "MET-01",
+  "name": "风向",
+  "unit": "°",
+  "kind": "analog",
+  "min": 0,
+  "max": 360
+ },
+ {
+  "id": "MET-01.tide",
+  "device": "MET-01",
+  "name": "潮位",
+  "unit": "m",
+  "kind": "analog",
+  "min": -1,
+  "max": 6
+ },
+ {
+  "id": "EU2-1.41.stage",
+  "device": "EU2-1.41",
+  "name": "瀚洋天玑 作业阶段",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "EU2-1.41.done",
+  "device": "EU2-1.41",
+  "name": "瀚洋天玑 已完成",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0,
+  "max": 3600
+ },
+ {
+  "id": "EU2-1.41.moves",
+  "device": "EU2-1.41",
+  "name": "瀚洋天玑 计划箱量",
+  "unit": "自然箱",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "EU2-1.41.rate",
+  "device": "EU2-1.41",
+  "name": "瀚洋天玑 船时效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "SE1-2.41.stage",
+  "device": "SE1-2.41",
+  "name": "长澜云帆 作业阶段",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "SE1-2.41.done",
+  "device": "SE1-2.41",
+  "name": "长澜云帆 已完成",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0,
+  "max": 2320
+ },
+ {
+  "id": "SE1-2.41.moves",
+  "device": "SE1-2.41",
+  "name": "长澜云帆 计划箱量",
+  "unit": "自然箱",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SE1-2.41.rate",
+  "device": "SE1-2.41",
+  "name": "长澜云帆 船时效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "SE1-4.41.stage",
+  "device": "SE1-4.41",
+  "name": "长澜太微 作业阶段",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "SE1-4.41.done",
+  "device": "SE1-4.41",
+  "name": "长澜太微 已完成",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0,
+  "max": 1600
+ },
+ {
+  "id": "SE1-4.41.moves",
+  "device": "SE1-4.41",
+  "name": "长澜太微 计划箱量",
+  "unit": "自然箱",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SE1-4.41.rate",
+  "device": "SE1-4.41",
+  "name": "长澜太微 船时效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ },
+ {
+  "id": "SE2-6.41.stage",
+  "device": "SE2-6.41",
+  "name": "长澜远图 作业阶段",
+  "unit": "",
+  "kind": "state"
+ },
+ {
+  "id": "SE2-6.41.done",
+  "device": "SE2-6.41",
+  "name": "长澜远图 已完成",
+  "unit": "自然箱",
+  "kind": "counter",
+  "min": 0,
+  "max": 680
+ },
+ {
+  "id": "SE2-6.41.moves",
+  "device": "SE2-6.41",
+  "name": "长澜远图 计划箱量",
+  "unit": "自然箱",
+  "kind": "analog",
+  "min": 0
+ },
+ {
+  "id": "SE2-6.41.rate",
+  "device": "SE2-6.41",
+  "name": "长澜远图 船时效率",
+  "unit": "自然箱/h",
+  "kind": "analog",
+  "min": 0,
+  "max": 400
+ }
+]

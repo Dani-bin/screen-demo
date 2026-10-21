@@ -46,6 +46,7 @@ const READY_TIMEOUT = 60
  *   - 候诊大厅：开屏先停全景 4 s（216 诊室正在叫号、橙色光柱亮着），状态柱约 1.5 s 长满，取 2.5 s
  *   - 智能矿山：无开场动画，地形加载后直接在综合态势视角，等 5 s 让标注、辉光与钻孔光点稳定
  *   - 智慧牧场：地形加载后 3 s 推到全景，全景停 14 s 再开始巡游，取 6 s
+ *   - 智慧港口：场景加载后停在总览（全景停 12 s 再巡游），等 10 s 让光迹、光带走起来
  * 新演示未配置时取 DEFAULT_SETTLE。
  */
 const DEFAULT_SETTLE = 5
@@ -59,7 +60,8 @@ const SETTLE = {
   hospital: 6,
   waiting: 2.5,
   "smart-mine": 5,
-  "smart-ranch": 6
+  "smart-ranch": 6,
+  "smart-port": 10
 }
 
 /**
