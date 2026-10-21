@@ -215,19 +215,25 @@
     padding: 118px 80px 0;
   }
 
-  /* ---------------- 工具行 */
+  /* ---------------- 工具行
+     标题和筛选条默认同一行；放不下时（行业变多，或窗口较窄、浏览器最小字号
+     把小字撑大）整条筛选条换到下一行，而不是把标签和标题挤到竖排折行 */
   .wall-tools {
     flex: none;
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
+    gap: 14px 24px;
     margin-bottom: 22px;
   }
 
   .wall-title {
+    flex: none;
     display: flex;
     align-items: baseline;
     gap: 16px;
+    white-space: nowrap;
 
     h2 {
       margin: 0;
@@ -253,13 +259,16 @@
 
   .wall-filters {
     display: flex;
+    flex-wrap: wrap; /* 单独一行也放不下时，标签再折到下一行 */
     align-items: center;
-    gap: 10px;
+    gap: 10px 8px;
   }
 
   .chip {
+    flex: none;
+    white-space: nowrap;
     height: 40px;
-    padding: 0 20px;
+    padding: 0 16px;
     border-radius: 20px;
     border: 1px solid var(--line);
     background: var(--card);
@@ -310,6 +319,7 @@
   }
 
   .search {
+    flex: none;
     height: 40px;
     width: 230px;
     padding: 0 12px 0 16px;
