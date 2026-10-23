@@ -221,5 +221,25 @@ export const DEMOS = [
     // 取自定稿的草原绿
     accent: "#2f8f4e",
     preview: "home/smart-ranch.webp"
+  },
+  {
+    key: "drone",
+    path: "/drone",
+    name: "无人机巡检监控平台",
+    en: "DRONE INSPECTION CENTER",
+    subTitle: "临江化工园区（虚构）· 机场自动巡检",
+    category: "低空经济",
+    desc: "4 座机场各驻一架无人机，按计划自动巡检储罐、装置与周界；AI 识别气体泄漏、周界入侵等事件，值班员看机载红外实时画面确认、派单、复核，大风自动停飞，可拖动时间轴回放整天。",
+    tags: ["机载红外画面", "事件处置闭环", "整天回放"],
+    // 依据：drone/data/layout.js 的 DOCKS（4 座，一机一巢）与 SCHEDULE（每天 49 趟）；
+    // data/catalog.js 的 EVENT_TYPES 共 11 类 AI 识别事件
+    stats: [
+      { value: "4", unit: "座", key: "机场 · 一机一巢" },
+      { value: "49", unit: "趟", key: "每日计划巡检" },
+      { value: "11", unit: "类", key: "AI 识别事件" }
+    ],
+    // 取自页面的航线青
+    accent: "#36e3d8",
+    preview: "home/drone.webp"
   }
 ]

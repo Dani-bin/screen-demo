@@ -54,6 +54,12 @@ const routes = [
     component: () => import("@/views/hospital/index.vue")
   },
   {
+    // 无人机巡检监控平台：虚构化工园区，4 机场 × 4 无人机自动巡检 + AI 事件处置，Blender 建模 + three.js 展示
+    path: "/drone",
+    name: "Drone",
+    component: () => import("@/views/drone/index.vue")
+  },
+  {
     // 候诊大厅：同一家医院 2F 内科候诊区，三维展示各诊室待诊 / 复诊 / 过诊 + 叫号高亮
     path: "/waiting",
     name: "Waiting",

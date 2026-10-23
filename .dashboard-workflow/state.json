@@ -200,6 +200,360 @@
           "issue": "面板逐像素门槛（容差 24、超差 ≤ 3%）对 1 px 的字体基线偏移和实时数据（秒数、闪烁、按编号播种的距离）过于敏感：功能导航 / 右栏 / 底部 / 工具条 4.4–10.7%，肉眼一致。建议 skill 的 compare.py 加 1–2 px 位移容忍或文字区域掩膜（门槛校准）"
         }
       ]
+    },
+    "drone": {
+      "title": "无人机机场自动巡检 · 化工园区安全巡查 三维大屏",
+      "mode": "new",
+      "docsDir": "docs/design/drone",
+      "stage": 11,
+      "stages": {
+        "1": {
+          "status": "passed",
+          "output": "01-requirements-qa.md"
+        },
+        "2": {
+          "status": "passed",
+          "output": [
+            "02-research.md",
+            "research/dock-and-drone.md",
+            "research/chem-park-inspection.md",
+            "research/visual-references.md"
+          ]
+        },
+        "3": {
+          "status": "passed",
+          "output": [
+            "03-scope.md",
+            "devices.json"
+          ]
+        },
+        "4": {
+          "status": "passed",
+          "output": [
+            "04-data-spec.md",
+            "mock/",
+            "05-requirement.md"
+          ],
+          "notes": "data-check 通过（真实路径调用）；仿真器 src/views/drone/sim/simulator.js，生成脚本 scripts/drone/make_mock.mjs"
+        },
+        "5": {
+          "status": "passed",
+          "output": [
+            "design/v1-a.png",
+            "design/v1-b.png",
+            "design/v1-c.png",
+            "design/README.md",
+            "design/src/drafts.html",
+            "design/final.png"
+          ],
+          "figma": "https://www.figma.com/design/18iQR20REanp86JvPIQDqV",
+          "notes": "用户选定 A（v1-a 原样定稿，未精修）"
+        },
+        "6": {
+          "status": "passed",
+          "output": [
+            "06-asset-map.md",
+            "design/ref/",
+            "design/panels.json",
+            "design/regions.json",
+            "design/recompose.png"
+          ],
+          "notes": "面板全部代码绘制，无切图；重组比对 9 个面板 0.00%"
+        },
+        "7": {
+          "status": "passed",
+          "output": [
+            "07-camera.json",
+            "design/annotations.json",
+            "design/annotation-check.png",
+            "design/layout-check.png",
+            "scripts/drone/plan_site.py",
+            "src/views/drone/data/site.js",
+            "scripts/blender/drone/site.json"
+          ],
+          "notes": "残差 RMS 2.217 px / 最大 6.0 px"
+        },
+        "8": {
+          "status": "passed",
+          "output": [
+            "scripts/blender/drone/",
+            "public/drone/park.glb",
+            "public/drone/fleet.glb",
+            "design/blender-preview.png"
+          ],
+          "notes": "glb-check 通过（park：48 个设备根节点、28 万面、42 材质、5 贴图；fleet：UAV + 4 桨）；同机位预览与定稿 50% 叠图布局重合；光照 / 天空 / 水面留到 three.js 调"
+        },
+        "9": {
+          "status": "passed",
+          "output": [
+            "src/views/drone/",
+            "src/router/index.js"
+          ],
+          "notes": "一台设备链路验证：点 1# 机场卡片 → 卡片描边 + 三维高亮 + 镜头飞近 + 详情（GLB 截取的模型缩略图 + 参数）；三维里点 TK-104 → 选中 + 详情；时间游标接入（实时 / 回放）"
+        },
+        "10": {
+          "status": "passed",
+          "notes": "动效全部由仿真时刻派生：桨叶转角 = 时刻 × 转速、舱盖按仿真时间推进、光圈 / 光柱 / 气羽相位按时刻；验证：回放暂停位置与相位不变、播放 60× 推进、再暂停定住；停机舱内隐藏不转；切后台单帧 dt ≤ 0.1 s 且时刻由时钟重算"
+        },
+        "11": {
+          "status": "in_progress",
+          "output": [
+            "review/"
+          ]
+        }
+      },
+      "approvals": {
+        "requirements": {
+          "at": "2026-10-19",
+          "summary": "化工园区无人机机场自动巡检：值班员为主、运维为辅；4 机场×4 机，KPI / 机队 / 计划 / 事件流 / 统计 + 三维与机载画面；选中、跟随、事件复核派单、回放、自动巡游；可见光/红外；气象停飞；只看无人机体系"
+        },
+        "design": {
+          "at": "2026-10-19",
+          "summary": "选定 A 指挥大屏 · 黄昏沙盘：深蓝玻璃两栏面板叠在黄昏三维沙盘上，机载红外画中画；场景图 ai/scene-a-dusk.png，3 套装置一排（U-1/U-3/U-2），码头 2 艘槽船为静态模型"
+        }
+      },
+      "finalDesign": "docs/design/drone/design/final.png",
+      "camera": "docs/design/drone/07-camera.json",
+      "thresholds": {
+        "file": "C:/Users/asus/src/build-3d-visual-dashboard/templates/thresholds.json",
+        "reviewerMin": 5
+      },
+      "rulings": [
+        {
+          "at": "2026-10-19",
+          "stage": 1,
+          "decision": "阶段文档跟随仓库约定放 docs/design/drone/，项目键与路由为 drone（第 1 轮 Q3 已确认）"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 1,
+          "decision": "机场 / 无人机外形参照主流一舱一机机场形态，不出现品牌名与 logo"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 1,
+          "decision": "模拟数据跟随真实时钟，巡检计划按时刻表运行"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 1,
+          "decision": "画面只做一种光照，白天或黄昏在阶段 5 由用户选，不做昼夜切换"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 2,
+          "decision": "事件状态在已确认流程上加一步'待复核'：待确认 → 已派单 → 处置中 → 待复核 → 已办结 / 误报；复核不通过退回处置中；超时为'督办'标记"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 2,
+          "decision": "4 架无人机都带广角 + 长焦 + 红外 + 激光测距；罐区、装置区的 2 架另挂激光甲烷遥测；气体泄漏按白雾/冷点 + ppm·m 判定"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 2,
+          "decision": "虚构园区约 8–10 km²，精细核心区约 3 × 2 km；4 机场各管一片区，半径 2–3 km；火炬约 120 m，是禁飞柱和烟火屏蔽区"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 2,
+          "decision": "合规信息只做小区块（管制空域长期飞行批复、今日计划已报备、登记号、运行识别报送）"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 2,
+          "decision": "气象显示风速 m/s + 风级、雨量等级、温湿度，风向标'估算'；预置 14:00 阵风停飞、14:30 起飞、顺延 30 min"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 2,
+          "decision": "事件等级三级：重大红 / 较大橙 / 一般黄，蓝色用于提示 / 低置信度"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 4,
+          "decision": "排程从调研的 6–8 架次/机场/天提高到 12–13，四个机场错开起飞（:00/:00/:20/:50），满足需求'同时 1–3 架在飞'（白天 79% 时间 ≥1 架）"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 4,
+          "decision": "事件发生率按悬停次数下调到每天约 17–28 条；处置时长：重大 20–60 min、较大 30–150 min、一般 40–240 min"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 4,
+          "decision": "剧情每天 14:00 前后固定上演（阵风顺延、3# 离线、RTK 浮点、重大气体泄漏）；近 7 天统计的前 6 天不含剧情"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 4,
+          "decision": "设计稿画 2026-10-19 14:09 这一刻"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 4,
+          "decision": "RT-41 只管北侧卡口 G-1/G-2，G-3 归 RT-32、G-4 归 RT-42"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 5,
+          "decision": "设计稿画 2026-10-19 14:09；AI 图用 Figma gpt-image-2.5-sunburst（只能文字生图，布局靠提示词约束）"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 5,
+          "decision": "三张 AI 图都把 3 套装置排成一排（U-1、U-3、U-2 从左到右），以定稿为准，阶段 7 反投影更新布局"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 5,
+          "decision": "机场 / 无人机在全园视角用放大符号表示（六边形机场标、四旋翼图标、名称牌）"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 5,
+          "decision": "码头的 2 艘槽船按设计稿保留为静态模型"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 7,
+          "decision": "相机：透视模型（方位 92.4°、俯角 17.4°、视场角 23°），两段式拟合（scripts/drone/fit_camera.py 调用 skill 的 calibrate.py 函数），残差 RMS 2.2 px / 最大 6.0 px；正交模型虽残差小但俯角退化到 1–8°、尺寸不合理，故用透视"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 7,
+          "decision": "AI 图透视不自洽（地面灭点与远山地平线对不上、罐顶椭圆偏扁），以 8 个矩形的最小二乘折中为准"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 7,
+          "decision": "尺度以设计稿为准：浮顶罐 D40 定比例，场地约东西 600 m × 南北 780 m（规划 v0 的 3.2×2.2 km 作废）；仿真布局改用反投影坐标，降低巡检速度、加悬停点以保持单趟时长；定稿数字随新数据重渲（版式不变）"
+        },
+        {
+          "at": "2026-10-19",
+          "stage": 7,
+          "decision": "世界坐标系 = 标定坐标系：原点在原料罐区罐顶中心网格中心，x 向东、y 向北、z 向上，单位 m；three.js (X,Y,Z) = (x, z, -y)"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 7,
+          "decision": "设计时刻由 14:09 改为 14:03（新布局下剧情事件 14:01:44 发现）；定稿 final.png 用同一合成页按新数据重渲，v1-a.png 保留为选稿原图"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 7,
+          "decision": "RT-21 第一个悬停点改为 2# 芳烃装置（STORY_WP = 0）；3# 机场离线 13:58:30–14:09:10、RTK 浮点 13:59–14:09"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 7,
+          "decision": "航线高度：罐区 45 m、装置区 130 m（塔器最高约 101 m）、公用工程 50–70 m、周界 35–40 m；火炬禁飞半径 60 m"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 8,
+          "decision": "Blender MCP 插件中途断连，改用命令行后台模式（F:/blander/blender.exe --background，scripts/blender/drone/run_cli.py）建模、渲染、导出"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 8,
+          "decision": "标定相机视野顶边在真地平线下约 6°：天空不能用普通天空球，three.js 里按视线高度在窄范围内重映射渐变；画布全屏 + CSS 暗角遮罩复现定稿的沙盘边缘"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 8,
+          "decision": "树、路灯挂父节点以便导出为 GPU 实例（1816 → 4 个实例网格）；无人机预制件不实例化，保留 UAV_prop_1..4"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 9,
+          "decision": "EffectComposer 辉光前加 NaN 清洗通道（退化面法线的 NaN 经辉光扩散会让全屏变黑）"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 9,
+          "decision": "OrbitControls 构造会改相机朝向：创建后重新套用标定主机位；拖动超过 5 px 才离开主机位"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 9,
+          "decision": "夕阳高度角 18°（10° 时塔器长影压黑地面），树不投影；江面粗糙度 0.58（太光滑时左侧落日高光经辉光糊掉罐区）"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "第 20–21 轮：Blender 自带 meshopt 导出的顶点坐标是共享指数 12 位尾数，离原点 500 m 处高度误差约 0.24 m、3 km 处约 1.5 m，世界坐标铺的各层地面被吸到同一高度互相打架（农田盖住远处的河和公用工程地块）；export.py 把 EXP_FILTER_BITS 提到 20，park.glb 1.90 → 2.03 MB"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "第 22 轮：禁飞柱去掉半透明圆柱面（把公用工程右半边染红），改成定稿画法：上下两道虚线圈 + 东西两侧竖直虚线"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "第 23 轮：远处农田的亮度主要来自掠射角下夕阳的镜面高光，换底色几乎不起作用；M_fields 换成物理材质、specularIntensity 0.6、底色 #9c9cbc"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "第 24–25 轮：草地 #3c4038 → #545a48，天光天空色 #b3b3d6 → #b8b4cc（暖夕阳 + 偏蓝紫天光叠出品红色偏）；五个分区色差全部 ≤ 5"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "第 26 轮：按定稿反推 UAV-02 悬停监视位置在泄漏点正南约 240 m、绝对 130 m（显示的 118 m 是相对起飞点高度），RT-21 首个悬停点改到这里，俯角约 27° 正是定稿机载画面的构图；到点后识别延迟 20 s → 9 s 保持 14:01:44 发现；当天 RT-21 每趟多飞一段，final.png 按新 mock 重渲（7 h 24 min / 45.3 km / 温度异常 13:07），旧版留在 design/history/final-before-r26.png"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "第 27 轮：暗角遮罩在机载窗口处挖洞（clip-path），原先 box-shadow 盖住了机载画面沙盘框以下约 70 px"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "第 28–30 轮：机载相机视场角 34° → 16°；红外改为渲染前把材质换成按材质名给定温度的灰度 Lambert 材质（THEME.thermal：塔器 / 管线 / 钢结构热、地坪绿化冷、水面最冷），不再按可见光亮度映射；气羽不做深度测试、更浓、从泄漏点往东横向铺开，事件缩略图对准气羽中段"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "第 31 轮：远处农田底色 #9c9cbc → #a49ad4（UAV-02 标签移出远景田野区域后均色偏黄），五个分区色差全部 ≤ 5"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "面板比对口径：KPI 条、告警横幅是半透明叠在三维上的，背后透出的 AI 图和实时渲染天然不同；事件缩略图也是实时渲染。面板改为两边都隐藏场景（drafts.html?ui=1 / 页面截图时隐藏画布、场景标签、暗角和缩略图）后逐像素比，量的是面板本身的排版"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "面板对齐（子代理，5 轮）：主要原因是页面从 Tailwind preflight 继承了 line-height 1.5、设计稿是 normal；FleetPanel 的 .warn 类撞名把整张卡染橙；告警横幅高度 40.01px 抵消 rem 取整（40px 排成 39.984px，文字上移 1px）。8 个面板全部 ≤ 3 %"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "轮廓 IoU：设计侧轮廓由 scripts/drone/trace_design.py 半自动描出（定稿像素分割，ID 图做种子，凸包）；13 个物体中心偏差全部 ≤ 0.55 %，IoU 只有前排 3 座外浮顶罐 ≥ 0.85，其余 0.6–0.85（物体只有 700–5000 px，边界差 1–2 px 就掉到 0.8；ID 图是可见轮廓，设计侧取凸包；AI 图里仓库透视和其他建筑不一致）——待用户决定是否按实测值放宽"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "性能（第 32 轮）：静态设备按材质合批（网格 578 → 321）、无人机不投影、阴影贴图加载后只画一次（原先每次 render 都重画，一帧两遍约 470 × 2 次）、冷却塔白汽 56 个 Sprite 改成一个 Points；一帧 1491 次调用 / 101 万三角面 → 422 次 / 77 万，60 fps。超出 300 次预算的约 100 次是机载画面的第二次整场景渲染（需求要求的第二相机）"
+        },
+        {
+          "at": "2026-10-20",
+          "stage": 11,
+          "decision": "第 33 轮：RT-42 最后一个悬停点按定稿挪到西南角 (-50, -586)，西门 G-4 悬停 60 → 30 s；final.png 重渲（巡检里程 45.3 → 45.7 km），上一版 design/history/final-before-r33.png"
+        },
+        {
+          "at": "2026-10-22",
+          "stage": 11,
+          "decision": "用户通知：skill 已更新，独立评审门槛由 8 改为最后一轮 ≥ 5 / 10（硬性）。上一轮评审 4.8，继续按评语修改后重评"
+        }
+      ],
+      "openIssues": [
+        "无指定现场屏与主机，性能只在开发机（RTX 4070）和集显笔记本上测",
+        "skill 的 data-check.mjs 经软链接路径调用时静默退出 0、不做检查（import.meta.url 与 argv[1] 路径不一致）；本项目改用真实路径 ~/src/build-3d-visual-dashboard/scripts/"
+      ]
     }
   }
 }

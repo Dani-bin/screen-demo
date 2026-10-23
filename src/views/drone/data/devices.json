@@ -1,0 +1,468 @@
+[
+  {
+    "id": "DK-01",
+    "name": "1# 机场（储运）",
+    "kind": "dock",
+    "zone": "Z1",
+    "node": "DK-01",
+    "drone": "UAV-01"
+  },
+  {
+    "id": "DK-02",
+    "name": "2# 机场（生产）",
+    "kind": "dock",
+    "zone": "Z2",
+    "node": "DK-02",
+    "drone": "UAV-02"
+  },
+  {
+    "id": "DK-03",
+    "name": "3# 机场（公用工程）",
+    "kind": "dock",
+    "zone": "Z3",
+    "node": "DK-03",
+    "drone": "UAV-03"
+  },
+  {
+    "id": "DK-04",
+    "name": "4# 机场（物流管理）",
+    "kind": "dock",
+    "zone": "Z4",
+    "node": "DK-04",
+    "drone": "UAV-04"
+  },
+  {
+    "id": "UAV-01",
+    "name": "1# 无人机",
+    "kind": "drone",
+    "zone": "Z1",
+    "node": "UAV-01",
+    "dock": "DK-01",
+    "payload": ["wide", "zoom", "ir", "laser", "ch4"]
+  },
+  {
+    "id": "UAV-02",
+    "name": "2# 无人机",
+    "kind": "drone",
+    "zone": "Z2",
+    "node": "UAV-02",
+    "dock": "DK-02",
+    "payload": ["wide", "zoom", "ir", "laser", "ch4"]
+  },
+  {
+    "id": "UAV-03",
+    "name": "3# 无人机",
+    "kind": "drone",
+    "zone": "Z3",
+    "node": "UAV-03",
+    "dock": "DK-03",
+    "payload": ["wide", "zoom", "ir", "laser"]
+  },
+  {
+    "id": "UAV-04",
+    "name": "4# 无人机",
+    "kind": "drone",
+    "zone": "Z4",
+    "node": "UAV-04",
+    "dock": "DK-04",
+    "payload": ["wide", "zoom", "ir", "laser"]
+  },
+  {
+    "id": "TK-101",
+    "name": "原料罐区 1# 浮顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-101",
+    "group": "TF-1",
+    "roof": "floating",
+    "volume": 20000,
+    "d": 40,
+    "h": 18
+  },
+  {
+    "id": "TK-102",
+    "name": "原料罐区 2# 浮顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-102",
+    "group": "TF-1",
+    "roof": "floating",
+    "volume": 20000,
+    "d": 40,
+    "h": 18
+  },
+  {
+    "id": "TK-103",
+    "name": "原料罐区 3# 浮顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-103",
+    "group": "TF-1",
+    "roof": "floating",
+    "volume": 20000,
+    "d": 40,
+    "h": 18
+  },
+  {
+    "id": "TK-104",
+    "name": "原料罐区 4# 浮顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-104",
+    "group": "TF-1",
+    "roof": "floating",
+    "volume": 20000,
+    "d": 40,
+    "h": 18
+  },
+  {
+    "id": "TK-105",
+    "name": "原料罐区 5# 浮顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-105",
+    "group": "TF-1",
+    "roof": "floating",
+    "volume": 20000,
+    "d": 40,
+    "h": 18
+  },
+  {
+    "id": "TK-106",
+    "name": "原料罐区 6# 浮顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-106",
+    "group": "TF-1",
+    "roof": "floating",
+    "volume": 20000,
+    "d": 40,
+    "h": 18
+  },
+  {
+    "id": "TK-201",
+    "name": "成品罐区 1# 固定顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-201",
+    "group": "TF-2",
+    "roof": "fixed",
+    "volume": 5000,
+    "d": 22,
+    "h": 15
+  },
+  {
+    "id": "TK-202",
+    "name": "成品罐区 2# 固定顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-202",
+    "group": "TF-2",
+    "roof": "fixed",
+    "volume": 5000,
+    "d": 22,
+    "h": 15
+  },
+  {
+    "id": "TK-203",
+    "name": "成品罐区 3# 固定顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-203",
+    "group": "TF-2",
+    "roof": "fixed",
+    "volume": 5000,
+    "d": 22,
+    "h": 15
+  },
+  {
+    "id": "TK-204",
+    "name": "成品罐区 4# 固定顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-204",
+    "group": "TF-2",
+    "roof": "fixed",
+    "volume": 5000,
+    "d": 22,
+    "h": 15
+  },
+  {
+    "id": "TK-205",
+    "name": "成品罐区 5# 固定顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-205",
+    "group": "TF-2",
+    "roof": "fixed",
+    "volume": 5000,
+    "d": 22,
+    "h": 15
+  },
+  {
+    "id": "TK-206",
+    "name": "成品罐区 6# 固定顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-206",
+    "group": "TF-2",
+    "roof": "fixed",
+    "volume": 5000,
+    "d": 22,
+    "h": 15
+  },
+  {
+    "id": "TK-207",
+    "name": "成品罐区 7# 固定顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-207",
+    "group": "TF-2",
+    "roof": "fixed",
+    "volume": 5000,
+    "d": 22,
+    "h": 15
+  },
+  {
+    "id": "TK-208",
+    "name": "成品罐区 8# 固定顶罐",
+    "kind": "tank",
+    "zone": "Z1",
+    "node": "TK-208",
+    "group": "TF-2",
+    "roof": "fixed",
+    "volume": 5000,
+    "d": 22,
+    "h": 15
+  },
+  {
+    "id": "SP-101",
+    "name": "液化烃球罐区 1# 球罐",
+    "kind": "sphere",
+    "zone": "Z1",
+    "node": "SP-101",
+    "group": "SP-1",
+    "volume": 2000,
+    "d": 15.7
+  },
+  {
+    "id": "SP-102",
+    "name": "液化烃球罐区 2# 球罐",
+    "kind": "sphere",
+    "zone": "Z1",
+    "node": "SP-102",
+    "group": "SP-1",
+    "volume": 2000,
+    "d": 15.7
+  },
+  {
+    "id": "SP-103",
+    "name": "液化烃球罐区 3# 球罐",
+    "kind": "sphere",
+    "zone": "Z1",
+    "node": "SP-103",
+    "group": "SP-1",
+    "volume": 2000,
+    "d": 15.7
+  },
+  {
+    "id": "SP-104",
+    "name": "液化烃球罐区 4# 球罐",
+    "kind": "sphere",
+    "zone": "Z1",
+    "node": "SP-104",
+    "group": "SP-1",
+    "volume": 2000,
+    "d": 15.7
+  },
+  {
+    "id": "SP-105",
+    "name": "液化烃球罐区 5# 球罐",
+    "kind": "sphere",
+    "zone": "Z1",
+    "node": "SP-105",
+    "group": "SP-1",
+    "volume": 2000,
+    "d": 15.7
+  },
+  {
+    "id": "SP-106",
+    "name": "液化烃球罐区 6# 球罐",
+    "kind": "sphere",
+    "zone": "Z1",
+    "node": "SP-106",
+    "group": "SP-1",
+    "volume": 2000,
+    "d": 15.7
+  },
+  {
+    "id": "LD-1",
+    "name": "汽车装卸站",
+    "kind": "loading",
+    "zone": "Z1",
+    "node": "LD-1"
+  },
+  {
+    "id": "JT-1",
+    "name": "液体化工码头",
+    "kind": "jetty",
+    "zone": "S",
+    "node": "JT-1"
+  },
+  {
+    "id": "U-1",
+    "name": "1# 裂解装置",
+    "kind": "unit",
+    "zone": "Z2",
+    "node": "U-1"
+  },
+  {
+    "id": "U-2",
+    "name": "2# 芳烃装置",
+    "kind": "unit",
+    "zone": "Z2",
+    "node": "U-2"
+  },
+  {
+    "id": "U-3",
+    "name": "3# 聚烯烃装置",
+    "kind": "unit",
+    "zone": "Z2",
+    "node": "U-3"
+  },
+  {
+    "id": "PR-1",
+    "name": "园区公共主管廊",
+    "kind": "piperack",
+    "zone": "Z1-Z3",
+    "node": "PR-1"
+  },
+  {
+    "id": "SS-1",
+    "name": "总变电站",
+    "kind": "building",
+    "zone": "Z3",
+    "node": "SS-1"
+  },
+  {
+    "id": "CW-1",
+    "name": "循环水场",
+    "kind": "building",
+    "zone": "Z3",
+    "node": "CW-1"
+  },
+  {
+    "id": "AS-1",
+    "name": "空分装置",
+    "kind": "unit",
+    "zone": "Z3",
+    "node": "AS-1"
+  },
+  {
+    "id": "WW-1",
+    "name": "污水处理场",
+    "kind": "building",
+    "zone": "Z3",
+    "node": "WW-1"
+  },
+  {
+    "id": "HW-1",
+    "name": "危废仓库",
+    "kind": "building",
+    "zone": "Z3",
+    "node": "HW-1"
+  },
+  {
+    "id": "FL-1",
+    "name": "高架火炬",
+    "kind": "flare",
+    "zone": "Z3",
+    "node": "FL-1",
+    "h": 120,
+    "noFlyRadius": 150
+  },
+  {
+    "id": "CC-1",
+    "name": "园区指挥中心",
+    "kind": "building",
+    "zone": "Z4",
+    "node": "CC-1"
+  },
+  {
+    "id": "FS-1",
+    "name": "特勤消防站 + 气防站",
+    "kind": "building",
+    "zone": "Z4",
+    "node": "FS-1"
+  },
+  {
+    "id": "PK-1",
+    "name": "危化品车辆专用停车场",
+    "kind": "parking",
+    "zone": "Z4",
+    "node": "PK-1"
+  },
+  {
+    "id": "WH-1",
+    "name": "危化品仓库",
+    "kind": "building",
+    "zone": "Z4",
+    "node": "WH-1"
+  },
+  {
+    "id": "G-1",
+    "name": "综合卡口",
+    "kind": "gate",
+    "zone": "edge",
+    "node": "G-1"
+  },
+  {
+    "id": "G-2",
+    "name": "危化品专用卡口",
+    "kind": "gate",
+    "zone": "edge",
+    "node": "G-2"
+  },
+  {
+    "id": "G-3",
+    "name": "普通卡口",
+    "kind": "gate",
+    "zone": "edge",
+    "node": "G-3"
+  },
+  {
+    "id": "G-4",
+    "name": "应急卡口",
+    "kind": "gate",
+    "zone": "edge",
+    "node": "G-4"
+  },
+  {
+    "id": "PM-N",
+    "name": "周界围网北段",
+    "kind": "perimeter",
+    "zone": "edge",
+    "node": "PM-N"
+  },
+  {
+    "id": "PM-E",
+    "name": "周界围网东段",
+    "kind": "perimeter",
+    "zone": "edge",
+    "node": "PM-E"
+  },
+  {
+    "id": "PM-S",
+    "name": "周界围网南段",
+    "kind": "perimeter",
+    "zone": "edge",
+    "node": "PM-S"
+  },
+  {
+    "id": "PM-W",
+    "name": "周界围网西段",
+    "kind": "perimeter",
+    "zone": "edge",
+    "node": "PM-W"
+  }
+]

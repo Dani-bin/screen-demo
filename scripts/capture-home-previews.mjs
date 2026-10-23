@@ -46,6 +46,7 @@ const READY_TIMEOUT = 60
  *   - 候诊大厅：开屏先停全景 4 s（216 诊室正在叫号、橙色光柱亮着），状态柱约 1.5 s 长满，取 2.5 s
  *   - 智能矿山：无开场动画，地形加载后直接在综合态势视角，等 5 s 让标注、辉光与钻孔光点稳定
  *   - 智慧牧场：地形加载后 3 s 推到全景，全景停 14 s 再开始巡游，取 6 s
+ *   - 无人机巡检：时钟钉在定稿那一刻（见 QUERY），模型加载后等 4 s，让事件缩略图、机载画面和标签都出来
  * 新演示未配置时取 DEFAULT_SETTLE。
  */
 const DEFAULT_SETTLE = 5
@@ -59,7 +60,17 @@ const SETTLE = {
   hospital: 6,
   waiting: 2.5,
   "smart-mine": 5,
-  "smart-ranch": 6
+  "smart-ranch": 6,
+  drone: 4
+}
+
+/**
+ * 截预览图时附加的查询参数（只用于截图，首页卡片的链接仍是 demo.path）：
+ *   - 无人机巡检：仿真跟着真实时钟走，夜里截到的多是停机画面；钉在定稿时刻 2026-10-19 14:03
+ *     （气体泄漏告警、UAV-02 悬停监视、机载红外画面都在），并关掉 30 s 无操作自动巡游
+ */
+const QUERY = {
+  drone: "?t=2026-10-19T14:03&tour=0"
 }
 
 /**
@@ -183,7 +194,7 @@ async function main() {
     })
 
     for (const demo of targets) {
-      const url = `${base}/#${demo.path}`
+      const url = `${base}/#${demo.path}${QUERY[demo.key] ?? ""}`
       const settle = SETTLE[demo.key] ?? DEFAULT_SETTLE
       console.log(`→ ${demo.name}  ${url}`)
       // 先回空白页，保证每个演示都整页重新加载，而不是在同一页面里切路由
