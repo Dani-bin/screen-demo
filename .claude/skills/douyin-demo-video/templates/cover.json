@@ -1,0 +1,35 @@
+{
+  "style": "flat",
+  "palette": {
+    "bg": "auto",
+    "ink": "#13201C",
+    "sub": "#56665F",
+    "brand": "#0F5B4C",
+    "onBrand": "#FFFFFF",
+    "accent": "#F26B1D",
+    "card": "#FFFFFF"
+  },
+  "badge": "<demo 名>",
+  "kicker": "<场景> · 3D <大屏类型>",
+  "title": ["<开头口播前半句>", "<后半句里的[关键词]用强调色>"],
+  "subtitle": "<第二个卖点，≤ 22 字>",
+  "hero": { "image": "stills/hero.png", "target": [1920, 600] },
+  "heroTags": [],
+  "steps": [
+    { "image": "stills/step1.png", "label": "<输入 / 普通做法>" },
+    { "image": "stills/step2.png", "label": "<过程 / 看点>" },
+    { "image": "stills/step3.png", "label": "<结果 / 招牌效果>" }
+  ],
+  "card": {
+    "title": "<道具卡片名：检查申请单 / 排队小票 / 派车单>",
+    "org": "××<机构>",
+    "bubble": "<一句话气泡>",
+    "fields": [
+      { "label": "<字段>", "value": "<值>" },
+      { "label": "<编号>", "value": "A113", "size": "xl" },
+      { "label": "<目的地>", "value": "214", "note": "<补充>", "accent": true, "size": "lg" }
+    ],
+    "footer": "<底部提示，或删掉这行改成 \"barcode\": true>"
+  },
+  "layout": {}
+}
