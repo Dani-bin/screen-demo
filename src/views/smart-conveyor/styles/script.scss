@@ -1,0 +1,303 @@
+/*
+ * 带式输送机孪生 · 故障剧本演示层（横条、字幕、说明卡）
+ * 剧本期间三维区左上的图层工具让位给剧本横条。
+ */
+.conveyor-page {
+  .scripting .scene-tools {
+    display: none;
+  }
+  .sc-bar {
+    position: absolute;
+    left: 456px;
+    top: 172px;
+    width: 1008px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 34px;
+    padding: 0 10px;
+    pointer-events: auto;
+    background: rgba(10, 14, 20, 0.88);
+    border: 1px solid var(--hair-warm);
+    box-shadow: 0 0 18px rgba(255, 178, 62, 0.15);
+    b {
+      font: 15px var(--font-title);
+      font-weight: normal;
+      color: var(--coal);
+      white-space: nowrap;
+    }
+    .code {
+      font-size: 12px;
+      color: var(--text-2);
+      white-space: nowrap;
+    }
+    a {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 8px;
+      font-size: var(--fs-label);
+      color: var(--text);
+      border: 1px solid var(--hair);
+      cursor: pointer;
+      &.x {
+        color: var(--text-2);
+      }
+      &:hover {
+        border-color: var(--hair-strong);
+      }
+    }
+  }
+  .sc-tag {
+    flex: none;
+    padding: 2px 8px;
+    font-size: 12px;
+    color: #120c03;
+    background: var(--coal);
+    white-space: nowrap;
+  }
+  .sc-track {
+    position: relative;
+    flex: 1;
+    height: 8px;
+    background: var(--hair-soft);
+    cursor: pointer;
+    i {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      background: var(--coal);
+      box-shadow: var(--glow-coal);
+    }
+    u {
+      position: absolute;
+      top: -4px;
+      bottom: -4px;
+      width: 2px;
+      background: var(--text-3);
+      &.on {
+        background: var(--coal);
+      }
+    }
+  }
+  .sc-load {
+    position: absolute;
+    left: 760px;
+    top: 420px;
+    width: 400px;
+    z-index: 5;
+    padding: 14px 16px;
+    text-align: center;
+    font-size: var(--fs-body);
+    color: var(--text-2);
+    background: rgba(10, 14, 20, 0.9);
+    border: 1px solid var(--hair);
+    .bar {
+      margin-top: 10px;
+    }
+  }
+  // 字幕：三维区下方居中
+  .sc-cap {
+    position: absolute;
+    left: 486px;
+    top: 690px;
+    width: 948px;
+    z-index: 5;
+    padding: 8px 18px 10px;
+    text-align: center;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(10, 14, 20, 0.88) 12%,
+      rgba(10, 14, 20, 0.88) 88%,
+      transparent
+    );
+    em {
+      font-style: normal;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--coal);
+    }
+    p {
+      margin: 4px 0 2px;
+      font: 20px var(--font-title);
+      line-height: 1.35;
+      color: var(--text);
+      text-shadow: 0 0 12px rgba(0, 0, 0, 0.8);
+      animation: sc-in 0.6s var(--ease);
+    }
+    .sc-sim {
+      font: 12px var(--font-num);
+      color: var(--text-3);
+    }
+  }
+  @keyframes sc-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  // 说明卡：三维区右侧
+  .sc-cards {
+    position: absolute;
+    right: 476px;
+    top: 220px;
+    width: 300px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: auto;
+  }
+  .scc {
+    padding: 8px 10px;
+    font-size: var(--fs-label);
+    color: var(--text-2);
+    background: rgba(10, 14, 20, 0.92);
+    border: 1px solid var(--hair);
+    border-left: 2px solid var(--coal);
+    animation: sc-in 0.6s var(--ease);
+    header {
+      margin-bottom: 6px;
+      font: 14px var(--font-title);
+      color: var(--text);
+    }
+    p {
+      margin: 0;
+    }
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    &.tear,
+    &.intrude {
+      border-left-color: var(--l1);
+    }
+    &.push,
+    &.order {
+      border-left-color: var(--ok);
+    }
+    &.video {
+      border-left-color: var(--data);
+    }
+  }
+  .compare {
+    width: 380px;
+    margin-left: -80px;
+    border-left-color: var(--predict);
+    .cmp {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      > div {
+        padding: 6px 8px;
+        border: 1px solid var(--hair-soft);
+        > b {
+          display: block;
+          margin-bottom: 4px;
+          font: 13px var(--font-title);
+          font-weight: normal;
+        }
+        li {
+          font-size: 12px;
+          line-height: 1.6;
+        }
+        strong {
+          font: 16px var(--font-num);
+        }
+      }
+      .ok {
+        background: rgba(52, 211, 153, 0.08);
+        border-color: rgba(52, 211, 153, 0.4);
+        > b,
+        strong {
+          color: var(--ok);
+        }
+      }
+      .bad {
+        background: rgba(244, 63, 94, 0.08);
+        border-color: rgba(244, 63, 94, 0.4);
+        > b,
+        strong {
+          color: var(--l1);
+        }
+      }
+    }
+    footer {
+      margin-top: 6px;
+      font-size: 11.5px;
+      color: var(--predict);
+    }
+  }
+  .tear-bar {
+    position: relative;
+    height: 10px;
+    background: var(--hair-soft);
+    i {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      background: var(--l1);
+      box-shadow: 0 0 8px var(--l1);
+    }
+    u {
+      position: absolute;
+      right: 0;
+      top: -3px;
+      bottom: -3px;
+      width: 2px;
+      background: var(--text-2);
+    }
+  }
+  .tear p,
+  .intrude p {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 6px;
+    b {
+      flex: none;
+      font: 24px var(--font-num);
+      color: var(--l1);
+      white-space: nowrap;
+    }
+    span {
+      font-size: 11.5px;
+      color: var(--text-3);
+    }
+  }
+  .intrude > span {
+    display: block;
+    margin-top: 4px;
+    font-size: 11.5px;
+    color: var(--text-3);
+  }
+  .push li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 20px;
+    .ic {
+      color: var(--ok);
+    }
+  }
+  .vid {
+    position: relative;
+    height: 150px;
+    .cv {
+      position: absolute;
+      inset: 0;
+    }
+  }
+  .order p {
+    color: var(--text);
+  }
+  .order span {
+    font-size: 11.5px;
+    color: var(--ok);
+  }
+}

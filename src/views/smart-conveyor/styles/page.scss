@@ -1,0 +1,295 @@
+/*
+ * 带式输送机孪生 · 页面骨架与交互态（定稿里没有的部分：舞台、画布、加载层、选中 / 悬停、可点元素）
+ * 面板本身的样式在 board.scss（定稿移植），这里只补充，不改定稿的规则。
+ */
+.conveyor-page {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  // 定稿 #app 的底色：中央一团冷灰光晕 + 石墨黑
+  background: var(--bg);
+  font-family: var(--font-body);
+  color: var(--text-2);
+  // Tailwind preflight 把全局行高设成 1.5；定稿按浏览器默认行高画，这里还原，否则面板装不下
+  line-height: normal;
+  // 定稿 body 用的就是灰度抗锯齿，和全站一致，不用还原
+
+  // preflight 把 svg 设成 display: block，定稿里的图表 svg 是行内的
+  svg {
+    display: inline;
+    vertical-align: baseline;
+  }
+
+  > .scene {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  // 舞台：1920 × 1080 设计稿（10 rem × 5.625 rem），位置由页面按窗口居中
+  .stage {
+    position: absolute;
+    width: 1920px;
+    height: 1080px;
+    pointer-events: none;
+    // 舞台里能点的东西单独打开
+    .hd,
+    .kpis,
+    .col,
+    .tg,
+    .beam-card,
+    .scene-tools,
+    .cs,
+    .tl {
+      pointer-events: auto;
+    }
+  }
+  // 舞台外（窗口比 16:9 宽 / 高时的两边）压成和暗角边缘一样的深色
+  .stage .vignette {
+    box-shadow: 0 0 0 100vmax rgba(5, 7, 11, 0.9);
+  }
+
+  .scene-tags {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    color: var(--text-2);
+    background: rgba(5, 7, 11, 0.85);
+    z-index: 10;
+  }
+
+  /* ---------------- 交互态 ---------------- */
+  .hd-nav a,
+  .bt tbody tr,
+  .bk,
+  .al li:not(.sep),
+  .tg,
+  .beam-card,
+  .scene-tools a,
+  .cs-b,
+  .cs-bk,
+  .tl-r a {
+    cursor: pointer;
+  }
+  .bt tbody tr {
+    transition: background 0.3s var(--ease);
+    &:hover {
+      background: var(--data-dim);
+    }
+    &.sel {
+      background: var(--coal-dim);
+      box-shadow: inset 2px 0 0 var(--coal);
+    }
+  }
+  .tg {
+    transition: border-color 0.3s var(--ease);
+    &:hover {
+      border-color: var(--hair-strong);
+    }
+  }
+  .al li:not(.sep):hover {
+    filter: brightness(1.25);
+  }
+  .cs-b.sel header b {
+    text-shadow: var(--glow-coal);
+  }
+  .cs-b.sel .cs-coal {
+    border-color: var(--hair-warm);
+  }
+  // 保护动作：那一盏灯变红
+  .cs-prot i.trip {
+    background: var(--l1);
+    box-shadow: 0 0 6px var(--l1);
+  }
+  .kpi.l1 b {
+    color: var(--l1);
+  }
+  .scene-tools a.home {
+    color: var(--coal);
+    border-color: var(--hair-warm);
+  }
+  // 选中的剧本按钮是琥珀色；「实时」选中时保持青色（定稿）
+  .tl-r a.on:not(.live) {
+    color: var(--coal);
+    border-color: var(--hair-warm);
+  }
+  .tl-r a.live:not(.on) {
+    color: var(--text-3);
+    border-color: var(--hair);
+    .ic {
+      color: var(--text-3);
+    }
+  }
+
+  /* ---------------- 下钻：面包屑 + 细节标签 ---------------- */
+  .crumb {
+    position: absolute;
+    left: 456px;
+    top: 172px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    pointer-events: auto;
+    font-size: var(--fs-label);
+    a {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      color: var(--text-2);
+      border: 1px solid var(--hair);
+      background: rgba(8, 12, 18, 0.8);
+      cursor: pointer;
+      em {
+        font-style: normal;
+        font-family: var(--font-num);
+        color: var(--text-3);
+      }
+      &.on {
+        color: #120c03;
+        background: var(--coal);
+        border-color: var(--coal);
+        cursor: default;
+        em {
+          color: #3a2508;
+        }
+      }
+      &:hover:not(.on) {
+        border-color: var(--hair-strong);
+        color: var(--text);
+      }
+    }
+    > i {
+      font-style: normal;
+      color: var(--text-3);
+    }
+    .code {
+      margin-left: 10px;
+      font-size: 11px;
+      color: var(--text-3);
+    }
+  }
+  .dtags {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .dtag {
+    position: absolute;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    transform: translate(-6px, -6px);
+    pointer-events: auto;
+    white-space: nowrap;
+    > i {
+      flex: none;
+      width: 9px;
+      height: 9px;
+      margin-top: 2px;
+      border: 2px solid var(--data);
+      border-radius: 50%;
+      background: rgba(8, 12, 18, 0.9);
+      box-shadow: 0 0 6px var(--data);
+    }
+    > div {
+      padding: 2px 7px 3px;
+      border: 1px solid var(--hair);
+      border-left: 2px solid var(--data);
+      background: rgba(8, 12, 18, 0.82);
+    }
+    // 引线（有竖向偏移的部件标签）
+    > u {
+      position: absolute;
+      left: 4px;
+      width: 1px;
+      background: rgba(150, 200, 225, 0.5);
+    }
+    b {
+      display: block;
+      font-weight: normal;
+      font-size: 11.5px;
+      color: var(--text);
+    }
+    em {
+      display: block;
+      font: 11px var(--font-num);
+      font-style: normal;
+      color: var(--text-2);
+    }
+    &.fault,
+    &.drive {
+      cursor: pointer;
+      > i {
+        border-color: var(--predict);
+        box-shadow: 0 0 8px var(--predict);
+      }
+      > div {
+        border-left-color: var(--predict);
+      }
+      b {
+        color: var(--predict);
+      }
+    }
+    &.part > div {
+      border-left-color: var(--coal);
+    }
+    &.part b {
+      color: var(--coal);
+    }
+    &.estop > i,
+    &.dev > i {
+      border-color: var(--l3);
+      box-shadow: none;
+    }
+    &.estop > div,
+    &.dev > div,
+    &.person > div {
+      padding: 1px 5px;
+      b {
+        font-size: 10.5px;
+        color: var(--text-2);
+      }
+    }
+    &.person > i {
+      border-color: var(--coal);
+      box-shadow: none;
+    }
+  }
+
+  /* 手机竖屏提示（底部横条）：竖屏时 rem 很小，尺寸用 vw（不随大屏缩放） */
+  .rotate-hint {
+    position: fixed;
+    left: 3vw;
+    right: 3vw;
+    bottom: 4vw;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2.6vw 3.6vw;
+    font-size: 3.8vw;
+    color: var(--text);
+    background: rgba(10, 14, 20, 0.95);
+    border: 1px solid var(--hair-warm);
+    a {
+      padding: 1vw 3vw;
+      color: #120c03;
+      background: var(--coal);
+      cursor: pointer;
+    }
+  }
+}

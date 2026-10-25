@@ -1,0 +1,669 @@
+/*
+ * 带式输送机孪生 · 预警中心（人机料环）面板样式；令牌与面板外壳同智能看板
+ * 四维分类色（--dim-person / machine / material / env）只用来标"哪一维"，等级仍用一到四级色。
+ */
+.conveyor-page {
+  /* 各面板高度（每栏 980 px） */
+  .col.left.alarm .pn:nth-child(1) {
+    height: 214px;
+  }
+  .col.left.alarm .pn:nth-child(2) {
+    height: 252px;
+  }
+  .col.left.alarm .pn:nth-child(3) {
+    height: 236px;
+  }
+  .col.left.alarm .pn:nth-child(4) {
+    height: auto;
+    flex: 1;
+  }
+  .col.right.alarm .pn:nth-child(1) {
+    height: 170px;
+  }
+  .col.right.alarm .pn:nth-child(2) {
+    height: 324px;
+  }
+  .col.right.alarm .pn:nth-child(3) {
+    height: 222px;
+  }
+  .col.right.alarm .pn:nth-child(4) {
+    height: auto;
+    flex: 1;
+  }
+  // 面板头里的小切换（趋势按四维）：英文副标让位
+  .pn-hd em:has(+ .seg) {
+    display: none;
+  }
+  .seg.mini {
+    margin-left: auto;
+    a {
+      padding: 1px 6px;
+      font-size: 11px;
+    }
+  }
+
+  /* A1 人 */
+  .ps {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ps-n {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    .ic {
+      width: 18px;
+      height: 18px;
+      align-self: center;
+    }
+    b {
+      font: 34px var(--font-num);
+      color: var(--text);
+    }
+    span {
+      font-size: var(--fs-micro);
+      color: var(--text-3);
+    }
+  }
+  .ps-ev {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    > div {
+      padding: 4px 6px;
+      border: 1px solid var(--hair-soft);
+      background: rgba(22, 30, 42, 0.5);
+      b {
+        display: block;
+        font: 18px var(--font-num);
+        color: var(--text);
+      }
+      span {
+        font-size: 11px;
+        color: var(--text-3);
+      }
+      &.hot {
+        border-color: rgba(250, 204, 21, 0.4);
+        b {
+          color: var(--l3);
+        }
+      }
+    }
+  }
+  .ps-areas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px 14px;
+    margin-top: 8px;
+  }
+  .ps-a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    span {
+      width: 76px;
+      color: var(--text-2);
+      white-space: nowrap;
+    }
+    .bar {
+      flex: 1;
+      i {
+        background: var(--dim-person);
+        box-shadow: none;
+      }
+    }
+    b {
+      width: 18px;
+      text-align: right;
+      font: 12px var(--font-num);
+      color: var(--text);
+    }
+  }
+  .ps-uwb {
+    margin: 8px 0 0;
+    font-size: var(--fs-micro);
+    color: var(--text-3);
+    .ic {
+      margin-right: 4px;
+    }
+    b {
+      font-family: var(--font-num);
+      color: var(--text);
+      margin: 0 6px 0 2px;
+    }
+    em {
+      font-style: normal;
+    }
+    &.q em {
+      color: var(--off);
+      padding: 0 4px;
+      background: repeating-linear-gradient(
+        135deg,
+        rgba(91, 101, 119, 0.3) 0 5px,
+        transparent 5px 10px
+      );
+    }
+  }
+
+  /* A2 机 */
+  .mc-k {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    > div {
+      padding: 3px 4px;
+      text-align: center;
+      border: 1px solid var(--hair-soft);
+      background: rgba(22, 30, 42, 0.5);
+      b {
+        display: block;
+        font: 17px var(--font-num);
+        color: var(--dim-machine);
+      }
+      span {
+        font-size: 10.5px;
+        color: var(--text-3);
+        white-space: nowrap;
+      }
+    }
+  }
+  .mc-l {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 23px;
+      font-size: var(--fs-micro);
+      border-bottom: 1px dashed var(--hair-soft);
+      cursor: pointer;
+      b {
+        flex: 1;
+        font-weight: normal;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      em {
+        font-style: normal;
+        color: var(--l2);
+      }
+      .code {
+        color: var(--text-3);
+      }
+      &.pred em {
+        color: var(--predict);
+      }
+      &.done {
+        cursor: default;
+        opacity: 0.6;
+        em {
+          color: var(--ok);
+        }
+      }
+    }
+  }
+
+  /* A3 料 */
+  .mt {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    height: 100%;
+  }
+  .mt-i {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-height: 0;
+  }
+  .mt-shot {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    .cv {
+      position: absolute;
+      inset: 0;
+    }
+    .cv-use {
+      display: none;
+    }
+  }
+  .mt-none {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    color: var(--text-3);
+    border: 1px dashed var(--hair-soft);
+  }
+  .mt-t {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    b {
+      font: 17px var(--font-num);
+      color: var(--text-2);
+    }
+    span {
+      font-size: var(--fs-micro);
+      color: var(--text-2);
+    }
+    em {
+      margin-left: auto;
+      font-style: normal;
+      font-size: 10.5px;
+      color: var(--text-3);
+    }
+  }
+  .mt-i.hot .mt-t b {
+    color: var(--dim-material);
+  }
+
+  /* A4 环 */
+  .ev {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-micro);
+    th {
+      padding: 0 2px 4px;
+      font-weight: normal;
+      font-size: 10.5px;
+      color: var(--text-3);
+      text-align: right;
+      &:first-child {
+        text-align: left;
+      }
+    }
+    td {
+      padding: 3px 2px;
+      text-align: right;
+      font-family: var(--font-num);
+      color: var(--text);
+      border-top: 1px solid var(--hair-soft);
+      &:first-child {
+        text-align: left;
+      }
+      b {
+        font-size: 11.5px;
+        color: var(--dim-env);
+      }
+      &.near {
+        color: var(--l3);
+      }
+      &.over {
+        color: #fff;
+        background: rgba(244, 63, 94, 0.55);
+      }
+    }
+  }
+  .ev-sum {
+    margin: 6px 0 0;
+    font-size: var(--fs-micro);
+    color: var(--text-3);
+    b {
+      font-family: var(--font-num);
+      color: var(--text);
+      &.hot {
+        color: var(--l1);
+      }
+    }
+  }
+
+  /* A5 分级汇总 */
+  .ls {
+    display: flex;
+    gap: 12px;
+  }
+  .ls-lv {
+    flex: 1.4;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .ls-c {
+    position: relative;
+    padding: 4px 8px 6px 10px;
+    border: 1px solid var(--hair-soft);
+    background: rgba(22, 30, 42, 0.5);
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--c);
+    }
+    span {
+      font-size: var(--fs-micro);
+      color: var(--text-2);
+    }
+    b {
+      margin-left: 6px;
+      font: 20px var(--font-num);
+      color: var(--c);
+    }
+    em {
+      float: right;
+      margin-top: 6px;
+      font-style: normal;
+      font-size: 10.5px;
+      color: var(--text-3);
+    }
+    .bar {
+      margin-top: 3px;
+      i {
+        background: var(--c);
+        box-shadow: none;
+      }
+    }
+  }
+  .ls-st {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    > div {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: var(--fs-micro);
+      color: var(--text-2);
+      i {
+        width: 7px;
+        height: 7px;
+      }
+      b {
+        margin-left: auto;
+        font: 16px var(--font-num);
+        color: var(--text);
+      }
+    }
+    .s-new i {
+      background: var(--l1);
+    }
+    .s-doing i {
+      background: var(--l3);
+    }
+    .s-pred i {
+      background: var(--predict);
+    }
+    .s-done i {
+      background: var(--ok);
+    }
+  }
+
+  /* A6 告警卡 */
+  .ac {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .ac-c {
+    display: flex;
+    gap: 8px;
+    height: 80px;
+    padding: 5px;
+    border: 1px solid var(--hair);
+    border-left: 2px solid var(--l2);
+    background: rgba(22, 30, 42, 0.55);
+    cursor: pointer;
+    animation: ac-in 0.6s var(--ease);
+    &.pred {
+      border-left-color: var(--predict);
+    }
+    &:hover {
+      border-color: var(--hair-strong);
+    }
+  }
+  @keyframes ac-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+  .ac-shot {
+    position: relative;
+    width: 116px;
+    flex: none;
+    .cv {
+      position: absolute;
+      inset: 0;
+    }
+    .cv-use {
+      display: none;
+    }
+  }
+  .ac-t {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    header {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      b {
+        font-weight: normal;
+        font-size: 12.5px;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+    p {
+      margin: 0;
+      font-size: var(--fs-micro);
+      color: var(--text-2);
+      .ic {
+        margin-right: 3px;
+      }
+    }
+    footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-3);
+      em {
+        font-style: normal;
+        color: var(--l2);
+      }
+    }
+  }
+  .ac-none {
+    font-size: var(--fs-micro);
+    color: var(--text-3);
+  }
+  .ac-dots {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 6px;
+    i {
+      width: 14px;
+      height: 3px;
+      background: var(--hair);
+      &.on {
+        background: var(--coal);
+      }
+    }
+  }
+
+  /* A7 趋势 */
+  .tr-lg {
+    display: flex;
+    gap: 10px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 11px;
+    color: var(--text-3);
+    li {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    i {
+      width: 8px;
+      height: 8px;
+      background: var(--c);
+    }
+    .avg {
+      margin-left: auto;
+    }
+  }
+
+  /* A8 动态阈值 */
+  .dt-h {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: var(--fs-micro);
+    color: var(--text-2);
+    .ic {
+      margin-right: 3px;
+    }
+    b {
+      font: 18px var(--font-num);
+      color: var(--coal);
+    }
+    em {
+      margin-left: auto;
+      font-style: normal;
+      color: var(--text-3);
+      font-size: 11px;
+    }
+  }
+  .dt-r {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 26px;
+    span {
+      width: 34px;
+      font-size: var(--fs-label);
+      color: var(--text-2);
+    }
+    > b {
+      width: 118px;
+      text-align: right;
+      font: 15px var(--font-num);
+      color: var(--text);
+      i {
+        font-size: 10.5px;
+        font-style: normal;
+        color: var(--text-3);
+        margin-left: 3px;
+      }
+    }
+    &.hit > b {
+      color: var(--predict);
+    }
+  }
+  .dt-bar {
+    position: relative;
+    flex: 1;
+    height: 8px;
+    background: var(--hair-soft);
+    i {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      background: var(--data);
+    }
+    u {
+      position: absolute;
+      right: 0;
+      top: -3px;
+      bottom: -3px;
+      width: 2px;
+      background: var(--l2);
+    }
+  }
+  .dt-r.hit .dt-bar i {
+    background: var(--predict);
+    box-shadow: 0 0 6px var(--predict);
+  }
+  .dt-note {
+    margin: 6px 0 0;
+    font-size: var(--fs-micro);
+    color: var(--text-3);
+  }
+
+  /* 告警时间线（底部，套用 .cs 外框） */
+  .atl-rows {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 34px;
+  }
+  .atl-r {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 22px;
+    > span {
+      width: 54px;
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--fs-micro);
+      color: var(--text-2);
+      border-left: 3px solid var(--c);
+      padding-left: 5px;
+      b {
+        font-family: var(--font-num);
+        color: var(--text);
+      }
+    }
+  }
+  .atl-track {
+    position: relative;
+    flex: 1;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.025);
+    border-bottom: 1px solid var(--hair-soft);
+    i {
+      position: absolute;
+      top: 1px;
+      bottom: 1px;
+      min-width: 3px;
+      cursor: pointer;
+      opacity: 0.9;
+      &.pred {
+        top: 3px;
+        bottom: 3px;
+        opacity: 0.55;
+      }
+    }
+    u {
+      position: absolute;
+      top: -2px;
+      bottom: -2px;
+      width: 1.5px;
+      background: var(--data);
+      box-shadow: var(--glow-data);
+    }
+  }
+  .atl-ax {
+    display: flex;
+    justify-content: space-between;
+    margin: 3px 0 0 62px;
+    font: 10px var(--font-num);
+    color: var(--text-3);
+  }
+  .atl .cs-hd .lg i {
+    margin-left: 8px;
+  }
+}

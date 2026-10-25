@@ -1,0 +1,489 @@
+/*
+ * 带式输送机孪生 · 运维中心面板样式（今夜检修、五大决策、备件、机器人、生命周期、成效、7 天甘特）
+ */
+.conveyor-page {
+  /* 各面板高度（每栏 980 px） */
+  .col.left.ops .pn:nth-child(1) {
+    height: 290px;
+  }
+  .col.left.ops .pn:nth-child(2) {
+    height: 340px;
+  }
+  .col.left.ops .pn:nth-child(3) {
+    height: auto;
+    flex: 1;
+  }
+  .col.right.ops .pn:nth-child(1) {
+    height: 344px;
+  }
+  .col.right.ops .pn:nth-child(2) {
+    height: 300px;
+  }
+  .col.right.ops .pn:nth-child(3) {
+    height: auto;
+    flex: 1;
+  }
+
+  /* O1 今夜检修 */
+  .np-sum {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-size: var(--fs-micro);
+    color: var(--text-3);
+    b {
+      font: 20px var(--font-num);
+      color: var(--text);
+      &.pred {
+        color: var(--predict);
+      }
+    }
+    em {
+      font-style: normal;
+      margin-right: 10px;
+    }
+  }
+  .np {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 30px;
+      padding: 0 6px;
+      font-size: var(--fs-micro);
+      border-left: 2px solid var(--data);
+      background: rgba(22, 30, 42, 0.5);
+      margin-bottom: 4px;
+      cursor: pointer;
+      .code {
+        width: 82px;
+        color: var(--text-2);
+      }
+      b {
+        flex: 1;
+        font-weight: normal;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      em {
+        font-style: normal;
+        color: var(--data);
+      }
+      i {
+        width: 30px;
+        text-align: right;
+        font-style: normal;
+        font-family: var(--font-num);
+        color: var(--text-2);
+      }
+      &.pred {
+        border-left-color: var(--predict);
+        em {
+          color: var(--predict);
+        }
+      }
+      &:hover {
+        background: var(--data-dim);
+      }
+    }
+  }
+
+  /* O2 五大决策 */
+  .dc-h {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    b {
+      font-weight: normal;
+      font-size: var(--fs-body);
+      color: var(--text);
+    }
+    em {
+      margin-left: auto;
+      font-style: normal;
+      font-size: 11px;
+      color: var(--predict);
+    }
+  }
+  .dc {
+    margin: 8px 0 0;
+    > div {
+      display: flex;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--hair-soft);
+    }
+    dt {
+      flex: none;
+      width: 52px;
+      height: fit-content;
+      padding: 2px 0;
+      text-align: center;
+      font: 12px var(--font-title);
+      color: #120c03;
+      background: var(--coal);
+      clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+    }
+    dd {
+      margin: 0;
+      font-size: var(--fs-label);
+      line-height: 1.45;
+      color: var(--text-2);
+    }
+  }
+
+  /* O3 备件 */
+  .sp {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-micro);
+    th {
+      padding: 0 2px 4px;
+      font-weight: normal;
+      font-size: 10.5px;
+      color: var(--text-3);
+      text-align: right;
+      &:first-child {
+        text-align: left;
+      }
+    }
+    td {
+      padding: 4px 2px;
+      text-align: right;
+      color: var(--text);
+      border-top: 1px solid var(--hair-soft);
+      &:first-child {
+        text-align: left;
+      }
+      b {
+        font-weight: normal;
+      }
+      span {
+        margin-left: 4px;
+        font-size: 10px;
+        color: var(--text-3);
+      }
+    }
+    tr.low td.num:nth-child(2) {
+      color: var(--l3);
+    }
+    tr.short td.num:nth-child(2) {
+      color: var(--l1);
+    }
+  }
+  .sp-bar {
+    position: relative;
+    width: 70px;
+    height: 6px;
+    margin-left: auto;
+    background: var(--hair-soft);
+    i {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      background: var(--data);
+    }
+    u {
+      position: absolute;
+      top: -2px;
+      bottom: -2px;
+      width: 1.5px;
+      background: var(--l3);
+    }
+  }
+  .sp-note {
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: var(--text-3);
+  }
+
+  /* O4 机器人 */
+  .rb2 {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .rb2-i {
+    padding: 7px 8px;
+    border: 1px solid var(--hair-soft);
+    background: rgba(22, 30, 42, 0.5);
+    cursor: pointer;
+    &:hover {
+      border-color: var(--hair-strong);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      .ic {
+        width: 16px;
+        height: 16px;
+      }
+      b {
+        font-size: 13px;
+        color: var(--coal);
+      }
+      span {
+        font-size: var(--fs-label);
+        color: var(--text);
+      }
+      em {
+        margin-left: auto;
+        font-style: normal;
+        font-size: 11px;
+        padding: 0 6px;
+        color: var(--ok);
+        border: 1px solid rgba(52, 211, 153, 0.5);
+        &.charging {
+          color: var(--text-3);
+          border-color: var(--hair);
+        }
+      }
+    }
+  }
+  .rb2-m {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 5px;
+    > div {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      span {
+        font-size: 11px;
+        color: var(--text-3);
+      }
+      b {
+        font: 15px var(--font-num);
+        color: var(--text);
+        i {
+          font-style: normal;
+          font-size: 10px;
+          color: var(--text-3);
+          margin-left: 2px;
+        }
+        &.low {
+          color: var(--l3);
+        }
+        &.pred {
+          color: var(--predict);
+        }
+      }
+    }
+  }
+  .rb2-p {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+    .bar {
+      width: 120px;
+      i {
+        background: var(--data);
+        box-shadow: none;
+      }
+    }
+    em {
+      font-style: normal;
+      font-size: 11px;
+      color: var(--text-3);
+    }
+  }
+
+  /* O5 生命周期 */
+  .lc {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-micro);
+    th {
+      padding: 0 2px 4px;
+      font-weight: normal;
+      font-size: 10.5px;
+      color: var(--text-3);
+      text-align: left;
+    }
+    td {
+      padding: 4px 2px;
+      color: var(--text);
+      border-top: 1px solid var(--hair-soft);
+      b {
+        margin-right: 4px;
+        font-size: 12px;
+        color: var(--coal);
+      }
+      span {
+        font-size: 10.5px;
+        color: var(--text-3);
+      }
+      .num {
+        font-size: 10.5px;
+      }
+    }
+  }
+  .lc-bar {
+    height: 5px;
+    margin-bottom: 2px;
+    background: var(--hair-soft);
+    i {
+      display: block;
+      height: 100%;
+      background: var(--data);
+      &.old {
+        background: var(--l3);
+      }
+    }
+  }
+  .lc-note {
+    margin: 6px 0 0;
+    font-size: var(--fs-micro);
+    color: var(--text-3);
+    b {
+      font-family: var(--font-num);
+      color: var(--ok);
+    }
+  }
+
+  /* O6 成效 */
+  .pm {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    > div {
+      padding: 5px 6px;
+      border: 1px solid var(--hair-soft);
+      background: rgba(22, 30, 42, 0.5);
+      span {
+        display: block;
+        font-size: 11px;
+        color: var(--text-3);
+      }
+      b {
+        font: 22px var(--font-num);
+        color: var(--text);
+        i {
+          font-style: normal;
+          font-size: 10.5px;
+          color: var(--text-3);
+          margin-left: 2px;
+        }
+      }
+      em {
+        display: block;
+        font-style: normal;
+        font-size: 10.5px;
+        color: var(--text-3);
+      }
+      &.pred b {
+        color: var(--predict);
+      }
+      &.ok b {
+        color: var(--ok);
+      }
+    }
+  }
+  .pm-vs {
+    margin-top: 10px;
+  }
+  .pm-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 22px;
+    span {
+      width: 132px;
+      font-size: var(--fs-micro);
+      color: var(--text-2);
+    }
+    .bar {
+      flex: 1;
+      height: 8px;
+      i.ok {
+        background: var(--ok);
+        box-shadow: none;
+      }
+      i.bad {
+        background: var(--l1);
+        box-shadow: none;
+      }
+    }
+    b {
+      width: 26px;
+      text-align: right;
+      font: 14px var(--font-num);
+      color: var(--text);
+    }
+  }
+
+  /* 7 天检修甘特（底部，套用 .cs 外框） */
+  .gt-rows {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 34px;
+  }
+  .gt-r {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 19px;
+    > span {
+      width: 70px;
+      font-size: 11px;
+      color: var(--text-2);
+    }
+    > em {
+      width: 30px;
+      text-align: right;
+      font-style: normal;
+      font-size: 10.5px;
+      color: var(--text-3);
+    }
+  }
+  .gt-track {
+    position: relative;
+    flex: 1;
+    height: 17px;
+    background: rgba(255, 255, 255, 0.025);
+    border-bottom: 1px solid var(--hair-soft);
+    i {
+      position: absolute;
+      height: 50%;
+      overflow: hidden;
+      white-space: nowrap;
+      font: 9px var(--font-num);
+      font-style: normal;
+      line-height: 8.5px;
+      padding-left: 2px;
+      color: #061018;
+      background: var(--data);
+      border-right: 1px solid #0b1018;
+      cursor: pointer;
+      b {
+        margin-right: 2px;
+        font-family: var(--font-num);
+      }
+      &.pred {
+        background: var(--predict);
+      }
+    }
+  }
+  .gt-ax {
+    display: flex;
+    justify-content: space-between;
+    margin: 2px 38px 0 78px;
+    font: 10px var(--font-num);
+    color: var(--text-3);
+  }
+  .gantt .cs-hd .lg .p {
+    background: var(--predict);
+  }
+  .gantt .cs-hd .lg .c {
+    background: var(--data);
+  }
+}

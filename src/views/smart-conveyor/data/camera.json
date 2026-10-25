@@ -1,0 +1,36 @@
+{
+ "source": "scripts/smart-conveyor/fit_camera.py（拟合 docs/design/smart-conveyor/design/src/concept.png 的长方体角点）",
+ "rmsPx": 11.97,
+ "image": [
+  1536,
+  864
+ ],
+ "place": {
+  "x": 420,
+  "y": 150,
+  "w": 1080
+ },
+ "block": {
+  "W": 6000.0,
+  "H": 1122.7,
+  "D": 594.7
+ },
+ "fovImage": 29.943,
+ "position": [
+  7194.33,
+  1264.97,
+  2861.66
+ ],
+ "target": [
+  3561.87,
+  348.5,
+  -884.3
+ ],
+ "up": [
+  -0.07716,
+  0.98315,
+  -0.16571
+ ],
+ "focalPx": 1615.468,
+ "scale": 0.703125
+}

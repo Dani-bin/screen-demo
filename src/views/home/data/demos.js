@@ -241,5 +241,24 @@ export const DEMOS = [
     // 取自页面的航线青
     accent: "#36e3d8",
     preview: "home/drone.webp"
+  },
+  {
+    key: "smart-conveyor",
+    path: "/smart-conveyor",
+    name: "主煤流输送机安全预警与集控孪生",
+    en: "BELT CONVEYOR PHM TWIN",
+    subTitle: "青岚煤矿（虚构）· 工作面到地面原煤仓",
+    category: "智慧矿山",
+    desc: "井工煤矿主煤流全链剖面沙盘：6 条皮带、3 个煤仓按料流均衡调速运行；光纤测温 / 听诊、X 光、AI 视频提前发现托辊劣化，和集控事后跳闸对照演示；可一键起停集控，下钻到单条皮带和托辊、驱动部。",
+    tags: ["全链剖面孪生", "平台预警 vs 集控跳闸", "三级下钻"],
+    // 依据：smart-conveyor/data/layout.json 的 belts（6 条，长度合计 9 634 m）与 devices（502 个设备编号）
+    stats: [
+      { value: "6", unit: "条", key: "主煤流皮带" },
+      { value: "9.6", unit: "km", key: "全链长度" },
+      { value: "502", unit: "个", key: "设备编号" }
+    ],
+    // 取自定稿的煤流琥珀
+    accent: "#ffb23e",
+    preview: "home/smart-conveyor.webp"
   }
 ]

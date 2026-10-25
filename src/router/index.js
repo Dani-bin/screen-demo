@@ -78,6 +78,12 @@ const routes = [
     component: () => import("@/views/smart-ranch/index.vue")
   },
   {
+    // 带式输送机安全预警与集控孪生：虚构井工煤矿主煤流（6 条皮带、3 个煤仓），剖面沙盘 + 人机料环预警 + 集控
+    path: "/smart-conveyor",
+    name: "SmartConveyor",
+    component: () => import("@/views/smart-conveyor/index.vue")
+  },
+  {
     // 数字楼宇：城市（成都高新区）→ 园区 → 楼宇 → 楼层 → 房间 五级钻取
     path: "/building",
     name: "Building",
