@@ -8,6 +8,8 @@
   口播-<label>.txt            口播纯文本（每段一行），剪映「文本朗读」或自己照着念
   hook-sheet.png              开头 0–3.5 秒每 0.5 秒一帧 + 当时的字幕：检查开头 3 秒画面和口播
   storyboard.png              每段分镜一帧 + 那段的口播：检查画面和口播是不是在说同一件事
+时长只卡下限：字幕最后一条要在 min 秒（video.json 的 min，默认 30）以后结束，成片含定格也要 ≥ min 秒；不设上限。
+<label> 可选，没写时文件名里就没有这一截。
 用法：
   python3 build.py <douyin目录> --plan          只排时间轴、做开头检查（写口播阶段就用，不需要录好的片段）
   python3 build.py <douyin目录> --srt-only      排时间轴 + 出字幕和口播文本（片段还没录时按计划时长）
@@ -49,6 +51,7 @@ PUNCT = re.compile(r"[\s，,。．.：:？?！!、；;（）()“”\"'‘’《
 
 HOOK_END = 3.5  # 开头那句最晚几秒念完（含开录前 0.3 秒左右的留白）
 HOOK_CHARS = 16  # 开头那句建议不超过多少字
+MIN_SECONDS = 30  # 字幕和成片的时长下限（秒）；30 秒是下限不是目标，长度按看点定
 
 
 def chars(s):
@@ -140,7 +143,8 @@ class Job:
         self.rate = float(c.get("rate", 5.0))
         self.gap = float(c.get("gap", 0.2))
         self.tail = float(c.get("tail", 1.0))
-        self.target = c.get("target")
+        # 时长下限；旧的 video.json 写的是 target（当时的"30 秒左右"），现在一律当下限用
+        self.min = float(c.get("min", c.get("target", MIN_SECONDS)))
         self.W, self.H = c.get("size", [1920, 1080])
         self.fps = int(c.get("fps", 30))
         self.clips = os.path.join(self.root, c.get("clips", "clips"))
@@ -284,9 +288,20 @@ class Job:
                 warn.append(f"开头那句 {done:.1f} 秒才念完，要在 {HOOK_END} 秒内")
             if durs[0] < 2.5:
                 warn.append(f"第 1 段画面只有 {durs[0]:.1f} 秒，招牌效果来不及演完（≥ 2.5 秒）")
-        print(f"全片 {total:.1f} 秒（含末尾定格 {self.tail} 秒），口播 {sum(chars(s['text']) for s in self.segs)} 字，语速 {self.rate} 字/秒")
-        if self.target and abs(total - float(self.target)) > 3:
-            warn.append(f"全片 {total:.1f} 秒，和目标 {self.target} 秒差得多")
+        # 时长下限：字幕（配音）要念到 min 秒以后，成片含定格也要 ≥ min 秒；不设上限
+        sub_end = items[-1][1] if items else 0.0
+        print(
+            f"全片 {total:.1f} 秒（含末尾定格 {self.tail} 秒），字幕到 {sub_end:.1f} 秒结束，"
+            f"口播 {sum(chars(s['text']) for s in self.segs)} 字，语速 {self.rate} 字/秒，下限 {self.min:g} 秒"
+        )
+        if sub_end < self.min:
+            short = self.min - sub_end
+            warn.append(
+                f"字幕 {sub_end:.1f} 秒就结束了，要念到 {self.min:g} 秒以后：还差 {short:.1f} 秒（约 {short * self.rate:.0f} 字），"
+                "加一个看点（一句口播 + 一镜），差得少就在某句里补几个实在的字；不要只拉长画面留空镜；口播已确认的先问用户"
+            )
+        if total < self.min:
+            warn.append(f"全片 {total:.1f} 秒，不到 {self.min:g} 秒：加长片段（实际录得比 plan 短的那段重录）或加一镜")
         for w in warn:
             print("注意：" + w)
         if not warn:

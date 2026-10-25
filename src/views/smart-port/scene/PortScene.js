@@ -1349,6 +1349,9 @@ export class PortScene {
       return
     }
     const { u, v, r = 40, h = 140 } = alarm
+    // 新出现的告警（之前没有、或换了位置）：光柱从地面升起
+    if (!fx.visible || fx.userData.u !== u || fx.userData.v !== v)
+      fx.userData.rise0 = performance.now()
     fx.visible = true
     Object.assign(fx.userData, { r, h, u, v })
     const { rings, disc } = fx.userData
@@ -1368,7 +1371,13 @@ export class PortScene {
     if (!fx?.visible || fx.userData.h === undefined) return
     const { u, v, h, beam, halo } = fx.userData
     const k = Math.min(1, d / 6550)
-    const hh = Math.max(60, h * k)
+    // 升起：告警出现后 0.8 秒从地面冲到全高（先快后慢）
+    const rise = Math.min(
+      1,
+      (performance.now() - (fx.userData.rise0 ?? -1e9)) / 800
+    )
+    // 近景里最低 150 m（夸张后约 230 m，约两台岸桥高），光柱始终冲出岸桥顶
+    const hh = Math.max(150, h * k) * Math.max(0.001, 1 - Math.pow(1 - rise, 3))
     const w = Math.max(0.35, k)
     for (const b of [beam, halo]) {
       b.scale.set(w, hh, w)

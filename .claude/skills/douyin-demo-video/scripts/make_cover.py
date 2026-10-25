@@ -126,6 +126,10 @@ class Cover:
             "card": rgb(pal.get("card", "#FFFFFF")),
             "white": (255, 255, 255),
         }
+        # 白色卡片、缩略图标签条上的字：深色页面的 ink / sub 是浅色（给深底上的标题用），印在白底上看不见，
+        # 所以单独给 cardInk / cardSub；不给就和 ink / sub 一样（浅色页面照旧）
+        self.P["cardInk"] = rgb(pal["cardInk"]) if "cardInk" in pal else self.P["ink"]
+        self.P["cardSub"] = rgb(pal["cardSub"]) if "cardSub" in pal else self.P["sub"]
         self.steps = []
         for s in c.get("steps", []):
             img = Image.open(os.path.join(ROOT, s["image"])).convert("RGB")
@@ -260,7 +264,7 @@ class Cover:
             ImageDraw.Draw(sm).rounded_rectangle((0, -14, w - 1, sh - 1), 12, fill=255)
             cv.paste(strip, (cx, y + h - sh), sm)
             d = ImageDraw.Draw(cv)
-            d.text((cx + w // 2, y + h - sh // 2), name, font=font("title" if self.style == "candy" else "body", size), fill=P["accent"] if last else P["ink"], anchor="mm")
+            d.text((cx + w // 2, y + h - sh // 2), name, font=font("title" if self.style == "candy" else "body", size), fill=P["accent"] if last else P["cardInk"], anchor="mm")
             if not last:
                 ax, ay = cx + w + gap // 2 + 3, y + h // 2
                 d.line([(ax - 8, ay - 13), (ax + 5, ay), (ax - 8, ay + 13)], fill=P["sub"], width=5)
@@ -303,8 +307,8 @@ class Cover:
         for fld, rh in rows:
             size = fld.get("size", "md")
             val = str(fld["value"])
-            col = P["accent"] if fld.get("accent") else P["ink"]
-            d.text((x0 + S(22), y), fld.get("label", ""), font=font("body", S(18)), fill=P["sub"])
+            col = P["accent"] if fld.get("accent") else P["cardInk"]
+            d.text((x0 + S(22), y), fld.get("label", ""), font=font("body", S(18)), fill=P["cardSub"])
             if size == "md":
                 vf = font("num", S(30)) if is_code(val) else font("body", S(24))
                 vy = y + S(24)
@@ -315,20 +319,20 @@ class Cover:
             d.text((x0 + S(20), vy), val, font=vf, fill=col)
             if fld.get("note"):
                 vx = x0 + S(20) + d.textlength(val, font=vf) + S(14)
-                d.text((vx, vy + (vf.size - S(24)) * 0.55), fld["note"], font=font("body", S(24)), fill=P["ink"])
+                d.text((vx, vy + (vf.size - S(24)) * 0.55), fld["note"], font=font("body", S(24)), fill=P["cardInk"])
             y += S(rh)
         # 底部：虚线撕口 + 提示，或条形码
         if c.get("footer"):
             yy = y1 - S(46)
             for xx in range(x0 + S(14), x1 - S(14), S(14)):
-                d.line((xx, yy, xx + S(7), yy), fill=mix(P["sub"], P["white"], 0.55), width=max(2, S(2)))
-            d.text(((x0 + x1) // 2, yy + S(23)), c["footer"], font=font("body", S(18)), fill=P["sub"], anchor="mm")
+                d.line((xx, yy, xx + S(7), yy), fill=mix(P["cardSub"], P["white"], 0.55), width=max(2, S(2)))
+            d.text(((x0 + x1) // 2, yy + S(23)), c["footer"], font=font("body", S(18)), fill=P["cardSub"], anchor="mm")
         elif c.get("barcode"):
             rnd = random.Random(str(c.get("title")))
             bx, by, bh = x0 + S(22), y1 - S(58), S(36)
             while bx < x1 - S(24):
                 bw = rnd.choice((1, 1, 2, 3)) * max(1, S(2))
-                d.rectangle((bx, by, bx + bw - 1, by + bh), fill=P["ink"])
+                d.rectangle((bx, by, bx + bw - 1, by + bh), fill=P["cardInk"])
                 bx += bw + rnd.choice((2, 3, 4)) * max(1, int(1.5 * k))
         # 左上角气泡
         if c.get("bubble"):
@@ -342,7 +346,7 @@ class Cover:
         if self.style == "flat":  # 平面风格的投影在旋转之后加
             res = Image.new("RGBA", (out.width + 60, out.height + 60), (0, 0, 0, 0))
             sh = Image.new("RGBA", res.size, (0, 0, 0, 0))
-            sh.paste(P["ink"] + (90,), (30, 44), out.split()[3])
+            sh.paste(P["cardInk"] + (90,), (30, 44), out.split()[3])
             res.alpha_composite(sh.filter(ImageFilter.GaussianBlur(18)))
             res.alpha_composite(out, (30, 30))
             out = res

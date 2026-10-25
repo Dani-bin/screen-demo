@@ -21,7 +21,7 @@
 | 字段 | 说明 |
 |---|---|
 | `style` | `flat` / `candy` |
-| `palette` | `bg`（默认 `auto`）、`ink` 标题字、`sub` 小字、`brand` 标签和卡片抬头、`onBrand` 标签上的字、`accent` 强调色、`card` 卡片底色 |
+| `palette` | `bg`（默认 `auto`）、`ink` 标题字、`sub` 小字、`brand` 标签和卡片抬头、`onBrand` 标签上的字、`accent` 强调色、`card` 卡片底色；深色页面（`ink` 是浅色）再给 `cardInk` / `cardSub`：白色卡片和缩略图标签条上的字（不给就同 `ink` / `sub`） |
 | `badge` `kicker` | 左上标签、旁边小字 |
 | `title` | 两行，`[...]` 里用强调色，太长自动缩字号 |
 | `subtitle` | 副标题；横版放不下按逗号自动断成两行，也可以用 `\n` 指定 |

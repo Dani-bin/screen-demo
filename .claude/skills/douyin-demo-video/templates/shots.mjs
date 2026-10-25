@@ -1,4 +1,4 @@
-// <demo 中文名> 抖音视频 · 30 秒版的录屏分镜（口播见 口播-30秒.md，时长按 video.json 的 plan）
+// <demo 中文名> 抖音视频的录屏分镜（口播见 口播.md，时长按 video.json 的 plan）
 // 用法（仓库根目录、沙箱外、开发服务器开着）：
 //   node .claude/skills/douyin-demo-video/scripts/rec.mjs docs/design/<demo>/douyin/shots.mjs <devServerUrl> [分镜名… | all]
 // setup / preroll / play 会被转成源码注入页面执行，只能用页面里的全局（REC、window.__<demo>Scene、document）；

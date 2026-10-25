@@ -47,8 +47,8 @@ export class ChargingScene {
     this.container = container
     this.sim = sim
     this.baseUrl = baseUrl
-    this.onPick = onPick || (() => {})
-    this.onAnchors = onAnchors || (() => {})
+    this.onPick = onPick || (() => { })
+    this.onAnchors = onAnchors || (() => { })
     this.disposed = false
     this.anims = [] // 进行中的补间动画：{ update(dt) → 完成时返回 true }
 
@@ -670,11 +670,11 @@ export class ChargingScene {
     const mesh = new THREE.Mesh(
       new THREE.TubeGeometry(curve, 20, 0.04, 6),
       this._cableMat ||
-        (this._cableMat = new THREE.MeshStandardMaterial({
-          color: 0x34e07a,
-          emissive: 0x34e07a,
-          emissiveIntensity: 3
-        }))
+      (this._cableMat = new THREE.MeshStandardMaterial({
+        color: 0x34e07a,
+        emissive: 0x34e07a,
+        emissiveIntensity: 3
+      }))
     )
     this.scene.add(mesh)
     return mesh

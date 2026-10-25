@@ -210,7 +210,9 @@
   )
   const T_START = Date.now()
   const AT_MS = AT ? msForBeijing(AT[1], +AT[2] + +AT[3] / 60) : null
-  const now = () => (AT_MS ? AT_MS + (Date.now() - T_START) : Date.now())
+  // skew：开发模式录屏接口拨仿真时钟用（__portPage.seek），平时恒为 0
+  let skew = 0
+  const now = () => (AT_MS ? AT_MS + (Date.now() - T_START) : Date.now()) + skew
 
   const sim = createPortSim(layout)
   const state = shallowRef(null)
@@ -454,6 +456,23 @@
     touring.value = !touring.value
     if (touring.value) idleSince = 0
   }
+
+  // 开发模式的录屏接口（抖音视频逐帧录制用，分镜在 docs/design/smart-port/douyin/shots.mjs）：
+  // 拨仿真时钟、立刻刷新一次、单船跟踪、图层开关、总览镜头；生产构建里没有
+  if (import.meta.env.DEV)
+    window.__portPage = {
+      now,
+      sim,
+      OVERVIEW,
+      layers,
+      seek: (ms) => (skew += ms - now()),
+      tick: () => tick(),
+      startTrack,
+      stopTrack,
+      toggleLayer,
+      // 当作用户刚操作过：30 秒内新告警不自动联动、不抢镜头
+      hold: () => onUser()
+    }
   /** 搜索：航次 / 船名、岸桥 QCxx、箱区 Yxx、AGVxxx */
   function search(q) {
     if (!q || !state.value) return
@@ -653,7 +672,10 @@
     scene = null
     // 还原全站按宽度缩放的根字号（amfe-flexible 的规则）
     document.documentElement.style.fontSize = `${document.documentElement.clientWidth / 10}px`
-    if (import.meta.env.DEV) delete window.__smartPortScene
+    if (import.meta.env.DEV) {
+      delete window.__smartPortScene
+      delete window.__portPage
+    }
   })
 </script>
 
