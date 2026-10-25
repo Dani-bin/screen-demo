@@ -1,0 +1,16 @@
+{
+  "_note": "镜头表：from / to 为 [口播段 key, 段内偏移秒]，END 表示片尾；全部由 record.mjs 逐帧录页面。相邻镜头交叠 fade 秒叠化。运镜与界面状态见 record.mjs 的 SPECS",
+  "fade": 0.5,
+  "shots": [
+    { "id": "hook", "from": ["hook", 0], "to": ["intro", 0] },
+    { "id": "intro", "from": ["intro", 0], "to": ["fleet", 0] },
+    { "id": "fleet", "from": ["fleet", 0], "to": ["ir", 0] },
+    { "id": "irAir", "from": ["ir", 0], "to": ["ir", 9.0] },
+    { "id": "irPov", "from": ["ir", 9.0], "to": ["dispatch", 0] },
+    { "id": "dispatch", "from": ["dispatch", 0], "to": ["wind", 0] },
+    { "id": "wind", "from": ["wind", 0], "to": ["wind", 5.4] },
+    { "id": "replay", "from": ["wind", 5.4], "to": ["tech", 0] },
+    { "id": "tech", "from": ["tech", 0], "to": ["end", 0] },
+    { "id": "outro", "from": ["end", 0], "to": ["END", 0] }
+  ]
+}
