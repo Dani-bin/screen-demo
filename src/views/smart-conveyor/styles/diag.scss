@@ -1,0 +1,505 @@
+/*
+ * 带式输送机孪生 · 诊断中心面板样式（劣化设备、趋势、寿命、频谱、听诊、测温、X 光、全线温度条）
+ * 紫 = 平台预警 / 劣化；青 = 测量读数；琥珀 = 温度（煤流相关的热）。
+ */
+.conveyor-page {
+  /* 各面板高度（每栏 980 px） */
+  .col.left.diag .pn:nth-child(1) {
+    height: auto;
+    flex: 1;
+  }
+  .col.left.diag .pn:nth-child(2) {
+    height: 246px;
+  }
+  .col.left.diag .pn:nth-child(3) {
+    height: 196px;
+  }
+  .col.right.diag .pn:nth-child(1) {
+    height: 266px;
+  }
+  .col.right.diag .pn:nth-child(2) {
+    height: auto;
+    flex: 1;
+  }
+  .col.right.diag .pn:nth-child(3) {
+    height: 184px;
+  }
+  .col.right.diag .pn:nth-child(4) {
+    height: 176px;
+  }
+  .none {
+    margin: 0;
+    font-size: var(--fs-micro);
+    color: var(--text-3);
+  }
+  // 阈值虚线（趋势、测温共用）
+  .tc-th {
+    stroke-dasharray: 4 3;
+    stroke-width: 1;
+    &.l3 {
+      stroke: var(--l3);
+    }
+    &.l2 {
+      stroke: var(--l2);
+    }
+    &.l1 {
+      stroke: var(--l1);
+    }
+  }
+
+  /* D1 劣化设备 */
+  .dg {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    li {
+      padding: 6px 8px;
+      border: 1px solid var(--hair-soft);
+      border-left: 2px solid var(--predict);
+      background: rgba(22, 30, 42, 0.5);
+      cursor: pointer;
+      transition: all 0.3s var(--ease);
+      &:hover {
+        border-color: var(--hair-strong);
+      }
+      &.on {
+        border-color: var(--predict);
+        background: var(--predict-dim);
+        box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.3);
+      }
+      &.none {
+        border: none;
+        background: none;
+        color: var(--text-3);
+        font-size: var(--fs-micro);
+      }
+    }
+  }
+  .dg-t {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    b {
+      font-weight: normal;
+      font-size: var(--fs-body);
+      color: var(--text);
+    }
+    em {
+      font-style: normal;
+      font-size: 11px;
+      padding: 0 5px;
+      color: #0a0a0a;
+      background: var(--predict);
+      &.l2 {
+        background: var(--l2);
+      }
+      &.l3 {
+        background: var(--l3);
+      }
+    }
+  }
+  .dg-m {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    span {
+      width: 96px;
+      font-size: var(--fs-micro);
+      color: var(--text-2);
+    }
+    strong {
+      width: 36px;
+      text-align: right;
+      font: 13px var(--font-num);
+      color: var(--text);
+    }
+  }
+  .sev {
+    position: relative;
+    flex: 1;
+    height: 6px;
+    background: var(--hair-soft);
+    i {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+    }
+    u {
+      position: absolute;
+      top: -2px;
+      bottom: -2px;
+      width: 1px;
+      background: var(--text-3);
+    }
+  }
+  .dg-f {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-3);
+    b {
+      font-family: var(--font-num);
+      color: var(--predict);
+    }
+    em {
+      font-style: normal;
+    }
+  }
+
+  /* D2 趋势 */
+  .tc-h {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: var(--fs-micro);
+    color: var(--text-2);
+    b {
+      font: 18px var(--font-num);
+      color: var(--data);
+      i {
+        font-style: normal;
+        font-size: 11px;
+        color: var(--text-3);
+        margin-left: 2px;
+      }
+    }
+    em {
+      margin-left: auto;
+      font-style: normal;
+      color: var(--text-3);
+    }
+  }
+
+  /* D3 剩余寿命 */
+  .rl {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .rl-big {
+    width: 116px;
+    b {
+      font: 40px var(--font-num);
+      color: var(--predict);
+      text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+    }
+    span {
+      margin-left: 3px;
+      font-size: var(--fs-label);
+      color: var(--text-2);
+    }
+    em {
+      display: block;
+      font-style: normal;
+      font-size: 11px;
+      color: var(--text-3);
+    }
+  }
+  .rl-bar {
+    flex: 1;
+  }
+  .rl-track {
+    position: relative;
+    height: 10px;
+    margin-top: 22px;
+    background: var(--hair-soft);
+    .ci {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      background: rgba(167, 139, 250, 0.35);
+    }
+    u {
+      position: absolute;
+      top: -6px;
+      bottom: -6px;
+      width: 2px;
+      span {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 10.5px;
+        white-space: nowrap;
+      }
+    }
+    .fix {
+      background: var(--ok);
+      span {
+        color: var(--ok);
+      }
+    }
+    .fail {
+      background: var(--l1);
+      span {
+        color: var(--l1);
+        bottom: auto;
+        top: 100%;
+      }
+    }
+  }
+  .rl-ax {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+    font: 10px var(--font-num);
+    color: var(--text-3);
+  }
+  .rl-note {
+    margin: 12px 0 0;
+    font-size: var(--fs-micro);
+    color: var(--text-2);
+    .ic {
+      margin-right: 4px;
+      color: var(--coal);
+    }
+    b {
+      font-family: var(--font-num);
+      color: var(--ok);
+    }
+  }
+
+  /* D4 频谱 */
+  .spc-h {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: var(--fs-micro);
+    color: var(--text-2);
+    b {
+      font-size: 13px;
+      color: var(--coal);
+    }
+    em {
+      margin-left: auto;
+      font-style: normal;
+      font-family: var(--font-num);
+      color: var(--text-3);
+    }
+  }
+  .spc-c {
+    margin-top: 4px;
+  }
+  .spc-t {
+    display: block;
+    font-size: 10.5px;
+    color: var(--text-3);
+  }
+  .spc-d {
+    margin: 4px 0 0;
+    font-size: var(--fs-micro);
+    color: var(--text-2);
+    .ic {
+      margin-right: 4px;
+    }
+    &.bad {
+      color: var(--predict);
+      .ic {
+        color: var(--predict);
+      }
+    }
+    &.ok .ic {
+      color: var(--ok);
+    }
+  }
+
+  /* D5 听诊 */
+  .ds-h {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--fs-micro);
+    color: var(--text-2);
+    .ic {
+      margin-right: 4px;
+    }
+  }
+  .ds-play {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 8px;
+    font-size: 11.5px;
+    color: var(--predict);
+    border: 1px solid var(--predict);
+    background: var(--predict-dim);
+    cursor: pointer;
+    .ic {
+      margin: 0;
+      color: var(--predict);
+    }
+    &.on {
+      color: #0a0a0a;
+      background: var(--predict);
+      .ic {
+        color: #0a0a0a;
+      }
+    }
+  }
+  .ds-strip {
+    display: flex;
+    height: 14px;
+    margin-top: 8px;
+    border: 1px solid var(--hair-soft);
+    i {
+      flex: 1;
+    }
+  }
+  .ds-ax {
+    display: flex;
+    justify-content: space-between;
+    font: 10px var(--font-num);
+    color: var(--text-3);
+  }
+  .ds-wave {
+    display: block;
+    margin-top: 4px;
+  }
+  .ds-l {
+    margin: 6px 0 0;
+    padding: 0;
+    list-style: none;
+    li {
+      display: flex;
+      gap: 8px;
+      height: 20px;
+      align-items: center;
+      font-size: var(--fs-micro);
+      border-bottom: 1px dashed var(--hair-soft);
+      b {
+        flex: 1;
+        font-weight: normal;
+        color: var(--text);
+      }
+      span {
+        color: var(--predict);
+      }
+      em {
+        font-style: normal;
+        font-family: var(--font-num);
+        color: var(--text-3);
+      }
+      &.none {
+        color: var(--text-3);
+      }
+    }
+  }
+
+  /* D7 X 光 */
+  .xr-h {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: var(--fs-micro);
+    color: var(--text-2);
+    .ic {
+      margin-right: 4px;
+    }
+    em {
+      font-style: normal;
+      color: var(--text-3);
+    }
+  }
+  .xr-lg {
+    display: flex;
+    gap: 12px;
+    margin: 2px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 11px;
+    color: var(--text-3);
+    li {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--c);
+      &.j {
+        width: 4px;
+        height: 10px;
+        border-radius: 0;
+        background: rgba(250, 204, 21, 0.7);
+      }
+    }
+  }
+
+  /* 全线温度条（底部，套用 .cs 外框） */
+  .tstrip .cs-hd .lg i {
+    width: 14px;
+    &.cold {
+      background: rgb(13, 42, 58);
+    }
+    &.warm {
+      background: linear-gradient(90deg, rgb(30, 143, 176), var(--coal));
+    }
+    &.hot {
+      background: var(--predict);
+    }
+  }
+  .ts-row {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 40px;
+    bottom: 26px;
+    display: flex;
+    gap: 6px;
+  }
+  .ts-b {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    cursor: pointer;
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      height: 20px;
+      white-space: nowrap;
+      overflow: hidden;
+      b {
+        font-size: 12px;
+        color: var(--coal);
+      }
+      span {
+        font-size: 11px;
+        color: var(--text-2);
+      }
+      em {
+        margin-left: auto;
+        font: 10.5px var(--font-num);
+        font-style: normal;
+        color: var(--text-3);
+        &.hot {
+          color: var(--predict);
+        }
+      }
+    }
+    canvas {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      border: 1px solid var(--hair-soft);
+      image-rendering: pixelated;
+    }
+    footer {
+      margin-top: 3px;
+      font: 10.5px var(--font-num);
+      color: var(--text-3);
+    }
+    &:hover canvas {
+      border-color: var(--hair-strong);
+    }
+  }
+}

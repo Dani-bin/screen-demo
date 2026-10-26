@@ -554,6 +554,273 @@
         "无指定现场屏与主机，性能只在开发机（RTX 4070）和集显笔记本上测",
         "skill 的 data-check.mjs 经软链接路径调用时静默退出 0、不做检查（import.meta.url 与 argv[1] 路径不一致）；本项目改用真实路径 ~/src/build-3d-visual-dashboard/scripts/"
       ]
+    },
+    "smart-conveyor": {
+      "title": "带式输送机安全预警与集控孪生大屏",
+      "mode": "new",
+      "docsDir": "docs/design/smart-conveyor",
+      "route": "/smart-conveyor",
+      "stage": 11,
+      "stages": {
+        "1": {
+          "status": "done",
+          "output": "01-requirements-qa.md"
+        },
+        "2": {
+          "status": "done",
+          "output": "02-research.md",
+          "note": "业务以晨帆 PDF、69 号文表 6、规程为据；搜索工具不可用，视觉参考以晨帆截图和本仓库定稿为主"
+        },
+        "3": {
+          "status": "done",
+          "output": [
+            "03-scope.md",
+            "devices.json（scripts/smart-conveyor/layout.mjs 生成，502 台）",
+            "src/views/smart-conveyor/data/layout.json"
+          ]
+        },
+        "4": {
+          "status": "done",
+          "output": [
+            "04-data-spec.md",
+            "mock/（scripts/smart-conveyor/mock.mjs）",
+            "05-requirement.md",
+            "src/views/smart-conveyor/sim/simulator.js",
+            "src/views/smart-conveyor/sim/telemetry.js"
+          ],
+          "check": "data-check 通过（2026-10-24，774 测点 × 31 快照）；8 天煤量守恒差 0.00 t"
+        },
+        "5": {
+          "status": "done",
+          "output": [
+            "design/styles.md",
+            "design/v1.png",
+            "design/final.png",
+            "design/src/（v1.html、v1.js、v1.no-convert.css、tokens.no-convert.css、concept.png）",
+            "README.md（冲突清单、自查）"
+          ],
+          "note": "Figma 概念图生成 1 次（文件 4CMWs7e3K8w7YEdFqlNT9X，gpt-image-2.5-sunburst）；等用户确认定稿（拍板点③）"
+        },
+        "6": {
+          "status": "done",
+          "output": "06-asset-map.md",
+          "note": "全部程序化 three.js（无 Blender / GLB）；面板从定稿 HTML 移植成 Vue 组件"
+        },
+        "7": {
+          "status": "done",
+          "output": [
+            "scripts/smart-conveyor/fit_camera.py",
+            "src/views/smart-conveyor/data/camera.json",
+            "src/views/smart-conveyor/data/section.json"
+          ],
+          "note": "7 个块角点最小二乘，RMS 12.0 px（> 5 px，取最优解并记录：AI 概念图透视不一致）"
+        },
+        "8": {
+          "status": "done",
+          "output": [
+            "src/views/smart-conveyor/scene/"
+          ],
+          "note": "程序化：地层块（岩面着色器）、煤流光管、巷道、煤仓、工作面空腔、地面设施；下钻细节 scene/detail/（真实尺度）"
+        },
+        "9": {
+          "status": "done",
+          "output": [
+            "src/views/smart-conveyor/index.vue",
+            "src/views/smart-conveyor/components/",
+            "src/views/smart-conveyor/styles/",
+            "src/views/smart-conveyor/store/"
+          ]
+        },
+        "10": {
+          "status": "done",
+          "note": "带面滚动按带速积分（停车即停）、起车预警黄闪 / 闭锁橙 / 保护停机红闪、告警光柱涟漪、劣化光晕声波、集控起停序列、三段剧本、空闲巡游；回放 / 钉住 / 冻结都正确"
+        },
+        "11": {
+          "status": "done",
+          "output": [
+            "11-review-report.md",
+            "review/"
+          ],
+          "note": "16 轮比对；评审 4.6 → 5.0 → 5.2（过 5 分硬门槛）；MC01 / 工作面 IoU 与左栏 / 右栏 / 时间轴面板门槛经用户确认按实测值放宽，验收通过"
+        }
+      },
+      "approvals": {
+        "requirements": {
+          "at": "2026-10-24",
+          "summary": "输送机安全预警行业对口 demo（兼作品集）；主线 = 晨帆输送机安全预警与智能运维平台的三维孪生版（四维六感一平台），集控是运行中心里的模块，叙事“平台提前预警 vs 集控事后跳闸”；虚构井工煤矿主煤流全链 5–7 条皮带，剖面沙盘；5 页签（智能看板/运行/预警/诊断/运维中心）；三级下钻 全链→单条→部件；检测全上；可操作集控 + 3 段故障剧本；中性名称不放 logo；只交付链接，手机整屏缩放 + 横屏提示；2–3 周"
+        },
+        "style": {
+          "at": "2026-10-24",
+          "summary": "A 透视矿脉 · 琥珀能流（hud-sci-fi-fui + 工业排版）：半透明石墨地层 + 琥珀色煤流光带 + 青色传感器光点；底 #05070B、煤流 #FFB23E、数据 #3DE0FF、平台预警 #A78BFA；状态 正常 #34D399 / 三级 #FACC15 / 二级 #FB923C / 一级 #F43F5E / 四级 #60A5FA / 离线 #5B6577；阿里妈妈数黑体 / 思源黑体 / DIN"
+        },
+        "design": {
+          "at": "2026-10-24",
+          "summary": "v1 一次定稿：A 透视矿脉 · 琥珀能流，默认页「智能看板」；中央 Figma 概念图（剖面沙盘，左工作面右地面），左栏生产 / 皮带 / 煤仓 / 能耗 / 69 号文对标，右栏四维告警 / 实时告警 / 平台预警时间线 / 光纤 / 巡检人员，中下主煤流一张图，底部今日运量 + 剧本按钮；冲突 11 条按 README 处理"
+        },
+        "acceptance": {
+          "at": "2026-10-24",
+          "summary": "同意按实测值放宽 MC01 / 工作面 IoU（0.81 / 0.82）和左栏 / 右栏 / 时间轴面板门槛（3.15 / 4.11 / 3.01 %），阶段 11 验收通过"
+        }
+      },
+      "finalDesign": "docs/design/smart-conveyor/design/final.png",
+      "camera": "src/views/smart-conveyor/data/camera.json",
+      "thresholds": {
+        "file": "docs/design/smart-conveyor/11-review-report.md",
+        "relaxed": {
+          "iou": {
+            "MC01": 0.8,
+            "face": 0.8
+          },
+          "panels": {
+            "左栏": 0.032,
+            "右栏": 0.042,
+            "时间轴": 0.031
+          }
+        },
+        "approvedAt": "2026-10-24"
+      },
+      "rulings": [
+        {
+          "at": "2026-10-24",
+          "stage": 1,
+          "decision": "路由 /smart-conveyor、文档目录 docs/design/smart-conveyor（跟随 smart-mine / smart-ranch / smart-port 命名）"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 1,
+          "decision": "现场屏按 1920×1080 设计，rem 按 min(宽, 高×16/9)（同 smart-ranch / smart-port）"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 1,
+          "decision": "检测模块按用户“大屏要满、要多”的偏好全部上屏，不单独问"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 1,
+          "decision": "井下用剖面沙盘：岩层半透明、巷道内皮带全链可见，主斜井爬升到地面工业广场"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 1,
+          "decision": "数据全部模拟，跟随北京时间、三班制含检修班；?at= / ?tour=0 等参数与其他页一致"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 1,
+          "decision": "皮带、托辊程序化 three.js（InstancedMesh）；驱动部与晨帆检测硬件（X 光箱、纵撕激光、吊轨机器人、机器狗）用 Blender"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 1,
+          "decision": "光纤听诊异响用 WebAudio 合成，默认静音"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 3,
+          "decision": "虚构矿井：BC01 地面栈桥 / BC02 主斜井（4×1400 kW）/ BC03 大巷（含 R1500 平面转弯）/ BC04 运输上山下运（发电回馈）/ BC05 综采顺槽伸缩带 / BC06 掘进顺槽；MC01–MC03 三个煤仓；编号沿逆煤流排，一键启动 BC01 先起"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 3,
+          "decision": "托辊不单独编号，按“皮带 + 组号 + 左/中/右辊”指代（组号 × 间距 = 里程）"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 4,
+          "decision": "班次定为 00:00–08:00 检修、08–24 两个生产班（白天打开页面有煤流）"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 4,
+          "decision": "仿真按 10 s 步长、06:00→次日 06:00 分段积分，输送带按带面坐标记账（质量守恒）；集控操作和故障剧本做成页面本地覆盖层，不改仿真器"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 4,
+          "decision": "data-check 的 stale 只支持全局阈值，取 1500 s（无线类）；PLC 10 s、光纤 / UWB 30 s 由 telemetry.js 自己判定"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 5,
+          "decision": "版式：全景型 + 流程顺序（工作面在左、地面在右，左栏生产运行、右栏预警健康）"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 5,
+          "decision": "概念图缩放放进中央（不铺满全屏），两侧栏 420 px，保证工作面和原煤仓都露出来"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 5,
+          "decision": "设计稿只画默认页「智能看板」，其余 4 个页签沿用同一套令牌和组件实现"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 5,
+          "decision": "冲突处理：概念图定镜头 / 剖面构图 / 左右顺序，工艺与数据以 layout + 仿真器为准；三维坐标改为剖面示意（竖向 ×5），煤仓按工艺上进下出"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 6,
+          "decision": "实现分支 feature/smart-conveyor 从 origin/master（10-23 被强制改写过、docs/ 不入库、含 drone）开，不从本地旧 master 开；用户确认"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 7,
+          "decision": "相机标定残差 RMS 12 px > 5 px：AI 概念图透视不自洽，取最小二乘最优解，不停下（skill 冲突优先级）"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 8,
+          "decision": "不用 Blender：剖面是示意尺度（竖向 ×5），全部程序化 three.js 更容易对齐定稿；第 2 / 3 级下钻用真实尺度的局部程序化模型"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 9,
+          "decision": "画布铺满窗口，面板放 16:9 居中的舞台；投影中心按舞台位置换算（scene 的 origin），宽屏 / 竖屏都对齐"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 9,
+          "decision": "其余 4 个页签按 05-requirement 实现，沿用定稿令牌；运维 / 诊断里的台账、备件库存为演示静态数据（data/ops.js），其余数字从仿真派生"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 10,
+          "decision": "故障剧本 1（托辊）直接快进仿真器里真实的劣化过程；剧本 2 / 3 在剧本开始时刻上叠加事件；三段剧本键名 idler / tear / intrude（?script=）"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 11,
+          "decision": "MC01 半径按定稿量取宽度 × 0.7 修正（反投影偏大）；工作面支架只占工作面线前 90 %、整体上移 50（定稿右端接 BC05）"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 11,
+          "decision": "面板像素差 3–4 %（左右栏 / 时间轴）为文字行 1 px 级取整偏移，放大比对肉眼不可辨；MC01 / 工作面 IoU 0.81 / 0.82 受外接矩形标注限制，均记入报告待用户确认是否按实测值放宽"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 11,
+          "decision": "评审 3（5.2 / 10）后只修小问题（第 16 轮：光柱细亮线、UWB010 标签回定稿位置、厂房压暗、路灯、实时按钮青色），数字不回退，不再送评审；造型级差距（岩体节理、巷道方壳、工作面硐室、煤仓给煤机）记为遗留"
+        },
+        {
+          "at": "2026-10-24",
+          "stage": 11,
+          "decision": "用户确认放宽门槛：MC01 / face IoU ≥ 0.80，面板 左栏 ≤ 3.2 %、右栏 ≤ 4.2 %、时间轴 ≤ 3.1 %；阶段 11 关闭"
+        }
+      ],
+      "openIssues": [
+        "晨帆 PDF 是用户本地资料，不入库；文档里只按页码引用",
+        "skill 的 data-check 只支持全局 stale 阈值，分类阈值靠测点层；以后可给 stale 规则加 points / prefix 过滤（skill 仓库的改动）",
+        "仿真一段约 0.2 s，首屏要算两段约 0.4 s；实现时考虑放进 Web Worker",
+        "设计稿约 70 处次要标注 10–11.5 px，低于 skill 的 12 px 标签下限；精修时决定是否整体放大",
+        "docs/ 在当前基线被 .gitignore 忽略：阶段文档、定稿、mock 只在本地",
+        "feature/smart-conveyor 未提交、未合并、未推送",
+        "评审遗留的造型差距：岩体节理 / 台阶岩层、巷道方壳、工作面硐室（顶板、采煤机、煤壁）、煤仓底部漏斗 / 给煤机、栈桥格构支架 / 井架；第 2 级下钻没有画 BC06 在 BC04 420 m 处的搭接点"
+      ],
+      "designAt": "2026-10-30T21:20（北京时间，mock/window.json）"
     }
   }
 }
