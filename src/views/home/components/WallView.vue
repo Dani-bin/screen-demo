@@ -1,7 +1,8 @@
 <!--
   首页 · 作品墙视图（浅色）
   ----------------------------------------------------------
-  顶部「标题 + 行业筛选 + 搜索」，下方 4 列卡片网格，区域内纵向滚动，演示再多也能全部浏览。
+  顶部两行：上行「标题 + 数量 + 搜索」，下行行业筛选（宽度不够时整颗 chip 折到下一行，chip 和标题自身不折行）；
+  下方 4 列卡片网格，区域内纵向滚动，演示再多也能全部浏览。
   未筛选、未搜索时，最新上线的演示（DEMOS 末项）占 2×2 大格，展示简介、指标与进入按钮；
   筛选或搜索后改为统一的小卡片，按原顺序排列。
   下方还有卡片没露出来时，底部渐隐并提示「向下滚动查看更多 · 还有 N 个」。
@@ -9,24 +10,12 @@
 <template>
   <section class="wall-view">
     <div class="wall-tools">
-      <div class="wall-title">
-        <h2>全部演示</h2>
-        <em>{{ pad2(list.length) }}</em>
-        <p>点击卡片进入演示</p>
-      </div>
-      <div class="wall-filters">
-        <button
-          v-for="c in categories"
-          :key="c.name"
-          type="button"
-          class="chip"
-          :class="{ active: category === c.name }"
-          :aria-pressed="category === c.name"
-          @click="category = c.name"
-        >
-          {{ c.name }}<i>{{ c.count }}</i>
-        </button>
-        <span class="sep"></span>
+      <div class="wall-head">
+        <div class="wall-title">
+          <h2>全部演示</h2>
+          <em>{{ pad2(list.length) }}</em>
+          <p>点击卡片进入演示</p>
+        </div>
         <label class="search">
           <Search class="search-icon" aria-hidden="true" />
           <input
@@ -45,6 +34,19 @@
             <X aria-hidden="true" />
           </button>
         </label>
+      </div>
+      <div class="wall-filters" role="group" aria-label="按行业筛选">
+        <button
+          v-for="c in categories"
+          :key="c.name"
+          type="button"
+          class="chip"
+          :class="{ active: category === c.name }"
+          :aria-pressed="category === c.name"
+          @click="category = c.name"
+        >
+          {{ c.name }}<i>{{ c.count }}</i>
+        </button>
       </div>
     </div>
 
@@ -215,19 +217,28 @@
     padding: 118px 80px 0;
   }
 
-  /* ---------------- 工具行 */
+  /* ---------------- 工具区（两行）
+     页面按窗口宽度等比缩放，但浏览器有最小字号（中文常见 12px）：窗口窄时文字不再跟着缩，
+     原来挤在一行的标题 + 9 个 chip + 搜索就会被压得竖排。所以标题、chip 一律不折行，
+     行业筛选单独占一整行，放不下时整颗 chip 折到下一行 */
   .wall-tools {
     flex: none;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
     margin-bottom: 22px;
   }
 
+  .wall-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
   .wall-title {
+    flex: none;
     display: flex;
     align-items: baseline;
     gap: 16px;
+    white-space: nowrap;
 
     h2 {
       margin: 0;
@@ -252,12 +263,15 @@
   }
 
   .wall-filters {
+    margin-top: 18px;
     display: flex;
-    align-items: center;
+    flex-wrap: wrap;
     gap: 10px;
   }
 
   .chip {
+    flex: none;
+    white-space: nowrap;
     height: 40px;
     padding: 0 20px;
     border-radius: 20px;
@@ -302,16 +316,11 @@
     }
   }
 
-  .sep {
-    width: 1px;
-    height: 24px;
-    margin: 0 8px;
-    background: var(--line);
-  }
-
+  /* 搜索框在标题行右侧：空间够时 280px，窗口很窄时可以缩 */
   .search {
+    flex: 0 1 280px;
+    min-width: 160px;
     height: 40px;
-    width: 230px;
     padding: 0 12px 0 16px;
     border-radius: 20px;
     border: 1px solid var(--line);
