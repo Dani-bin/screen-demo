@@ -83,6 +83,12 @@ export function chainageToPoint(id, chainage) {
   return pathAt(id, chainage / BELTS[id].L).pos
 }
 
+/** 巷道截面里"朝上"的方向（垂直于走向）；斜井里跟着倾斜 */
+export function normalOf(tan) {
+  const up = new THREE.Vector3(0, 1, 0)
+  return up.sub(tan.clone().multiplyScalar(up.dot(tan))).normalize()
+}
+
 /** 带面的横向（水平、垂直于走向）；竖直段退化时用 z 轴 */
 export function sideOf(tan) {
   const s = new THREE.Vector3().crossVectors(tan, new THREE.Vector3(0, 1, 0))

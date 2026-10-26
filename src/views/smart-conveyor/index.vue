@@ -809,6 +809,8 @@
       sc.controls.addEventListener("start", () => (atHome.value = false))
       sceneRef.value = markRaw(sc)
       sc.setSlow(w.value)
+      // 图层开关的初始状态同步给三维（人员 / 机器人默认关）
+      for (const l of LAYERS) sc.setLayer(l.key, layers[l.key])
     } catch (e) {
       error.value = `三维初始化失败：${e.message}`
       throw e

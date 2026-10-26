@@ -24,6 +24,8 @@ import { buildStrata } from "./strata.js"
 import { Belts } from "./belts.js"
 import { Props } from "./props.js"
 import { Beacons } from "./beacons.js"
+import { Crew } from "./crew.js"
+import { DtsLayer } from "./dts.js"
 import { BeltDetail } from "./detail/belt.js"
 import { IdlerPart, DrivePart } from "./detail/parts.js"
 
@@ -106,6 +108,10 @@ export class ConveyorScene {
     this.belts = new Belts(scene, layout)
     this.props = new Props(scene)
     this.beacons = new Beacons(scene)
+    // 人员 / 巡检机器人（图层开关控制，默认关）
+    this.crew = new Crew(scene, layout)
+    // 光纤测温色带（慢数据到了才建）
+    this.dts = new DtsLayer(scene)
     this.strata = buildStrata(block, seamY)
     scene.add(this.strata.group)
 
@@ -197,6 +203,7 @@ export class ConveyorScene {
     const ms = s.t
     this.belts.setState(this.sim, s, ms)
     this.props.setState(s)
+    this.crew.setState(s)
     this.beacons.setAlarms(
       s.alarms.map((a) => ({ ...a, severity: a.predictive ? 1 : 0 }))
     )
@@ -212,6 +219,8 @@ export class ConveyorScene {
         this.belts.tick(dt, t)
         this.props.face.fade(this.camera.position)
         this.beacons.tick(t, this.camera)
+        this.crew.tick(dt, t, this.camera)
+        this.dts.tick(t, this.camera)
       }
       this._tweenTick(dt)
       if (this.mode !== "home") this.controls.update()
@@ -317,14 +326,16 @@ export class ConveyorScene {
   }
 
   /**
-   * 图层开关：coal 煤流光管、sensors 沿线传感器光点；
-   * dts / people / robots 的三维表现在对应图层做好之前先只记状态
+   * 图层开关：coal 煤流光管、sensors 沿线传感器光点、dts 光纤测温色带（dts.js）、
+   * people 人员、robots 巡检机器人（crew.js）
    */
   setLayer(key, on) {
     this.layers = { ...(this.layers || {}), [key]: on }
     if (key === "coal")
       for (const it of Object.values(this.belts.items)) it.ribbon.visible = on
     if (key === "sensors") this.belts.sensors.visible = on
+    if (key === "dts") this.dts.setVisible(on)
+    if (key === "people" || key === "robots") this.crew.setVisible(key, on)
   }
 
   flyHome() {
@@ -568,14 +579,17 @@ export class ConveyorScene {
       this.belts.group,
       this.props.group,
       this.beacons.group,
+      this.crew.group,
+      this.dts.group,
       this.strata.group,
       ...Object.values(this.markers || {})
     ]
   }
 
-  /** 慢数据（10 s 一档：沿线煤量、光纤测温）给下钻模型用 */
+  /** 慢数据（10 s 一档：沿线煤量、光纤测温）给下钻模型和总览的光纤测温色带用 */
   setSlow(w) {
     this.slow = w
+    this.dts.update(w)
     if (this.detail && this.state) this.detail.update(this.state, w)
   }
 
