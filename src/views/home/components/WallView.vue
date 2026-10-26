@@ -410,10 +410,12 @@
     }
   }
 
+  /* 行高至少 352px（设计稿尺寸，内容刚好放下）；窄窗口下文字被浏览器最小字号托住、相对卡片变大时，
+     整行跟着长高，卡片里的文字不会被 overflow: hidden 裁掉 */
   .wall-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    grid-auto-rows: 352px;
+    grid-auto-rows: minmax(352px, auto);
     gap: 22px;
   }
 
@@ -534,13 +536,18 @@
   }
 
   .card-info {
-    padding: 14px 18px 0;
+    /* 底部留出主题色条（4px）的位置；设计宽度下内容到 343px，加上 8px 正好不超过 352px 行高 */
+    padding: 14px 18px 8px;
 
+    /* 名称只占一行，放不下时省略（完整名称仍在按钮的可访问名称里） */
     h3 {
       margin: 0;
       font-size: 21px;
       font-weight: 600;
       letter-spacing: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 
@@ -553,12 +560,15 @@
     text-overflow: ellipsis;
   }
 
+  /* 标签放不下时整颗折到下一行，单个标签不折行 */
   .card-tags {
     margin-top: 10px;
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
 
     span {
+      white-space: nowrap;
       padding: 2px 10px;
       border-radius: 10px;
       font-size: 12px;
@@ -596,21 +606,30 @@
     background: var(--card-accent);
   }
 
+  /* 文字在左、指标与按钮在右；右侧放不下时（窄窗口下最小字号把指标撑宽）整块换到文字下方 */
   .feature-info {
     flex: 1;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 24px;
-    padding: 18px 26px 0;
+    gap: 16px 24px;
+    padding: 18px 26px 20px;
   }
 
+  .feature-text {
+    flex: 1 1 360px;
+    min-width: 0;
+  }
+
+  /* 名称长时折成两行并把字数均分（text-wrap: balance），避免第二行只剩一个字 */
   .feature-text h3 {
     margin: 0;
     font-family: "Alimama ShuHeiTi";
     font-weight: normal;
     font-size: 36px;
     letter-spacing: 2px;
+    text-wrap: balance;
   }
 
   .feature-en {
