@@ -46,6 +46,13 @@ export function createControl(layout) {
     log: [] // 操作记录 { at: 仿真时刻, text }
   })
 
+  // 起停序列的快进倍数：页面上恒为 1；只有开发模式的录屏接口（index.vue 的 window.__conveyorPage）会改，
+  // 让抖音视频几秒内演完逐台起车
+  let tempo = 1
+  function setTempo(k) {
+    tempo = k > 0 ? k : 1
+  }
+
   function touch(text, simMs) {
     ctl.active = true
     ctl.lastOp = performance.now()
@@ -92,7 +99,7 @@ export function createControl(layout) {
     }
     const out = { ...s, belts: { ...s.belts }, alarms: [...s.alarms] }
     const sched = ctl.seq ? schedule(ctl.seq.kind) : null
-    const el = ctl.seq ? (now - ctl.seq.t0) / 1000 : 0
+    const el = ctl.seq ? ((now - ctl.seq.t0) / 1000) * tempo : 0
     const locked = new Set()
     for (const id of Object.keys(ctl.estop)) {
       // 急停皮带的上游逐级闭锁（只沿皮带往上传，煤仓有缓冲）
@@ -261,6 +268,7 @@ export function createControl(layout) {
     setManualV,
     reset,
     affects,
+    setTempo,
     startOrder,
     stopOrder
   }

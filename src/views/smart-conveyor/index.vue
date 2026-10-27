@@ -835,6 +835,23 @@
         latest: () => clock.goLive()
       }
     })
+    // 录屏接口（只在开发模式）：抖音视频的分镜脚本（docs/design/smart-conveyor/douyin/shots.mjs）
+    // 用它切页签、下钻、放剧本、开关图层、加速一键启停；生产构建里没有
+    if (import.meta.env.DEV)
+      window.__conveyorPage = {
+        setTab: (k) => onTab(k),
+        enterBelt,
+        enterPart,
+        enterDrive,
+        toOverview,
+        goHome,
+        startScript,
+        toggleLayer,
+        layers,
+        scen,
+        control,
+        state: () => f.value
+      }
     sc.setState(view.value)
     ready.value = true
     // 深链：?tab=… 打开页签的默认焦点；?script=idler|tear|intrude 直接播剧本
@@ -851,6 +868,7 @@
     clearInterval(tourTimer)
     scen.stop(true)
     hooks?.uninstall()
+    if (import.meta.env.DEV) delete window.__conveyorPage
     clock.dispose()
     sceneRef.value?.dispose()
     // 还原成 amfe-flexible 的按宽度缩放
