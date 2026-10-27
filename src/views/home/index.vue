@@ -4,7 +4,7 @@
   两种视图，顶栏按钮切换：
     - wall      作品墙（浅色）：行业筛选 + 搜索 + 4 列卡片网格，最新上线占大格，可纵向滚动浏览全部
     - spotlight 聚焦（深色）：当前演示铺满全屏 + 右侧可滚动目录，8 秒自动轮播（大屏无人值守）
-  视图取值优先级：地址参数 ?view= > 上次选择（localStorage）> 默认聚焦。切换时同步写回地址，便于分享与截图。
+  视图取值优先级：地址参数 ?view= > 上次选择（localStorage）> 默认作品墙。切换时同步写回地址，便于分享与截图。
   演示列表全部来自 ./data/demos.js，新增演示不用改本页面。
 -->
 <template>
@@ -23,9 +23,13 @@
   import SpotlightView from "./components/SpotlightView.vue"
   import { DEMOS } from "./data/demos"
 
-  /** 视图取值与本地记忆的键名 */
+  /**
+   * 视图取值与本地记忆的键名。
+   * 2026-10-27 默认视图从聚焦改成作品墙，键名随之换成 v2：以前记住的"聚焦"失效一次，
+   * 所有人重新从作品墙开始；之后再切换照样记住
+   */
   const VIEWS = ["wall", "spotlight"]
-  const STORE_KEY = "home:view"
+  const STORE_KEY = "home:view:v2"
 
   const route = useRoute()
   const router = useRouter()
@@ -42,7 +46,7 @@
   const initial = [route.query.view, readStored()].find((v) =>
     VIEWS.includes(v)
   )
-  const view = ref(initial || "spotlight")
+  const view = ref(initial || "wall")
 
   watch(view, (v) => {
     try {
