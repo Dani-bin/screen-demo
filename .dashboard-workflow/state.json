@@ -821,6 +821,181 @@
         "评审遗留的造型差距：岩体节理 / 台阶岩层、巷道方壳、工作面硐室（顶板、采煤机、煤壁）、煤仓底部漏斗 / 给煤机、栈桥格构支架 / 井架；第 2 级下钻没有画 BC06 在 BC04 420 m 处的搭接点"
       ],
       "designAt": "2026-10-30T21:20（北京时间，mock/window.json）"
+    },
+    "coal-prep": {
+      "title": "井上地面输送系统 · 带式输送机安全孪生大屏",
+      "mode": "design-first",
+      "docsDir": "docs/design/coal-prep",
+      "route": "/coal-prep",
+      "stage": 9,
+      "stages": {
+        "1": {
+          "status": "done",
+          "note": "先出设计稿模式，需求在对话中确认：井上地面输送系统、独立页面、先做智能看板、面板全部围绕皮带"
+        },
+        "2": {
+          "status": "done",
+          "note": "依据晨帆《输送机安全预警与智能运维管理平台》《煤矿智能化建设规划方案》两份方案"
+        },
+        "3": {
+          "status": "done",
+          "note": "设备编号：BC103-P1/P2/M1/M2/G1/G2/D1、VT-103-01…05、ES-103-01、RB01、IDL_<组号>（见 scripts/blender/coal_prep/layout.py 头注释）"
+        },
+        "4": {
+          "status": "done",
+          "output": [
+            "src/views/coal-prep/sim/simulator.js",
+            "src/views/coal-prep/store/board.js"
+          ],
+          "note": "定稿时刻数值与设计稿 data.js 一致（node 核对：健康 81、498 kW、19.8 ℃ @ 42 m、5.5 天）"
+        },
+        "5": {
+          "status": "done",
+          "output": [
+            "design/styles.md",
+            "design/v1.png",
+            "design/v2.png",
+            "design/v3.png",
+            "design/final.png",
+            "README.md"
+          ]
+        },
+        "6": {
+          "status": "done",
+          "note": "面板代码绘制、场景标签由三维锚点投影；装饰素材只有 backdrop.webp（概念图模糊暗化）"
+        },
+        "7": {
+          "status": "done",
+          "output": "docs/design/coal-prep/calib/camera-fit.json",
+          "note": "透视拟合 9 点，残差 RMS 9.7 px > 5 px，AI 图透视不自洽，接受最优解"
+        },
+        "8": {
+          "status": "done",
+          "output": [
+            "scripts/blender/coal_prep/",
+            "public/coal-prep/conveyor.glb",
+            "public/coal-prep/lm_*.webp"
+          ],
+          "note": "Blender 命令行建模 + Cycles DIFFUSE 烘焙两张图集；同机位预览叠图核对通过"
+        },
+        "9": {
+          "status": "in_progress",
+          "output": "src/views/coal-prep/"
+        },
+        "10": {
+          "status": "not_started"
+        },
+        "11": {
+          "status": "not_started"
+        }
+      },
+      "approvals": {
+        "requirements": {
+          "at": "2026-10-27",
+          "summary": "井上地面生产系统；独立新页面 /coal-prep；先只做智能看板；v3 起中央单台输送机（103）机头特写、两侧面板全部围绕皮带"
+        },
+        "style": {
+          "at": "2026-10-27",
+          "summary": "A 黄昏写实航拍 · 钢蓝安全橙：底 #070B12、数据 #38BDF8、煤流 #F97316、平台预警 #A78BFA；正常 #22C55E / 三级 #FACC15 / 二级 #FB923C / 一级 #EF4444 / 四级 #60A5FA / 离线 #64748B；阿里妈妈数黑体 / 思源黑体 / DIN"
+        },
+        "design": {
+          "at": "2026-10-27",
+          "summary": "v3 定稿：103 原煤上仓带式输送机机头驱动部特写（栈桥剖切，concept-r3）；左栏 档案 / 驱动部温振 / 托辊健康 / 八大保护，右栏 输送带检测 / 四维告警 / 平台预警 / 巡检人员，中下沿线一张图，底部光纤测温与运量"
+        }
+      },
+      "finalDesign": "docs/design/coal-prep/design/final.png",
+      "camera": "docs/design/coal-prep/calib/camera-fit.json",
+      "thresholds": "templates/thresholds.json",
+      "rulings": [
+        {
+          "at": "2026-10-27",
+          "stage": 5,
+          "decision": "版式：v1–v2 全景 + 流程型，v3 用户改为设备重点型（单台输送机特写）"
+        },
+        {
+          "at": "2026-10-27",
+          "stage": 5,
+          "decision": "冲突 1：机头段水平、中后段按 14° 爬坡（概念图机头段近似水平）"
+        },
+        {
+          "at": "2026-10-27",
+          "stage": 5,
+          "decision": "冲突 2：第 35 组热点按里程 42 m 摆放，不跟概念图里的近景托辊位置"
+        },
+        {
+          "at": "2026-10-27",
+          "stage": 5,
+          "decision": "冲突 3：纵撕 / X 光 / 机尾跑偏在画面外，只在面板与沿线图出现"
+        },
+        {
+          "at": "2026-10-27",
+          "stage": 5,
+          "decision": "冲突 4：不画制动器测点；冲突 5：其余 7 条皮带切换只换数据，复用同一机头模型"
+        },
+        {
+          "at": "2026-10-27",
+          "stage": 8,
+          "decision": "用户要求改用 Blender 脚本建模 + Cycles 烘焙（命令行方式，同 /drone），转动部件单独节点"
+        },
+        {
+          "at": "2026-10-27",
+          "stage": 7,
+          "decision": "相机标定残差 RMS 9.7 px（> 5 px），AI 概念图透视不自洽，接受最小二乘最优解"
+        },
+        {
+          "at": "2026-10-27",
+          "stage": 8,
+          "decision": "双滚筒按工程布置：2# 滚筒在 1# 后下方，M1/G1 在下层平台，主机位被输送带遮挡"
+        },
+        {
+          "at": "2026-10-27",
+          "stage": 8,
+          "decision": "托辊第 1 组离机头 1.0 m、间距 1.2 m；屋面梁底 3.6 m；吊轨在皮带上方，机器人定稿时刻 4.5 m"
+        },
+        {
+          "at": "2026-10-27",
+          "stage": 9,
+          "decision": "第 35 组（42 m）在主机位画面外：热点钉左边缘 + 箭头，点击镜头飞过去"
+        },
+        {
+          "at": "2026-10-27",
+          "stage": 9,
+          "decision": "舞台用 1920×1080 设计像素 + transform: scale（不走 rem），面板样式 board.no-convert.css"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 11,
+          "decision": "两轮评审 3.4 / 10 停滞，用户决定放开相机不手调：主机位按定稿构图摆（scripts/coal-prep/compose_camera.py），标定解保留在 calib/camera-fit.json"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 11,
+          "decision": "用户决定热点进画面：劣化托辊由第 35 组（42 m）改为第 5 组（6 m），热点温升 6.3 ℃ 使定稿时刻峰值仍为 19.8 ℃"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 11,
+          "decision": "用户决定 2# 驱动组（G1 / M1）按定稿放在 1# 驱动组后上方的抬高平台，不画到 2# 滚筒的传动轴"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 11,
+          "decision": "光照图后处理去饱和 55 %；多材质物体的光照图从父节点 extras 取（修 bug）"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 11,
+          "decision": "顶栏去掉全部页签，标题改为居中梯形标题牌"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 11,
+          "decision": "用户决定保持当前画面（r12 评审 4.8 / 10），不再继续冲分；遗留问题记在 11-review-report.md"
+        }
+      ],
+      "openIssues": [
+        "docs/ 被 .gitignore 排除，设计稿与阶段文档只在本地"
+      ]
     }
   }
 }
