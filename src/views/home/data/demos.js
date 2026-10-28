@@ -3,6 +3,7 @@
  * ----------------------------------------------------------
  * 首页的全部内容都来自这里。新增演示的步骤：
  *   1. 在 DEMOS 末尾追加一项（末尾即「最新上线」，作品墙视图里占大格）；
+ *      首页的展示顺序和卡片序号按文件末尾的 HOME_DEMOS，不是 DEMOS 的原顺序；
  *   2. 在 src/router/index.js 注册该演示的路由；
  *   3. 启动开发服务器后运行 scripts/capture-home-previews.mjs 生成预览图。
  * 页面与组件都不用改。
@@ -323,4 +324,30 @@ export const DEMOS = [
     accent: "#ff3b30",
     preview: "home/mine-fire.webp"
   }
+]
+
+/**
+ * 排在首页最后的演示（2026-10-28 用户指定），按 key 列出。
+ * 只影响首页的展示顺序和卡片序号；「最新上线」仍是 DEMOS 末项。
+ */
+const REAR = [
+  "school",
+  "city",
+  "hometown",
+  "hospital",
+  "waiting",
+  "smart-ranch"
+]
+
+/** 最新上线：DEMOS 末项，作品墙视图里占 2×2 大格 */
+export const NEWEST = DEMOS[DEMOS.length - 1]
+
+/**
+ * 首页展示顺序（两个视图的排列和卡片序号都按它）：
+ * 最新上线排第一，接着是其余演示，REAR 里的排最后；后两组内部都保持上线顺序
+ */
+export const HOME_DEMOS = [
+  NEWEST,
+  ...DEMOS.filter((d) => d !== NEWEST && !REAR.includes(d.key)),
+  ...DEMOS.filter((d) => d !== NEWEST && REAR.includes(d.key))
 ]

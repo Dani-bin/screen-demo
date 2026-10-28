@@ -3,7 +3,7 @@
   ----------------------------------------------------------
   顶部两行：上行「标题 + 数量 + 搜索」，下行行业筛选（宽度不够时整颗 chip 折到下一行，chip 和标题自身不折行）；
   下方 4 列卡片网格，区域内纵向滚动，演示再多也能全部浏览。
-  未筛选、未搜索时，最新上线的演示（DEMOS 末项）占 2×2 大格，展示简介、指标与进入按钮；
+  未筛选、未搜索时，列表首项（最新上线，见 demos.js 的 HOME_DEMOS）占 2×2 大格，展示简介、指标与进入按钮；
   筛选或搜索后改为统一的小卡片，按原顺序排列。
   下方还有卡片没露出来时，底部渐隐并提示「向下滚动查看更多 · 还有 N 个」。
 -->
@@ -156,14 +156,15 @@
     () => category.value === ALL && !keyword.value.trim()
   )
 
-  /** 网格里的演示：有大格时把最新上线（末项）提到最前，其余保持原顺序 */
-  const list = computed(() => {
-    const items = filterDemos(props.demos, category.value, keyword.value)
-    if (!featured.value || items.length < 2) return items
-    return [items[items.length - 1], ...items.slice(0, -1)]
-  })
+  /**
+   * 网格里的演示，按传入顺序排列。传入的 HOME_DEMOS 已把最新上线排在首位，
+   * 所以有大格时首项就是大格
+   */
+  const list = computed(() =>
+    filterDemos(props.demos, category.value, keyword.value)
+  )
 
-  /** 卡片编号固定取演示在 DEMOS 里的序号，筛选后不变 */
+  /** 卡片编号固定取演示在传入列表（HOME_DEMOS）里的序号，筛选后不变 */
   const numberOf = (d) => props.demos.indexOf(d) + 1
 
   const resetFilter = () => {

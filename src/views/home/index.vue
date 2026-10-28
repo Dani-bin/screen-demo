@@ -11,8 +11,8 @@
   <div class="home-page" :class="{ 'is-dark': view === 'spotlight' }">
     <HomeHead v-model:view="view" class="home-head-bar" />
     <Transition name="view" mode="out-in">
-      <WallView v-if="view === 'wall'" :demos="DEMOS" @enter="enterDemo" />
-      <SpotlightView v-else :demos="DEMOS" @enter="enterDemo" />
+      <WallView v-if="view === 'wall'" :demos="HOME_DEMOS" @enter="enterDemo" />
+      <SpotlightView v-else :demos="HOME_DEMOS" @enter="enterDemo" />
     </Transition>
   </div>
 </template>
@@ -21,7 +21,8 @@
   import HomeHead from "./components/HomeHead.vue"
   import WallView from "./components/WallView.vue"
   import SpotlightView from "./components/SpotlightView.vue"
-  import { DEMOS } from "./data/demos"
+  // HOME_DEMOS 是首页展示顺序：最新上线排第一，指定的几个早期演示排最后
+  import { HOME_DEMOS } from "./data/demos"
 
   /**
    * 视图取值与本地记忆的键名。
