@@ -303,5 +303,24 @@ export const DEMOS = [
     // 取自定稿的煤流安全橙
     accent: "#f97316",
     preview: "home/coal-prep.webp"
+  },
+  {
+    key: "mine-fire",
+    path: "/mine-fire",
+    name: "矿井智能防灭火与应急避灾",
+    en: "MINE FIRE & EVACUATION",
+    subTitle: "青崖煤矿 · 2# 煤层",
+    category: "智慧矿山",
+    desc: "按 2# 煤层避灾路线图（CAD）建三维巷网：井下四个硐室柜内全氟己酮自动灭火，光纤 / 烟雾 / CO 双参量复合确认后断电、关防火阀、30 s 延时喷放；人员定位联动上风侧、下风侧两路撤离，整段火情演练循环回放。",
+    tags: ["CAD 巷网孪生", "双参量联动灭火", "避灾路线演练"],
+    // 依据：mine-fire/data/site.js 的 CHAMBERS（4 个硐室、灭火装置合计 62 台）与 data/plan.json 的 corridors（巷道组合计 12 575 m）
+    stats: [
+      { value: "4", unit: "个", key: "监控硐室" },
+      { value: "62", unit: "台", key: "全氟己酮装置" },
+      { value: "12.6", unit: "km", key: "巷网长度" }
+    ],
+    // 取自定稿的火警红
+    accent: "#ff3b30",
+    preview: "home/mine-fire.webp"
   }
 ]

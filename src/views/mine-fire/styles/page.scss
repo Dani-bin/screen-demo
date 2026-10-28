@@ -1,0 +1,372 @@
+/*
+ * 矿井智能防灭火与应急避灾 · 页面骨架与交互态
+ * 定稿里没有的部分：舞台、画布、加载层、可点元素、场景标签容器，以及正常 / 预警 / 倒计时 / 复位各阶段的状态色。
+ * 面板本身的样式在 board.scss（定稿移植），这里只补充，不改定稿的规则。
+ */
+.mine-fire-page {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--bg-top), var(--bg));
+  font-family: var(--font-body);
+  color: var(--text-2);
+  // Tailwind preflight 把全局行高设成 1.5；定稿按浏览器默认行高画，这里还原，否则面板装不下
+  line-height: normal;
+  // 全站 body 设了灰度抗锯齿 + optimizeLegibility、label 加粗（index.scss）；定稿 HTML 都是浏览器默认，这里还原，
+  // 否则面板文字笔画和定稿逐像素对不上
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: auto;
+  label {
+    font-weight: normal;
+  }
+
+  // preflight 把 svg 设成 display: block，定稿里的图标 / 图表 svg 是行内的
+  svg {
+    display: inline;
+    vertical-align: baseline;
+  }
+  // preflight 把 ol 的列表样式清掉了，定稿也是无序号，保持
+
+  > .scene {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  // 舞台：1920 × 1080 设计稿（10 rem × 5.625 rem），位置由页面按窗口居中
+  .stage {
+    position: absolute;
+    width: 1920px;
+    height: 1080px;
+    pointer-events: none;
+    .hd,
+    .col,
+    .bottom,
+    .pick,
+    .views,
+    .tools,
+    .play {
+      pointer-events: auto;
+    }
+  }
+  .vignette,
+  .scan,
+  .tags,
+  .overlay {
+    position: absolute;
+    inset: 0;
+  }
+  .tags,
+  .overlay {
+    pointer-events: none;
+  }
+  .pick {
+    cursor: pointer;
+  }
+  // 定稿面板用了毛玻璃模糊（backdrop-filter）；页面底下是每帧重绘的三维画布，二十几块面板逐帧重新模糊，
+  // 实测帧率从约 48 掉到 29（无头 Chrome）。面板底色本来就是 78 % 不透明的深色，去掉模糊几乎看不出差别
+  .pn > .pn-h,
+  .pn > .pn-b {
+    backdrop-filter: none;
+  }
+
+  /* ---------------- 加载 / 报错 ---------------- */
+  .scene-loading,
+  .scene-error {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    color: var(--text-2);
+    background: var(--bg);
+  }
+  .scene-error {
+    color: #ff8a80;
+  }
+
+  /* ---------------- 顶栏页签可点 ---------------- */
+  .hd-nav a {
+    cursor: pointer;
+  }
+
+  /* ---------------- 硐室状态：预警 / 复位（定稿只画了正常、火警、故障、离线） ---------------- */
+  .ds.warn {
+    border-color: rgba(250, 204, 21, 0.5);
+    border-left-color: var(--warn);
+    background: linear-gradient(
+      90deg,
+      rgba(250, 204, 21, 0.16),
+      rgba(10, 32, 58, 0.45)
+    );
+  }
+  .ds.reset {
+    border-left-color: var(--ok);
+  }
+  .ds.sel {
+    outline: 1px solid var(--hair-strong);
+  }
+  .pill.warn {
+    color: #fff3bf;
+    border-color: var(--warn);
+    background: rgba(250, 204, 21, 0.22);
+  }
+
+  /* ---------------- 当前火警：预警黄 / 复位绿 / 正常 ---------------- */
+  .pn.warnp {
+    border-color: rgba(250, 204, 21, 0.45);
+  }
+  .pn.warnp > .pn-h {
+    background: linear-gradient(
+      90deg,
+      rgba(250, 204, 21, 0.32),
+      rgba(8, 22, 38, 0.78) 70%
+    ) !important;
+  }
+  .pn.okp > .pn-h {
+    background: linear-gradient(
+      90deg,
+      rgba(52, 211, 153, 0.3),
+      rgba(8, 22, 38, 0.78) 70%
+    ) !important;
+  }
+  .fire-ico.warnico {
+    border-color: var(--warn);
+    background: radial-gradient(
+      circle,
+      rgba(250, 204, 21, 0.4),
+      rgba(250, 204, 21, 0.06)
+    );
+    box-shadow: 0 0 14px rgba(250, 204, 21, 0.5);
+  }
+  .fire-ico.safe {
+    border-color: var(--ok);
+    background: radial-gradient(
+      circle,
+      rgba(52, 211, 153, 0.35),
+      rgba(52, 211, 153, 0.05)
+    );
+    box-shadow: 0 0 14px rgba(52, 211, 153, 0.4);
+  }
+  .fire-ico.safe svg {
+    color: #d1fae5;
+  }
+  .fire-dur.warnd b {
+    color: var(--warn);
+    text-shadow: 0 0 12px rgba(250, 204, 21, 0.5);
+  }
+  .fire-dur.safe b {
+    color: var(--ok);
+    text-shadow: 0 0 12px rgba(52, 211, 153, 0.5);
+  }
+  .btn.stopb {
+    color: #fff;
+    border-color: var(--fire);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 59, 48, 0.55),
+      rgba(255, 59, 48, 0.2)
+    );
+    box-shadow: var(--fire-glow);
+  }
+  .jd label svg {
+    color: var(--text-3);
+  }
+  .jd.hit label svg {
+    color: var(--fire);
+  }
+
+  /* ---------------- 联动流程：未到的步骤变灰，倒计时步骤闪 ---------------- */
+  .steps li.pending {
+    opacity: 0.45;
+  }
+  .steps li.pending .nd {
+    border-color: var(--off);
+  }
+  .steps li.cd .nd {
+    border-color: var(--fire);
+    box-shadow: var(--fire-glow);
+    animation: mf-blink 0.8s steps(2) infinite;
+  }
+  .steps li.cd b,
+  .steps li.cd time {
+    color: #ff8a80;
+  }
+
+  /* ---------------- 人员撤离：未开始撤离时路线变灰 ---------------- */
+  .rt.idle {
+    opacity: 0.5;
+  }
+  // 避难硐室人数："+11 途中"时定稿的 120 px 列放不下会换行，改成按内容宽、不换行
+  .rf {
+    grid-template-columns: 1fr auto;
+  }
+  .rf-cap {
+    white-space: nowrap;
+  }
+
+  /* ---------------- 横幅：预警黄、复位绿（定稿是火警红） ---------------- */
+  .banner.warn {
+    color: #fff6cf;
+    border-color: rgba(250, 204, 21, 0.75);
+    background: linear-gradient(
+      90deg,
+      rgba(110, 86, 6, 0.85),
+      rgba(60, 46, 6, 0.75)
+    );
+    box-shadow:
+      0 0 24px rgba(250, 204, 21, 0.35),
+      inset 0 0 18px rgba(250, 204, 21, 0.25);
+  }
+  .banner.warn .bn-k {
+    color: #1a1400;
+    background: var(--warn);
+  }
+  .banner.reset {
+    color: #d9fbe9;
+    border-color: rgba(52, 211, 153, 0.7);
+    background: linear-gradient(
+      90deg,
+      rgba(6, 80, 52, 0.85),
+      rgba(6, 46, 32, 0.75)
+    );
+    box-shadow: 0 0 24px rgba(52, 211, 153, 0.3);
+  }
+  .banner.reset .bn-k {
+    color: #002a1a;
+    background: var(--ok);
+  }
+  .banner.countdown {
+    animation: mf-pulse 1s ease-in-out infinite;
+  }
+
+  /* ---------------- 演练回放控制（定稿之外新增） ---------------- */
+  .upd .play {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 2px;
+    a {
+      display: inline-grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border: 1px solid var(--hair);
+      background: rgba(4, 18, 34, 0.75);
+      cursor: pointer;
+    }
+    svg {
+      width: 12px;
+      height: 12px;
+      color: var(--brand);
+      stroke-width: 2;
+    }
+    b {
+      font-family: var(--font-num);
+      font-weight: normal;
+      color: var(--brand);
+    }
+  }
+
+  /* ---------------- 场景标签容器（锚点光点、引线、预警 / 复位的火点卡） ---------------- */
+  .tags .leaders {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: visible;
+  }
+  .tags .leaders line {
+    stroke-width: 1.4;
+    stroke: rgba(43, 217, 254, 0.8);
+    filter: drop-shadow(0 0 3px rgba(43, 217, 254, 0.8));
+  }
+  .tags .leaders line.rf {
+    stroke: rgba(57, 240, 138, 0.85);
+    filter: drop-shadow(0 0 3px rgba(57, 240, 138, 0.8));
+  }
+  .tags .leaders line.fault {
+    stroke: rgba(251, 146, 60, 0.85);
+  }
+  .tags .leaders line.fire {
+    stroke: var(--fire);
+    stroke-width: 1.6;
+    filter: drop-shadow(0 0 4px rgba(255, 59, 48, 0.9));
+  }
+  .tags .leaders line.warn {
+    stroke: var(--warn);
+    filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.9));
+  }
+  .anc-pt {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    border-radius: 50%;
+    background: var(--brand);
+    box-shadow: 0 0 8px var(--brand);
+  }
+  .anc-pt.rf {
+    background: var(--route);
+    box-shadow: var(--route-glow);
+  }
+  .anc-pt.fault {
+    background: var(--fault);
+    box-shadow: 0 0 8px var(--fault);
+  }
+  .tags .tg.pick {
+    pointer-events: auto;
+  }
+  .tags .firecard {
+    pointer-events: auto;
+  }
+  .firecard.warn {
+    border-color: var(--warn);
+    background: linear-gradient(
+      180deg,
+      rgba(90, 70, 6, 0.9),
+      rgba(36, 28, 4, 0.86)
+    );
+    box-shadow: 0 0 14px rgba(250, 204, 21, 0.5);
+  }
+  .firecard.reset {
+    border-color: var(--ok);
+    background: linear-gradient(
+      180deg,
+      rgba(6, 70, 46, 0.9),
+      rgba(4, 32, 22, 0.86)
+    );
+    box-shadow: 0 0 14px rgba(52, 211, 153, 0.45);
+  }
+  .firept.warn {
+    background: var(--warn);
+    box-shadow:
+      0 0 0 6px rgba(250, 204, 21, 0.25),
+      0 0 14px rgba(250, 204, 21, 0.65);
+  }
+  .firept.reset {
+    background: var(--ok);
+    box-shadow: 0 0 0 6px rgba(52, 211, 153, 0.25);
+  }
+  .shaft {
+    transform: translate(-50%, -100%);
+  }
+}
+
+@keyframes mf-blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+@keyframes mf-pulse {
+  50% {
+    box-shadow:
+      0 0 36px rgba(255, 59, 48, 0.7),
+      inset 0 0 22px rgba(255, 59, 48, 0.4);
+  }
+}
