@@ -1,0 +1,27 @@
+{
+ "note": "从定稿概念图反求（docs/design/mine-fire/07-camera.json）：固定正南看向正北，透视视场 20°；7 个特征点最小二乘，残差 RMS 45.9 px（概念图与 CAD 比例不自洽，按最优解接受）",
+ "rms": 45.9,
+ "pitchDeg": 49.35,
+ "fovDeg": 20,
+ "distance": 17784.9,
+ "position": [
+  372.1,
+  13492.6,
+  12266.7
+ ],
+ "target": [
+  372.1,
+  0.0,
+  680.0
+ ],
+ "up": [
+  0,
+  1,
+  0
+ ],
+ "imageCenter": [
+  1003.2,
+  470.8
+ ],
+ "focalDesign": 3062.49
+}

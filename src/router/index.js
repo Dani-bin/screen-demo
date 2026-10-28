@@ -84,6 +84,12 @@ const routes = [
     component: () => import("@/views/smart-conveyor/index.vue")
   },
   {
+    // 矿井智能防灭火与应急避灾：2# 煤层避灾路线图（CAD，企业名虚构为青崖煤矿）→ 三维巷网，井下硐室全氟己酮自动灭火 + 火情联动 + 人员撤离演练
+    path: "/mine-fire",
+    name: "MineFire",
+    component: () => import("@/views/mine-fire/index.vue")
+  },
+  {
     // 数字楼宇：城市（成都高新区）→ 园区 → 楼宇 → 楼层 → 房间 五级钻取
     path: "/building",
     name: "Building",

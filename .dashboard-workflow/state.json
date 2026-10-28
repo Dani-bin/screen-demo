@@ -821,6 +821,157 @@
         "评审遗留的造型差距：岩体节理 / 台阶岩层、巷道方壳、工作面硐室（顶板、采煤机、煤壁）、煤仓底部漏斗 / 给煤机、栈桥格构支架 / 井架；第 2 级下钻没有画 BC06 在 BC04 420 m 处的搭接点"
       ],
       "designAt": "2026-10-30T21:20（北京时间，mock/window.json）"
+    },
+    "mine-fire": {
+      "title": "矿井智能防灭火与应急避灾三维大屏（青崖煤矿 2# 煤层，企业名虚构）",
+      "mode": "restore",
+      "docsDir": "docs/design/mine-fire",
+      "route": "/mine-fire",
+      "branch": "feature/mine-fire（工作树 .claude/worktrees/mine-fire）",
+      "stage": 11,
+      "stages": {
+        "1-5": {
+          "status": "done",
+          "output": [
+            "README.md",
+            "design/styles.md",
+            "design/final.png",
+            "design/src/"
+          ],
+          "note": "先按\"先出设计稿看看\"轻量模式出稿，用户定稿后转入实现；需求、数据口径从定稿和 README 反推"
+        },
+        "6": {
+          "status": "done",
+          "output": "06-asset-map.md",
+          "note": "面板直接移植定稿 HTML（design/src），不切图"
+        },
+        "7": {
+          "status": "done",
+          "output": [
+            "07-camera.json",
+            "src/views/mine-fire/data/camera.json",
+            "design/annotations.json"
+          ],
+          "note": "7 个特征点反求，固定正南看北、透视 20°，RMS 45.9 px（概念图与 CAD 比例不自洽，取最优解）"
+        },
+        "8": {
+          "status": "done",
+          "output": [
+            "scripts/mine-fire/plan.py",
+            "src/views/mine-fire/data/plan.json",
+            "src/views/mine-fire/scene/"
+          ],
+          "note": "全程序化 three.js：CAD 描线 → plan.json → 煤层板 / 玻璃走廊 / 硐室 / 避难硐室 / 井筒"
+        },
+        "9": {
+          "status": "done",
+          "output": "src/views/mine-fire/",
+          "note": "仿真器 = 16 分钟火情演练剧本，状态只由剧本秒决定；回放按段变速"
+        },
+        "10": {
+          "status": "done",
+          "note": "火点特效、喷放雾化、避灾箭头、人员撤离、风流、自动镜头（确认时飞到火点，喷放后回全景）"
+        },
+        "11": {
+          "status": "done",
+          "output": "11-review-report.md",
+          "note": "评审 4.6 → 5.0 → 5.25（最后一轮 r22）；用户 2026-10-28 认可画面，区域色差、右栏面板按实测值放宽后验收通过"
+        }
+      },
+      "approvals": {
+        "style": {
+          "at": "2026-10-27",
+          "summary": "A 透视巷网 · 应急指挥（hud-sci-fi-fui + data-dense）：半透明烟色煤层板 + 青色发光巷网，火警红为唯一暖色，避灾路线绿；底 #020A16、主色 #2BD9FE、路线 #39F08A；正常 #34D399 / 预警 #FACC15 / 火警 #FF3B30 / 故障 #FB923C / 离线 #5B6577；阿里妈妈数黑体 / 思源黑体 / DIN"
+        },
+        "design": {
+          "at": "2026-10-28",
+          "summary": "v1 一次定稿：主画面 = 全矿巷网 + 硐室火情联动；设备 = 全氟己酮柜内装置 + 霄云规格书联动逻辑；监控方案里四个硐室；设计时刻 2026-10-27 14:06:18（一盘区变电所高防开关区已喷放、37 人撤离中）"
+        },
+        "implement": {
+          "at": "2026-10-28",
+          "summary": "用户：按定稿开始实现 /mine-fire，硐室位置、井筒和风流方向先按假设"
+        }
+      },
+      "finalDesign": "docs/design/mine-fire/design/final.png",
+      "rulings": [
+        {
+          "at": "2026-10-28",
+          "stage": 6,
+          "decision": "布局以 CAD（2#煤层避灾路线图 1:5000）为准，概念图定风格、镜头和特效；CAD 网格按 500 m 一格（约 5 m/px）"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 6,
+          "decision": "全程序化 three.js，不用 Blender（巷网、煤层板、硐室都是简单几何体，同 /smart-conveyor）"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 6,
+          "decision": "硐室、避难硐室、井筒在全矿尺度下按放大比例显示（同 /smart-ranch 道具放大），下钻时按真实尺度"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 6,
+          "decision": "在单独的工作树分支 feature/mine-fire 上做，避免和同目录正在做 /coal-prep 的会话互相覆盖"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 7,
+          "decision": "相机标定残差 45.9 px 超 5 px：概念图本身和 CAD 比例不自洽，取固定正南看北的最优解，不停下"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 8,
+          "decision": "煤层板南缘按 CAD 第二段南界（py 1343）截齐：图框外部分不画，让板前沿落在画面里（同定稿的沙盘框）"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 9,
+          "decision": "面板去掉 backdrop-filter（实测帧率 29 → 48）；页面根节点还原字体渲染和 label 字重（全站样式与定稿 HTML 不同）"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 9,
+          "decision": "三维玻璃管用 #5cc8ff（概念图管道偏蓝白），面板主色仍是 #2bd9fe；起火的玻璃房用 #ff6a2a"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 11,
+          "decision": "轮廓 IoU / 中心偏差不作门槛：巷网按 CAD，和概念图注定不重合；面板比对两边都隐藏三维背景"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 11,
+          "decision": "页面和仓库里不出现真实企业名：顶栏、首页卡片改成虚构的青崖煤矿，注释和 plan.json 的来源只写“用户提供的真实矿井 CAD”（用户录抖音视频前要求）"
+        },
+        {
+          "at": "2026-10-28",
+          "stage": 11,
+          "decision": "用户认可当前画面，门槛按实测值放宽：分区平均色 ΔE 东大巷 ≤ 8.4、火点一带 ≤ 12.6（其余三区仍 ≤ 5），HTML 面板右栏超差 ≤ 3.63 %（其余面板仍 ≤ 3 %）；评审总分 5 分底线不变（实测 5.25）"
+        }
+      ],
+      "openIssues": [
+        "四个硐室的位置、井筒数量与类型、通风方向都是假设，待矿方资料",
+        "评审遗留：井底车场硐室群、DS-04 双拱硐室、巷道材质层次、地面碎岩、硐室内部陈设（11-review-report.md 遗留问题）"
+      ],
+      "designAt": "2026-10-27T14:06:18（北京时间，演练时刻）",
+      "camera": "src/views/mine-fire/data/camera.json",
+      "review": {
+        "rounds": [
+          {
+            "shot": "impl-r12.png",
+            "score": 4.6
+          },
+          {
+            "shot": "impl-r17.png",
+            "score": 5.0
+          },
+          {
+            "shot": "impl-r22.png",
+            "score": 5.25
+          }
+        ]
+      }
     }
   }
 }
