@@ -1,0 +1,23 @@
+{
+  "model": "persp",
+  "image": [1536, 864],
+  "azimuthDeg": 136.17974250249182,
+  "pitchDeg": 10.424095030185715,
+  "rollDeg": 1.5,
+  "fovDeg": 30.183832576010794,
+  "distance": 10.0,
+  "targetWorld": [-1.778494554977529, 0.5053541935970394, 1.64700853188218],
+  "residualPx": {
+    "rms": 11.86
+  },
+  "rects": [],
+  "three": {
+    "type": "PerspectiveCamera",
+    "position": [5.3176, 3.4563, 6.3044],
+    "target": [-1.7785, 1.647, -0.5054],
+    "up": [-0.1486, 0.9832, -0.1063],
+    "fov": 30.1838,
+    "aspect": 1.7777777777777777
+  },
+  "note": "按定稿构图摆的主机位（scripts/coal-prep/compose_camera.py），标定解见 docs/design/coal-prep/calib/camera-fit.json"
+}

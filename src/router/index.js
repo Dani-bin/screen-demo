@@ -84,6 +84,12 @@ const routes = [
     component: () => import("@/views/smart-conveyor/index.vue")
   },
   {
+    // 井上地面输送系统：103 原煤上仓带式输送机机头特写（Blender 建模 + Cycles 光照图），输送机安全预警与智能运维
+    path: "/coal-prep",
+    name: "CoalPrep",
+    component: () => import("@/views/coal-prep/index.vue")
+  },
+  {
     // 数字楼宇：城市（成都高新区）→ 园区 → 楼宇 → 楼层 → 房间 五级钻取
     path: "/building",
     name: "Building",

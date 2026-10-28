@@ -260,5 +260,25 @@ export const DEMOS = [
     // 取自定稿的煤流琥珀
     accent: "#ffb23e",
     preview: "home/smart-conveyor.webp"
+  },
+  {
+    key: "coal-prep",
+    path: "/coal-prep",
+    name: "地面输送 · 带式输送机安全孪生",
+    en: "SURFACE BELT CONVEYOR TWIN",
+    subTitle: "青峰煤矿（虚构）· 103 原煤上仓输送机机头",
+    category: "智慧矿山",
+    desc: "井上栈桥里一台带式输送机的机头特写：双滚筒驱动部的温振、206 组托辊健康、光纤测温沿线热力、纵撕 / X 光 / 跑偏检测和吊轨巡检机器人；第 35 组托辊轴承劣化由平台提前 5.5 天预警，先于超温保护跳闸。",
+    tags: ["机头驱动部特写", "Blender + Cycles 光照烘焙", "平台预警 vs 保护跳闸"],
+    // 依据：coal-prep/sim/simulator.js 的 FOCUS（248 m、托辊间距 1.2 m → 206 组）、DRIVE（5 个温振测点）
+    // 与第 35 组托辊的劣化周期（首次异响到外推跳闸 5.5 天）
+    stats: [
+      { value: "206", unit: "组", key: "上托辊" },
+      { value: "5", unit: "个", key: "驱动部温振测点" },
+      { value: "5.5", unit: "天", key: "预警提前量" }
+    ],
+    // 取自定稿的煤流安全橙
+    accent: "#f97316",
+    preview: "home/coal-prep.webp"
   }
 ]
