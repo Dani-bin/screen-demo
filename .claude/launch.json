@@ -7,6 +7,13 @@
       "runtimeArgs": ["scripts/dev-http.mjs"],
       "port": 8893,
       "autoPort": true
+    },
+    {
+      "name": "mine-fire",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd .claude/worktrees/mine-fire && exec node scripts/dev-http.mjs"],
+      "port": 8897,
+      "autoPort": true
     }
   ]
 }
