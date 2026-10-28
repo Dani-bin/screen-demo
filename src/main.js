@@ -13,8 +13,11 @@ import "amfe-flexible"
 import "@/assets/styles/index.scss"
 import App from "./App.vue"
 import router from "@/router"
+import { installTopProgress } from "@/components/topProgress.js"
 
 const app = createApp(App)
+// 切换页面、加载三维模型时显示顶部进度条
+installTopProgress(router)
 app.use(router)
 
 // 挂载实例

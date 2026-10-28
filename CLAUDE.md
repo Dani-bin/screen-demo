@@ -74,7 +74,7 @@ The screen scales via rem, not media queries. **Author all sizes in `px`** — t
 
 ## Architecture
 
-- **Entry**: `src/main.js` → imports Tailwind base, `amfe-flexible` and `index.scss`, registers the router and mounts `App.vue`. There is no store, UI library or route guard.
+- **Entry**: `src/main.js` → imports Tailwind base, `amfe-flexible` and `index.scss`, registers the router and mounts `App.vue`. There is no store, UI library or auth guard. The only global UI is the top loading bar (`src/components/TopProgress.vue` + `topProgress.js`, installed on the router in `main.js`): it covers the lazy route chunk plus whatever the page then loads through three.js's `DefaultLoadingManager` (GLTF / texture loaders without their own manager); routes that never use three.js set `meta: { three: false }` so the bar does not pull three in. The browser pane's screenshots do not show the top few pixels of the viewport, so check the bar through the DOM or headless Chrome.
 - **Routing**: `src/router/index.js`, **hash history**. Top-level pages are lazy-loaded views; the registered routes are `/home`, `/school`, `/city`, `/charging`, `/building`, `/energy`, `/hometown`, `/hospital`, `/waiting`, `/smart-mine`, `/smart-ranch`, `/smart-port`, `/drone`, `/smart-conveyor`, `/coal-prep` and `/mine-fire`. Default redirect is `/home`.
   - `/home` is the demo showcase homepage with two views switched by the header toggle (`?view=wall|spotlight`, last choice kept in localStorage under `home:view:v2`, default wall since 2026-10-27; the key was bumped then so old remembered spotlight choices reset once):
     `wall` (作品墙, light) = category chips + search + a scrolling 4-column card grid where the newest demo (the last `DEMOS` entry) gets a 2×2 tile;

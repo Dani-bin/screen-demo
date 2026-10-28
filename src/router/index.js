@@ -15,6 +15,8 @@ const routes = [
     // 演示中心首页：展示各演示的介绍与预览图，点击进入
     path: "/home",
     name: "Home",
+    // 首页不用 three.js：顶部进度条不为它去挂模型加载回调（免得多下载 three）
+    meta: { three: false },
     component: () => import("@/views/home/index.vue")
   },
   {
