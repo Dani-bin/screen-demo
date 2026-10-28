@@ -78,6 +78,12 @@ const routes = [
     component: () => import("@/views/smart-ranch/index.vue")
   },
   {
+    // 智慧港口：上海洋山四期全自动化集装箱码头（真实布局示意 + 周边 Sentinel-2 影像），全息孪生风格，船舶装卸与设备协同
+    path: "/smart-port",
+    name: "SmartPort",
+    component: () => import("@/views/smart-port/index.vue")
+  },
+  {
     // 带式输送机安全预警与集控孪生：虚构井工煤矿主煤流（6 条皮带、3 个煤仓），剖面沙盘 + 人机料环预警 + 集控
     path: "/smart-conveyor",
     name: "SmartConveyor",

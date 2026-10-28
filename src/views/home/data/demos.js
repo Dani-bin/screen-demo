@@ -223,6 +223,25 @@ export const DEMOS = [
     preview: "home/smart-ranch.webp"
   },
   {
+    key: "smart-port",
+    path: "/smart-port",
+    name: "智慧港口 · 数字孪生",
+    en: "SMART PORT DIGITAL TWIN",
+    subTitle: "上海洋山四期 · 全自动化集装箱码头",
+    category: "智慧港口",
+    desc: "按公开参数还原洋山四期 2350 m 岸线、61 个箱区，28 台双小车岸桥、121 台轨道吊、145 台 AGV 全息孪生；周泊位计划驱动船舶靠离泊与装卸，作业路光带串起岸桥、AGV 和箱区，故障告警自动飞到现场。",
+    tags: ["全息孪生", "岸桥 · AGV · 轨道吊协同", "单船作业跟踪"],
+    // 依据：smart-port/data/layout.json 的 cranes（28）、blocks 的 rmg 合计（121）、agvs（145）
+    stats: [
+      { value: "28", unit: "台", key: "双小车岸桥" },
+      { value: "121", unit: "台", key: "自动化轨道吊" },
+      { value: "145", unit: "台", key: "AGV" }
+    ],
+    // 取自定稿的全息青
+    accent: "#19e3ff",
+    preview: "home/smart-port.webp"
+  },
+  {
     key: "drone",
     path: "/drone",
     name: "无人机巡检监控平台",

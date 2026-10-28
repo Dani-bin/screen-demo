@@ -1,0 +1,11 @@
+{
+  "note": "由 scripts/smart-port/prepare.py 生成，不要手改",
+  "u": [-3200.0, 6800.0],
+  "v": [-3600.0, 2600.0],
+  "pixel": 10.0,
+  "width": 1000,
+  "height": 620,
+  "heightEncoding": "R*256+G = (h + 10) * 100",
+  "maxHeight": 123.27095794677734,
+  "attribution": "Contains modified Copernicus Sentinel data 2024–2026; Copernicus DEM GLO-30 © DLR e.V. 2010–2014 and © Airbus 2014–2018 provided under COPERNICUS by the European Union and ESA; ESA WorldCover 2021"
+}
