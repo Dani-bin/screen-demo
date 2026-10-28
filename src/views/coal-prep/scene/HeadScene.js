@@ -738,15 +738,10 @@ export class HeadScene {
     this.composer?.setSize(w, h)
     // 画布对应概念图裁掉顶部 70 px 后的区域（与设计稿场景框一致）
     const [iw, ih] = CAMERA.image
+    // cropTop 平时 = 70（设计稿场景框）；抖音录屏让场景铺满全屏时临时改成 0（docs/design/coal-prep/douyin/helpers.js）
+    const crop = this.cropTop ?? CAMERA.cropTop
     this.camera.aspect = iw / ih
-    this.camera.setViewOffset(
-      iw,
-      ih,
-      0,
-      CAMERA.cropTop,
-      iw,
-      ih - CAMERA.cropTop
-    )
+    this.camera.setViewOffset(iw, ih, 0, crop, iw, ih - crop)
     this.camera.updateProjectionMatrix()
   }
 

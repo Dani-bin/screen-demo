@@ -1573,7 +1573,7 @@
     height: 196px;
   }
   .hoist .chart {
-    height: 128px;
+    height: 186px;
   }
   .chart .grid {
     stroke: rgba(148, 180, 214, 0.1);
@@ -1629,30 +1629,6 @@
   .chart .now-t {
     fill: var(--text);
     font-size: 12px;
-  }
-  .scen {
-    margin-top: 4px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    align-items: center;
-    padding: 0 12px;
-    font-size: 12px;
-    color: var(--text-3);
-  }
-  .scen span {
-    margin-right: 2px;
-  }
-  .scen a {
-    padding: 2px 7px;
-    border: 1px solid var(--hair);
-    color: var(--text-2);
-    font-size: 12px;
-  }
-  .scen a.on {
-    color: var(--text);
-    border-color: var(--platform);
-    background: rgba(167, 139, 250, 0.16);
   }
 
   /* ================= v3：带式输送机专项 ================= */

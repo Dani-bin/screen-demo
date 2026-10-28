@@ -1,5 +1,6 @@
 <!--
-  底部两张图：10 光纤测温剖面（103 全线，含定温 / 差温阈值）、11 今日运量（逐小时，检修班留白）+ 故障剧本按钮
+  底部两张图：10 光纤测温剖面（103 全线，含定温 / 差温阈值）、11 今日运量（逐小时，检修班留白）
+  （故障剧本按钮没做功能，用户 2026-10-28 要求去掉，运量图加高填满面板）
 -->
 <template>
   <div class="bottom">
@@ -75,15 +76,15 @@
         <h3>今日运量 · 103</h3>
         <i>t/h · 累计 {{ fmt(s.flowToday) }} t</i>
       </header>
-      <svg viewBox="0 0 380 104" class="chart">
+      <svg viewBox="0 0 380 148" class="chart">
         <rect
           :x="FX(0)"
           y="6"
           :width="FX(8) - FX(0)"
-          height="80"
+          height="124"
           class="maint"
         />
-        <text :x="(FX(0) + FX(8)) / 2" y="52" class="ax" text-anchor="middle">
+        <text :x="(FX(0) + FX(8)) / 2" y="74" class="ax" text-anchor="middle">
           检修班
         </text>
         <line
@@ -96,7 +97,7 @@
         <text x="34" :y="FY(1000) + 12" class="thr-t">额定 1,000</text>
         <polygon :points="flowArea" class="area" />
         <polyline :points="flowPts" class="line warm" />
-        <line :x1="FX(now)" :x2="FX(now)" y1="4" y2="86" class="nowl" />
+        <line :x1="FX(now)" :x2="FX(now)" y1="4" y2="130" class="nowl" />
         <text :x="FX(now) + 4" y="14" class="now-t">
           现在 {{ s.time.hms.slice(0, 5) }}
         </text>
@@ -104,23 +105,13 @@
           v-for="h in [0, 6, 12, 18, 24]"
           :key="h"
           :x="FX(h)"
-          y="100"
+          y="144"
           class="ax"
           :text-anchor="h === 24 ? 'end' : h === 0 ? 'start' : 'middle'"
         >
           {{ String(h).padStart(2, "0") }}:00
         </text>
       </svg>
-      <div class="scen">
-        <span>故障剧本</span>
-        <a
-          v-for="(n, i) in s.scenarios || SCENARIOS"
-          :key="n"
-          :class="{ on: i === 0 }"
-          title="剧本演示在后续版本实现"
-          >{{ n }}</a
-        >
-      </div>
     </section>
   </div>
 </template>
@@ -130,13 +121,6 @@
 
   const props = defineProps({ d: { type: Object, required: true } })
   const s = computed(() => props.d.s)
-  const SCENARIOS = [
-    "A 托辊劣化",
-    "B 纵撕联锁",
-    "C 溜槽堵料",
-    "D 人员越界",
-    "E 栈桥火情"
-  ]
 
   // 光纤测温剖面：x 0–248 m，y 8–48 ℃
   const TX = (m) => 36 + (m / 248) * 512
@@ -150,7 +134,7 @@
 
   // 今日运量：0–24 点，0–1000 t/h，阶梯线到"现在"为止
   const FX = (h) => 30 + (h / 24) * 340
-  const FY = (v) => 6 + (1 - v / 1000) * 80
+  const FY = (v) => 6 + (1 - v / 1000) * 124
   const now = computed(() => s.value.time.hour + s.value.time.minute / 60)
   const steps = computed(() => {
     const pts = []
