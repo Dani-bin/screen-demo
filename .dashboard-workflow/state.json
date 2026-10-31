@@ -1483,6 +1483,251 @@
           }
         ]
       }
+    },
+    "estate": {
+      "title": "楼盘沙盘三维展示（澜岸云境，虚构楼盘）",
+      "mode": "new",
+      "docsDir": "docs/design/estate",
+      "route": "/estate",
+      "branch": "feature/estate",
+      "stage": 11,
+      "stages": {
+        "1": {
+          "status": "passed",
+          "output": "01-requirements-qa.md"
+        },
+        "2": {
+          "status": "passed",
+          "output": "02-research.md",
+          "note": "联网搜索不可用，业务与视觉结论多为行业常识（标假设），沙盘实物只看过麓湖 2 张照片"
+        },
+        "3": {
+          "status": "passed",
+          "output": [
+            "03-scope.md",
+            "devices.json",
+            "scripts/estate/layout.mjs",
+            "src/views/estate/data/layout.json"
+          ],
+          "note": "16 栋（高层4/洋房8/联排4）704 户，容积率 1.7；编号 B01–B16 + 配套 20 项"
+        },
+        "4": {
+          "status": "passed",
+          "output": [
+            "04-data-spec.md",
+            "mock/",
+            "05-requirement.md",
+            "scripts/estate/mock.mjs"
+          ],
+          "note": "销售状态 7 日快照，data-check 通过；无告警语义，不预置异常"
+        },
+        "5": {
+          "status": "passed",
+          "output": [
+            "design/styles.md",
+            "design/final.png",
+            "design/src/",
+            "README.md"
+          ],
+          "note": "v1 一次定稿；Figma 生图 1 次；冲突清单 9 条见 README.md"
+        },
+        "6": {
+          "status": "passed",
+          "output": "06-asset-map.md",
+          "note": "面板直接移植定稿 HTML，场景全程序化，不切图"
+        },
+        "7": {
+          "status": "passed",
+          "output": [
+            "07-camera.json",
+            "src/views/estate/data/camera.json",
+            "design/annotations.json",
+            "design/annotation-check.png"
+          ],
+          "note": "固定视场角 28° 拟合（calibrate.py 透视拟合退化成近正交，视场角触底 2°），RMS 9.2 px、最大 18.9 px"
+        },
+        "8": {
+          "status": "done",
+          "output": [
+            "src/views/estate/scene/"
+          ],
+          "note": "全程序化 three.js（地面画布 + 窗格贴图 + 凹凸图 + 实例化树 / 灯 / 车）；无 Blender"
+        },
+        "9": {
+          "status": "done",
+          "output": [
+            "src/views/estate/index.vue",
+            "src/views/estate/components/",
+            "src/views/estate/styles/estate.no-convert.css"
+          ],
+          "note": "画布铺满窗口、舞台 1920×1080 缩放；楼栋点选、页签、图层、时间滑块、自动导览"
+        },
+        "10": {
+          "status": "done",
+          "output": [
+            "src/views/estate/scene/tour.js"
+          ],
+          "note": "8 段导览 + 45 s 空闲自动开始；一天光影 tweenTime；开场飞入"
+        },
+        "11": {
+          "status": "blocked",
+          "output": [
+            "11-review-report.md",
+            "shots/"
+          ],
+          "note": "第一阶段 5.1（过 5 分门槛）；用户要求 ≥ 8 分，后续六轮 4.7–4.9 没进步，已汇报，待用户决定是否提交 / 是否换路线"
+        }
+      },
+      "approvals": {
+        "requirements": {
+          "at": "2026-10-30",
+          "summary": "售楼部 1920×1080 大屏，销售带客户看；虚构中型改善盘约 16 栋（高层+洋房+联排）、中央景观湖；纯沙盘占满屏 + 底部浮层；交互：楼栋点选信息卡、日夜光影、配套景观图层、自动导览；目标是实体沙盘质感；不做户型漫游/VR/后端/真实数据"
+        },
+        "style": {
+          "at": "2026-10-30",
+          "summary": "A 展厅暖光 · 象牙白实体沙盘（skeuomorphism + 3d-product-preview）：日间展厅暖色顶光，象牙白楼体 + 多色模型树 + 蓝亚克力水 + 圆形深色底座与极淡玻璃罩；底 #0B0907、面板 #1A1510 磨砂、主色 #C9A86A、强调 #5AA9D6；销售三态 可售 #E9E2D0 / 热销 #E8B04A / 售罄 #7E7A72；思源黑体 + DIN；版式 顶部细条 + 沙盘占满 + 底部胶囊切换条"
+        },
+        "design": {
+          "at": "2026-10-30",
+          "summary": "v1 一次定稿：风格 A，纯沙盘 + 顶部细条 + 底部胶囊切换条，设计时刻 18:00 选中 8 栋；冲突按 README 清单处理（联排以 4 栋为准，乐园西/运动场东，湖放大到 80×56 m）"
+        }
+      },
+      "finalDesign": "docs/design/estate/design/final.png",
+      "camera": "src/views/estate/data/camera.json",
+      "rulings": [
+        {
+          "at": "2026-10-30",
+          "stage": 1,
+          "decision": "放弃真实楼盘还原（规划局反爬、沙盘实物拿不到），改为虚构楼盘；路由 /estate，楼栋编号 B01–B16"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 1,
+          "decision": "画面选纯沙盘 + 底部浮层（用户没选推荐的两侧满栏），不做两侧信息栏"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 3,
+          "decision": "楼盘设定：地块 300×210 m；高层 4 栋(32/26/26/32F) + 洋房 8 栋(7F) + 联排 4 栋(3F，每栋 4 户)；中央景观湖 + 景观轴；户数/容积率/密度从明细算出，绿地率 38% 为设定值"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 4,
+          "decision": "不预置告警类异常（展示型页面无此语义）；状态差异用销售状态分档（可售/热销/售罄）"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 5,
+          "decision": "版式方向定为纯沙盘占满屏 + 顶部细条 + 底部胶囊切换条（沿用用户在阶段 1 的选择），不另问"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 5,
+          "decision": "设计时刻定在 18:00 黄昏（窗灯点亮，与概念图一致）；风格稿的日间 10:00 在实现里另做一档"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 5,
+          "decision": "概念图南排右侧画了 5 栋联排，以布局的 4 栋为准（16 栋是需求硬约束）"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 5,
+          "decision": "按设计稿：儿童乐园在西、运动场在东；景观湖放大到 80×56 m，内侧洋房外移 3 m（layout.mjs 已同步）"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 5,
+          "decision": "数据条配色经 dataviz 校验：已售 #BA8A33、认购 #3F96D4，在售用中性轨道；装饰仍用香槟金 #C9A86A"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 7,
+          "decision": "相机用固定视场角 28° 自己拟合：calibrate.py 透视模型把视场角推到下限 2°、相机退到 9 km 外（近正交，残差 28.7 px），实测视场角 2°–40° 残差只差 3 px"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 7,
+          "decision": "设计稿优先于初版布局：按定稿锚点反投影校正楼栋位置（高层外 ±89/内 ±43，洋房内 ±78/外 ±115，联排 ±57/±89），保持左右对称；高层面宽 34 m、洋房 28 m，底商街收窄到 14 m；标定残差 28.7 → 9.2 px"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 8,
+          "decision": "全程序化 three.js，不用 Blender：地面贴图用画布生成，楼体用窗格贴图，树和车用实例化"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 8,
+          "decision": "阴影图只在光照变化时重画（autoUpdate=false），车不投影，抗锯齿采样 4→2：无头 Chrome 帧率 31→42 fps"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 11,
+          "decision": "评审三轮 4.5 / 4.9 / 5.1，最后一轮刚过 5 分硬性门槛；相机标定残差 12.1 px（门槛 5）和分区 ΔE 均值 5.6（门槛 5）按实测记录，不再硬磨"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 11,
+          "decision": "面板像素差改目视对照（底下三维背景不同，像素差无意义）；轮廓 IoU 无基准多边形，不测"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 11,
+          "decision": "相机固定俯角 46°（原拟合 53°，评审多轮说太陡）；底座南北半轴 208 m"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 11,
+          "decision": "渲染管线：环境反射只挂窗玻璃和金边；接触阴影烘焙进地面代替实时 GTAO（?q=high 才开）；乒乓缓冲去 MSAA、边缘平滑做在镜头通道；辉光半分辨率；树和地面 Lambert"
+        },
+        {
+          "at": "2026-10-30",
+          "stage": 11,
+          "decision": "评审第二阶段 5.1 → 4.7 → 4.9 三轮没进步，按停滞规则停下，向用户汇报并请其选路线（AI 生图贴图 / Blender 烘焙 / 按现状验收）"
+        },
+        {
+          "at": "2026-10-31",
+          "stage": 8,
+          "decision": "用户选 Blender 建模 + 烘焙：楼栋 28 栋和 4 种树冠改成命令行 Blender 建模（scripts/blender/estate/），导出 buildings.glb / trees.glb；楼栋顶点 AO 和地面 AO 烘进模型和贴图，光照阴影仍实时；读不到 GLB 退回程序化版本"
+        },
+        {
+          "at": "2026-10-31",
+          "stage": 8,
+          "decision": "2、3 号楼 26 → 23 层（总户数 704 → 680），湖 78×60 → 78×66，步道 88×70 → 88×76：向定稿的高度比和湖形靠拢，相机标定残差 13.6 → 12.7 px"
+        },
+        {
+          "at": "2026-10-31",
+          "stage": 11,
+          "decision": "第三阶段两轮评审 4.7 / 4.9 仍没超过 5.1，按停滞规则停下汇报"
+        },
+        {
+          "at": "2026-10-31",
+          "stage": 11,
+          "decision": "用户选再做一轮光效专项：辉光阈值降低、路灯光池、双层树冠、水面倒影；评审 4.9 持平，辉光和倒影按意见回收（u8）；停下汇报，不再盲调"
+        }
+      ],
+      "openIssues": [
+        "评分未达用户要求的 8 分（最近一轮 4.9）：暖光溢出、景深气氛、树冠层次、配套建筑细节、水面倒影",
+        "未提交：用户没有要求提交"
+      ],
+      "designAt": "2026-10-30T18:00:00+08:00（北京时间，黄昏；选中 8 栋）",
+      "review": {
+        "scores": [
+          4.5,
+          4.9,
+          5.1,
+          4.7,
+          4.9,
+          4.7,
+          4.9,
+          4.9
+        ],
+        "final": 4.9,
+        "phase1Final": 5.1,
+        "report": "docs/design/estate/11-review-report.md",
+        "fps": "60（无头 Chrome，M2，1920×1080，DPR 1）",
+        "note": "用户要 ≥ 8 分；第二阶段渲染管线 3 轮、第三阶段 Blender 建模 + 烘焙 2 轮、光效专项 1 轮，评审一直 4.7–4.9，没超过第一阶段的 5.1，已停下汇报；u8 是光效回收后的版本（未评审）"
+      }
     }
   }
 }

@@ -1,0 +1,945 @@
+/*
+ * /estate 楼盘沙盘：面板样式（定稿 docs/design/estate/design/final.png 的 CSS 移植）
+ * ----------------------------------------------------------
+ * 文件名以 no-convert.css 结尾：px 不转 rem。舞台是固定 1920×1080 的设计像素盒，用 transform: scale 等比缩放，
+ * 三维画布铺满窗口，舞台在窗口里居中（scene 的投影中心按同一个缩放和原点换算）。
+ * 令牌来自 design/src/tokens.css。不用 backdrop-filter（盖在 WebGL 画布上会让帧率腰斩），面板用不透明度补偿。
+ */
+.estate-page {
+  --bg: #0b0907;
+  --panel: rgba(26, 21, 16, 0.86);
+  --panel-core: rgba(35, 29, 22, 0.94);
+  --line: rgba(201, 168, 106, 0.42);
+  --line-soft: rgba(201, 168, 106, 0.18);
+  --hairline-hi: rgba(255, 240, 210, 0.14);
+  --gold: #c9a86a;
+  --gold-hi: #ffd27a;
+  --lake: #5aa9d6;
+  --ink: #f3ebdd;
+  --ink-2: #bfb19b;
+  --ink-3: #8f8372;
+  --sale-open: #e9e2d0;
+  --sale-hot: #e8b04a;
+  --sale-out: #7e7a72;
+  --bar-sold: #ba8a33;
+  --bar-reserved: #3f96d4;
+  --bar-open: rgba(233, 226, 208, 0.42);
+  --r-shell: 22px;
+  --r-core: 16px;
+  --shell-pad: 6px;
+  --fz-label: 13px;
+  --fz-body: 15px;
+  --fz-num: 28px;
+  --fz-title: 40px;
+  --font-title: "Alimama ShuHeiTi", "Source Han Sans CN", sans-serif;
+  --font-body: "Source Han Sans CN", "PingFang SC", sans-serif;
+  --font-num: "DIN", "Source Han Sans CN", sans-serif;
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fz-body);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+.estate-page * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+.estate-page canvas.scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+.estate-page .stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+.estate-page .stage > *,
+.estate-page .stage .pin,
+.estate-page .stage .tag {
+  pointer-events: auto;
+}
+.estate-page .stage .no-pointer {
+  pointer-events: none;
+}
+/* 顶部和底部暗角：托住面板，不吃鼠标 */
+.estate-page .veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(11, 9, 7, 0.66), transparent 17%),
+    linear-gradient(to top, rgba(11, 9, 7, 0.7), transparent 19%);
+}
+/* 选中某栋时周围轻微压暗，中心位置每帧更新 */
+.estate-page .spot {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-spring);
+}
+.estate-page .spot.on {
+  opacity: 1;
+}
+
+/* ---------- 双层外壳 ---------- */
+.estate-page .shell {
+  position: absolute;
+  padding: var(--shell-pad);
+  border-radius: var(--r-shell);
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+.estate-page .core {
+  position: relative;
+  border-radius: var(--r-core);
+  background: var(--panel-core);
+  box-shadow: inset 0 1px 1px var(--hairline-hi);
+}
+.estate-page .num {
+  font-family: var(--font-num);
+  letter-spacing: 0.01em;
+}
+.estate-page .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line-soft);
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+}
+
+/* ---------- 顶部细条 ---------- */
+.estate-page .top {
+  left: 190px;
+  top: 26px;
+  width: 1540px;
+  border-radius: 34px;
+}
+.estate-page .top .core {
+  display: flex;
+  align-items: center;
+  height: 72px;
+  padding: 0 26px 0 18px;
+  border-radius: 28px;
+}
+.estate-page .brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 470px;
+}
+.estate-page .brand svg {
+  flex: none;
+}
+.estate-page .brand .name {
+  font-family: var(--font-title);
+  font-size: 28px;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+}
+.estate-page .brand .slogan {
+  margin-top: 2px;
+  color: var(--ink-2);
+  font-size: var(--fz-label);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+.estate-page .brand .fake {
+  margin-left: 6px;
+}
+.estate-page .sep {
+  width: 1px;
+  height: 34px;
+  background: var(--line-soft);
+  flex: none;
+}
+.estate-page .metrics {
+  display: flex;
+  flex: 1;
+  justify-content: space-around;
+  padding: 0 10px;
+}
+.estate-page .metric {
+  text-align: center;
+}
+.estate-page .metric .v {
+  font-size: var(--fz-num);
+  line-height: 1.05;
+}
+.estate-page .metric .v i {
+  font-style: normal;
+  margin-left: 3px;
+  color: var(--ink-2);
+  font-size: 14px;
+  font-family: var(--font-body);
+}
+.estate-page .metric .k {
+  margin-top: 3px;
+  color: var(--ink-3);
+  font-size: var(--fz-label);
+  letter-spacing: 0.1em;
+}
+.estate-page .clock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 230px;
+  justify-content: flex-end;
+  text-align: right;
+}
+.estate-page .clock .t {
+  font-size: var(--fz-num);
+  line-height: 1.05;
+  color: var(--gold-hi);
+}
+.estate-page .clock .d {
+  color: var(--ink-2);
+  font-size: var(--fz-label);
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+/* ---------- 信息卡 ---------- */
+.estate-page .card {
+  left: 86px;
+  top: 276px;
+  width: 404px;
+  animation: card-in 0.6s var(--ease-spring);
+}
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.estate-page .card .core {
+  padding: 22px 22px 20px;
+}
+.estate-page .card .row1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.estate-page .card .acts {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.estate-page .iconbtn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--line-soft);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition:
+    color 0.3s var(--ease-spring),
+    border-color 0.3s var(--ease-spring),
+    transform 0.3s var(--ease-spring);
+}
+.estate-page .iconbtn:hover {
+  color: var(--gold-hi);
+  border-color: var(--line);
+}
+.estate-page .iconbtn:active {
+  transform: scale(0.94);
+}
+.estate-page .card h2 {
+  margin-top: 12px;
+  font-family: var(--font-title);
+  font-size: var(--fz-title);
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  font-weight: 400;
+}
+.estate-page .state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1510;
+}
+.estate-page .state::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1a1510;
+  opacity: 0.55;
+}
+.estate-page .state.hot {
+  background: var(--sale-hot);
+}
+.estate-page .state.open {
+  background: var(--sale-open);
+}
+.estate-page .state.out {
+  background: var(--sale-out);
+  color: #fff;
+}
+.estate-page .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.estate-page .tags span {
+  height: 26px;
+  line-height: 24px;
+  padding: 0 11px;
+  border-radius: 13px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 13px;
+}
+.estate-page .stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 18px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+.estate-page .stats div + div {
+  border-left: 1px solid var(--line-soft);
+  padding-left: 16px;
+}
+.estate-page .stats b {
+  font-family: var(--font-num);
+  font-size: var(--fz-num);
+  font-weight: 400;
+  line-height: 1;
+}
+.estate-page .stats b i {
+  font-style: normal;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-2);
+  margin-left: 3px;
+}
+.estate-page .stats small {
+  display: block;
+  margin-top: 5px;
+  color: var(--ink-3);
+  font-size: var(--fz-label);
+  letter-spacing: 0.08em;
+}
+.estate-page .card h3 {
+  margin: 16px 0 8px;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+}
+.estate-page .types div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 7px 0;
+  font-size: var(--fz-body);
+  border-bottom: 1px dashed var(--line-soft);
+}
+.estate-page .types div:last-child {
+  border-bottom: 0;
+}
+.estate-page .types b {
+  font-family: var(--font-num);
+  font-weight: 400;
+  font-size: 20px;
+}
+.estate-page .types b i {
+  font-style: normal;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-left: 2px;
+}
+.estate-page .bar {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+}
+.estate-page .bar span {
+  display: block;
+  height: 8px;
+  min-width: 4px;
+}
+.estate-page .bar span:first-child {
+  border-radius: 4px 0 0 4px;
+}
+.estate-page .bar span:last-child {
+  border-radius: 0 4px 4px 0;
+}
+.estate-page .bar .sold {
+  background: var(--bar-sold);
+}
+.estate-page .bar .rsv {
+  background: var(--bar-reserved);
+}
+.estate-page .bar .opn {
+  background: var(--bar-open);
+}
+.estate-page .legend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.estate-page .legend div {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.estate-page .legend b {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-num);
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--ink);
+}
+.estate-page .legend b i {
+  font-style: normal;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-left: 2px;
+}
+.estate-page .legend em {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 2px;
+}
+.estate-page .desc {
+  margin-top: 14px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.estate-page .facts {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.estate-page .facts div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.estate-page .facts b {
+  font-family: var(--font-num);
+  font-weight: 400;
+  font-size: 20px;
+  color: var(--ink);
+}
+.estate-page .facts b i {
+  font-style: normal;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-left: 2px;
+}
+/* 引线：从信息卡连到楼栋 */
+.estate-page .leader {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* ---------- 底部胶囊切换条 ---------- */
+.estate-page .bottom {
+  left: 320px;
+  top: 962px;
+  width: 1280px;
+  border-radius: 38px;
+}
+.estate-page .bottom .core {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  height: 70px;
+  padding: 0 14px 0 12px;
+  border-radius: 32px;
+}
+.estate-page .tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 26px;
+  background: rgba(0, 0, 0, 0.28);
+}
+.estate-page .tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 20px 0 16px;
+  border-radius: 23px;
+  color: var(--ink-2);
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition:
+    color 0.4s var(--ease-spring),
+    background 0.4s var(--ease-spring),
+    transform 0.3s var(--ease-spring);
+}
+.estate-page .tab:hover {
+  color: var(--ink);
+}
+.estate-page .tab:active {
+  transform: scale(0.97);
+}
+.estate-page .tab svg {
+  flex: none;
+}
+.estate-page .tab.on {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 210, 122, 0.22),
+    rgba(201, 168, 106, 0.12)
+  );
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--gold-hi);
+}
+.estate-page .time {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+.estate-page .time .ic {
+  color: var(--ink-2);
+  flex: none;
+}
+.estate-page .track {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    #f0c98a 0%,
+    #ffe9b8 24%,
+    #ffd27a 60%,
+    #e08a4a 76%,
+    #4b5a86 92%,
+    #2b3358 100%
+  );
+}
+.estate-page .track .knob {
+  position: absolute;
+  left: var(--p);
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  background: var(--gold-hi);
+  box-shadow:
+    0 0 0 4px rgba(255, 210, 122, 0.22),
+    0 2px 10px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+.estate-page .track input {
+  position: absolute;
+  left: -10px;
+  top: -14px;
+  width: calc(100% + 20px);
+  height: 32px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.estate-page .track .lb {
+  position: absolute;
+  top: 14px;
+  font-size: 12px;
+  color: var(--ink-3);
+  font-family: var(--font-num);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.estate-page .time .read {
+  min-width: 92px;
+  text-align: right;
+  color: var(--gold-hi);
+  font-size: 22px;
+  line-height: 1;
+}
+.estate-page .time .read small {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--ink-2);
+  letter-spacing: 0.1em;
+}
+.estate-page .btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 8px 0 20px;
+  border-radius: 23px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  background: rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  transition:
+    border-color 0.4s var(--ease-spring),
+    transform 0.3s var(--ease-spring);
+}
+.estate-page .btn:active {
+  transform: scale(0.98);
+}
+.estate-page .btn.on {
+  border-color: var(--gold-hi);
+}
+.estate-page .btn .dot {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(201, 168, 106, 0.18);
+  color: var(--gold-hi);
+}
+.estate-page .btn small {
+  color: var(--ink-3);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+.estate-page .btn.round {
+  width: 46px;
+  padding: 0;
+  justify-content: center;
+  color: var(--gold);
+}
+
+/* ---------- 图层选择条（配套 / 景观页签下） ---------- */
+.estate-page .chips {
+  left: 50%;
+  top: 884px;
+  transform: translateX(-50%);
+  border-radius: 30px;
+  animation: chips-in 0.5s var(--ease-spring);
+}
+@keyframes chips-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.estate-page .chips .core {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 24px;
+}
+.estate-page .chip {
+  height: 38px;
+  line-height: 38px;
+  padding: 0 18px;
+  border-radius: 19px;
+  color: var(--ink-2);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.4s var(--ease-spring),
+    background 0.4s var(--ease-spring);
+}
+.estate-page .chip:hover {
+  color: var(--ink);
+}
+.estate-page .chip.on {
+  color: var(--gold-hi);
+  background: rgba(255, 210, 122, 0.16);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+/* ---------- 导览讲解词 ---------- */
+.estate-page .caption {
+  left: 50%;
+  top: 836px;
+  width: 920px;
+  transform: translateX(-50%);
+  border-radius: 26px;
+  animation: chips-in 0.6s var(--ease-spring);
+}
+.estate-page .caption .core {
+  padding: 14px 24px 16px;
+  border-radius: 20px;
+}
+.estate-page .caption .hd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--gold);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+}
+.estate-page .caption .hd b {
+  font-family: var(--font-num);
+  font-weight: 400;
+  font-size: 15px;
+  color: var(--gold-hi);
+}
+.estate-page .caption .hd .dots {
+  display: flex;
+  gap: 5px;
+  margin-left: auto;
+}
+.estate-page .caption .hd .dots i {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--line-soft);
+}
+.estate-page .caption .hd .dots i.on {
+  background: var(--gold-hi);
+}
+.estate-page .caption p {
+  margin-top: 8px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+/* ---------- 指北针、销售状态图例 ---------- */
+.estate-page .compass {
+  position: absolute;
+  left: 70px;
+  top: 912px;
+  pointer-events: none;
+}
+.estate-page .sale {
+  left: 1648px;
+  top: 960px;
+  width: 206px;
+  border-radius: 22px;
+}
+.estate-page .sale .core {
+  padding: 12px 16px;
+  border-radius: 16px;
+}
+.estate-page .sale .cap {
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  margin-bottom: 2px;
+}
+.estate-page .sale .row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 24px;
+}
+.estate-page .sale .row b {
+  margin-left: auto;
+  font-family: var(--font-num);
+  font-weight: 400;
+  color: var(--ink-2);
+  font-size: 15px;
+}
+.estate-page .sale .row i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ---------- 楼栋插牌、配套标签 ---------- */
+.estate-page .pins {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  pointer-events: none;
+}
+.estate-page .pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  margin: -40px 0 0 -13px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-num);
+  font-size: 14px;
+  color: #1a1510;
+  box-shadow:
+    0 0 0 2px rgba(11, 9, 7, 0.78),
+    0 4px 10px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: opacity 0.4s var(--ease-spring);
+  will-change: transform;
+}
+.estate-page .pin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: 14px;
+  margin-left: -1px;
+  background: rgba(243, 235, 221, 0.85);
+}
+.estate-page .pin.open {
+  background: var(--sale-open);
+}
+.estate-page .pin.hot {
+  background: var(--sale-hot);
+}
+.estate-page .pin.out {
+  background: var(--sale-out);
+  color: #fff;
+}
+.estate-page .pin.sel {
+  width: 34px;
+  height: 34px;
+  margin: -48px 0 0 -17px;
+  font-size: 18px;
+  background: var(--gold-hi);
+  box-shadow:
+    0 0 0 3px rgba(255, 210, 122, 0.35),
+    0 0 26px rgba(255, 210, 122, 0.65);
+}
+.estate-page .pin.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+.estate-page .tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 32px;
+  line-height: 30px;
+  padding: 0 14px;
+  margin: -52px 0 0 0;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--panel-core);
+  color: var(--ink);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    opacity 0.4s var(--ease-spring),
+    color 0.3s var(--ease-spring);
+  will-change: transform;
+}
+.estate-page .tag::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: 100%;
+  width: 2px;
+  height: 18px;
+  background: rgba(255, 210, 122, 0.7);
+}
+.estate-page .tag.sel {
+  color: var(--gold-hi);
+  border-color: var(--gold-hi);
+}
+.estate-page .tag.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- 加载 ---------- */
+.estate-page .loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  transition: opacity 0.9s var(--ease-spring);
+  z-index: 10;
+}
+.estate-page .loading.done {
+  opacity: 0;
+  pointer-events: none;
+}
+.estate-page .loading .box {
+  text-align: center;
+}
+.estate-page .loading .name {
+  font-family: var(--font-title);
+  font-size: 46px;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+}
+.estate-page .loading .sub {
+  margin-top: 10px;
+  color: var(--ink-3);
+  font-size: 14px;
+  letter-spacing: 0.3em;
+}
+.estate-page .loading .prog {
+  width: 260px;
+  height: 3px;
+  margin: 28px auto 0;
+  border-radius: 2px;
+  background: var(--line-soft);
+  overflow: hidden;
+}
+.estate-page .loading .prog i {
+  display: block;
+  height: 100%;
+  background: var(--gold-hi);
+  transition: width 0.4s var(--ease-spring);
+}

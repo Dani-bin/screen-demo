@@ -108,6 +108,12 @@ const routes = [
     path: "/building",
     name: "Building",
     component: () => import("@/views/building/index.vue")
+  },
+  {
+    // 楼盘沙盘：虚构楼盘「澜岸云境」，实体沙盘质感的三维展示（楼栋点选、日夜光影、配套图层、自动导览）
+    path: "/estate",
+    name: "Estate",
+    component: () => import("@/views/estate/index.vue")
   }
 ]
 
