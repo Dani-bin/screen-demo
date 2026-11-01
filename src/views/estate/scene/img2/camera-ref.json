@@ -1,0 +1,30 @@
+{
+ "image": [
+  1536,
+  864
+ ],
+ "fovDeg": 28.0,
+ "azimuthDeg": 90.261,
+ "pitchDeg": 54.322,
+ "residualRms": 9.82,
+ "three": {
+  "type": "PerspectiveCamera",
+  "position": [
+   5.347,
+   536.011,
+   409.771
+  ],
+  "target": [
+   3.597,
+   0.0,
+   24.919
+  ],
+  "up": [
+   0,
+   1,
+   0
+  ],
+  "fov": 28.0,
+  "aspect": 1.7777777777777777
+ }
+}

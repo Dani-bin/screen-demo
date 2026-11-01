@@ -35,7 +35,11 @@ export default [
   ...pluginVue.configs["flat/essential"],
   ...compat.extends("plugin:prettier/recommended"),
   {
-    ignores: ["**/temp.js", "config/*"],
+    ignores: [
+      "**/temp.js",
+      "config/*",
+      "src/views/estate/scene/img2/createEstateModel.ts"
+    ],
     rules: {
       // 禁用组件名称为单词的规则
       "vue/multi-word-component-names": "off"

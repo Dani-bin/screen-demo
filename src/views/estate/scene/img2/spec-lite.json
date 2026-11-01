@@ -1,0 +1,833 @@
+{
+ "materials": {
+  "mat_plaster": {
+   "color": "#e0d6bf",
+   "rough": 0.72,
+   "metal": 0.0,
+   "emissive": "#d8c79e",
+   "emissiveIntensity": 0.22
+  },
+  "mat_window": {
+   "color": "#ffd79a",
+   "rough": 0.35,
+   "metal": 0.0,
+   "emissive": "#ffc878",
+   "emissiveIntensity": 1.6
+  },
+  "mat_roof_slate": {
+   "color": "#8a8d93",
+   "rough": 0.8,
+   "metal": 0.0,
+   "emissive": "#9a9ca0",
+   "emissiveIntensity": 0.16
+  },
+  "mat_context": {
+   "color": "#cac8c3",
+   "rough": 0.92,
+   "metal": 0.0,
+   "emissive": null,
+   "emissiveIntensity": 0
+  },
+  "mat_roof_bright": {
+   "color": "#f1f0ee",
+   "rough": 0.85,
+   "metal": 0.0,
+   "emissive": "#f0efed",
+   "emissiveIntensity": 0.18
+  },
+  "mat_roof_white": {
+   "color": "#d2d4d8",
+   "rough": 0.9,
+   "metal": 0.0,
+   "emissive": "#dcdcdc",
+   "emissiveIntensity": 0.1
+  },
+  "mat_glass": {
+   "color": "#6f8f9c",
+   "rough": 0.12,
+   "metal": 0.15,
+   "emissive": "#ffcf8a",
+   "emissiveIntensity": 0.5
+  },
+  "mat_mall_glass": {
+   "color": "#7f96a6",
+   "rough": 0.12,
+   "metal": 0.15,
+   "emissive": "#6f98b0",
+   "emissiveIntensity": 0.1
+  },
+  "mat_water_lake": {
+   "color": "#1d78b8",
+   "rough": 0.05,
+   "metal": 0.0,
+   "emissive": "#2a8fd0",
+   "emissiveIntensity": 0.25
+  },
+  "mat_water_axis": {
+   "color": "#49b3e8",
+   "rough": 0.05,
+   "metal": 0.0,
+   "emissive": "#5cc4f0",
+   "emissiveIntensity": 0.9
+  },
+  "mat_water_river": {
+   "color": "#0e4166",
+   "rough": 0.05,
+   "metal": 0.0,
+   "emissive": null,
+   "emissiveIntensity": 0
+  },
+  "mat_grass": {
+   "color": "#4f7330",
+   "rough": 0.95,
+   "metal": 0.0,
+   "emissive": null,
+   "emissiveIntensity": 0
+  },
+  "mat_asphalt": {
+   "color": "#2d2e31",
+   "rough": 0.85,
+   "metal": 0.0,
+   "emissive": null,
+   "emissiveIntensity": 0
+  },
+  "mat_paving": {
+   "color": "#b3a58a",
+   "rough": 0.8,
+   "metal": 0.0,
+   "emissive": null,
+   "emissiveIntensity": 0
+  },
+  "mat_foliage": {
+   "color": "#3d6a2b",
+   "rough": 0.9,
+   "metal": 0.0,
+   "emissive": null,
+   "emissiveIntensity": 0
+  },
+  "mat_gold": {
+   "color": "#b98b3e",
+   "rough": 0.3,
+   "metal": 0.85,
+   "emissive": null,
+   "emissiveIntensity": 0
+  },
+  "mat_plinth": {
+   "color": "#4a3526",
+   "rough": 0.4,
+   "metal": 0.2,
+   "emissive": null,
+   "emissiveIntensity": 0
+  },
+  "mat_stone_bank": {
+   "color": "#8a8579",
+   "rough": 0.9,
+   "metal": 0.0,
+   "emissive": null,
+   "emissiveIntensity": 0
+  },
+  "mat_mall_core": {
+   "color": "#c7a56c",
+   "rough": 0.8,
+   "metal": 0.0,
+   "emissive": "#e0a85c",
+   "emissiveIntensity": 0.6
+  },
+  "mat_steel": {
+   "color": "#b4bbc2",
+   "rough": 0.45,
+   "metal": 0.25,
+   "emissive": null,
+   "emissiveIntensity": 0
+  },
+  "mat_sports": {
+   "color": "#3f7a3a",
+   "rough": 0.9,
+   "metal": 0.0,
+   "emissive": null,
+   "emissiveIntensity": 0
+  }
+ },
+ "components": {
+  "root": {
+   "material": "mat_plinth",
+   "level": "macro",
+   "role": "body"
+  },
+  "plinth": {
+   "material": "mat_plinth",
+   "level": "macro",
+   "role": "base"
+  },
+  "plinth_rim": {
+   "material": "mat_gold",
+   "level": "meso",
+   "role": "trim"
+  },
+  "ground": {
+   "material": "mat_grass",
+   "level": "macro",
+   "role": "ground"
+  },
+  "roads": {
+   "material": "mat_asphalt",
+   "level": "macro",
+   "role": "road"
+  },
+  "R01": {
+   "material": "mat_asphalt",
+   "level": "meso",
+   "role": "road"
+  },
+  "R02": {
+   "material": "mat_asphalt",
+   "level": "meso",
+   "role": "road"
+  },
+  "R03": {
+   "material": "mat_asphalt",
+   "level": "meso",
+   "role": "road"
+  },
+  "R04": {
+   "material": "mat_asphalt",
+   "level": "meso",
+   "role": "road"
+  },
+  "AX01": {
+   "material": "mat_water_axis",
+   "level": "macro",
+   "role": "water"
+  },
+  "AX01_b1": {
+   "material": "mat_water_axis",
+   "level": "meso",
+   "role": "water"
+  },
+  "AX01_b2": {
+   "material": "mat_water_axis",
+   "level": "meso",
+   "role": "water"
+  },
+  "AX01_b3": {
+   "material": "mat_water_axis",
+   "level": "meso",
+   "role": "water"
+  },
+  "AX01_b4": {
+   "material": "mat_water_axis",
+   "level": "meso",
+   "role": "water"
+  },
+  "AX01_b5": {
+   "material": "mat_water_axis",
+   "level": "meso",
+   "role": "water"
+  },
+  "AX01_b6": {
+   "material": "mat_water_axis",
+   "level": "meso",
+   "role": "water"
+  },
+  "AX01_b7": {
+   "material": "mat_water_axis",
+   "level": "meso",
+   "role": "water"
+  },
+  "LK01": {
+   "material": "mat_water_lake",
+   "level": "macro",
+   "role": "water"
+  },
+  "TR01": {
+   "material": "mat_paving",
+   "level": "meso",
+   "role": "path"
+  },
+  "RV01": {
+   "material": "mat_water_river",
+   "level": "macro",
+   "role": "water"
+  },
+  "RV01_bank": {
+   "material": "mat_stone_bank",
+   "level": "meso",
+   "role": "embankment"
+  },
+  "pad_towers": {
+   "material": "mat_paving",
+   "level": "macro",
+   "role": "pad"
+  },
+  "pad_terrace_w": {
+   "material": "mat_grass",
+   "level": "macro",
+   "role": "pad"
+  },
+  "pad_terrace_e": {
+   "material": "mat_grass",
+   "level": "macro",
+   "role": "pad"
+  },
+  "pad_villa": {
+   "material": "mat_grass",
+   "level": "macro",
+   "role": "pad"
+  },
+  "B01": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B01_crown": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B01_core": {
+   "material": "mat_roof_white",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B02": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B02_crown": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B02_core": {
+   "material": "mat_roof_white",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B03": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B03_crown": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B03_core": {
+   "material": "mat_roof_white",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B04": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B04_crown": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B04_core": {
+   "material": "mat_roof_white",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B05": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B05_roof": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B06": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B06_roof": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B07": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B07_roof": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B08": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B08_roof": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B09": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B09_roof": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B10": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B10_roof": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B11": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B11_roof": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B12": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B12_roof": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B13": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B13_roof": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B14": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B14_roof": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B15": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B15_roof": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "B16": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "B16_roof": {
+   "material": "mat_roof_slate",
+   "level": "meso",
+   "role": "roof"
+  },
+  "CL01": {
+   "material": "mat_plaster",
+   "level": "macro",
+   "role": "building-mass"
+  },
+  "CL01_wl": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "CL01_roofwl": {
+   "material": "mat_roof_bright",
+   "level": "meso",
+   "role": "roof"
+  },
+  "CL01_wr": {
+   "material": "mat_plaster",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "CL01_roofwr": {
+   "material": "mat_roof_bright",
+   "level": "meso",
+   "role": "roof"
+  },
+  "CL01_roof": {
+   "material": "mat_roof_bright",
+   "level": "meso",
+   "role": "roof"
+  },
+  "CL01_sky": {
+   "material": "mat_steel",
+   "level": "meso",
+   "role": "roof"
+  },
+  "SW01": {
+   "material": "mat_water_axis",
+   "level": "meso",
+   "role": "water"
+  },
+  "E01": {
+   "material": "mat_plaster",
+   "level": "macro",
+   "role": "building-mass"
+  },
+  "SH01": {
+   "material": "mat_roof_white",
+   "level": "macro",
+   "role": "building-mass"
+  },
+  "SH01_s1": {
+   "material": "mat_roof_white",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "SH01_s2": {
+   "material": "mat_roof_white",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "SH01_s3": {
+   "material": "mat_roof_white",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "SH01_s4": {
+   "material": "mat_roof_white",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "SH01_s5": {
+   "material": "mat_roof_white",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01": {
+   "material": "mat_mall_core",
+   "level": "macro",
+   "role": "building-mass"
+  },
+  "ML01_glass1": {
+   "material": "mat_mall_glass",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_slab1": {
+   "material": "mat_steel",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_glass2": {
+   "material": "mat_mall_glass",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_slab2": {
+   "material": "mat_steel",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_glass3": {
+   "material": "mat_mall_glass",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_slab3": {
+   "material": "mat_steel",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_glass4": {
+   "material": "mat_mall_glass",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_slab4": {
+   "material": "mat_steel",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_glass5": {
+   "material": "mat_mall_glass",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_slab5": {
+   "material": "mat_steel",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_cap": {
+   "material": "mat_roof_white",
+   "level": "meso",
+   "role": "roof"
+  },
+  "ML01_roof": {
+   "material": "mat_roof_white",
+   "level": "meso",
+   "role": "roof"
+  },
+  "ML01_esc_postws": {
+   "material": "mat_steel",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_esc_postwn": {
+   "material": "mat_steel",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_esc_postes": {
+   "material": "mat_steel",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_esc_posten": {
+   "material": "mat_steel",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_esc_glassw": {
+   "material": "mat_glass",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_esc_glasse": {
+   "material": "mat_glass",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_escalator": {
+   "material": "mat_glass",
+   "level": "meso",
+   "role": "roof"
+  },
+  "ML01_esc_rampw": {
+   "material": "mat_steel",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_esc_rampe": {
+   "material": "mat_steel",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "ML01_dome": {
+   "material": "mat_glass",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "SC01": {
+   "material": "mat_roof_white",
+   "level": "macro",
+   "role": "building-mass"
+  },
+  "SC01_west": {
+   "material": "mat_roof_white",
+   "level": "meso",
+   "role": "building-mass"
+  },
+  "SC01_field": {
+   "material": "mat_sports",
+   "level": "meso",
+   "role": "ground"
+  },
+  "HP01": {
+   "material": "mat_context",
+   "level": "macro",
+   "role": "building-mass"
+  },
+  "KG01": {
+   "material": "mat_plaster",
+   "level": "macro",
+   "role": "building-mass"
+  },
+  "PM01": {
+   "material": "mat_plaster",
+   "level": "macro",
+   "role": "building-mass"
+  },
+  "MT01": {
+   "material": "mat_glass",
+   "level": "macro",
+   "role": "building-mass"
+  },
+  "context_blocks": {
+   "material": "mat_roof_white",
+   "level": "macro",
+   "role": "context"
+  },
+  "ctx_01": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_04": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_02a": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_02b": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_03": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_05a": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_05b": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_05c": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_05d": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_06a": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_06b": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_07": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_07b": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_08": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_09": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_10": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_11a": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_11b": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_12a": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_12b": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_13": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_14": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_15a": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_15b": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "ctx_15c": {
+   "material": "mat_context",
+   "level": "meso",
+   "role": "context"
+  },
+  "SP01": {
+   "material": "mat_sports",
+   "level": "meso",
+   "role": "ground"
+  },
+  "PL01": {
+   "material": "mat_sports",
+   "level": "meso",
+   "role": "ground"
+  },
+  "vegetation": {
+   "material": "mat_foliage",
+   "level": "macro",
+   "role": "vegetation"
+  },
+  "site_furniture": {
+   "material": "mat_plinth",
+   "level": "macro",
+   "role": "furniture"
+  }
+ }
+}
