@@ -279,9 +279,16 @@ export function buildTrees(layout, mask, geos = null) {
   shrubs.receiveShadow = false
   shrubs.instanceMatrix.needsUpdate = true
   if (shrubs.instanceColor) shrubs.instanceColor.needsUpdate = true
+  shrubs.name = "shrubs"
   group.add(shrubs)
+  // 实例化网格都起名字：scripts/estate/export_for_blender.mjs 按名字把矩阵和颜色导给 Blender 离线渲染
+  crownMeshes.forEach((m, i) => (m.name = `crown${i}`))
+  crown2Meshes.forEach((m, i) => (m.name = `crown2_${i}`))
+  conifers.name = "conifers"
+  trunks.name = "trunks"
   for (const m of [...crownMeshes, ...crown2Meshes, conifers, trunks]) {
-    m.castShadow = true
+    // 树不投影：硬阴影在暗下来的草地上成了一个个黑斑，树脚的软阴影已经画进地面了（paintContactShadows）
+    m.castShadow = false
     // 树不接收阴影：接触阴影已经烘焙进地面，树丛是屏幕上过度绘制最多的地方，省掉阴影采样
     m.receiveShadow = false
     m.instanceMatrix.needsUpdate = true
@@ -346,6 +353,8 @@ export function buildLamps(layout) {
     heads.setMatrixAt(i, m4)
   })
   poles.castShadow = true
+  poles.name = "lamp_poles"
+  heads.name = "lamp_heads"
   group.add(poles, heads)
 
   // 路灯在地面上的暖色光池：贴地的加色圆片，亮度随夜色（白天几乎看不见，黄昏起一圈圈亮起来）
@@ -378,6 +387,7 @@ export function buildLamps(layout) {
     pools.setMatrixAt(i, m4)
   })
   pools.renderOrder = 2
+  pools.name = "lamp_pools"
   group.add(pools)
 
   // 草坪里的地灯：树丛和步道之间一粒粒暖色小光点，夜里 / 黄昏亮起
@@ -410,6 +420,7 @@ export function buildLamps(layout) {
     m4.makeTranslation(x, 0.7, -y)
     ups.setMatrixAt(i, m4)
   })
+  ups.name = "ground_lamps"
   group.add(ups)
   const dayCol = new THREE.Color(0xffd9a0).multiplyScalar(0.45)
   const nightCol = new THREE.Color(0xffd9a0).multiplyScalar(3.2)
@@ -513,6 +524,10 @@ export function buildCars(layout) {
     body.setColorAt(i, col.setHex(c.color))
     cabin.setColorAt(i, col.setHex(c.color).multiplyScalar(0.85))
   })
+  body.name = "car_body"
+  cabin.name = "car_cabin"
+  heads.name = "car_heads"
+  tails.name = "car_tails"
   group.add(body, cabin, heads, tails)
 
   const m4 = new THREE.Matrix4()

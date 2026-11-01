@@ -64,7 +64,7 @@ const FRAG = /* glsl */ `
     float glint = pow(noise(vWorld.xz * 0.42 + vec2(0.0, uTime * 0.08)), 6.0);
     col += uLed * glint * uLit * 0.22 * (1.0 - 0.6 * d);
     // 夜里水面压暗，岸边一圈 LED
-    col *= mix(1.0, 0.72, uNight);
+    col *= 0.82 * mix(1.0, 0.72, uNight);
     float rim = 1.0 - smoothstep(0.0, 0.14, d);
     col += uLed * rim * uLit * 0.4;
     gl_FragColor = vec4(col, 1.0);
@@ -202,7 +202,7 @@ export function buildWater(layout) {
   group.name = "water"
   const mats = []
 
-  const lakeMat = makeMaterial(0x4fa6c4, 0x1f6fa0, layout.base)
+  const lakeMat = makeMaterial(0x34788f, 0x124a6c, layout.base)
   const riverMat = makeMaterial(0x2f5a66, 0x142c38, layout.base)
   const poolMat = makeMaterial(0x7fd6e4, 0x2a86c4, layout.base)
   const stepMat = makeMaterial(0x8fd3e6, 0x3a8fc6, layout.base)

@@ -36,6 +36,12 @@ FIXED_PITCH = 46.0  # 固定俯角（度）；None = 自由拟合。拟合出的
 # 概念图原图坐标 → 定稿整屏坐标
 K, OX, OY = 1728 / 1536, 96, 96
 
+# 构图（压低机位、拉近）：定稿概念图的透视信息很弱，按楼栋锚点拟合出来的机位偏高偏远，评审多轮说"整个圆盘露全、没有近景压迫感"。
+# 这里在拟合出方位之后，另外按两个构图点重新解机位：俯角固定 pitch，方位取正北（左右对称），
+# 解"相机到目标的距离 D"和"目标点的南北位置 ty"，让 1 号楼屋顶落在画面 top_y、南排联排（B14 南缘）落在 villa_y。
+# 拉近之后底座左右和下缘会略微出画，和定稿一样。COMPOSE = None 则只用拟合结果。
+COMPOSE = {"pitch": 40.0, "top_y": 192.0, "villa_y": 765.0}
+
 
 def to_px(x, y):
     return [round(OX + x * K, 1), round(OY + y * K, 1)]
@@ -87,6 +93,41 @@ def fit(world, px):
     return best.x
 
 
+def compose(layout, c):
+    """构图机位：方位正北、俯角 c["pitch"]，解 (D, ty) 让 1 号楼屋顶在 top_y、B14 南缘在 villa_y（见 COMPOSE 注释）"""
+    az, pit = 90.0, c["pitch"]
+    b1 = next(b for b in layout["buildings"] if b["id"] == "B01")
+    b14 = next(b for b in layout["buildings"] if b["id"] == "B14")
+    p_top = np.array([[b1["cx"], b1["cy"], b1["height"]]], float)
+    p_vil = np.array([[b14["cx"], b14["cy"] - b14["d"] / 2, 0.0]], float)
+
+    def cam(D, ty):
+        ph = math.radians(pit)
+        return [az, pit, 0.0, ty - D * math.cos(ph), D * math.sin(ph)]
+
+    def resid(v):
+        prm = cam(*v)
+        return [project(prm, p_top)[0][1] - c["top_y"], project(prm, p_vil)[0][1] - c["villa_y"]]
+
+    sol = least_squares(resid, [650.0, 0.0], x_scale=[50, 20])
+    prm = cam(*sol.x)
+    base = layout["base"]
+    pts = {
+        "底座左端": [base["cx"] - base["rx"], base["cy"], 0],
+        "底座右端": [base["cx"] + base["rx"], base["cy"], 0],
+        "底座南缘": [base["cx"], base["cy"] - base["ry"], 0],
+        "底座北缘": [base["cx"], base["cy"] + base["ry"], 0],
+        "湖心": [0, -12, 0],
+        "河心": [0, -160, 0],
+    }
+    print(f"构图机位：俯角 {pit}°，目标距离 {sol.x[0]:.0f} m，目标南北位置 {sol.x[1]:.1f} m；落点（像素）：", end="")
+    for k, v in pts.items():
+        u = project(prm, np.array([v], float))[0]
+        print(f"{k} ({u[0]:.0f}, {u[1]:.0f})", end="  ")
+    print()
+    return prm
+
+
 def main():
     layout = json.load(open(os.path.join(ROOT, "src/views/estate/data/layout.json")))
     pts = []
@@ -114,6 +155,8 @@ def main():
     print(f"固定视场角 {FOV}°：方位 {az:.2f}°，俯角 {pit:.2f}°，相机 ({cx:.1f}, {cy:.1f}, {cz:.1f}) m，"
           f"RMS {rms:.1f} px，最大 {err.max():.1f} px")
 
+    if COMPOSE:
+        az, pit, cx, cy, cz = compose(layout, COMPOSE)
     # 光轴和地面（z = 0）的交点，作为 three.js 的目标点
     f, r, u = basis(az, pit)
     t = -cz / f[2]

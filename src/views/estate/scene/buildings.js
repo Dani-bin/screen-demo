@@ -862,7 +862,7 @@ const smooth = (a, b, x) => {
 
 /** GLB 楼栋的灯光：窗玻璃按档亮起，店面、LED 灯带随夜色变亮 */
 function litGlb(mats, v) {
-  const on = 0.7 + 1.7 * v
+  const on = 0.7 + 1.3 * v
   for (const [name, thr] of Object.entries(GLASS_THR)) {
     const m = mats.get(name)
     if (m) m.emissiveIntensity = on * smooth(thr, thr + 0.12, v)
@@ -900,7 +900,18 @@ function adoptGlb(glb, layout, reg, glbMats) {
       }
       o.castShadow = true
       o.receiveShadow = true
-      for (const m of [o.material].flat()) glbMats.set(m.name, m)
+      for (const m of [o.material].flat()) {
+        glbMats.set(m.name, m)
+        // 墙和楼板压暗一档：评审说楼体像米色纸板，要深一点，让窗光跳出来；
+        // 屋面反而提亮：压暗之后屋顶成了近黑的剪影，屋顶朝上，本来就该接住最多的光
+        if (!m.userData.dimmed) {
+          if (/^(wall|slab|school|clinic)/.test(m.name))
+            m.color.multiplyScalar(0.84)
+          else if (/^(roof|green_roof)/.test(m.name))
+            m.color.multiplyScalar(1.4)
+          m.userData.dimmed = true
+        }
+      }
     })
     if (!hull) throw new Error(`楼栋 ${node.name} 缺少 _hull 外框盒`)
     node.updateMatrixWorld(true)
@@ -1049,6 +1060,7 @@ export function buildBuildings(layout, blocks, glb = null) {
   })
   tier.castShadow = true
   tier.receiveShadow = true
+  tier.name = "context_tier"
   group.add(tier)
 
   // 夜里窗灯、LED 灯带亮度：lit 0–1。白天窗里也有一点点暖光，和沙盘里常亮的 LED 一致

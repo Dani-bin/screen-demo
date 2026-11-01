@@ -24,6 +24,7 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js"
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js"
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js"
+import { Lens, backdropTexture } from "./lens.js"
 import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js"
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js"
 import { LineSegments2 } from "three/addons/lines/LineSegments2.js"
@@ -65,145 +66,6 @@ function quality() {
 
 const nextFrame = () => new Promise((r) => setTimeout(r, 16))
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
-
-/**
- * 镜头通道（只做一个通道）：
- *   - 真景深：用 GTAO 渲染的深度图，离对焦面越远越糊（沙盘近端、远端虚化，像微距实拍）
- *   - 少量移轴：画面上下两端再糊一点
- *   - 暗角、对比度和暖色调色、胶片颗粒
- * 在线性空间里做，色调映射仍由后面的 OutputPass 统一做一次。
- */
-const Lens = {
-  uniforms: {
-    tDiffuse: { value: null },
-    tDepth: { value: null },
-    resolution: { value: new THREE.Vector2(1, 1) },
-    focus: { value: 740 }, // 对焦距离（相机到视线目标）
-    near: { value: 40 },
-    far: { value: 3200 },
-    aperture: { value: 3.2 }, // 景深强度：越大，离对焦面稍远就越糊
-    maxBlur: { value: 7 }, // 最大模糊半径（像素）
-    tiltBand: { value: 0.3 },
-    tiltAmount: { value: 2.5 },
-    contrast: { value: 1.1 },
-    warm: { value: new THREE.Vector3(1.06, 1.0, 0.9) },
-    grain: { value: 0.03 },
-    time: { value: 0 }
-  },
-  vertexShader: /* glsl */ `
-    varying vec2 vUv;
-    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
-  `,
-  fragmentShader: /* glsl */ `
-    uniform sampler2D tDiffuse;
-    uniform sampler2D tDepth;
-    uniform vec2 resolution;
-    uniform float focus, near, far, aperture, maxBlur, tiltBand, tiltAmount, contrast, grain, time;
-    uniform vec3 warm;
-    varying vec2 vUv;
-    float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
-    void main() {
-      float d = texture2D(tDepth, vUv).x;
-      float z = d * 2.0 - 1.0;
-      float dist = 2.0 * near * far / (far + near - z * (far - near));
-      // 背景（深度 = 1）不参与景深
-      // 远端虚化为主，近端只轻微虚化（定稿里前景河岸和小径是清晰的）
-      float far = max(dist - focus, 0.0) / focus;
-      float nearD = max(focus - dist, 0.0) / focus;
-      float coc = d > 0.9999 ? 0.0 : clamp(aperture * (far + 0.3 * nearD), 0.0, 1.0) * maxBlur;
-      // 移轴只作用在画面上方（远端）；下方保持清晰
-      coc += smoothstep(tiltBand + 0.05, tiltBand + 0.3, vUv.y - 0.5) * tiltAmount;
-      coc = min(coc, maxBlur * 1.5);
-      vec3 sum = texture2D(tDiffuse, vUv).rgb;
-      float w = 1.0;
-      if (coc > 0.4) {
-        for (int i = 0; i < 12; i++) {
-          float a = float(i) * 2.399963;
-          float rr = sqrt((float(i) + 0.5) / 12.0) * coc;
-          sum += texture2D(tDiffuse, vUv + vec2(cos(a), sin(a)) * rr / resolution).rgb;
-          w += 1.0;
-        }
-      }
-      vec3 c = sum / w;
-      // 边缘平滑：亮度梯度大的地方，沿梯度的垂直方向混合邻点（代替 MSAA）
-      if (coc <= 0.4) {
-        vec2 px = 1.0 / resolution;
-        vec3 n = texture2D(tDiffuse, vUv + vec2(0.0, -px.y)).rgb;
-        vec3 sN = texture2D(tDiffuse, vUv + vec2(0.0, px.y)).rgb;
-        vec3 e = texture2D(tDiffuse, vUv + vec2(px.x, 0.0)).rgb;
-        vec3 wv = texture2D(tDiffuse, vUv + vec2(-px.x, 0.0)).rgb;
-        float lc = dot(c, vec3(0.299, 0.587, 0.114));
-        float ln = dot(n, vec3(0.299, 0.587, 0.114));
-        float ls = dot(sN, vec3(0.299, 0.587, 0.114));
-        float le = dot(e, vec3(0.299, 0.587, 0.114));
-        float lw = dot(wv, vec3(0.299, 0.587, 0.114));
-        float edge = clamp((abs(ln - ls) + abs(le - lw)) * 2.2, 0.0, 1.0);
-        c = mix(c, (c * 2.0 + n + sN + e + wv) / 6.0, edge * 0.85);
-      }
-      // 暗角
-      float vg = 1.0 - smoothstep(0.42, 1.08, length((vUv - 0.5) * vec2(1.3, 1.0)));
-      c *= mix(0.62, 1.0, vg);
-      // 对比度（绕中灰）；分色调色：暗部偏冷蓝，高光偏暖黄（定稿是冷蓝暗部 + 暖色高光）
-      c = max((c - 0.16) * contrast + 0.16, 0.0);
-      float lum = dot(c, vec3(0.299, 0.587, 0.114));
-      vec3 shadowTint = vec3(0.9, 0.97, 1.12);
-      c *= mix(shadowTint, warm, smoothstep(0.02, 0.32, lum));
-      // 胶片颗粒
-      c += (hash(vUv * resolution + time) - 0.5) * grain;
-      gl_FragColor = vec4(c, 1.0);
-    }
-  `
-}
-
-/** 展厅背景：暖黑渐变 + 几团虚化的灯光（光斑），整张贴在 scene.background 上 */
-function backdropTexture() {
-  const c = document.createElement("canvas")
-  c.width = 1920
-  c.height = 1080
-  const g = c.getContext("2d")
-  const bg = g.createRadialGradient(960, 600, 80, 960, 540, 1400)
-  bg.addColorStop(0, "#6a4a2c")
-  bg.addColorStop(0.45, "#3a2818")
-  bg.addColorStop(1, "#170f09")
-  g.fillStyle = bg
-  g.fillRect(0, 0, 1920, 1080)
-  // 光斑：集中在画面上半部，像展厅里远处的筒灯和灯带
-  let s = 5
-  const r = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646
-  // 竖向的玻璃柱 / 灯箱：几条宽而柔的亮带，像展厅里远处的立柱
-  for (const x of [90, 330, 620, 1290, 1580, 1830]) {
-    const w = 60 + ((x * 7) % 70)
-    const gr = g.createLinearGradient(x - w, 0, x + w, 0)
-    gr.addColorStop(0, "rgba(255,190,120,0)")
-    gr.addColorStop(0.5, "rgba(255,190,120,0.1)")
-    gr.addColorStop(1, "rgba(255,190,120,0)")
-    g.fillStyle = gr
-    g.fillRect(x - w, 0, w * 2, 640)
-  }
-  for (let i = 0; i < 40; i++) {
-    const x = r() * 1920
-    const y = r() * 520
-    const rad = 24 + r() * 110
-    const a = 0.06 + r() * 0.2
-    const gr = g.createRadialGradient(x, y, 0, x, y, rad)
-    gr.addColorStop(0, `rgba(255,196,120,${a})`)
-    gr.addColorStop(1, "rgba(255,196,120,0)")
-    g.fillStyle = gr
-    g.fillRect(x - rad, y - rad, rad * 2, rad * 2)
-  }
-  // 左右两条竖向的灯带
-  for (const x of [150, 1780]) {
-    const gr = g.createLinearGradient(x - 40, 0, x + 40, 0)
-    gr.addColorStop(0, "rgba(255,190,110,0)")
-    gr.addColorStop(0.5, "rgba(255,190,110,0.12)")
-    gr.addColorStop(1, "rgba(255,190,110,0)")
-    g.fillStyle = gr
-    g.fillRect(x - 40, 0, 80, 520)
-  }
-  const t = new THREE.CanvasTexture(c)
-  t.colorSpace = THREE.SRGBColorSpace
-  return t
-}
 
 /** 选中时脚下的光斑：中心亮、边缘渐隐的金色 */
 function haloTexture() {
@@ -259,7 +121,7 @@ export class EstateScene {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.NeutralToneMapping
-    renderer.toneMappingExposure = 1.22
+    renderer.toneMappingExposure = 1.12
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFShadowMap
     // 楼和树都是静止的，只有太阳动（拖时间、导览的一天光影）时才需要重画阴影图，见 applyLight
@@ -532,19 +394,20 @@ export class EstateScene {
     const dist = 800
     this.sun.position.copy(this.baseCenter).addScaledVector(l.dir, dist)
     this.sun.color.copy(l.sunColor)
-    this.sun.intensity = l.sunIntensity
+    this.sun.intensity = l.sunIntensity * THEME.dim
     this.sun.castShadow = l.sunIntensity > 0.05
     this.renderer.shadowMap.needsUpdate = true
     this.hemi.color.copy(l.hemiSky)
     this.hemi.groundColor.copy(l.hemiGround)
-    this.hemi.intensity = l.hemiIntensity
+    // 半球光少压一点：树和楼的影子里要还有一点环境光，不然阴影成了黑洞
+    this.hemi.intensity = l.hemiIntensity * (THEME.dim + 0.3)
     // 补光从太阳的对面斜着打，夜里转成冷色
     this.fill.position
       .copy(this.baseCenter)
       .add(new THREE.Vector3(-l.dir.x * 300, 360, -l.dir.z * 300))
     this.fill.color.set(0xffe2bd).lerp(new THREE.Color(0x7d8fc4), l.night)
-    this.fill.intensity = 0.22 + 0.1 * l.night
-    this.key.intensity = 2.5 * (1 - 0.6 * l.night)
+    this.fill.intensity = (0.22 + 0.1 * l.night) * THEME.dim
+    this.key.intensity = 2.5 * (1 - 0.6 * l.night) * THEME.dim
     this.key.color.set(0xffe6c6).lerp(new THREE.Color(0x9fb0e0), l.night * 0.6)
     this.buildings.setLit(l.lit)
     this.lamps.setLit(l.lit)
@@ -552,7 +415,29 @@ export class EstateScene {
     this.gold.emissiveIntensity = 0.03 + 0.18 * l.lit
     // 背景：夜里压暗；辉光夜里更明显
     this.scene.backgroundIntensity = 0.62 - 0.3 * l.night
-    this.bloom.strength = 0.32 + 0.4 * l.lit
+    this.bloom.strength = 0.28 + 0.25 * l.lit
+  }
+
+  /**
+   * 导出给 Blender 离线渲染的数据（scripts/estate/export_for_blender.mjs 调用）：
+   * 地面底图（重新画一张，不含树脚阴影和地面 AO，那些让 Cycles 自己算）、周边楼，
+   * 以及按名字收集的实例化网格（树冠 / 树干 / 灌木 / 路灯 / 车）的矩阵和颜色。
+   * 矩阵是 three.js 世界坐标（y 向上，z = -y），Blender 那边再换轴。
+   */
+  exportForBlender() {
+    const { canvas } = paintGround(this.layout, contextBlocks(this.layout))
+    const instances = {}
+    this.scene.traverse((o) => {
+      if (!o.isInstancedMesh || !o.name) return
+      instances[o.name] = {
+        count: o.count,
+        matrix: Array.from(o.instanceMatrix.array.slice(0, o.count * 16)),
+        color: o.instanceColor
+          ? Array.from(o.instanceColor.array.slice(0, o.count * 3))
+          : null
+      }
+    })
+    return { albedo: canvas.toDataURL("image/png"), instances }
   }
 
   /** 平滑地把时间拨到某个时刻（导览"一天光影"用） */

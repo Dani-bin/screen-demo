@@ -38,6 +38,9 @@ export const THEME = {
     maxPolar: (74 * Math.PI) / 180
   },
 
+  // 整体压暗系数：灯光（太阳、半球、补光、展厅主光）乘它；窗光、灯池、水面是自发光，不受它影响，所以暗下来之后它们更跳
+  dim: 0.7,
+
   // 窗灯、路灯、LED 的点亮曲线：太阳高度角（度）低于 onFrom 开始亮，低于 onFull 全亮
   lights: { onFrom: 9, onFull: -2 }
 }
