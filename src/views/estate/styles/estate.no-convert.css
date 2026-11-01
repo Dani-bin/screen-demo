@@ -755,6 +755,31 @@
 }
 
 /* ---------- 指北针、销售状态图例 ---------- */
+.estate-page .orbit-hint {
+  position: absolute;
+  left: 760px;
+  top: 905px;
+  width: 400px;
+  text-align: center;
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: #ffd27a;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  animation: orbit-hint 9s ease both;
+}
+@keyframes orbit-hint {
+  0% {
+    opacity: 0;
+  }
+  10%,
+  80% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
 .estate-page .compass {
   position: absolute;
   left: 70px;
@@ -942,4 +967,180 @@
   height: 100%;
   background: var(--gold-hi);
   transition: width 0.4s var(--ease-spring);
+}
+
+/* ---------- 信息卡：进入样板间按钮 ---------- */
+.estate-page .room-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  height: 46px;
+  margin-top: 16px;
+  border-radius: 23px;
+  border: 1px solid var(--line);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 210, 122, 0.2),
+    rgba(201, 168, 106, 0.1)
+  );
+  color: var(--gold-hi);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition:
+    background 0.3s var(--ease-spring),
+    transform 0.3s var(--ease-spring),
+    border-color 0.3s var(--ease-spring);
+}
+.estate-page .room-btn:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 210, 122, 0.32),
+    rgba(201, 168, 106, 0.18)
+  );
+  border-color: var(--gold-hi);
+}
+.estate-page .room-btn:active {
+  transform: scale(0.98);
+}
+.estate-page .room-btn em {
+  font-style: normal;
+  font-family: var(--font-num);
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--gold-hi);
+  color: #1a1510;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- 样板间 VR 浮层 ---------- */
+.estate-page .room-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 6, 4, 0.78);
+  animation: room-in 0.5s var(--ease-spring);
+}
+@keyframes room-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.estate-page .room-shell {
+  position: relative;
+  width: min(1560px, 94vw);
+  height: min(900px, 92vh);
+  animation: room-pop 0.6s var(--ease-spring);
+}
+@keyframes room-pop {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.estate-page .room-core {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 18px 20px 14px;
+}
+.estate-page .room-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.estate-page .room-title h2 {
+  margin-top: 8px;
+  font-family: var(--font-title);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+}
+.estate-page .room-title p {
+  margin-top: 4px;
+  color: var(--ink-3);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+.estate-page .room-head .acts {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.estate-page .room-head a.iconbtn {
+  text-decoration: none;
+}
+.estate-page .room-view {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #120f0b;
+  box-shadow: inset 0 0 0 1px var(--line-soft);
+}
+.estate-page .room-view iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #120f0b;
+}
+.estate-page .room-wait {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #120f0b;
+  color: var(--ink-2);
+  pointer-events: none;
+}
+.estate-page .room-wait i {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--line-soft);
+  border-top-color: var(--gold-hi);
+  animation: room-spin 0.9s linear infinite;
+}
+@keyframes room-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.estate-page .room-wait b {
+  font-weight: 400;
+  letter-spacing: 0.2em;
+}
+.estate-page .room-wait small {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.estate-page .room-foot {
+  margin-top: 10px;
+  color: var(--ink-3);
+  font-size: 12px;
+  text-align: right;
+  letter-spacing: 0.08em;
 }

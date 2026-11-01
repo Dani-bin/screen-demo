@@ -10,7 +10,8 @@
   交互：点楼栋 / 插牌出信息卡；底部四个页签（总览 / 楼栋 / 配套 / 景观）；时间滑块看一天的光影；自动导览；
   45 秒无人操作自动开始导览。
   深链：?at=2026-10-30T18:00 钉住场景时刻（定稿的一刻）；?tour=0 关闭自动导览；?select=B08 选中；
-  ?tab=building|amenity|scenic；?skip=1 跳过开场动画。
+  ?tab=building|amenity|scenic；?room=1（配合 ?select=B08）直接进样板间；?roomUrl=<https 链接> 换一个 VR 页面；?skip=1 跳过开场动画；?mode=live 强制用实时三维版（默认用预渲染的照片模式，
+  见 scene/PhotoScene.js；没有照片时自动退回实时版）。
 -->
 <template>
   <div ref="pageRef" class="estate-page">
@@ -53,6 +54,7 @@
         :s="saleOf(selBuilding.id)"
         @close="clearSelection()"
         @focus="focusSelected"
+        @room="openRoom"
       />
       <AmenityCard
         v-else-if="selAmenity"
@@ -62,6 +64,8 @@
         @close="clearSelection()"
         @focus="focusSelected"
       />
+
+      <div v-if="orbitHint" class="orbit-hint">‹ 左右拖动画面 · 环绕查看 ›</div>
 
       <!-- 指北针：随镜头转 -->
       <svg
@@ -161,6 +165,9 @@
       </aside>
     </div>
 
+    <!-- 样板间 VR 看房浮层（盖满窗口，在舞台之外） -->
+    <RoomTour v-if="roomOpen" :b="selBuilding" @close="closeRoom" />
+
     <div v-if="!ready" class="loading scene-loading">
       <div class="box">
         <div class="name">{{ layout.name }}</div>
@@ -173,7 +180,7 @@
 
 <script setup>
   import "./styles/estate.no-convert.css"
-  import { EstateScene } from "./scene/EstateScene.js"
+  import { PhotoScene } from "./scene/PhotoScene.js"
   import { createTour } from "./scene/tour.js"
   import { lightAt, hhmm, periodName } from "./scene/sun.js"
   import layout from "./data/layout.json"
@@ -189,6 +196,7 @@
   import AmenityCard from "./components/AmenityCard.vue"
   import BottomBar from "./components/BottomBar.vue"
   import PinLayer from "./components/PinLayer.vue"
+  import RoomTour from "./components/RoomTour.vue"
 
   const route = useRoute()
   const q = route.query
@@ -210,6 +218,8 @@
   const selectedId = ref(null)
   const chipId = ref(null)
   const touring = ref(false)
+  const roomOpen = ref(false) // 样板间 VR 浮层
+  const orbitHint = ref(false) // 照片模式：提示可以左右拖动环绕，第一次操作后收起
   const tourIdx = ref(0)
   const tourStop = ref(null)
   const stageStyle = ref({})
@@ -339,6 +349,11 @@
       return
     }
     if (id.startsWith("B")) {
+      // 再点一次已选中的楼栋 = 进入样板间
+      if (id === selectedId.value && !roomOpen.value) {
+        openRoom()
+        return
+      }
       if (tab.value !== "building") {
         tab.value = "building"
         scene.setLayer(null)
@@ -360,6 +375,20 @@
       scene.setLayer(layerId, { fly: false })
     }
     selectItem(id)
+  }
+
+  /** 进入样板间：停导览、停空闲计时、冻结三维（浮层盖住了，不用再渲染） */
+  function openRoom() {
+    stopTour()
+    clearTimeout(idleTimer)
+    roomOpen.value = true
+    scene?.setFrozen(true)
+  }
+
+  function closeRoom() {
+    roomOpen.value = false
+    scene?.setFrozen(false)
+    bumpIdle()
   }
 
   function focusSelected() {
@@ -408,7 +437,7 @@
   /** 45 秒没人操作就自动导览；有人操作就重新计时 */
   function bumpIdle() {
     clearTimeout(idleTimer)
-    if (q.tour === "0" || !ready.value) return
+    if (q.tour === "0" || !ready.value || roomOpen.value) return
     idleTimer = setTimeout(() => {
       if (!touring.value && !selectedId.value) toggleTour()
     }, 45000)
@@ -469,10 +498,25 @@
 
   // ---------------------------------------------------------------- 生命周期
 
+  /** 照片清单读得到才算有（开发服务器对不存在的文件会回 index.html，所以要看内容类型） */
+  async function hasPhoto() {
+    try {
+      const r = await fetch(
+        `${import.meta.env.BASE_URL}estate/photo/manifest.json`
+      )
+      if (!r.ok || !(r.headers.get("content-type") ?? "").includes("json"))
+        return false
+      await r.json()
+      return true
+    } catch {
+      return false
+    }
+  }
+
   onMounted(async () => {
     layoutStage()
     window.addEventListener("resize", layoutStage)
-    scene = new EstateScene(canvasRef.value, {
+    const opts = {
       layout,
       month: at.month,
       day: at.day,
@@ -480,8 +524,20 @@
       onPick,
       onFrame,
       onProgress: (p) => (progress.value = p)
-    })
+    }
+    // 三种画面：默认是 img2threejs 按设计稿还原的实时三维版（RestoredScene，动态加载）；
+    // ?mode=photo 用 Blender Cycles 离线渲染的照片版（没有照片时退回程序化版）；?mode=live 用最早的程序化实时版
+    if (q.mode === "live") {
+      const { EstateScene } = await import("./scene/EstateScene.js")
+      scene = new EstateScene(canvasRef.value, opts)
+    } else if (q.mode === "photo" && (await hasPhoto())) {
+      scene = new PhotoScene(canvasRef.value, opts)
+    } else {
+      const { RestoredScene } = await import("./scene/RestoredScene.js")
+      scene = new RestoredScene(canvasRef.value, opts)
+    }
     scene.onInteract = () => {
+      orbitHint.value = false
       stopTour()
       bumpIdle()
     }
@@ -499,10 +555,15 @@
     })
     if (import.meta.env.DEV) {
       window.__estateScene = scene
+      window.__estateTour = tour // 录屏用：缩短每站停留（tour.stops[i].dwell）
       installHooks()
     }
     await scene.ready
     ready.value = true
+    if (scene instanceof PhotoScene) {
+      orbitHint.value = true
+      setTimeout(() => (orbitHint.value = false), 9000)
+    }
     if (q.skip !== "1") scene.intro()
     if (q.tab && ["building", "amenity", "scenic"].includes(q.tab))
       setTab(q.tab, true)
@@ -515,6 +576,8 @@
         tab.value = "building"
         selectItem(q.select)
       } else onPick(q.select)
+      // ?room=1：直接打开选中楼栋的样板间（演示 / 截图用）
+      if (q.room === "1" && q.select.startsWith("B")) openRoom()
     }
     window.addEventListener("pointerdown", bumpIdle)
     window.addEventListener("keydown", bumpIdle)
@@ -531,6 +594,7 @@
     scene?.dispose()
     if (import.meta.env.DEV) {
       delete window.__estateScene
+      delete window.__estateTour
       delete window.__dashboard
     }
   })

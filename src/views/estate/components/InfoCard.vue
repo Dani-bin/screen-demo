@@ -1,6 +1,7 @@
 <!--
   选中楼栋的信息卡：层数 / 户数 / 高度 / 户型表 / 销售条（定稿 left 86 top 276）
   销售条：已售、认购、在售三段，细条 + 2px 间隙；在售是未售剩余，用中性轨道；下方有图例和直接标注。
+  底部「进入样板间」：打开 RoomTour 浮层（内嵌 VR 看房），也可以再点一次已选中的楼栋进入。
 -->
 <template>
   <aside class="shell card">
@@ -89,6 +90,24 @@
           >
         </div>
       </div>
+      <button class="room-btn" type="button" @click="$emit('room')">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 18 18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M2 8.2 9 2.5l7 5.7V15a.8.8 0 0 1-.8.8H11v-4.4H7v4.4H2.8A.8.8 0 0 1 2 15z"
+          />
+        </svg>
+        进入样板间 · 实景 VR 看房
+        <em>360°</em>
+      </button>
     </div>
   </aside>
 </template>
@@ -100,5 +119,5 @@
     b: { type: Object, required: true },
     s: { type: Object, required: true }
   })
-  defineEmits(["close", "focus"])
+  defineEmits(["close", "focus", "room"])
 </script>
