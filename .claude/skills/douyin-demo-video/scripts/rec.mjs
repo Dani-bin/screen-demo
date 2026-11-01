@@ -56,6 +56,7 @@ const C = {
   cssMotion: false, // true = 保留页面的 CSS 动画 / 过渡（一般不要）
   maxSeconds: 60, // 单段最长秒数，防止编排函数卡住时无限录下去
   maxPreroll: 600, // 快进最多多少秒虚拟时间
+  inputSettle: 160, // REC.input / mouse / dragTo / clickReal 排的 CDP 输入事件派发后，真实等多少毫秒再截图（让跨域 iframe 渲染完）
   ...(mod.CONFIG || {})
 }
 const FPS = C.fps
@@ -184,6 +185,10 @@ async function record(shot, idx) {
       }
       continue
     }
+    // 输入桥：页面里 REC.input 排的 CDP 输入事件（能进跨域 iframe），截图前派发
+    const queued = (await evaluate("window.REC && REC.__input ? REC.__input.splice(0) : []")) || []
+    for (const e of queued) await send(e.method, e.params)
+    if (queued.length) await sleep(C.inputSettle)
     const img = await send("Page.captureScreenshot", { format: "jpeg", quality: 92 })
     writeFileSync(join(dir, `${String(frames).padStart(6, "0")}.jpg`), Buffer.from(img.result.data, "base64"))
     frames++

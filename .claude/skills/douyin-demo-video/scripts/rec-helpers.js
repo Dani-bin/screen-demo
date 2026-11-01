@@ -224,6 +224,55 @@ window.REC = (() => {
     for (const s of sels.flat()) document.querySelectorAll(s).forEach((e) => (e.style.visibility = ""))
   }
 
+  /**
+   * 排一个 CDP 输入事件：rec.mjs 在这一帧截图前把它派发出去。
+   * 页面里的 dispatchEvent 进不了跨域 iframe（内嵌的 VR 看房页之类），CDP 的 Input.* 能（浏览器层按坐标路由）。
+   * 事件派发后 rec.mjs 会真实等 CONFIG.inputSettle 毫秒（默认 160）让 iframe 渲染完再截图。
+   */
+  function input(method, params) {
+    ;(api.__input ||= []).push({ method, params })
+  }
+
+  /** 鼠标事件：type = mouseMoved / mousePressed / mouseReleased；x y 是视口像素 */
+  function mouse(type, x, y, extra = {}) {
+    input("Input.dispatchMouseEvent", {
+      type,
+      x,
+      y,
+      button: type === "mouseMoved" ? "none" : "left",
+      buttons: type === "mousePressed" || extra.drag ? 1 : 0,
+      clickCount: type === "mouseMoved" ? 0 : 1,
+      ...extra
+    })
+  }
+
+  /** 在 (x0,y0) 按下、ms 毫秒内拖到 (x1,y1)、松开（每一帧排一个移动事件；配合假光标看起来是人在拖） */
+  async function dragTo(x0, y0, x1, y1, ms = 1500) {
+    await move(x0, y0, 300)
+    mouse("mouseMoved", x0, y0)
+    mouse("mousePressed", x0, y0)
+    await tween(ms, (e) => {
+      const x = lerp(x0, x1, e)
+      const y = lerp(y0, y1, e)
+      cx = x
+      cy = y
+      cursor().style.transform = `translate(${x - 4}px, ${y - 2}px)`
+      mouse("mouseMoved", x, y, { drag: true })
+    })
+    mouse("mouseReleased", x1, y1)
+  }
+
+  /** 用 CDP 真实点一下 (x, y)（能点进跨域 iframe）：假光标移过去、波纹、按下松开 */
+  async function clickReal(x, y, { ms = 800, hold = 250 } = {}) {
+    await move(x, y, ms)
+    mouse("mouseMoved", x, y)
+    await sleep(hold)
+    ripple()
+    mouse("mousePressed", x, y)
+    await sleep(60)
+    mouse("mouseReleased", x, y)
+  }
+
   const api = {
     accent: "#FF7A00", // 光标波纹、高亮框的颜色；分镜 setup 里按页面配色改，例如 REC.accent = "#F26B1D"
     sleep,
@@ -245,7 +294,11 @@ window.REC = (() => {
     overlay,
     fadeOut,
     hide,
-    show
+    show,
+    input,
+    mouse,
+    dragTo,
+    clickReal
   }
   return api
 })()
