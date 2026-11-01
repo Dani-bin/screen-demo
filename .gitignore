@@ -46,3 +46,6 @@ __pycache__/
 
 # 设计文档、比对截图等全部只留在本地（体积大，页面运行和部署都不依赖）
 /docs/
+
+# img2threejs 还原的本地工作目录（状态、证据、截图、地面中间件，约 100 MB，可由 scripts/estate/img2/ 重新生成）
+.img2threejs/

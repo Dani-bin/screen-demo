@@ -25,11 +25,7 @@
         },
         "4": {
           "status": "done",
-          "output": [
-            "04-data-spec.md",
-            "mock/",
-            "05-requirement.md"
-          ],
+          "output": ["04-data-spec.md", "mock/", "05-requirement.md"],
           "check": "data-check 通过（2026-10-20，需用 skill 真实路径运行）"
         },
         "5": {
@@ -56,10 +52,7 @@
         },
         "8": {
           "status": "done",
-          "output": [
-            "scene/props.js",
-            "scene/animals.js"
-          ],
+          "output": ["scene/props.js", "scene/animals.js"],
           "note": "程序化 three.js（营地 / 场部 / 饮水点 / 基站 / 牛羊），未用 Blender"
         },
         "9": {
@@ -72,10 +65,7 @@
         },
         "11": {
           "status": "in_progress",
-          "output": [
-            "compare/r3/report.md",
-            "11-review-report.md"
-          ]
+          "output": ["compare/r3/report.md", "11-review-report.md"]
         }
       },
       "approvals": {
@@ -231,11 +221,7 @@
         },
         "4": {
           "status": "done",
-          "output": [
-            "04-data-spec.md",
-            "mock/",
-            "05-requirement.md"
-          ],
+          "output": ["04-data-spec.md", "mock/", "05-requirement.md"],
           "check": "data-check 通过（2026-10-21，用 ~/src/build-3d-visual-dashboard 真实路径运行）"
         },
         "5": {
@@ -274,9 +260,7 @@
         },
         "9": {
           "status": "done",
-          "output": [
-            "src/views/smart-port/"
-          ]
+          "output": ["src/views/smart-port/"]
         },
         "10": {
           "status": "done",
@@ -284,9 +268,7 @@
         },
         "11": {
           "status": "done",
-          "output": [
-            "11-review-report.md（各轮截图与比对输出验收后已删除）"
-          ],
+          "output": ["11-review-report.md（各轮截图与比对输出验收后已删除）"],
           "note": "评审 4.2 → 5.55 / 5.2；2026-10-21 用户选择现在收尾，按实测值调整门槛后通过"
         }
       },
@@ -312,10 +294,7 @@
       "camera": "docs/design/smart-port/07-camera.json",
       "thresholds": {
         "deltaE": 5,
-        "deltaERegions": [
-          "近处海面",
-          "远处海面（左上）"
-        ],
+        "deltaERegions": ["近处海面", "远处海面（左上）"],
         "panelTol": 24,
         "panelPctOver": 0.04,
         "panelCompare": "去掉三维背景（capture.mjs --css）",
@@ -558,18 +537,11 @@
         },
         "3": {
           "status": "passed",
-          "output": [
-            "03-scope.md",
-            "devices.json"
-          ]
+          "output": ["03-scope.md", "devices.json"]
         },
         "4": {
           "status": "passed",
-          "output": [
-            "04-data-spec.md",
-            "mock/",
-            "05-requirement.md"
-          ],
+          "output": ["04-data-spec.md", "mock/", "05-requirement.md"],
           "notes": "data-check 通过（真实路径调用）；仿真器 src/views/drone/sim/simulator.js，生成脚本 scripts/drone/make_mock.mjs"
         },
         "5": {
@@ -621,10 +593,7 @@
         },
         "9": {
           "status": "passed",
-          "output": [
-            "src/views/drone/",
-            "src/router/index.js"
-          ],
+          "output": ["src/views/drone/", "src/router/index.js"],
           "notes": "一台设备链路验证：点 1# 机场卡片 → 卡片描边 + 三维高亮 + 镜头飞近 + 详情（GLB 截取的模型缩略图 + 参数）；三维里点 TK-104 → 选中 + 详情；时间游标接入（实时 / 回放）"
         },
         "10": {
@@ -633,9 +602,7 @@
         },
         "11": {
           "status": "in_progress",
-          "output": [
-            "review/"
-          ]
+          "output": ["review/"]
         }
       },
       "approvals": {
@@ -953,9 +920,7 @@
         },
         "8": {
           "status": "done",
-          "output": [
-            "src/views/smart-conveyor/scene/"
-          ],
+          "output": ["src/views/smart-conveyor/scene/"],
           "note": "程序化：地层块（岩面着色器）、煤流光管、巷道、煤仓、工作面空腔、地面设施；下钻细节 scene/detail/（真实尺度）"
         },
         "9": {
@@ -973,10 +938,7 @@
         },
         "11": {
           "status": "done",
-          "output": [
-            "11-review-report.md",
-            "review/"
-          ],
+          "output": ["11-review-report.md", "review/"],
           "note": "16 轮比对；评审 4.6 → 5.0 → 5.2（过 5 分硬门槛）；MC01 / 工作面 IoU 与左栏 / 右栏 / 时间轴面板门槛经用户确认按实测值放宽，验收通过"
         }
       },
@@ -1329,9 +1291,7 @@
           "decision": "用户决定保持当前画面（r12 评审 4.8 / 10），不再继续冲分；遗留问题记在 11-review-report.md"
         }
       ],
-      "openIssues": [
-        "docs/ 被 .gitignore 排除，设计稿与阶段文档只在本地"
-      ]
+      "openIssues": ["docs/ 被 .gitignore 排除，设计稿与阶段文档只在本地"]
     },
     "mine-fire": {
       "title": "矿井智能防灭火与应急避灾三维大屏（青崖煤矿 2# 煤层，企业名虚构）",
@@ -1548,9 +1508,7 @@
         },
         "8": {
           "status": "done",
-          "output": [
-            "src/views/estate/scene/"
-          ],
+          "output": ["src/views/estate/scene/"],
           "note": "全程序化 three.js（地面画布 + 窗格贴图 + 凹凸图 + 实例化树 / 灯 / 车）；无 Blender"
         },
         "9": {
@@ -1564,18 +1522,13 @@
         },
         "10": {
           "status": "done",
-          "output": [
-            "src/views/estate/scene/tour.js"
-          ],
+          "output": ["src/views/estate/scene/tour.js"],
           "note": "8 段导览 + 45 s 空闲自动开始；一天光影 tweenTime；开场飞入"
         },
         "11": {
           "status": "blocked",
-          "output": [
-            "11-review-report.md",
-            "shots/"
-          ],
-          "note": "第一阶段 5.1（过 5 分门槛）；用户要求 ≥ 8 分，后续六轮 4.7–4.9 没进步，已汇报，待用户决定是否提交 / 是否换路线"
+          "output": ["11-review-report.md", "shots/"],
+          "note": "第一阶段 5.1（过 5 分门槛）；用户要求 ≥ 8 分，后续九轮 4.5–4.9 没进步，已汇报；白天画面比黄昏更像实体沙盘，可考虑改设计时刻"
         }
       },
       "approvals": {
@@ -1704,29 +1657,88 @@
           "at": "2026-10-31",
           "stage": 11,
           "decision": "用户选再做一轮光效专项：辉光阈值降低、路灯光池、双层树冠、水面倒影；评审 4.9 持平，辉光和倒影按意见回收（u8）；停下汇报，不再盲调"
+        },
+        {
+          "at": "2026-10-31",
+          "stage": 11,
+          "decision": "用户选压低机位拉近、整体压暗、加强景深：fit_camera.py 加 COMPOSE（俯角 40°、1 号楼屋顶 y=192、B14 南缘 y=765），THEME.dim=0.7，景深带清晰带 + 上下移轴 6 px，树不投影、屋面提亮、湖面压深；评审 4.8 / 4.7 持平，停下汇报"
+        },
+        {
+          "at": "2026-10-31",
+          "stage": 11,
+          "decision": "用户问怎样做到跟真实沙盘一样：实时网页 3D 评审天花板约 5 分，改走 Cycles 离线渲染 + 网页热点（用户选 A）；树换成 ez-tree 造的真树模型（devDependency，只离线用），草地加草丛和花；先出主视图效果图，确认后再扩成整套（多视角 / 环绕 / 昼夜 / 点楼遮罩）"
+        },
+        {
+          "at": "2026-10-31",
+          "stage": 11,
+          "decision": "用户看了主视图效果图后说「可以，扩成整套」：照片模式 = 31 张 Cycles 渲染（主视图 4 档光照 + 8 个近景 × 2 档 + 11 帧环绕）+ 楼栋 ID 遮罩 + manifest，网页由 PhotoScene 在 2D 画布上交叉淡入、遮罩点楼、拖动环绕；manifest 读不到或 ?mode=live 退回实时版。环绕只有 12 帧，松手后吸附到最近一帧（线性叠加会重影）；评审量表对的是实时版，照片模式不再打分，由用户看图判断"
+        },
+        {
+          "at": "2026-10-31",
+          "stage": 11,
+          "decision": "用户说 Cycles 照片版「还是不如预期」，要求用 img2threejs skill 按设计稿 v1 还原：页面默认改为 RestoredScene（scene/img2/，生成器出部件树 + extras.js 手写实例 + look.js 光和后处理）；照片版留在 ?mode=photo，最早的程序化版留在 ?mode=live。评审：blockout / structural 通过，form-refinement 因 east-commercial 0.62 < 0.65 记 request-input（不虚报），后四个 pass 的内容已做进页面但没逐个走闸门"
+        },
+        {
+          "at": "2026-10-31",
+          "stage": 11,
+          "decision": "用户对 request-input 选了「继续精修」，并要求树改用 ez-tree 模型：树 = ez-tree 低面数变体（离线造、打包 1 MB、页面实例化）；商业体改暖光内芯 + 玻璃环 + 出挑楼板环 + 窗框；楼体加檐口 / 女儿墙 / 墙脚压暗；form-refinement 记 continue（east-commercial 0.66）。发现并修掉昼夜句柄补丁悄悄没生效的 bug，用像素亮度实测。材质 / 表面 / 光照 / 交互 / 优化五个 pass 没走闸门（页面是手写材质，材质层 0.55 < 0.7）"
+        },
+        {
+          "at": "2026-10-31",
+          "stage": 11,
+          "decision": "用户选「按设计稿改」：layout.mjs 里 B01 / B04 改 30 层 96 m（户数 664），ML01 / CL01 / E01 / SC01 / HP01 / SH01 的位置、尺寸、层数、高度取还原模型（配套行加可选第 11 项 heightM）；mock / 范围文档重生成；导览文案和范围文档的层数改成从布局取。camera.json 和 Cycles 照片集不重跑"
+        },
+        {
+          "at": "2026-10-31",
+          "stage": 11,
+          "decision": "用户指出小区建筑的造型和材质没按设计稿还原：放大逐类对比后重做——立面改成着色器（facade.js，凹窗 / 窗帘 / 竖槽 / 壁柱 / 墙面渐变，窗光昼夜联动，拆掉近 7000 个窗实例）、屋顶白边和浅色台座（修了屋面板被体积登记门槛漏掉的 bug）、会所三段式、学校 3 层 L 形窄楼（布局同步 3 层 13 m）、周边白模独立材质；用 facade_stats.py 把各类楼的亮度 / 窗光 / 暖度对到设计稿。先前我判断「墙色米黄 vs 灰白」被像素实测推翻，已改正"
+        },
+        {
+          "at": "2026-10-31",
+          "stage": 11,
+          "decision": "用户指出楼面改动比之前更不一致，并问「楼栋不是用 blender 的建模吗」：着色器立面 + 实例化梁墩的做法在整页尺度上窗格是随机色块、结构对不上设计稿。选「Blender 重建楼栋」：住宅楼 B01–B16 改回 Blender 建模（scripts/blender/estate/restored.py，位置 / 尺寸读 footprints.json，真梁墩壁柱深槽 + 窗格贴图集 + 每户小阳台 + 屋顶构件 + 顶点 AO → public/estate/img2/buildings_bl.glb），还原页载入 GLB；着色器立面和 lattice.js 保留作 GLB 读不到时的退路。整页尺度的分位亮度分布（bl_stats.py）平均绝对差 24.7 → 13.5；轮廓内部差异 0.049 → 0.053（略差，如实记录）"
+        },
+        {
+          "at": "2026-11-01",
+          "stage": 11,
+          "decision": "整页并排看，Blender 楼栋的立面已接近设计稿，但屋顶进深和东侧面比设计稿大得多（相机俯角 54° vs 概念图 ≈ 35–40°）。用户选「收浅住宅楼进深」：塔楼 20→12 m、洋房 15→10 m、联排 13→10 m（实测取 10，不是选项里写的 9），南立面不动；户数公式跟着改（高层 3 户/层、洋房 2 户/层、联排 8 户/栋，使每层面积和户型表自洽），总户数 768→486、容积率 1.82→1.22。整页分位差 12.9→10.0，轮廓内部差异 0.050→0.048。同时更正此前报的「155 次绘制调用」：稳态是 290（Blender 楼栋 GLB 占 156）。洋房 / 联排 / 塔楼各用一张窗格贴图集（结构不同：联排炭灰凹槽 + 小窗、洋房暖褐凹槽 + 浅色栏板、塔楼窄暗凹槽）"
+        },
+        {
+          "at": "2026-11-01",
+          "stage": 11,
+          "decision": "用户要求收浅会所：设计稿会所屋顶进深 35 px，旧 58 px；屋顶板前后各出挑 1.5 m，所以楼体进深 24.9 → 14 m（屋顶实际 17 m），南立面不动，立面高 × 1.08；layout.mjs 的 CL01 行改为 (0, −70)、62 × 14、24 m。总容积率 1.19、密度 14.3 %。会所立面开间划分、两层高度比仍未还原。"
+        },
+        {
+          "at": "2026-11-01",
+          "stage": 11,
+          "decision": "用户：接着改（会所立面 + 商业体进深）。会所立面改 Blender 建模（restored.py club()，3 开间 + 4 根细灰柱 + 下层金黄通高玻璃 / 粗梁 / 上层矮窗带，36:64），贴图 window_atlas_club.png，节点 CL01 并入 buildings_bl.glb。商业体 / 医院 / 学校进深用同口径投影对设计稿读数核对：都在 5 px 内，我上一条「进深还没收」是没核对就写的，更正；只有医院进深 ×0.88。"
+        },
+        {
+          "at": "2026-11-01",
+          "stage": 11,
+          "decision": "用户要在沙盘里「点楼栋进入样板间看 360° 实景」，并给了一个贝壳 / 如视的 VR 链接问「图片资源能拿到吗」，说只是自己做 demo、不用管侵权风险和户型对不上。该链接实际是一套二手房（华熙艺术村颐都 4 室 2 厅 171 ㎡），不是在售楼盘样板间；全景数据在对方页面里以 blob 加载，没有可直接下载的图片地址。我的做法：不把平台的全景图拷出来存进仓库，改为在页面里内嵌官方 VR 页（iframe，页面本身没有 X-Frame-Options / CSP 限制），照片、漫游、户型图、切换房间都是它自带的；入口 = 信息卡「进入样板间」按钮 + 再点一次已选中的楼栋；浮层 RoomTour.vue，三维冻结、导览与空闲计时暂停。链接放在 data/room.js（推送 master 会让公开 Pages 页也出现这个内嵌）。"
+        },
+        {
+          "at": "2026-11-01",
+          "stage": 11,
+          "decision": "用户调用 douyin-demo-video 给 /estate 出抖音视频。口播关卡：用户先说「我期望的是开头吸引人」，我给了「像实拍沙盘 → 面板滑入揭晓是网页」的新开头，用户最后选的仍是「这座楼盘沙盘，一拖就从白天到夜晚。」，并确认整体文案、选了样板间入镜。成片 53.2 秒、字幕 26 条到 52.5 秒、画面无字幕；样板间一段是贝壳·如视的第三方页面（含经纪人头像姓名），README 里写了发布前自查。录屏为拍样板间给 rec.mjs 加了 CDP 输入桥（REC.input / mouse / dragTo / clickReal，跨域 iframe 用），给页面加了 DEV-only 的 window.__estateTour；导览讲解词里写死的「7 层洋房 / 3 层联排」改成从布局读。成片原始 400 MB（页面带胶片颗粒），压到 64 MB（crf 26）。"
         }
       ],
       "openIssues": [
-        "评分未达用户要求的 8 分（最近一轮 4.9）：暖光溢出、景深气氛、树冠层次、配套建筑细节、水面倒影",
-        "未提交：用户没有要求提交"
+        "img2threejs 还原：form-refinement 已 continue；后五个 pass 内容已做但没走闸门（材质层 0.55，页面用手写材质而非 PBR 贴图）",
+        "实时版评审最后一轮 4.9（没到 8 分）；照片版（?mode=photo）不打分",
+        "未提交：用户没有要求提交（含 ez-tree devDependency、Cycles 脚本、照片模式、还原版 scripts/estate/img2/、public/estate/photo 与 img2 共约 10 MB）",
+        "照片版（?mode=photo）和 camera.json 还是按旧布局（B01 / B04 102 m）做的，没重跑",
+        "楼栋立面是着色器画的，窗洞没有真几何凹进、阳台是整条板、学校无柱廊、医院无红色标识、白模无倒角；洋房 / 底商街暖度还偏冷（55 对 66、46 对 68）"
       ],
       "designAt": "2026-10-30T18:00:00+08:00（北京时间，黄昏；选中 8 栋）",
       "review": {
-        "scores": [
-          4.5,
-          4.9,
-          5.1,
-          4.7,
-          4.9,
-          4.7,
-          4.9,
-          4.9
-        ],
-        "final": 4.9,
+        "scores": [4.5, 4.9, 5.1, 4.7, 4.9, 4.7, 4.9, 4.9, 4.8, 4.7],
+        "final": 4.7,
         "phase1Final": 5.1,
         "report": "docs/design/estate/11-review-report.md",
         "fps": "60（无头 Chrome，M2，1920×1080，DPR 1）",
-        "note": "用户要 ≥ 8 分；第二阶段渲染管线 3 轮、第三阶段 Blender 建模 + 烘焙 2 轮、光效专项 1 轮，评审一直 4.7–4.9，没超过第一阶段的 5.1，已停下汇报；u8 是光效回收后的版本（未评审）"
+        "note": "用户要 ≥ 8 分；第二阶段渲染管线 3 轮、第三阶段 Blender 建模 + 烘焙 2 轮、光效专项 1 轮、镜头明暗 2 轮，评审一直 4.7–4.9，没超过第一阶段的 5.1；评审意见前后矛盾，分差已在噪声里，已停下汇报"
       }
     }
   }
