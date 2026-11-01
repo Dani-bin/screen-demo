@@ -323,6 +323,25 @@ export const DEMOS = [
     // 取自定稿的火警红
     accent: "#ff3b30",
     preview: "home/mine-fire.webp"
+  },
+  {
+    key: "estate",
+    path: "/estate",
+    name: "楼盘沙盘",
+    en: "REAL ESTATE SAND TABLE",
+    subTitle: "澜岸云境 · 虚构改善盘",
+    category: "智慧地产",
+    desc: "给售楼部大屏用的实体沙盘质感三维展示：象牙白楼体、模型树、蓝色亚克力水面，圆形底座上摆着一个虚构的湖居改善盘。点楼栋看户型和销售情况，拖时间条看一天的阳光、阴影和夜景灯光，配套与景观按类点亮，45 秒无人操作自动导览。",
+    tags: ["实体沙盘质感", "日夜光影", "自动导览"],
+    // 依据：estate/data/layout.json 的 totals（16 栋、704 户）与 scene/tour.js 的导览停靠点（8 个）
+    stats: [
+      { value: "16", unit: "栋", key: "住宅楼栋" },
+      { value: "704", unit: "户", key: "总户数" },
+      { value: "8", unit: "段", key: "自动导览" }
+    ],
+    // 取自定稿的香槟金
+    accent: "#c9a86a",
+    preview: "home/estate.webp"
   }
 ]
 

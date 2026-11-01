@@ -1,0 +1,947 @@
+{
+ "name": "澜岸云境",
+ "slogan": "湖居改善 · 轴线人居",
+ "note": "虚构楼盘，示意成都锦江滨水新城，不对应真实地块",
+ "site": {
+  "w": 300,
+  "d": 210
+ },
+ "storeyH": 3,
+ "base": {
+  "cx": 10,
+  "cy": -6,
+  "rx": 285,
+  "ry": 208
+ },
+ "buildings": [
+  {
+   "id": "B01",
+   "no": 1,
+   "name": "1 栋",
+   "kind": "tower",
+   "kindName": "高层",
+   "cx": -89,
+   "cy": 69,
+   "w": 34,
+   "d": 12,
+   "floors": 30,
+   "storeyH": 3,
+   "height": 96,
+   "units": 90,
+   "unitTypes": [
+    {
+     "name": "三室两厅两卫",
+     "area": 118
+    },
+    {
+     "name": "四室两厅两卫",
+     "area": 143
+    },
+    {
+     "name": "四室两厅三卫",
+     "area": 168
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "中庭景观",
+    "临主路"
+   ]
+  },
+  {
+   "id": "B02",
+   "no": 2,
+   "name": "2 栋",
+   "kind": "tower",
+   "kindName": "高层",
+   "cx": -43,
+   "cy": 63,
+   "w": 34,
+   "d": 12,
+   "floors": 23,
+   "storeyH": 3,
+   "height": 75,
+   "units": 69,
+   "unitTypes": [
+    {
+     "name": "三室两厅两卫",
+     "area": 118
+    },
+    {
+     "name": "四室两厅两卫",
+     "area": 143
+    },
+    {
+     "name": "四室两厅三卫",
+     "area": 168
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "景观轴",
+    "临主路"
+   ]
+  },
+  {
+   "id": "B03",
+   "no": 3,
+   "name": "3 栋",
+   "kind": "tower",
+   "kindName": "高层",
+   "cx": 43,
+   "cy": 63,
+   "w": 34,
+   "d": 12,
+   "floors": 23,
+   "storeyH": 3,
+   "height": 75,
+   "units": 69,
+   "unitTypes": [
+    {
+     "name": "三室两厅两卫",
+     "area": 118
+    },
+    {
+     "name": "四室两厅两卫",
+     "area": 143
+    },
+    {
+     "name": "四室两厅三卫",
+     "area": 168
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "景观轴",
+    "临主路"
+   ]
+  },
+  {
+   "id": "B04",
+   "no": 4,
+   "name": "4 栋",
+   "kind": "tower",
+   "kindName": "高层",
+   "cx": 89,
+   "cy": 69,
+   "w": 34,
+   "d": 12,
+   "floors": 30,
+   "storeyH": 3,
+   "height": 96,
+   "units": 90,
+   "unitTypes": [
+    {
+     "name": "三室两厅两卫",
+     "area": 118
+    },
+    {
+     "name": "四室两厅两卫",
+     "area": 143
+    },
+    {
+     "name": "四室两厅三卫",
+     "area": 168
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "中庭景观",
+    "临主路"
+   ]
+  },
+  {
+   "id": "B05",
+   "no": 5,
+   "name": "5 栋",
+   "kind": "terrace",
+   "kindName": "洋房",
+   "cx": -112,
+   "cy": 33.5,
+   "w": 33,
+   "d": 10,
+   "floors": 8,
+   "storeyH": 3,
+   "height": 25.5,
+   "units": 16,
+   "unitTypes": [
+    {
+     "name": "三室两厅两卫",
+     "area": 125
+    },
+    {
+     "name": "四室两厅三卫",
+     "area": 150
+    },
+    {
+     "name": "带花园跃层",
+     "area": 186
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "中庭景观"
+   ]
+  },
+  {
+   "id": "B06",
+   "no": 6,
+   "name": "6 栋",
+   "kind": "terrace",
+   "kindName": "洋房",
+   "cx": -79,
+   "cy": 33.5,
+   "w": 33,
+   "d": 10,
+   "floors": 8,
+   "storeyH": 3,
+   "height": 25.5,
+   "units": 16,
+   "unitTypes": [
+    {
+     "name": "三室两厅两卫",
+     "area": 125
+    },
+    {
+     "name": "四室两厅三卫",
+     "area": 150
+    },
+    {
+     "name": "带花园跃层",
+     "area": 186
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "景观轴",
+    "近湖"
+   ]
+  },
+  {
+   "id": "B07",
+   "no": 7,
+   "name": "7 栋",
+   "kind": "terrace",
+   "kindName": "洋房",
+   "cx": -112,
+   "cy": -8.5,
+   "w": 33,
+   "d": 10,
+   "floors": 9,
+   "storeyH": 3,
+   "height": 28.5,
+   "units": 18,
+   "unitTypes": [
+    {
+     "name": "三室两厅两卫",
+     "area": 125
+    },
+    {
+     "name": "四室两厅三卫",
+     "area": 150
+    },
+    {
+     "name": "带花园跃层",
+     "area": 186
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "中庭景观"
+   ]
+  },
+  {
+   "id": "B08",
+   "no": 8,
+   "name": "8 栋",
+   "kind": "terrace",
+   "kindName": "洋房",
+   "cx": -79,
+   "cy": -8.5,
+   "w": 33,
+   "d": 10,
+   "floors": 9,
+   "storeyH": 3,
+   "height": 28.5,
+   "units": 18,
+   "unitTypes": [
+    {
+     "name": "三室两厅两卫",
+     "area": 125
+    },
+    {
+     "name": "四室两厅三卫",
+     "area": 150
+    },
+    {
+     "name": "带花园跃层",
+     "area": 186
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "湖景"
+   ]
+  },
+  {
+   "id": "B09",
+   "no": 9,
+   "name": "9 栋",
+   "kind": "terrace",
+   "kindName": "洋房",
+   "cx": 79,
+   "cy": 33.5,
+   "w": 33,
+   "d": 10,
+   "floors": 8,
+   "storeyH": 3,
+   "height": 25.5,
+   "units": 16,
+   "unitTypes": [
+    {
+     "name": "三室两厅两卫",
+     "area": 125
+    },
+    {
+     "name": "四室两厅三卫",
+     "area": 150
+    },
+    {
+     "name": "带花园跃层",
+     "area": 186
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "景观轴",
+    "近湖"
+   ]
+  },
+  {
+   "id": "B10",
+   "no": 10,
+   "name": "10 栋",
+   "kind": "terrace",
+   "kindName": "洋房",
+   "cx": 112,
+   "cy": 33.5,
+   "w": 33,
+   "d": 10,
+   "floors": 8,
+   "storeyH": 3,
+   "height": 25.5,
+   "units": 16,
+   "unitTypes": [
+    {
+     "name": "三室两厅两卫",
+     "area": 125
+    },
+    {
+     "name": "四室两厅三卫",
+     "area": 150
+    },
+    {
+     "name": "带花园跃层",
+     "area": 186
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "中庭景观"
+   ]
+  },
+  {
+   "id": "B11",
+   "no": 11,
+   "name": "11 栋",
+   "kind": "terrace",
+   "kindName": "洋房",
+   "cx": 79,
+   "cy": -8.5,
+   "w": 33,
+   "d": 10,
+   "floors": 9,
+   "storeyH": 3,
+   "height": 28.5,
+   "units": 18,
+   "unitTypes": [
+    {
+     "name": "三室两厅两卫",
+     "area": 125
+    },
+    {
+     "name": "四室两厅三卫",
+     "area": 150
+    },
+    {
+     "name": "带花园跃层",
+     "area": 186
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "湖景"
+   ]
+  },
+  {
+   "id": "B12",
+   "no": 12,
+   "name": "12 栋",
+   "kind": "terrace",
+   "kindName": "洋房",
+   "cx": 112,
+   "cy": -8.5,
+   "w": 33,
+   "d": 10,
+   "floors": 9,
+   "storeyH": 3,
+   "height": 28.5,
+   "units": 18,
+   "unitTypes": [
+    {
+     "name": "三室两厅两卫",
+     "area": 125
+    },
+    {
+     "name": "四室两厅三卫",
+     "area": 150
+    },
+    {
+     "name": "带花园跃层",
+     "area": 186
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "中庭景观"
+   ]
+  },
+  {
+   "id": "B13",
+   "no": 13,
+   "name": "13 栋",
+   "kind": "villa",
+   "kindName": "联排",
+   "cx": -91,
+   "cy": -84.5,
+   "w": 30,
+   "d": 10,
+   "floors": 9,
+   "storeyH": 3,
+   "height": 28.5,
+   "units": 8,
+   "unitTypes": [
+    {
+     "name": "五室三厅四卫",
+     "area": 268
+    },
+    {
+     "name": "六室四厅五卫",
+     "area": 312
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "临滨河路",
+    "河岸公园景观"
+   ]
+  },
+  {
+   "id": "B14",
+   "no": 14,
+   "name": "14 栋",
+   "kind": "villa",
+   "kindName": "联排",
+   "cx": -57,
+   "cy": -84.5,
+   "w": 30,
+   "d": 10,
+   "floors": 9,
+   "storeyH": 3,
+   "height": 28.5,
+   "units": 8,
+   "unitTypes": [
+    {
+     "name": "五室三厅四卫",
+     "area": 268
+    },
+    {
+     "name": "六室四厅五卫",
+     "area": 312
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "临滨河路",
+    "河岸公园景观"
+   ]
+  },
+  {
+   "id": "B15",
+   "no": 15,
+   "name": "15 栋",
+   "kind": "villa",
+   "kindName": "联排",
+   "cx": 57,
+   "cy": -84.5,
+   "w": 30,
+   "d": 10,
+   "floors": 9,
+   "storeyH": 3,
+   "height": 28.5,
+   "units": 8,
+   "unitTypes": [
+    {
+     "name": "五室三厅四卫",
+     "area": 268
+    },
+    {
+     "name": "六室四厅五卫",
+     "area": 312
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "临滨河路",
+    "河岸公园景观"
+   ]
+  },
+  {
+   "id": "B16",
+   "no": 16,
+   "name": "16 栋",
+   "kind": "villa",
+   "kindName": "联排",
+   "cx": 91,
+   "cy": -84.5,
+   "w": 30,
+   "d": 10,
+   "floors": 9,
+   "storeyH": 3,
+   "height": 28.5,
+   "units": 8,
+   "unitTypes": [
+    {
+     "name": "五室三厅四卫",
+     "area": 268
+    },
+    {
+     "name": "六室四厅五卫",
+     "area": 312
+    }
+   ],
+   "facing": "坐北朝南",
+   "tags": [
+    "临滨河路",
+    "河岸公园景观"
+   ]
+  }
+ ],
+ "amenities": [
+  {
+   "id": "CL01",
+   "name": "社区会所",
+   "layer": "club",
+   "shape": "building",
+   "cx": 0,
+   "cy": -70,
+   "w": 62,
+   "d": 14,
+   "floors": 3,
+   "height": 24,
+   "desc": "3 层会所：室内恒温泳池、健身房、亲子空间、业主活动厅",
+   "outside": false
+  },
+  {
+   "id": "SW01",
+   "name": "室外泳池",
+   "layer": "club",
+   "shape": "pool",
+   "cx": 0,
+   "cy": -86,
+   "w": 28,
+   "d": 12,
+   "floors": 0,
+   "height": 0,
+   "desc": "景观泳池，临会所，夏季开放",
+   "outside": false
+  },
+  {
+   "id": "KG01",
+   "name": "社区幼儿园",
+   "layer": "edu",
+   "shape": "building",
+   "cx": -134,
+   "cy": -78,
+   "w": 22,
+   "d": 14,
+   "floors": 3,
+   "height": 10,
+   "desc": "3 层幼儿园，带户外操场，开发商配建",
+   "outside": false
+  },
+  {
+   "id": "SH01",
+   "name": "底商街",
+   "layer": "shop",
+   "shape": "building",
+   "cx": 155,
+   "cy": -3,
+   "w": 16,
+   "d": 140,
+   "floors": 2,
+   "height": 7,
+   "desc": "沿岸南路 2 层社区商业街：超市、餐饮、药房、洗衣",
+   "outside": false
+  },
+  {
+   "id": "PM01",
+   "name": "物业服务中心",
+   "layer": "traffic",
+   "shape": "building",
+   "cx": -24,
+   "cy": 95,
+   "w": 14,
+   "d": 10,
+   "floors": 1,
+   "height": 4,
+   "desc": "主入口旁 1 层物业服务中心，24 小时管家",
+   "outside": false
+  },
+  {
+   "id": "LK01",
+   "name": "中央景观湖",
+   "layer": "scenic",
+   "shape": "lake",
+   "cx": 0,
+   "cy": -12,
+   "w": 78,
+   "d": 66,
+   "floors": 0,
+   "height": 0,
+   "desc": "约 3 700 ㎡ 景观湖，环湖步道，景观轴的终点",
+   "outside": false
+  },
+  {
+   "id": "AX01",
+   "name": "景观轴",
+   "layer": "scenic",
+   "shape": "axis",
+   "cx": 0,
+   "cy": 58,
+   "w": 24,
+   "d": 84,
+   "floors": 0,
+   "height": 0,
+   "desc": "主入口到景观湖的中轴，林荫 + 跌水，北高南低",
+   "outside": false
+  },
+  {
+   "id": "TR01",
+   "name": "环湖步道",
+   "layer": "club",
+   "shape": "track",
+   "cx": 0,
+   "cy": -12,
+   "w": 88,
+   "d": 76,
+   "floors": 0,
+   "height": 0,
+   "desc": "环湖慢跑道，约 250 m，夜间有地灯",
+   "outside": false
+  },
+  {
+   "id": "PL01",
+   "name": "儿童乐园",
+   "layer": "club",
+   "shape": "playground",
+   "cx": -80,
+   "cy": -38,
+   "w": 24,
+   "d": 18,
+   "floors": 0,
+   "height": 0,
+   "desc": "分龄儿童游乐场，橡胶地面",
+   "outside": false
+  },
+  {
+   "id": "SP01",
+   "name": "运动场",
+   "layer": "club",
+   "shape": "court",
+   "cx": 80,
+   "cy": -38,
+   "w": 24,
+   "d": 16,
+   "floors": 0,
+   "height": 0,
+   "desc": "篮球 + 羽毛球场，夜间照明",
+   "outside": false
+  },
+  {
+   "id": "E01",
+   "name": "主入口",
+   "layer": "traffic",
+   "shape": "gate",
+   "cx": 3,
+   "cy": 118,
+   "w": 29,
+   "d": 12,
+   "floors": 0,
+   "height": 15,
+   "desc": "北侧主入口，面向锦澜大道，人车分流",
+   "outside": false
+  },
+  {
+   "id": "E02",
+   "name": "东次入口",
+   "layer": "traffic",
+   "shape": "gate",
+   "cx": 150,
+   "cy": -72,
+   "w": 6,
+   "d": 14,
+   "floors": 0,
+   "height": 0,
+   "desc": "东侧次入口，通地铁口和商业",
+   "outside": false
+  },
+  {
+   "id": "G01",
+   "name": "车库入口 1",
+   "layer": "traffic",
+   "shape": "garage",
+   "cx": -60,
+   "cy": 105,
+   "w": 14,
+   "d": 6,
+   "floors": 0,
+   "height": 0,
+   "desc": "北侧地下车库入口",
+   "outside": false
+  },
+  {
+   "id": "G02",
+   "name": "车库入口 2",
+   "layer": "traffic",
+   "shape": "garage",
+   "cx": 60,
+   "cy": 105,
+   "w": 14,
+   "d": 6,
+   "floors": 0,
+   "height": 0,
+   "desc": "北侧地下车库入口",
+   "outside": false
+  },
+  {
+   "id": "SC01",
+   "name": "九年一贯制学校",
+   "layer": "edu",
+   "shape": "building",
+   "cx": -226,
+   "cy": 22,
+   "w": 92,
+   "d": 19,
+   "floors": 3,
+   "height": 13,
+   "desc": "步行约 3 分钟（示意）",
+   "outside": true
+  },
+  {
+   "id": "MT01",
+   "name": "地铁站 A 口",
+   "layer": "traffic",
+   "shape": "building",
+   "cx": 182,
+   "cy": 82,
+   "w": 12,
+   "d": 8,
+   "floors": 1,
+   "height": 4,
+   "desc": "步行约 3 分钟（示意，线路不指代真实线路）",
+   "outside": true
+  },
+  {
+   "id": "ML01",
+   "name": "商业综合体",
+   "layer": "shop",
+   "shape": "building",
+   "cx": 252,
+   "cy": -10.5,
+   "w": 54,
+   "d": 27,
+   "floors": 5,
+   "height": 40.8,
+   "desc": "5 层购物中心，步行约 5 分钟（示意）",
+   "outside": true
+  },
+  {
+   "id": "HP01",
+   "name": "社区医院",
+   "layer": "med",
+   "shape": "building",
+   "cx": 239,
+   "cy": -80,
+   "w": 59,
+   "d": 33,
+   "floors": 6,
+   "height": 28,
+   "desc": "步行约 4 分钟（示意）",
+   "outside": true
+  },
+  {
+   "id": "PK01",
+   "name": "河岸公园",
+   "layer": "scenic",
+   "shape": "park",
+   "cx": 0,
+   "cy": -131,
+   "w": 300,
+   "d": 22,
+   "floors": 0,
+   "height": 0,
+   "desc": "滨河带状公园 + 骑行道，沿河 1.2 km",
+   "outside": true
+  },
+  {
+   "id": "RV01",
+   "name": "锦澜河",
+   "layer": "scenic",
+   "shape": "river",
+   "cx": 0,
+   "cy": -160,
+   "w": 460,
+   "d": 36,
+   "floors": 0,
+   "height": 0,
+   "desc": "滨水景观河道，宽约 36 m",
+   "outside": true
+  }
+ ],
+ "roads": [
+  {
+   "id": "R01",
+   "name": "锦澜大道",
+   "cx": 0,
+   "cy": 127,
+   "w": 460,
+   "d": 40,
+   "lanes": 6
+  },
+  {
+   "id": "R02",
+   "name": "滨河路",
+   "cx": 0,
+   "cy": -112,
+   "w": 460,
+   "d": 16,
+   "lanes": 2
+  },
+  {
+   "id": "R03",
+   "name": "云岸路",
+   "cx": -160,
+   "cy": 0,
+   "w": 12,
+   "d": 240,
+   "lanes": 2
+  },
+  {
+   "id": "R04",
+   "name": "岸南路",
+   "cx": 162,
+   "cy": 0,
+   "w": 20,
+   "d": 240,
+   "lanes": 4
+  }
+ ],
+ "layers": [
+  {
+   "id": "edu",
+   "name": "教育",
+   "ids": [
+    "KG01",
+    "SC01"
+   ]
+  },
+  {
+   "id": "shop",
+   "name": "商业",
+   "ids": [
+    "SH01",
+    "ML01"
+   ]
+  },
+  {
+   "id": "traffic",
+   "name": "交通",
+   "ids": [
+    "MT01",
+    "E01",
+    "E02",
+    "G01",
+    "G02",
+    "PM01"
+   ]
+  },
+  {
+   "id": "club",
+   "name": "会所运动",
+   "ids": [
+    "CL01",
+    "SW01",
+    "TR01",
+    "PL01",
+    "SP01"
+   ]
+  },
+  {
+   "id": "scenic",
+   "name": "景观",
+   "ids": [
+    "LK01",
+    "AX01",
+    "PK01",
+    "RV01"
+   ]
+  },
+  {
+   "id": "med",
+   "name": "医疗",
+   "ids": [
+    "HP01"
+   ]
+  }
+ ],
+ "totals": {
+  "siteArea": 63000,
+  "siteMu": 94.5,
+  "gfa": 74800,
+  "far": 1.19,
+  "density": 0.143,
+  "greenRate": 0.38,
+  "buildings": 16,
+  "units": 486,
+  "parking": 630,
+  "maxFloors": 30,
+  "byKind": {
+   "tower": {
+    "name": "高层",
+    "buildings": 4,
+    "units": 318
+   },
+   "terrace": {
+    "name": "洋房",
+    "buildings": 8,
+    "units": 136
+   },
+   "villa": {
+    "name": "联排",
+    "buildings": 4,
+    "units": 32
+   }
+  }
+ }
+}

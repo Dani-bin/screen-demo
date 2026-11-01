@@ -129,6 +129,8 @@ class Cover:
         # 白色卡片、缩略图标签条上的字：深色页面的 ink / sub 是浅色（给深底上的标题用），印在白底上看不见，
         # 所以单独给 cardInk / cardSub；不给就和 ink / sub 一样（浅色页面照旧）
         self.P["cardInk"] = rgb(pal["cardInk"]) if "cardInk" in pal else self.P["ink"]
+        # accentInk：白色卡片 / 缩略图标签条上的强调字用的颜色（深色页面的强调色是浅金，落在白底上看不清，给一个深一点的同色系）
+        self.P["accentInk"] = rgb(pal["accentInk"]) if "accentInk" in pal else self.P["accent"]
         self.P["cardSub"] = rgb(pal["cardSub"]) if "cardSub" in pal else self.P["sub"]
         self.steps = []
         for s in c.get("steps", []):
@@ -264,7 +266,7 @@ class Cover:
             ImageDraw.Draw(sm).rounded_rectangle((0, -14, w - 1, sh - 1), 12, fill=255)
             cv.paste(strip, (cx, y + h - sh), sm)
             d = ImageDraw.Draw(cv)
-            d.text((cx + w // 2, y + h - sh // 2), name, font=font("title" if self.style == "candy" else "body", size), fill=P["accent"] if last else P["cardInk"], anchor="mm")
+            d.text((cx + w // 2, y + h - sh // 2), name, font=font("title" if self.style == "candy" else "body", size), fill=P["accentInk"] if last else P["cardInk"], anchor="mm")
             if not last:
                 ax, ay = cx + w + gap // 2 + 3, y + h // 2
                 d.line([(ax - 8, ay - 13), (ax + 5, ay), (ax - 8, ay + 13)], fill=P["sub"], width=5)
@@ -307,7 +309,7 @@ class Cover:
         for fld, rh in rows:
             size = fld.get("size", "md")
             val = str(fld["value"])
-            col = P["accent"] if fld.get("accent") else P["cardInk"]
+            col = P["accentInk"] if fld.get("accent") else P["cardInk"]
             d.text((x0 + S(22), y), fld.get("label", ""), font=font("body", S(18)), fill=P["cardSub"])
             if size == "md":
                 vf = font("num", S(30)) if is_code(val) else font("body", S(24))
