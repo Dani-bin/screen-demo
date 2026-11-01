@@ -117,18 +117,22 @@ class MB:
         self.verts = []
         self.faces = []
         self.fmat = []
+        self.fuv = []  # 每个面的 UV（和顶点同序的 (u, v) 列表）或 None
 
-    def quad(self, m, a, b, c, d):
+    def quad(self, m, a, b, c, d, uv=None):
+        """uv：四个角的 (u, v)，顺序和 a b c d 一致；不给就不带 UV"""
         i = len(self.verts)
         self.verts += [a, b, c, d]
         self.faces.append((i, i + 1, i + 2, i + 3))
         self.fmat.append(m)
+        self.fuv.append(uv)
 
     def tri(self, m, a, b, c):
         i = len(self.verts)
         self.verts += [a, b, c]
         self.faces.append((i, i + 1, i + 2))
         self.fmat.append(m)
+        self.fuv.append(None)
 
     def box(self, m, x0, x1, y0, y1, z0, z1, skip=(), tf=None):
         """轴对齐盒子（局部坐标），skip 里写不要的面（如贴墙的背面 "+y"）"""
@@ -170,6 +174,14 @@ class MB:
         me.update()
         for p in me.polygons:
             p.use_smooth = False
+        # UV：只要有一个面带 UV 就建 UV 层，没带的面记 (0, 0)
+        if any(u is not None for u in self.fuv):
+            layer = me.uv_layers.new(name="UVMap")
+            k = 0
+            for poly, uv in zip(me.polygons, self.fuv):
+                for j, li in enumerate(poly.loop_indices):
+                    layer.data[li].uv = uv[j] if uv is not None else (0.0, 0.0)
+                    k += 1
         # 角点颜色：白（AO 烘焙会覆盖）
         attr = me.color_attributes.new("Col", "FLOAT_COLOR", "CORNER")
         attr.data.foreach_set("color", [1.0] * (4 * len(me.loops)))
