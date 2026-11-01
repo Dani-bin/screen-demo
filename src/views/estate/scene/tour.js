@@ -22,6 +22,15 @@ export function tourStops(layout) {
   const t = layout.totals
   const k = t.byKind
   const A = (id) => layout.amenities.find((a) => a.id === id)
+  // 某类住宅的层数范围文字（全部同层就写一个数，不同层写 "8–9"），讲解词里不再写死层数
+  const floorsText = (kind) => {
+    const f = layout.buildings
+      .filter((b) => b.kind === kind)
+      .map((b) => b.floors)
+    const lo = Math.min(...f)
+    const hi = Math.max(...f)
+    return lo === hi ? `${lo}` : `${lo}–${hi}`
+  }
   return [
     {
       name: "总览",
@@ -37,7 +46,12 @@ export function tourStops(layout) {
     },
     {
       name: "北排高层",
-      text: `北排 ${k.tower.buildings} 栋高层，32 / 26 / 26 / 32 层，坐北朝南，兼作北侧主路的屏障，阴影落在身后，不挡南边的洋房。`,
+      text: `北排 ${k.tower.buildings} 栋高层，${layout.buildings
+        .filter((b) => b.kind === "tower")
+        .map((b) => b.floors)
+        .join(
+          " / "
+        )} 层，坐北朝南，兼作北侧主路的屏障，阴影落在身后，不挡南边的洋房。`,
       dwell: 6500,
       run: (s) => {
         s.setLayer(null)
@@ -58,7 +72,7 @@ export function tourStops(layout) {
     },
     {
       name: "洋房组团",
-      text: `${k.terrace.buildings} 栋 7 层洋房分列湖的东西两侧，每侧 4 栋，靠湖的 4 栋是湖景房，其余看中庭。`,
+      text: `${k.terrace.buildings} 栋 ${floorsText("terrace")} 层洋房分列湖的东西两侧，每侧 4 栋，靠湖的 4 栋是湖景房，其余看中庭。`,
       dwell: 6500,
       run: (s) => {
         s.setLayer(null)
@@ -73,7 +87,7 @@ export function tourStops(layout) {
     },
     {
       name: "滨河联排",
-      text: `南排 ${k.villa.buildings} 栋 3 层联排临滨河路，共 ${k.villa.units} 户，对面是河岸公园和锦澜河。`,
+      text: `南排 ${k.villa.buildings} 栋 ${floorsText("villa")} 层联排临滨河路，共 ${k.villa.units} 户，对面是河岸公园和锦澜河。`,
       dwell: 6500,
       run: (s) =>
         s.flyToPlan(0, -78, {

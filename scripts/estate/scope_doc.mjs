@@ -16,6 +16,8 @@ const l = JSON.parse(
   )
 )
 const t = l.totals
+// 楼栋层数（示意图里用，不写死）
+const fl = (id) => l.buildings.find((b) => b.id === id).floors
 
 const rows = l.buildings.map(
   (b) =>
@@ -54,7 +56,7 @@ const md = `# 03 场景收敛与设备编号
 \`\`\`
                 锦澜大道（北，主干道）
    ┌── G01 ───── E01 主入口 ───── G02 ──┐
-   │ B01 32F    B02 26F ║ B03 26F    B04 32F │  北排高层，朝南
+   │ B01 ${fl("B01")}F    B02 ${fl("B02")}F ║ B03 ${fl("B03")}F    B04 ${fl("B04")}F │  北排高层，朝南
    │ B05  B06   ║景观轴 AX01║   B09  B10       │  洋房第一排 7F
  云│ B07  B08   ╚═景观湖 LK01═╝   B11  B12      │  洋房第二排，湖景
  岸│ PL01       环湖步道 TR01       SP01        │ SH01 底商街 · 岸南路
