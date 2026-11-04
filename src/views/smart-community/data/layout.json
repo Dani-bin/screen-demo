@@ -1,0 +1,478 @@
+{
+  "site": {
+    "x0": -154,
+    "x1": 152,
+    "y0": -104,
+    "y1": 107,
+    "w": 306,
+    "h": 211,
+    "name": "松岚苑",
+    "fictional": true
+  },
+  "vScale": 1,
+  "base": {
+    "cx": 10,
+    "cy": -6,
+    "rx": 285,
+    "ry": 208,
+    "depth": 30
+  },
+  "buildings": [
+    {
+      "id": "B01",
+      "name": "1 栋",
+      "kind": "tower",
+      "kindName": "高层",
+      "cx": -89,
+      "cy": 69,
+      "w": 34,
+      "d": 12,
+      "floors": 30,
+      "h": 96,
+      "units": 90
+    },
+    {
+      "id": "B02",
+      "name": "2 栋",
+      "kind": "tower",
+      "kindName": "高层",
+      "cx": -43,
+      "cy": 63,
+      "w": 34,
+      "d": 12,
+      "floors": 23,
+      "h": 75,
+      "units": 69
+    },
+    {
+      "id": "B03",
+      "name": "3 栋",
+      "kind": "tower",
+      "kindName": "高层",
+      "cx": 43,
+      "cy": 63,
+      "w": 34,
+      "d": 12,
+      "floors": 23,
+      "h": 75,
+      "units": 69
+    },
+    {
+      "id": "B04",
+      "name": "4 栋",
+      "kind": "tower",
+      "kindName": "高层",
+      "cx": 89,
+      "cy": 69,
+      "w": 34,
+      "d": 12,
+      "floors": 30,
+      "h": 96,
+      "units": 90
+    },
+    {
+      "id": "B05",
+      "name": "5 栋",
+      "kind": "terrace",
+      "kindName": "洋房",
+      "cx": -112,
+      "cy": 33.5,
+      "w": 33,
+      "d": 10,
+      "floors": 8,
+      "h": 25.5,
+      "units": 16
+    },
+    {
+      "id": "B06",
+      "name": "6 栋",
+      "kind": "terrace",
+      "kindName": "洋房",
+      "cx": -79,
+      "cy": 33.5,
+      "w": 33,
+      "d": 10,
+      "floors": 8,
+      "h": 25.5,
+      "units": 16
+    },
+    {
+      "id": "B07",
+      "name": "7 栋",
+      "kind": "terrace",
+      "kindName": "洋房",
+      "cx": -112,
+      "cy": -8.5,
+      "w": 33,
+      "d": 10,
+      "floors": 9,
+      "h": 28.5,
+      "units": 18
+    },
+    {
+      "id": "B08",
+      "name": "8 栋",
+      "kind": "terrace",
+      "kindName": "洋房",
+      "cx": -79,
+      "cy": -8.5,
+      "w": 33,
+      "d": 10,
+      "floors": 9,
+      "h": 28.5,
+      "units": 18
+    },
+    {
+      "id": "B09",
+      "name": "9 栋",
+      "kind": "terrace",
+      "kindName": "洋房",
+      "cx": 79,
+      "cy": 33.5,
+      "w": 33,
+      "d": 10,
+      "floors": 8,
+      "h": 25.5,
+      "units": 16
+    },
+    {
+      "id": "B10",
+      "name": "10 栋",
+      "kind": "terrace",
+      "kindName": "洋房",
+      "cx": 112,
+      "cy": 33.5,
+      "w": 33,
+      "d": 10,
+      "floors": 8,
+      "h": 25.5,
+      "units": 16
+    },
+    {
+      "id": "B11",
+      "name": "11 栋",
+      "kind": "terrace",
+      "kindName": "洋房",
+      "cx": 79,
+      "cy": -8.5,
+      "w": 33,
+      "d": 10,
+      "floors": 9,
+      "h": 28.5,
+      "units": 18
+    },
+    {
+      "id": "B12",
+      "name": "12 栋",
+      "kind": "terrace",
+      "kindName": "洋房",
+      "cx": 112,
+      "cy": -8.5,
+      "w": 33,
+      "d": 10,
+      "floors": 9,
+      "h": 28.5,
+      "units": 18
+    },
+    {
+      "id": "B13",
+      "name": "13 栋",
+      "kind": "villa",
+      "kindName": "联排",
+      "cx": -91,
+      "cy": -84.5,
+      "w": 30,
+      "d": 10,
+      "floors": 9,
+      "h": 28.5,
+      "units": 8
+    },
+    {
+      "id": "B14",
+      "name": "14 栋",
+      "kind": "villa",
+      "kindName": "联排",
+      "cx": -57,
+      "cy": -84.5,
+      "w": 30,
+      "d": 10,
+      "floors": 9,
+      "h": 28.5,
+      "units": 8
+    },
+    {
+      "id": "B15",
+      "name": "15 栋",
+      "kind": "villa",
+      "kindName": "联排",
+      "cx": 57,
+      "cy": -84.5,
+      "w": 30,
+      "d": 10,
+      "floors": 9,
+      "h": 28.5,
+      "units": 8
+    },
+    {
+      "id": "B16",
+      "name": "16 栋",
+      "kind": "villa",
+      "kindName": "联排",
+      "cx": 91,
+      "cy": -84.5,
+      "w": 30,
+      "d": 10,
+      "floors": 9,
+      "h": 28.5,
+      "units": 8
+    },
+    {
+      "id": "PM-01",
+      "name": "物业服务中心（含监控室、屋顶机库）",
+      "kind": "property",
+      "model": "CL01",
+      "cx": 0,
+      "cy": -70,
+      "w": 62,
+      "d": 14,
+      "floors": 3,
+      "h": 26.1,
+      "units": 0
+    },
+    {
+      "id": "KG-01",
+      "name": "幼儿园",
+      "kind": "kindergarten",
+      "model": "KG01",
+      "cx": -134,
+      "cy": -78,
+      "w": 22,
+      "d": 14,
+      "floors": 3,
+      "h": 10,
+      "units": 0
+    },
+    {
+      "id": "SH-01",
+      "name": "底商",
+      "kind": "shop",
+      "model": "SH01",
+      "cx": 155,
+      "cy": -3,
+      "w": 16,
+      "d": 140,
+      "floors": 2,
+      "h": 7,
+      "units": 0
+    },
+    {
+      "id": "EL-01",
+      "name": "配电房",
+      "kind": "utility",
+      "model": "PM01",
+      "cx": -24,
+      "cy": 95,
+      "w": 14,
+      "d": 10,
+      "floors": 1,
+      "h": 4,
+      "units": 0
+    }
+  ],
+  "points": [
+    {
+      "id": "GT-01",
+      "name": "北主入口",
+      "kind": "gate",
+      "x": 3,
+      "y": 114
+    },
+    {
+      "id": "GT-02",
+      "name": "东次入口",
+      "kind": "gate",
+      "x": 148,
+      "y": -72
+    },
+    {
+      "id": "GT-03",
+      "name": "西人行门",
+      "kind": "gate",
+      "x": -152,
+      "y": 14
+    },
+    {
+      "id": "PK-01",
+      "name": "地下车库出入口 1",
+      "kind": "garage",
+      "x": -60,
+      "y": 105
+    },
+    {
+      "id": "PK-02",
+      "name": "地下车库出入口 2",
+      "kind": "garage",
+      "x": 60,
+      "y": 105
+    },
+    {
+      "id": "CH-01",
+      "name": "电动车集中充电区 1",
+      "kind": "charge",
+      "x": -52,
+      "y": -36
+    },
+    {
+      "id": "CH-02",
+      "name": "电动车集中充电区 2",
+      "kind": "charge",
+      "x": 52,
+      "y": -36
+    },
+    {
+      "id": "CH-03",
+      "name": "电动车集中充电区 3",
+      "kind": "charge",
+      "x": -108,
+      "y": -42
+    },
+    {
+      "id": "FA-01",
+      "name": "消防登高面 B03",
+      "kind": "fireAccess",
+      "x": 43,
+      "y": 52
+    },
+    {
+      "id": "FA-02",
+      "name": "消防登高面 B06",
+      "kind": "fireAccess",
+      "x": -79,
+      "y": 24
+    },
+    {
+      "id": "FA-03",
+      "name": "消防登高面 B08",
+      "kind": "fireAccess",
+      "x": -79,
+      "y": -19
+    },
+    {
+      "id": "FA-04",
+      "name": "消防登高面 B11",
+      "kind": "fireAccess",
+      "x": 79,
+      "y": -19
+    },
+    {
+      "id": "BS-01",
+      "name": "盲区 B01–B02 夹缝",
+      "kind": "blind",
+      "x": -66,
+      "y": 66,
+      "w": 12,
+      "d": 20
+    },
+    {
+      "id": "BS-02",
+      "name": "盲区 B03–B04 夹缝",
+      "kind": "blind",
+      "x": 66,
+      "y": 66,
+      "w": 12,
+      "d": 20
+    },
+    {
+      "id": "BS-03",
+      "name": "盲区 湖西林荫带",
+      "kind": "blind",
+      "x": -54,
+      "y": 12,
+      "w": 22,
+      "d": 26
+    },
+    {
+      "id": "BS-04",
+      "name": "盲区 湖东林荫带",
+      "kind": "blind",
+      "x": 54,
+      "y": 12,
+      "w": 22,
+      "d": 26
+    },
+    {
+      "id": "BS-05",
+      "name": "盲区 景观轴林荫带",
+      "kind": "blind",
+      "x": 0,
+      "y": 46,
+      "w": 16,
+      "d": 26
+    },
+    {
+      "id": "BS-06",
+      "name": "盲区 湖西南岸树荫",
+      "kind": "blind",
+      "x": -44,
+      "y": -24,
+      "w": 20,
+      "d": 20
+    }
+  ],
+  "air": [
+    {
+      "id": "UAV-01",
+      "name": "一号机 · 主侦查机",
+      "kind": "droneScout",
+      "sixAxis": true,
+      "sensors": "4K 可见光 + 640×512 红外"
+    },
+    {
+      "id": "UAV-02",
+      "name": "二号机 · 中继通信机",
+      "kind": "droneRelay",
+      "sensors": "2.4G / 5.8G 双频中继"
+    },
+    {
+      "id": "UAV-03",
+      "name": "三号机 · 补盲探查机",
+      "kind": "droneBlind",
+      "sensors": "广角相机 + 近距红外 + 激光测距"
+    },
+    {
+      "id": "HG-01",
+      "name": "屋顶机库",
+      "kind": "hangar",
+      "on": "PM-01"
+    },
+    {
+      "id": "GS-01",
+      "name": "地面站（监控室）",
+      "kind": "groundStation",
+      "in": "PM-01"
+    }
+  ],
+  "hangar": {
+    "id": "HG-01",
+    "x": 0,
+    "y": -70,
+    "roof": 26.1
+  },
+  "fireLane": {
+    "id": "FR-01",
+    "name": "消防环路",
+    "path": [
+      [-142, -93],
+      [138, -93],
+      [138, 96],
+      [-142, 96],
+      [-142, -93]
+    ],
+    "width": 5
+  },
+  "totals": {
+    "households": 486,
+    "residentialBuildings": 16,
+    "blindZones": 6
+  }
+}

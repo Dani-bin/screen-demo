@@ -52,7 +52,7 @@ const PRINCIPAL_Y = SCENE_OY + (864 / 2) * SCENE_K // 投影中心在舞台里�
  * ground：地面贴图亮度（贴图是 18:00 的烘焙光）；win / lamp：窗光、路灯；tree：树冠自发光；
  * hemi / sun：半球光、主光强度；bloom：辉光强度；bg：背景亮度；cool：夜里整体偏冷的程度
  */
-const KEYS = [
+export const KEYS = [
   {
     h: 9,
     ground: 1.85,
@@ -107,12 +107,13 @@ const KEYS = [
   }
 ]
 
-function lookAt(hour) {
-  const h = Math.min(KEYS[KEYS.length - 1].h, Math.max(KEYS[0].h, hour))
+/** keys 缺省用上面的档位；/smart-community 继承本类时传自己的（多了凌晨和清晨的档，全天都能看） */
+function lookAt(hour, keys = KEYS) {
+  const h = Math.min(keys[keys.length - 1].h, Math.max(keys[0].h, hour))
   let i = 0
-  while (i < KEYS.length - 2 && h > KEYS[i + 1].h) i++
-  const a = KEYS[i]
-  const b = KEYS[i + 1]
+  while (i < keys.length - 2 && h > keys[i + 1].h) i++
+  const a = keys[i]
+  const b = keys[i + 1]
   const t = smooth(clamp01((h - a.h) / (b.h - a.h)))
   const out = {}
   for (const k of Object.keys(a))
@@ -152,6 +153,7 @@ export class RestoredScene {
     this.month = o.month ?? 10
     this.day = o.day ?? 30
     this.hour = o.hour ?? 18
+    this.keys = o.keys ?? KEYS
     this.frozen = false
     this.selected = null
     this.layerId = null
@@ -328,7 +330,7 @@ export class RestoredScene {
 
   applyLight() {
     if (!this.handles) return
-    const k = lookAt(this.hour)
+    const k = lookAt(this.hour, this.keys)
     this.light = k
     // 地面（烘焙光）整体亮度
     this.handles.ground.color.setScalar(k.ground)
@@ -747,7 +749,10 @@ export class RestoredScene {
     )
     this.lens.uniforms.time.value = (this.clockT * 37) % 1000
     this.renderer.info.reset()
+    // 子类的钩子（/smart-community：渲染前推进无人机、渲染后画视角窗）；本页面不设，行为不变
+    this.beforeRender?.(dt)
     this.composer.render()
+    this.afterRender?.(dt)
     this.onFrame(this)
     const f = this._fps
     f.frames++
