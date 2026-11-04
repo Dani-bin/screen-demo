@@ -1,0 +1,3340 @@
+{
+  "name": "青原露天矿",
+  "design": {
+    "capacityMtYear": 3500,
+    "trucks": 100,
+    "payloadT": 90,
+    "batteryKwh": 564,
+    "swapMin": 6
+  },
+  "fleets": [
+    {
+      "id": "FL-A",
+      "name": "剥离 · 西排线",
+      "n": 34,
+      "work": "overburden",
+      "dump": "DP-W",
+      "loaders": ["ES-01", "ES-02", "ES-03"],
+      "trucks": [
+        "TK-001",
+        "TK-002",
+        "TK-003",
+        "TK-004",
+        "TK-005",
+        "TK-006",
+        "TK-007",
+        "TK-008",
+        "TK-009",
+        "TK-010",
+        "TK-011",
+        "TK-012",
+        "TK-013",
+        "TK-014",
+        "TK-015",
+        "TK-016",
+        "TK-017",
+        "TK-018",
+        "TK-019",
+        "TK-020",
+        "TK-021",
+        "TK-022",
+        "TK-023",
+        "TK-024",
+        "TK-025",
+        "TK-026",
+        "TK-027",
+        "TK-028",
+        "TK-029",
+        "TK-030",
+        "TK-031",
+        "TK-032",
+        "TK-033",
+        "TK-034"
+      ]
+    },
+    {
+      "id": "FL-B",
+      "name": "剥离 · 内排线",
+      "n": 26,
+      "work": "overburden",
+      "dump": "DP-I",
+      "loaders": ["ES-04", "ES-05"],
+      "trucks": [
+        "TK-035",
+        "TK-036",
+        "TK-037",
+        "TK-038",
+        "TK-039",
+        "TK-040",
+        "TK-041",
+        "TK-042",
+        "TK-043",
+        "TK-044",
+        "TK-045",
+        "TK-046",
+        "TK-047",
+        "TK-048",
+        "TK-049",
+        "TK-050",
+        "TK-051",
+        "TK-052",
+        "TK-053",
+        "TK-054",
+        "TK-055",
+        "TK-056",
+        "TK-057",
+        "TK-058",
+        "TK-059",
+        "TK-060"
+      ]
+    },
+    {
+      "id": "FL-C",
+      "name": "运煤 · 破碎站 1",
+      "n": 13,
+      "work": "coal",
+      "crusher": "CR-01",
+      "loaders": ["ES-06"],
+      "trucks": [
+        "TK-061",
+        "TK-062",
+        "TK-063",
+        "TK-064",
+        "TK-065",
+        "TK-066",
+        "TK-067",
+        "TK-068",
+        "TK-069",
+        "TK-070",
+        "TK-071",
+        "TK-072",
+        "TK-073"
+      ]
+    },
+    {
+      "id": "FL-D",
+      "name": "运煤 · 破碎站 2",
+      "n": 8,
+      "work": "coal",
+      "crusher": "CR-02",
+      "loaders": ["ES-07"],
+      "trucks": [
+        "TK-074",
+        "TK-075",
+        "TK-076",
+        "TK-077",
+        "TK-078",
+        "TK-079",
+        "TK-080",
+        "TK-081"
+      ]
+    },
+    {
+      "id": "FL-E",
+      "name": "机动编组",
+      "n": 19,
+      "work": "swing",
+      "trucks": [
+        "TK-082",
+        "TK-083",
+        "TK-084",
+        "TK-085",
+        "TK-086",
+        "TK-087",
+        "TK-088",
+        "TK-089",
+        "TK-090",
+        "TK-091",
+        "TK-092",
+        "TK-093",
+        "TK-094",
+        "TK-095",
+        "TK-096",
+        "TK-097",
+        "TK-098",
+        "TK-099",
+        "TK-100"
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "id": "R-P1",
+      "name": "坑内主斜坡道",
+      "from": "pit",
+      "to": "trunk"
+    },
+    {
+      "id": "R-T1",
+      "name": "端帮干线",
+      "from": "trunk",
+      "to": "split"
+    },
+    {
+      "id": "R-W1",
+      "name": "西排土场线",
+      "from": "split",
+      "to": "DP-W"
+    },
+    {
+      "id": "R-I1",
+      "name": "内排土场线",
+      "from": "split",
+      "to": "DP-I"
+    },
+    {
+      "id": "R-C1",
+      "name": "破碎站 1 线",
+      "from": "split",
+      "to": "CR-01"
+    },
+    {
+      "id": "R-C2",
+      "name": "破碎站 2 线",
+      "from": "split",
+      "to": "CR-02"
+    },
+    {
+      "id": "R-S1",
+      "name": "换电联络线",
+      "from": "trunk",
+      "to": "SW-01"
+    }
+  ],
+  "counts": {
+    "pit": 1,
+    "building": 1,
+    "plant": 2,
+    "yard": 1,
+    "shovel": 7,
+    "bucketWheel": 1,
+    "drill": 3,
+    "blastZone": 2,
+    "crusher": 2,
+    "belt": 3,
+    "dump": 2,
+    "unload": 8,
+    "solar": 1,
+    "route": 7,
+    "swapStation": 2,
+    "charger": 1,
+    "substation": 1,
+    "truck": 100,
+    "sprinkler": 3,
+    "dozer": 4,
+    "patrol": 4,
+    "slopeRadar": 3,
+    "gnss": 118,
+    "groundwater": 23,
+    "blastVibration": 9,
+    "earthPressure": 3,
+    "seepage": 4,
+    "baseStation": 12,
+    "controlRoom": 1,
+    "cloud": 1
+  },
+  "devices": [
+    {
+      "id": "PIT-3",
+      "name": "第三采区采坑",
+      "kind": "pit",
+      "group": "site",
+      "node": "PIT-3",
+      "src": "public",
+      "note": "在采采区；一、二采区已采完"
+    },
+    {
+      "id": "OF-01",
+      "name": "办公生活区",
+      "kind": "building",
+      "group": "site",
+      "node": "OF-01",
+      "src": "demo"
+    },
+    {
+      "id": "WT-01",
+      "name": "疏干水处理站",
+      "kind": "plant",
+      "group": "site",
+      "node": "WT-01",
+      "src": "demo",
+      "note": "矿坑疏干水加压送电厂作循环水"
+    },
+    {
+      "id": "PP-01",
+      "name": "坑口电厂",
+      "kind": "plant",
+      "group": "site",
+      "node": "PP-01",
+      "src": "public",
+      "note": "煤电一体化：封闭皮带送煤，灰渣返排内排土场"
+    },
+    {
+      "id": "CY-01",
+      "name": "封闭煤场",
+      "kind": "yard",
+      "group": "site",
+      "node": "CY-01",
+      "src": "public",
+      "note": "全封闭预应力桁架，525 m × 160 m × 52.7 m"
+    },
+    {
+      "id": "ES-01",
+      "name": "剥离电铲 01",
+      "kind": "shovel",
+      "group": "loading",
+      "node": "ES-01",
+      "src": "demo",
+      "model": "WK-20",
+      "bucketM3": 20,
+      "work": "overburden"
+    },
+    {
+      "id": "ES-02",
+      "name": "剥离电铲 02",
+      "kind": "shovel",
+      "group": "loading",
+      "node": "ES-02",
+      "src": "demo",
+      "model": "WK-20",
+      "bucketM3": 20,
+      "work": "overburden"
+    },
+    {
+      "id": "ES-03",
+      "name": "剥离电铲 03",
+      "kind": "shovel",
+      "group": "loading",
+      "node": "ES-03",
+      "src": "demo",
+      "model": "WK-20",
+      "bucketM3": 20,
+      "work": "overburden"
+    },
+    {
+      "id": "ES-04",
+      "name": "剥离电铲 04",
+      "kind": "shovel",
+      "group": "loading",
+      "node": "ES-04",
+      "src": "demo",
+      "model": "WK-20",
+      "bucketM3": 20,
+      "work": "overburden"
+    },
+    {
+      "id": "ES-05",
+      "name": "剥离电铲 05",
+      "kind": "shovel",
+      "group": "loading",
+      "node": "ES-05",
+      "src": "demo",
+      "model": "WK-20",
+      "bucketM3": 20,
+      "work": "overburden"
+    },
+    {
+      "id": "ES-06",
+      "name": "采煤电铲 06",
+      "kind": "shovel",
+      "group": "loading",
+      "node": "ES-06",
+      "src": "demo",
+      "model": "WK-20",
+      "bucketM3": 20,
+      "work": "coal"
+    },
+    {
+      "id": "ES-07",
+      "name": "采煤电铲 07",
+      "kind": "shovel",
+      "group": "loading",
+      "node": "ES-07",
+      "src": "demo",
+      "model": "WK-20",
+      "bucketM3": 20,
+      "work": "coal"
+    },
+    {
+      "id": "BW-01",
+      "name": "剥离轮斗挖掘机",
+      "kind": "bucketWheel",
+      "group": "loading",
+      "node": "BW-01",
+      "src": "demo",
+      "note": "全连续剥离，经排土皮带送内排土场"
+    },
+    {
+      "id": "DR-01",
+      "name": "穿孔钻机 01",
+      "kind": "drill",
+      "group": "loading",
+      "node": "DR-01",
+      "src": "demo"
+    },
+    {
+      "id": "DR-02",
+      "name": "穿孔钻机 02",
+      "kind": "drill",
+      "group": "loading",
+      "node": "DR-02",
+      "src": "demo"
+    },
+    {
+      "id": "DR-03",
+      "name": "穿孔钻机 03",
+      "kind": "drill",
+      "group": "loading",
+      "node": "DR-03",
+      "src": "demo"
+    },
+    {
+      "id": "BL-01",
+      "name": "爆破区 01",
+      "kind": "blastZone",
+      "group": "loading",
+      "node": "BL-01",
+      "src": "demo"
+    },
+    {
+      "id": "BL-02",
+      "name": "爆破区 02",
+      "kind": "blastZone",
+      "group": "loading",
+      "node": "BL-02",
+      "src": "demo"
+    },
+    {
+      "id": "CR-01",
+      "name": "半移动破碎站",
+      "kind": "crusher",
+      "group": "coal",
+      "node": "CR-01",
+      "src": "demo"
+    },
+    {
+      "id": "CR-02",
+      "name": "自移式破碎机",
+      "kind": "crusher",
+      "group": "coal",
+      "node": "CR-02",
+      "src": "demo"
+    },
+    {
+      "id": "BC-01",
+      "name": "端帮皮带",
+      "kind": "belt",
+      "group": "coal",
+      "node": "BC-01",
+      "src": "demo",
+      "from": "CR-01",
+      "to": "BC-02"
+    },
+    {
+      "id": "BC-02",
+      "name": "地面输煤皮带（封闭走廊）",
+      "kind": "belt",
+      "group": "coal",
+      "node": "BC-02",
+      "src": "public",
+      "from": "BC-01",
+      "to": "PP-01"
+    },
+    {
+      "id": "BC-03",
+      "name": "排土皮带",
+      "kind": "belt",
+      "group": "coal",
+      "node": "BC-03",
+      "src": "demo",
+      "from": "BW-01",
+      "to": "DP-I"
+    },
+    {
+      "id": "DP-W",
+      "name": "西排土场",
+      "kind": "dump",
+      "group": "dump",
+      "node": "DP-W",
+      "src": "public"
+    },
+    {
+      "id": "DP-I",
+      "name": "内排土场",
+      "kind": "dump",
+      "group": "dump",
+      "node": "DP-I",
+      "src": "public",
+      "note": "电厂灰渣返排回填；表面覆盖腐殖土复垦"
+    },
+    {
+      "id": "UL-W01",
+      "name": "西排卸载点 01",
+      "kind": "unload",
+      "group": "dump",
+      "node": "UL-W01",
+      "src": "demo",
+      "dump": "DP-W"
+    },
+    {
+      "id": "UL-W02",
+      "name": "西排卸载点 02",
+      "kind": "unload",
+      "group": "dump",
+      "node": "UL-W02",
+      "src": "demo",
+      "dump": "DP-W"
+    },
+    {
+      "id": "UL-W03",
+      "name": "西排卸载点 03",
+      "kind": "unload",
+      "group": "dump",
+      "node": "UL-W03",
+      "src": "demo",
+      "dump": "DP-W"
+    },
+    {
+      "id": "UL-W04",
+      "name": "西排卸载点 04",
+      "kind": "unload",
+      "group": "dump",
+      "node": "UL-W04",
+      "src": "demo",
+      "dump": "DP-W"
+    },
+    {
+      "id": "UL-I01",
+      "name": "内排卸载点 01",
+      "kind": "unload",
+      "group": "dump",
+      "node": "UL-I01",
+      "src": "demo",
+      "dump": "DP-I"
+    },
+    {
+      "id": "UL-I02",
+      "name": "内排卸载点 02",
+      "kind": "unload",
+      "group": "dump",
+      "node": "UL-I02",
+      "src": "demo",
+      "dump": "DP-I"
+    },
+    {
+      "id": "UL-I03",
+      "name": "内排卸载点 03",
+      "kind": "unload",
+      "group": "dump",
+      "node": "UL-I03",
+      "src": "demo",
+      "dump": "DP-I"
+    },
+    {
+      "id": "UL-I04",
+      "name": "内排卸载点 04",
+      "kind": "unload",
+      "group": "dump",
+      "node": "UL-I04",
+      "src": "demo",
+      "dump": "DP-I"
+    },
+    {
+      "id": "PV-01",
+      "name": "排土场光伏",
+      "kind": "solar",
+      "group": "energy",
+      "node": "PV-01",
+      "src": "public",
+      "note": "为换电站供绿电"
+    },
+    {
+      "id": "R-P1",
+      "name": "坑内主斜坡道",
+      "kind": "route",
+      "group": "road",
+      "node": "R-P1",
+      "src": "demo",
+      "from": "pit",
+      "to": "trunk"
+    },
+    {
+      "id": "R-T1",
+      "name": "端帮干线",
+      "kind": "route",
+      "group": "road",
+      "node": "R-T1",
+      "src": "demo",
+      "from": "trunk",
+      "to": "split"
+    },
+    {
+      "id": "R-W1",
+      "name": "西排土场线",
+      "kind": "route",
+      "group": "road",
+      "node": "R-W1",
+      "src": "demo",
+      "from": "split",
+      "to": "DP-W"
+    },
+    {
+      "id": "R-I1",
+      "name": "内排土场线",
+      "kind": "route",
+      "group": "road",
+      "node": "R-I1",
+      "src": "demo",
+      "from": "split",
+      "to": "DP-I"
+    },
+    {
+      "id": "R-C1",
+      "name": "破碎站 1 线",
+      "kind": "route",
+      "group": "road",
+      "node": "R-C1",
+      "src": "demo",
+      "from": "split",
+      "to": "CR-01"
+    },
+    {
+      "id": "R-C2",
+      "name": "破碎站 2 线",
+      "kind": "route",
+      "group": "road",
+      "node": "R-C2",
+      "src": "demo",
+      "from": "split",
+      "to": "CR-02"
+    },
+    {
+      "id": "R-S1",
+      "name": "换电联络线",
+      "kind": "route",
+      "group": "road",
+      "node": "R-S1",
+      "src": "demo",
+      "from": "trunk",
+      "to": "SW-01"
+    },
+    {
+      "id": "SW-01",
+      "name": "换电站 1",
+      "kind": "swapStation",
+      "group": "energy",
+      "node": "SW-01",
+      "src": "demo",
+      "swapMin": 6,
+      "bays": 4
+    },
+    {
+      "id": "SW-02",
+      "name": "换电站 2",
+      "kind": "swapStation",
+      "group": "energy",
+      "node": "SW-02",
+      "src": "demo",
+      "swapMin": 6,
+      "bays": 4
+    },
+    {
+      "id": "CH-01",
+      "name": "充电区",
+      "kind": "charger",
+      "group": "energy",
+      "node": "CH-01",
+      "src": "demo",
+      "note": "离线电池组充电"
+    },
+    {
+      "id": "SS-01",
+      "name": "采场变电站",
+      "kind": "substation",
+      "group": "energy",
+      "node": "SS-01",
+      "src": "demo"
+    },
+    {
+      "id": "TK-001",
+      "name": "无人矿卡 001",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-001",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-002",
+      "name": "无人矿卡 002",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-002",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-003",
+      "name": "无人矿卡 003",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-003",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-004",
+      "name": "无人矿卡 004",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-004",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-005",
+      "name": "无人矿卡 005",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-005",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-006",
+      "name": "无人矿卡 006",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-006",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-007",
+      "name": "无人矿卡 007",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-007",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-008",
+      "name": "无人矿卡 008",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-008",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-009",
+      "name": "无人矿卡 009",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-009",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-010",
+      "name": "无人矿卡 010",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-010",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-011",
+      "name": "无人矿卡 011",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-011",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-012",
+      "name": "无人矿卡 012",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-012",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-013",
+      "name": "无人矿卡 013",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-013",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-014",
+      "name": "无人矿卡 014",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-014",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-015",
+      "name": "无人矿卡 015",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-015",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-016",
+      "name": "无人矿卡 016",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-016",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-017",
+      "name": "无人矿卡 017",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-017",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-018",
+      "name": "无人矿卡 018",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-018",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-019",
+      "name": "无人矿卡 019",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-019",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-020",
+      "name": "无人矿卡 020",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-020",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-021",
+      "name": "无人矿卡 021",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-021",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-022",
+      "name": "无人矿卡 022",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-022",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-023",
+      "name": "无人矿卡 023",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-023",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-024",
+      "name": "无人矿卡 024",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-024",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-025",
+      "name": "无人矿卡 025",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-025",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-026",
+      "name": "无人矿卡 026",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-026",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-027",
+      "name": "无人矿卡 027",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-027",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-028",
+      "name": "无人矿卡 028",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-028",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-029",
+      "name": "无人矿卡 029",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-029",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-030",
+      "name": "无人矿卡 030",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-030",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-031",
+      "name": "无人矿卡 031",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-031",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-032",
+      "name": "无人矿卡 032",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-032",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-033",
+      "name": "无人矿卡 033",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-033",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-034",
+      "name": "无人矿卡 034",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-034",
+      "src": "public",
+      "fleet": "FL-A",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-035",
+      "name": "无人矿卡 035",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-035",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-036",
+      "name": "无人矿卡 036",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-036",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-037",
+      "name": "无人矿卡 037",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-037",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-038",
+      "name": "无人矿卡 038",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-038",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-039",
+      "name": "无人矿卡 039",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-039",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-040",
+      "name": "无人矿卡 040",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-040",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-041",
+      "name": "无人矿卡 041",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-041",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-042",
+      "name": "无人矿卡 042",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-042",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-043",
+      "name": "无人矿卡 043",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-043",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-044",
+      "name": "无人矿卡 044",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-044",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-045",
+      "name": "无人矿卡 045",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-045",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-046",
+      "name": "无人矿卡 046",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-046",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-047",
+      "name": "无人矿卡 047",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-047",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-048",
+      "name": "无人矿卡 048",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-048",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-049",
+      "name": "无人矿卡 049",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-049",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-050",
+      "name": "无人矿卡 050",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-050",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-051",
+      "name": "无人矿卡 051",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-051",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-052",
+      "name": "无人矿卡 052",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-052",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-053",
+      "name": "无人矿卡 053",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-053",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-054",
+      "name": "无人矿卡 054",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-054",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-055",
+      "name": "无人矿卡 055",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-055",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-056",
+      "name": "无人矿卡 056",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-056",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-057",
+      "name": "无人矿卡 057",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-057",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-058",
+      "name": "无人矿卡 058",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-058",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-059",
+      "name": "无人矿卡 059",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-059",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-060",
+      "name": "无人矿卡 060",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-060",
+      "src": "public",
+      "fleet": "FL-B",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-061",
+      "name": "无人矿卡 061",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-061",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-062",
+      "name": "无人矿卡 062",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-062",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-063",
+      "name": "无人矿卡 063",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-063",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-064",
+      "name": "无人矿卡 064",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-064",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-065",
+      "name": "无人矿卡 065",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-065",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-066",
+      "name": "无人矿卡 066",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-066",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-067",
+      "name": "无人矿卡 067",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-067",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-068",
+      "name": "无人矿卡 068",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-068",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-069",
+      "name": "无人矿卡 069",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-069",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-070",
+      "name": "无人矿卡 070",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-070",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-071",
+      "name": "无人矿卡 071",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-071",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-072",
+      "name": "无人矿卡 072",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-072",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-073",
+      "name": "无人矿卡 073",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-073",
+      "src": "public",
+      "fleet": "FL-C",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-074",
+      "name": "无人矿卡 074",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-074",
+      "src": "public",
+      "fleet": "FL-D",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-075",
+      "name": "无人矿卡 075",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-075",
+      "src": "public",
+      "fleet": "FL-D",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-076",
+      "name": "无人矿卡 076",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-076",
+      "src": "public",
+      "fleet": "FL-D",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-077",
+      "name": "无人矿卡 077",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-077",
+      "src": "public",
+      "fleet": "FL-D",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-078",
+      "name": "无人矿卡 078",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-078",
+      "src": "public",
+      "fleet": "FL-D",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-079",
+      "name": "无人矿卡 079",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-079",
+      "src": "public",
+      "fleet": "FL-D",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-080",
+      "name": "无人矿卡 080",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-080",
+      "src": "public",
+      "fleet": "FL-D",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-081",
+      "name": "无人矿卡 081",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-081",
+      "src": "public",
+      "fleet": "FL-D",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-082",
+      "name": "无人矿卡 082",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-082",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-083",
+      "name": "无人矿卡 083",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-083",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-084",
+      "name": "无人矿卡 084",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-084",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-085",
+      "name": "无人矿卡 085",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-085",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-086",
+      "name": "无人矿卡 086",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-086",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-087",
+      "name": "无人矿卡 087",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-087",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-088",
+      "name": "无人矿卡 088",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-088",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-089",
+      "name": "无人矿卡 089",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-089",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-090",
+      "name": "无人矿卡 090",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-090",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-091",
+      "name": "无人矿卡 091",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-091",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-092",
+      "name": "无人矿卡 092",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-092",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-093",
+      "name": "无人矿卡 093",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-093",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-094",
+      "name": "无人矿卡 094",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-094",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-095",
+      "name": "无人矿卡 095",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-095",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-096",
+      "name": "无人矿卡 096",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-096",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-097",
+      "name": "无人矿卡 097",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-097",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-098",
+      "name": "无人矿卡 098",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-098",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-099",
+      "name": "无人矿卡 099",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-099",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "TK-100",
+      "name": "无人矿卡 100",
+      "kind": "truck",
+      "group": "truck",
+      "node": "TK-100",
+      "src": "public",
+      "fleet": "FL-E",
+      "payloadT": 90,
+      "batteryKwh": 564,
+      "cab": false
+    },
+    {
+      "id": "WC-01",
+      "name": "洒水车 01",
+      "kind": "sprinkler",
+      "group": "support",
+      "node": "WC-01",
+      "src": "demo"
+    },
+    {
+      "id": "WC-02",
+      "name": "洒水车 02",
+      "kind": "sprinkler",
+      "group": "support",
+      "node": "WC-02",
+      "src": "demo"
+    },
+    {
+      "id": "WC-03",
+      "name": "洒水车 03",
+      "kind": "sprinkler",
+      "group": "support",
+      "node": "WC-03",
+      "src": "demo"
+    },
+    {
+      "id": "BD-01",
+      "name": "推土机 01",
+      "kind": "dozer",
+      "group": "support",
+      "node": "BD-01",
+      "src": "demo"
+    },
+    {
+      "id": "BD-02",
+      "name": "推土机 02",
+      "kind": "dozer",
+      "group": "support",
+      "node": "BD-02",
+      "src": "demo"
+    },
+    {
+      "id": "BD-03",
+      "name": "推土机 03",
+      "kind": "dozer",
+      "group": "support",
+      "node": "BD-03",
+      "src": "demo"
+    },
+    {
+      "id": "BD-04",
+      "name": "推土机 04",
+      "kind": "dozer",
+      "group": "support",
+      "node": "BD-04",
+      "src": "demo"
+    },
+    {
+      "id": "CV-01",
+      "name": "指挥巡检车 01",
+      "kind": "patrol",
+      "group": "support",
+      "node": "CV-01",
+      "src": "demo"
+    },
+    {
+      "id": "CV-02",
+      "name": "指挥巡检车 02",
+      "kind": "patrol",
+      "group": "support",
+      "node": "CV-02",
+      "src": "demo"
+    },
+    {
+      "id": "CV-03",
+      "name": "指挥巡检车 03",
+      "kind": "patrol",
+      "group": "support",
+      "node": "CV-03",
+      "src": "demo"
+    },
+    {
+      "id": "CV-04",
+      "name": "指挥巡检车 04",
+      "kind": "patrol",
+      "group": "support",
+      "node": "CV-04",
+      "src": "demo"
+    },
+    {
+      "id": "SR-01",
+      "name": "边坡雷达 01",
+      "kind": "slopeRadar",
+      "group": "monitor",
+      "node": "SR-01",
+      "src": "public"
+    },
+    {
+      "id": "SR-02",
+      "name": "边坡雷达 02",
+      "kind": "slopeRadar",
+      "group": "monitor",
+      "node": "SR-02",
+      "src": "public"
+    },
+    {
+      "id": "SR-03",
+      "name": "边坡雷达 03",
+      "kind": "slopeRadar",
+      "group": "monitor",
+      "node": "SR-03",
+      "src": "public"
+    },
+    {
+      "id": "GN-001",
+      "name": "GNSS 位移站 001",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-001",
+      "src": "public"
+    },
+    {
+      "id": "GN-002",
+      "name": "GNSS 位移站 002",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-002",
+      "src": "public"
+    },
+    {
+      "id": "GN-003",
+      "name": "GNSS 位移站 003",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-003",
+      "src": "public"
+    },
+    {
+      "id": "GN-004",
+      "name": "GNSS 位移站 004",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-004",
+      "src": "public"
+    },
+    {
+      "id": "GN-005",
+      "name": "GNSS 位移站 005",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-005",
+      "src": "public"
+    },
+    {
+      "id": "GN-006",
+      "name": "GNSS 位移站 006",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-006",
+      "src": "public"
+    },
+    {
+      "id": "GN-007",
+      "name": "GNSS 位移站 007",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-007",
+      "src": "public"
+    },
+    {
+      "id": "GN-008",
+      "name": "GNSS 位移站 008",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-008",
+      "src": "public"
+    },
+    {
+      "id": "GN-009",
+      "name": "GNSS 位移站 009",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-009",
+      "src": "public"
+    },
+    {
+      "id": "GN-010",
+      "name": "GNSS 位移站 010",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-010",
+      "src": "public"
+    },
+    {
+      "id": "GN-011",
+      "name": "GNSS 位移站 011",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-011",
+      "src": "public"
+    },
+    {
+      "id": "GN-012",
+      "name": "GNSS 位移站 012",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-012",
+      "src": "public"
+    },
+    {
+      "id": "GN-013",
+      "name": "GNSS 位移站 013",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-013",
+      "src": "public"
+    },
+    {
+      "id": "GN-014",
+      "name": "GNSS 位移站 014",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-014",
+      "src": "public"
+    },
+    {
+      "id": "GN-015",
+      "name": "GNSS 位移站 015",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-015",
+      "src": "public"
+    },
+    {
+      "id": "GN-016",
+      "name": "GNSS 位移站 016",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-016",
+      "src": "public"
+    },
+    {
+      "id": "GN-017",
+      "name": "GNSS 位移站 017",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-017",
+      "src": "public"
+    },
+    {
+      "id": "GN-018",
+      "name": "GNSS 位移站 018",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-018",
+      "src": "public"
+    },
+    {
+      "id": "GN-019",
+      "name": "GNSS 位移站 019",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-019",
+      "src": "public"
+    },
+    {
+      "id": "GN-020",
+      "name": "GNSS 位移站 020",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-020",
+      "src": "public"
+    },
+    {
+      "id": "GN-021",
+      "name": "GNSS 位移站 021",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-021",
+      "src": "public"
+    },
+    {
+      "id": "GN-022",
+      "name": "GNSS 位移站 022",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-022",
+      "src": "public"
+    },
+    {
+      "id": "GN-023",
+      "name": "GNSS 位移站 023",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-023",
+      "src": "public"
+    },
+    {
+      "id": "GN-024",
+      "name": "GNSS 位移站 024",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-024",
+      "src": "public"
+    },
+    {
+      "id": "GN-025",
+      "name": "GNSS 位移站 025",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-025",
+      "src": "public"
+    },
+    {
+      "id": "GN-026",
+      "name": "GNSS 位移站 026",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-026",
+      "src": "public"
+    },
+    {
+      "id": "GN-027",
+      "name": "GNSS 位移站 027",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-027",
+      "src": "public"
+    },
+    {
+      "id": "GN-028",
+      "name": "GNSS 位移站 028",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-028",
+      "src": "public"
+    },
+    {
+      "id": "GN-029",
+      "name": "GNSS 位移站 029",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-029",
+      "src": "public"
+    },
+    {
+      "id": "GN-030",
+      "name": "GNSS 位移站 030",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-030",
+      "src": "public"
+    },
+    {
+      "id": "GN-031",
+      "name": "GNSS 位移站 031",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-031",
+      "src": "public"
+    },
+    {
+      "id": "GN-032",
+      "name": "GNSS 位移站 032",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-032",
+      "src": "public"
+    },
+    {
+      "id": "GN-033",
+      "name": "GNSS 位移站 033",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-033",
+      "src": "public"
+    },
+    {
+      "id": "GN-034",
+      "name": "GNSS 位移站 034",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-034",
+      "src": "public"
+    },
+    {
+      "id": "GN-035",
+      "name": "GNSS 位移站 035",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-035",
+      "src": "public"
+    },
+    {
+      "id": "GN-036",
+      "name": "GNSS 位移站 036",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-036",
+      "src": "public"
+    },
+    {
+      "id": "GN-037",
+      "name": "GNSS 位移站 037",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-037",
+      "src": "public"
+    },
+    {
+      "id": "GN-038",
+      "name": "GNSS 位移站 038",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-038",
+      "src": "public"
+    },
+    {
+      "id": "GN-039",
+      "name": "GNSS 位移站 039",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-039",
+      "src": "public"
+    },
+    {
+      "id": "GN-040",
+      "name": "GNSS 位移站 040",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-040",
+      "src": "public"
+    },
+    {
+      "id": "GN-041",
+      "name": "GNSS 位移站 041",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-041",
+      "src": "public"
+    },
+    {
+      "id": "GN-042",
+      "name": "GNSS 位移站 042",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-042",
+      "src": "public"
+    },
+    {
+      "id": "GN-043",
+      "name": "GNSS 位移站 043",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-043",
+      "src": "public"
+    },
+    {
+      "id": "GN-044",
+      "name": "GNSS 位移站 044",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-044",
+      "src": "public"
+    },
+    {
+      "id": "GN-045",
+      "name": "GNSS 位移站 045",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-045",
+      "src": "public"
+    },
+    {
+      "id": "GN-046",
+      "name": "GNSS 位移站 046",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-046",
+      "src": "public"
+    },
+    {
+      "id": "GN-047",
+      "name": "GNSS 位移站 047",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-047",
+      "src": "public"
+    },
+    {
+      "id": "GN-048",
+      "name": "GNSS 位移站 048",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-048",
+      "src": "public"
+    },
+    {
+      "id": "GN-049",
+      "name": "GNSS 位移站 049",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-049",
+      "src": "public"
+    },
+    {
+      "id": "GN-050",
+      "name": "GNSS 位移站 050",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-050",
+      "src": "public"
+    },
+    {
+      "id": "GN-051",
+      "name": "GNSS 位移站 051",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-051",
+      "src": "public"
+    },
+    {
+      "id": "GN-052",
+      "name": "GNSS 位移站 052",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-052",
+      "src": "public"
+    },
+    {
+      "id": "GN-053",
+      "name": "GNSS 位移站 053",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-053",
+      "src": "public"
+    },
+    {
+      "id": "GN-054",
+      "name": "GNSS 位移站 054",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-054",
+      "src": "public"
+    },
+    {
+      "id": "GN-055",
+      "name": "GNSS 位移站 055",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-055",
+      "src": "public"
+    },
+    {
+      "id": "GN-056",
+      "name": "GNSS 位移站 056",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-056",
+      "src": "public"
+    },
+    {
+      "id": "GN-057",
+      "name": "GNSS 位移站 057",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-057",
+      "src": "public"
+    },
+    {
+      "id": "GN-058",
+      "name": "GNSS 位移站 058",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-058",
+      "src": "public"
+    },
+    {
+      "id": "GN-059",
+      "name": "GNSS 位移站 059",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-059",
+      "src": "public"
+    },
+    {
+      "id": "GN-060",
+      "name": "GNSS 位移站 060",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-060",
+      "src": "public"
+    },
+    {
+      "id": "GN-061",
+      "name": "GNSS 位移站 061",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-061",
+      "src": "public"
+    },
+    {
+      "id": "GN-062",
+      "name": "GNSS 位移站 062",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-062",
+      "src": "public"
+    },
+    {
+      "id": "GN-063",
+      "name": "GNSS 位移站 063",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-063",
+      "src": "public"
+    },
+    {
+      "id": "GN-064",
+      "name": "GNSS 位移站 064",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-064",
+      "src": "public"
+    },
+    {
+      "id": "GN-065",
+      "name": "GNSS 位移站 065",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-065",
+      "src": "public"
+    },
+    {
+      "id": "GN-066",
+      "name": "GNSS 位移站 066",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-066",
+      "src": "public"
+    },
+    {
+      "id": "GN-067",
+      "name": "GNSS 位移站 067",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-067",
+      "src": "public"
+    },
+    {
+      "id": "GN-068",
+      "name": "GNSS 位移站 068",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-068",
+      "src": "public"
+    },
+    {
+      "id": "GN-069",
+      "name": "GNSS 位移站 069",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-069",
+      "src": "public"
+    },
+    {
+      "id": "GN-070",
+      "name": "GNSS 位移站 070",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-070",
+      "src": "public"
+    },
+    {
+      "id": "GN-071",
+      "name": "GNSS 位移站 071",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-071",
+      "src": "public"
+    },
+    {
+      "id": "GN-072",
+      "name": "GNSS 位移站 072",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-072",
+      "src": "public"
+    },
+    {
+      "id": "GN-073",
+      "name": "GNSS 位移站 073",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-073",
+      "src": "public"
+    },
+    {
+      "id": "GN-074",
+      "name": "GNSS 位移站 074",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-074",
+      "src": "public"
+    },
+    {
+      "id": "GN-075",
+      "name": "GNSS 位移站 075",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-075",
+      "src": "public"
+    },
+    {
+      "id": "GN-076",
+      "name": "GNSS 位移站 076",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-076",
+      "src": "public"
+    },
+    {
+      "id": "GN-077",
+      "name": "GNSS 位移站 077",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-077",
+      "src": "public"
+    },
+    {
+      "id": "GN-078",
+      "name": "GNSS 位移站 078",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-078",
+      "src": "public"
+    },
+    {
+      "id": "GN-079",
+      "name": "GNSS 位移站 079",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-079",
+      "src": "public"
+    },
+    {
+      "id": "GN-080",
+      "name": "GNSS 位移站 080",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-080",
+      "src": "public"
+    },
+    {
+      "id": "GN-081",
+      "name": "GNSS 位移站 081",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-081",
+      "src": "public"
+    },
+    {
+      "id": "GN-082",
+      "name": "GNSS 位移站 082",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-082",
+      "src": "public"
+    },
+    {
+      "id": "GN-083",
+      "name": "GNSS 位移站 083",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-083",
+      "src": "public"
+    },
+    {
+      "id": "GN-084",
+      "name": "GNSS 位移站 084",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-084",
+      "src": "public"
+    },
+    {
+      "id": "GN-085",
+      "name": "GNSS 位移站 085",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-085",
+      "src": "public"
+    },
+    {
+      "id": "GN-086",
+      "name": "GNSS 位移站 086",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-086",
+      "src": "public"
+    },
+    {
+      "id": "GN-087",
+      "name": "GNSS 位移站 087",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-087",
+      "src": "public"
+    },
+    {
+      "id": "GN-088",
+      "name": "GNSS 位移站 088",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-088",
+      "src": "public"
+    },
+    {
+      "id": "GN-089",
+      "name": "GNSS 位移站 089",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-089",
+      "src": "public"
+    },
+    {
+      "id": "GN-090",
+      "name": "GNSS 位移站 090",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-090",
+      "src": "public"
+    },
+    {
+      "id": "GN-091",
+      "name": "GNSS 位移站 091",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-091",
+      "src": "public"
+    },
+    {
+      "id": "GN-092",
+      "name": "GNSS 位移站 092",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-092",
+      "src": "public"
+    },
+    {
+      "id": "GN-093",
+      "name": "GNSS 位移站 093",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-093",
+      "src": "public"
+    },
+    {
+      "id": "GN-094",
+      "name": "GNSS 位移站 094",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-094",
+      "src": "public"
+    },
+    {
+      "id": "GN-095",
+      "name": "GNSS 位移站 095",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-095",
+      "src": "public"
+    },
+    {
+      "id": "GN-096",
+      "name": "GNSS 位移站 096",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-096",
+      "src": "public"
+    },
+    {
+      "id": "GN-097",
+      "name": "GNSS 位移站 097",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-097",
+      "src": "public"
+    },
+    {
+      "id": "GN-098",
+      "name": "GNSS 位移站 098",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-098",
+      "src": "public"
+    },
+    {
+      "id": "GN-099",
+      "name": "GNSS 位移站 099",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-099",
+      "src": "public"
+    },
+    {
+      "id": "GN-100",
+      "name": "GNSS 位移站 100",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-100",
+      "src": "public"
+    },
+    {
+      "id": "GN-101",
+      "name": "GNSS 位移站 101",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-101",
+      "src": "public"
+    },
+    {
+      "id": "GN-102",
+      "name": "GNSS 位移站 102",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-102",
+      "src": "public"
+    },
+    {
+      "id": "GN-103",
+      "name": "GNSS 位移站 103",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-103",
+      "src": "public"
+    },
+    {
+      "id": "GN-104",
+      "name": "GNSS 位移站 104",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-104",
+      "src": "public"
+    },
+    {
+      "id": "GN-105",
+      "name": "GNSS 位移站 105",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-105",
+      "src": "public"
+    },
+    {
+      "id": "GN-106",
+      "name": "GNSS 位移站 106",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-106",
+      "src": "public"
+    },
+    {
+      "id": "GN-107",
+      "name": "GNSS 位移站 107",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-107",
+      "src": "public"
+    },
+    {
+      "id": "GN-108",
+      "name": "GNSS 位移站 108",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-108",
+      "src": "public"
+    },
+    {
+      "id": "GN-109",
+      "name": "GNSS 位移站 109",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-109",
+      "src": "public"
+    },
+    {
+      "id": "GN-110",
+      "name": "GNSS 位移站 110",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-110",
+      "src": "public"
+    },
+    {
+      "id": "GN-111",
+      "name": "GNSS 位移站 111",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-111",
+      "src": "public"
+    },
+    {
+      "id": "GN-112",
+      "name": "GNSS 位移站 112",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-112",
+      "src": "public"
+    },
+    {
+      "id": "GN-113",
+      "name": "GNSS 位移站 113",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-113",
+      "src": "public"
+    },
+    {
+      "id": "GN-114",
+      "name": "GNSS 位移站 114",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-114",
+      "src": "public"
+    },
+    {
+      "id": "GN-115",
+      "name": "GNSS 位移站 115",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-115",
+      "src": "public"
+    },
+    {
+      "id": "GN-116",
+      "name": "GNSS 位移站 116",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-116",
+      "src": "public"
+    },
+    {
+      "id": "GN-117",
+      "name": "GNSS 位移站 117",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-117",
+      "src": "public"
+    },
+    {
+      "id": "GN-118",
+      "name": "GNSS 位移站 118",
+      "kind": "gnss",
+      "group": "monitor",
+      "node": "GN-118",
+      "src": "public"
+    },
+    {
+      "id": "GW-01",
+      "name": "地下水位监测 01",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-01",
+      "src": "public"
+    },
+    {
+      "id": "GW-02",
+      "name": "地下水位监测 02",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-02",
+      "src": "public"
+    },
+    {
+      "id": "GW-03",
+      "name": "地下水位监测 03",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-03",
+      "src": "public"
+    },
+    {
+      "id": "GW-04",
+      "name": "地下水位监测 04",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-04",
+      "src": "public"
+    },
+    {
+      "id": "GW-05",
+      "name": "地下水位监测 05",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-05",
+      "src": "public"
+    },
+    {
+      "id": "GW-06",
+      "name": "地下水位监测 06",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-06",
+      "src": "public"
+    },
+    {
+      "id": "GW-07",
+      "name": "地下水位监测 07",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-07",
+      "src": "public"
+    },
+    {
+      "id": "GW-08",
+      "name": "地下水位监测 08",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-08",
+      "src": "public"
+    },
+    {
+      "id": "GW-09",
+      "name": "地下水位监测 09",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-09",
+      "src": "public"
+    },
+    {
+      "id": "GW-10",
+      "name": "地下水位监测 10",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-10",
+      "src": "public"
+    },
+    {
+      "id": "GW-11",
+      "name": "地下水位监测 11",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-11",
+      "src": "public"
+    },
+    {
+      "id": "GW-12",
+      "name": "地下水位监测 12",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-12",
+      "src": "public"
+    },
+    {
+      "id": "GW-13",
+      "name": "地下水位监测 13",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-13",
+      "src": "public"
+    },
+    {
+      "id": "GW-14",
+      "name": "地下水位监测 14",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-14",
+      "src": "public"
+    },
+    {
+      "id": "GW-15",
+      "name": "地下水位监测 15",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-15",
+      "src": "public"
+    },
+    {
+      "id": "GW-16",
+      "name": "地下水位监测 16",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-16",
+      "src": "public"
+    },
+    {
+      "id": "GW-17",
+      "name": "地下水位监测 17",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-17",
+      "src": "public"
+    },
+    {
+      "id": "GW-18",
+      "name": "地下水位监测 18",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-18",
+      "src": "public"
+    },
+    {
+      "id": "GW-19",
+      "name": "地下水位监测 19",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-19",
+      "src": "public"
+    },
+    {
+      "id": "GW-20",
+      "name": "地下水位监测 20",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-20",
+      "src": "public"
+    },
+    {
+      "id": "GW-21",
+      "name": "地下水位监测 21",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-21",
+      "src": "public"
+    },
+    {
+      "id": "GW-22",
+      "name": "地下水位监测 22",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-22",
+      "src": "public"
+    },
+    {
+      "id": "GW-23",
+      "name": "地下水位监测 23",
+      "kind": "groundwater",
+      "group": "monitor",
+      "node": "GW-23",
+      "src": "public"
+    },
+    {
+      "id": "BV-01",
+      "name": "爆破振动监测 01",
+      "kind": "blastVibration",
+      "group": "monitor",
+      "node": "BV-01",
+      "src": "public"
+    },
+    {
+      "id": "BV-02",
+      "name": "爆破振动监测 02",
+      "kind": "blastVibration",
+      "group": "monitor",
+      "node": "BV-02",
+      "src": "public"
+    },
+    {
+      "id": "BV-03",
+      "name": "爆破振动监测 03",
+      "kind": "blastVibration",
+      "group": "monitor",
+      "node": "BV-03",
+      "src": "public"
+    },
+    {
+      "id": "BV-04",
+      "name": "爆破振动监测 04",
+      "kind": "blastVibration",
+      "group": "monitor",
+      "node": "BV-04",
+      "src": "public"
+    },
+    {
+      "id": "BV-05",
+      "name": "爆破振动监测 05",
+      "kind": "blastVibration",
+      "group": "monitor",
+      "node": "BV-05",
+      "src": "public"
+    },
+    {
+      "id": "BV-06",
+      "name": "爆破振动监测 06",
+      "kind": "blastVibration",
+      "group": "monitor",
+      "node": "BV-06",
+      "src": "public"
+    },
+    {
+      "id": "BV-07",
+      "name": "爆破振动监测 07",
+      "kind": "blastVibration",
+      "group": "monitor",
+      "node": "BV-07",
+      "src": "public"
+    },
+    {
+      "id": "BV-08",
+      "name": "爆破振动监测 08",
+      "kind": "blastVibration",
+      "group": "monitor",
+      "node": "BV-08",
+      "src": "public"
+    },
+    {
+      "id": "BV-09",
+      "name": "爆破振动监测 09",
+      "kind": "blastVibration",
+      "group": "monitor",
+      "node": "BV-09",
+      "src": "public"
+    },
+    {
+      "id": "EP-01",
+      "name": "土压力监测 01",
+      "kind": "earthPressure",
+      "group": "monitor",
+      "node": "EP-01",
+      "src": "public"
+    },
+    {
+      "id": "EP-02",
+      "name": "土压力监测 02",
+      "kind": "earthPressure",
+      "group": "monitor",
+      "node": "EP-02",
+      "src": "public"
+    },
+    {
+      "id": "EP-03",
+      "name": "土压力监测 03",
+      "kind": "earthPressure",
+      "group": "monitor",
+      "node": "EP-03",
+      "src": "public"
+    },
+    {
+      "id": "SP-01",
+      "name": "渗水监测 01",
+      "kind": "seepage",
+      "group": "monitor",
+      "node": "SP-01",
+      "src": "public"
+    },
+    {
+      "id": "SP-02",
+      "name": "渗水监测 02",
+      "kind": "seepage",
+      "group": "monitor",
+      "node": "SP-02",
+      "src": "public"
+    },
+    {
+      "id": "SP-03",
+      "name": "渗水监测 03",
+      "kind": "seepage",
+      "group": "monitor",
+      "node": "SP-03",
+      "src": "public"
+    },
+    {
+      "id": "SP-04",
+      "name": "渗水监测 04",
+      "kind": "seepage",
+      "group": "monitor",
+      "node": "SP-04",
+      "src": "public"
+    },
+    {
+      "id": "BS-01",
+      "name": "移动 5G 基站 01",
+      "kind": "baseStation",
+      "group": "comms",
+      "node": "BS-01",
+      "src": "public"
+    },
+    {
+      "id": "BS-02",
+      "name": "移动 5G 基站 02",
+      "kind": "baseStation",
+      "group": "comms",
+      "node": "BS-02",
+      "src": "public"
+    },
+    {
+      "id": "BS-03",
+      "name": "移动 5G 基站 03",
+      "kind": "baseStation",
+      "group": "comms",
+      "node": "BS-03",
+      "src": "public"
+    },
+    {
+      "id": "BS-04",
+      "name": "移动 5G 基站 04",
+      "kind": "baseStation",
+      "group": "comms",
+      "node": "BS-04",
+      "src": "public"
+    },
+    {
+      "id": "BS-05",
+      "name": "移动 5G 基站 05",
+      "kind": "baseStation",
+      "group": "comms",
+      "node": "BS-05",
+      "src": "public"
+    },
+    {
+      "id": "BS-06",
+      "name": "移动 5G 基站 06",
+      "kind": "baseStation",
+      "group": "comms",
+      "node": "BS-06",
+      "src": "public"
+    },
+    {
+      "id": "BS-07",
+      "name": "移动 5G 基站 07",
+      "kind": "baseStation",
+      "group": "comms",
+      "node": "BS-07",
+      "src": "public"
+    },
+    {
+      "id": "BS-08",
+      "name": "移动 5G 基站 08",
+      "kind": "baseStation",
+      "group": "comms",
+      "node": "BS-08",
+      "src": "public"
+    },
+    {
+      "id": "BS-09",
+      "name": "移动 5G 基站 09",
+      "kind": "baseStation",
+      "group": "comms",
+      "node": "BS-09",
+      "src": "public"
+    },
+    {
+      "id": "BS-10",
+      "name": "移动 5G 基站 10",
+      "kind": "baseStation",
+      "group": "comms",
+      "node": "BS-10",
+      "src": "public"
+    },
+    {
+      "id": "BS-11",
+      "name": "移动 5G 基站 11",
+      "kind": "baseStation",
+      "group": "comms",
+      "node": "BS-11",
+      "src": "public"
+    },
+    {
+      "id": "BS-12",
+      "name": "移动 5G 基站 12",
+      "kind": "baseStation",
+      "group": "comms",
+      "node": "BS-12",
+      "src": "public"
+    },
+    {
+      "id": "CC-01",
+      "name": "现场调度中心",
+      "kind": "controlRoom",
+      "group": "comms",
+      "node": "CC-01",
+      "src": "demo"
+    },
+    {
+      "id": "DC-01",
+      "name": "云端调度平台",
+      "kind": "cloud",
+      "group": "comms",
+      "node": "DC-01",
+      "src": "public",
+      "note": "距采场约 6 km，下达编组计划、路线规划和任务分配"
+    }
+  ]
+}

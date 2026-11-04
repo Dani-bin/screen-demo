@@ -1,0 +1,847 @@
+/*
+ * /open-pit 青原露天矿：面板样式（定稿 docs/design/open-pit/design/final.png 的 CSS 移植）
+ * ----------------------------------------------------------
+ * 文件名以 no-convert.css 结尾：px 不转 rem。舞台是固定 1920 × 1080 的设计像素盒，用 transform: scale 等比缩放，
+ * 三维画布铺满窗口，舞台在窗口里居中（场景的投影中心按同一个缩放和原点换算）。
+ * 令牌（色值、字号、间距）照搬 design/src/tokens.css，限定在 .open-pit-page 下，不污染别的页面；
+ * 版式照搬 design/src/drafts.html，选择器都加了 .open-pit-page 前缀。
+ * 不用 backdrop-filter（压在 WebGL 画布上会让帧率腰斩），面板用半透明深色补偿。
+ * 字体用 src/assets/styles/index.scss 里全局注册的 Alimama ShuHeiTi / Source Han Sans CN / DIN，不联网加载。
+ */
+
+.open-pit-page {
+  /* 底与面板 */
+  --bg: #050a12;
+  --panel: rgba(8, 18, 32, 0.78);
+  --panel-solid: #0a1420;
+  --panel-2: rgba(14, 30, 48, 0.72);
+  --line: rgba(34, 211, 238, 0.28);
+  --line-strong: rgba(34, 211, 238, 0.6);
+  --grid: rgba(120, 160, 190, 0.14);
+  /* 文字（对面板底 #0A1420 的对比度：ink 15:1、ink-2 8.6:1、ink-3 4.6:1） */
+  --ink: #e6f1f7;
+  --ink-2: #9db4c4;
+  --ink-3: #6b8296;
+  /* 霓虹强调（文字、细线、自发光） */
+  --neon-cyan: #22d3ee;
+  --neon-amber: #fbbf24;
+  /* 状态 */
+  --ok: #34d399;
+  --warn: #fb923c;
+  --fault: #f43f5e;
+  --offline: #64748b;
+  /* 图表标记色：车辆六类状态 */
+  --c-run: #10a5c4;
+  --c-load: #bf8700;
+  --c-queue: #4a7bef;
+  --c-swap: #d0609e;
+  --c-idle: #64748b;
+  --c-fault: #f43f5e;
+  /* 物料两个系列 */
+  --c-coal: #bf8700;
+  --c-strip: #a07af0;
+  /* 字体 */
+  --f-title: "Alimama ShuHeiTi", "Source Han Sans CN", sans-serif;
+  --f-body: "Source Han Sans CN", "PingFang SC", sans-serif;
+  --f-num: "DIN", "Source Han Sans CN", sans-serif;
+  /* 字号 */
+  --fs-label: 12px;
+  --fs-body: 14px;
+  --fs-title: 17px;
+  --fs-num: 34px;
+  /* 间距 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+
+  position: fixed;
+  inset: 0;
+  /* clip 而不是 hidden：舞台里压暗层向右 / 下延伸了 4000 px，hidden 仍可被 scrollIntoView / 焦点滚动，把整个舞台推走 */
+  overflow: hidden;
+  overflow: clip;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: var(--fs-body);
+  /* Tailwind 预检把行高改成 1.5、svg 改成块级，这里还原设计稿渲染时的浏览器默认 */
+  line-height: 1.25;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+.open-pit-page *,
+.open-pit-page *::before,
+.open-pit-page *::after {
+  box-sizing: border-box;
+}
+.open-pit-page svg {
+  display: inline;
+  vertical-align: baseline;
+}
+.open-pit-page svg text {
+  font-family: var(--f-num);
+}
+.open-pit-page button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+/* ---- 画布与舞台 ---- */
+.open-pit-page canvas.pit-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+.open-pit-page .stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+/* 舞台本身不吃鼠标（画布要能拖动环绕），面板和标签才吃 */
+.open-pit-page .stage .card,
+.open-pit-page .stage .tabs,
+.open-pit-page .stage .sync,
+.open-pit-page .stage .tg .tag {
+  pointer-events: auto;
+}
+.open-pit-page.ui canvas.pit-canvas,
+.open-pit-page.ui .shade,
+.open-pit-page.ui .tags {
+  display: none;
+}
+
+/* 两侧和上下压暗，托住面板；窗口比 16:9 宽 / 高时，暗色一直延伸到窗口边缘 */
+.open-pit-page .shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+      90deg,
+      rgba(5, 10, 18, 0.92) 0,
+      rgba(5, 10, 18, 0.55) 22%,
+      rgba(5, 10, 18, 0) 30%,
+      rgba(5, 10, 18, 0) 70%,
+      rgba(5, 10, 18, 0.55) 78%,
+      rgba(5, 10, 18, 0.92) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 10, 18, 0.96) 0,
+      rgba(5, 10, 18, 0) 15%,
+      rgba(5, 10, 18, 0) 80%,
+      rgba(5, 10, 18, 0.9) 100%
+    );
+}
+.open-pit-page .shade i {
+  position: absolute;
+  background: rgba(5, 10, 18, 0.92);
+}
+.open-pit-page .shade .xl {
+  right: 100%;
+  top: -3000px;
+  bottom: -3000px;
+  width: 4000px;
+}
+.open-pit-page .shade .xr {
+  left: 100%;
+  top: -3000px;
+  bottom: -3000px;
+  width: 4000px;
+}
+.open-pit-page .shade .xt {
+  bottom: 100%;
+  left: -3000px;
+  right: -3000px;
+  height: 4000px;
+  background: rgba(5, 10, 18, 0.96);
+}
+.open-pit-page .shade .xb {
+  top: 100%;
+  left: -3000px;
+  right: -3000px;
+  height: 4000px;
+  background: rgba(5, 10, 18, 0.9);
+}
+
+.open-pit-page .num {
+  font-family: var(--f-num);
+  letter-spacing: 0.01em;
+}
+.open-pit-page .mono {
+  font-family: var(--f-num);
+  letter-spacing: 0.08em;
+}
+.open-pit-page .dim {
+  color: var(--ink-2);
+}
+.open-pit-page .mute {
+  color: var(--ink-3);
+}
+
+/* ---- 卡片：直角、1px 细线、角标 ---- */
+.open-pit-page .card {
+  position: absolute;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 9px 14px 11px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.open-pit-page .card::before,
+.open-pit-page .card::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 0 solid var(--neon-cyan);
+}
+.open-pit-page .card::before {
+  left: -1px;
+  top: -1px;
+  border-width: 2px 0 0 2px;
+}
+.open-pit-page .card::after {
+  right: -1px;
+  bottom: -1px;
+  border-width: 0 2px 2px 0;
+}
+/* 页签对应的重点面板：亮边框 + 外发光 */
+.open-pit-page .card.hl {
+  border-color: var(--neon-cyan);
+  box-shadow:
+    inset 0 0 0 1px rgba(34, 211, 238, 0.45),
+    0 0 22px rgba(34, 211, 238, 0.28);
+}
+.open-pit-page .card h3 {
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 400 var(--fs-title) var(--f-title);
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}
+.open-pit-page .card h3 i {
+  font: 400 12px var(--f-num);
+  font-style: normal;
+  letter-spacing: 0.08em;
+  color: var(--neon-cyan);
+  border: 1px solid var(--line-strong);
+  padding: 0 5px;
+  line-height: 16px;
+}
+.open-pit-page .card h3 em {
+  margin-left: auto;
+  font: 400 12px var(--f-body);
+  font-style: normal;
+  color: var(--ink-3);
+  letter-spacing: 0;
+}
+.open-pit-page .card h3 em.warn {
+  color: var(--warn);
+}
+.open-pit-page .legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-top: 6px;
+}
+.open-pit-page .legend b {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+.open-pit-page .legend .num {
+  color: var(--ink);
+  font-size: 14px;
+  margin-left: 3px;
+}
+
+/* 卡片位置（左栏、右栏、底部中间；定稿坐标） */
+.open-pit-page .c-fleet {
+  left: 24px;
+  top: 84px;
+  width: 420px;
+  height: 330px;
+}
+.open-pit-page .c-trucks {
+  left: 24px;
+  top: 426px;
+  width: 420px;
+  height: 360px;
+}
+.open-pit-page .c-hourly {
+  left: 24px;
+  top: 798px;
+  width: 420px;
+  height: 258px;
+}
+.open-pit-page .c-shovel {
+  left: 1476px;
+  top: 84px;
+  width: 420px;
+  height: 300px;
+}
+.open-pit-page .c-swap {
+  left: 1476px;
+  top: 396px;
+  width: 420px;
+  height: 232px;
+}
+.open-pit-page .c-slope {
+  left: 1476px;
+  top: 640px;
+  width: 420px;
+  height: 236px;
+}
+.open-pit-page .c-comms {
+  left: 1476px;
+  top: 888px;
+  width: 420px;
+  height: 168px;
+}
+.open-pit-page .c-detail {
+  left: 1214px;
+  top: 260px;
+  width: 238px;
+  min-height: 146px;
+  z-index: 3;
+}
+.open-pit-page .c-console {
+  left: 468px;
+  top: 934px;
+  width: 424px;
+  height: 122px;
+}
+.open-pit-page .c-timeline {
+  left: 900px;
+  top: 934px;
+  width: 552px;
+  height: 122px;
+}
+
+/* ---- 顶栏 ---- */
+.open-pit-page .hdr {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: linear-gradient(
+    180deg,
+    rgba(5, 10, 18, 0.98),
+    rgba(5, 10, 18, 0)
+  );
+  border-bottom: 1px solid var(--line);
+  pointer-events: none;
+}
+.open-pit-page .logo {
+  width: 38px;
+  height: 38px;
+  margin-right: 12px;
+}
+.open-pit-page .title {
+  font: 400 25px var(--f-title);
+  letter-spacing: 0.06em;
+}
+.open-pit-page .title small {
+  display: block;
+  font: 400 12px var(--f-num);
+  letter-spacing: 0.22em;
+  color: var(--ink-3);
+  margin-top: 3px;
+}
+.open-pit-page .tabs {
+  position: absolute;
+  left: 600px;
+  top: 18px;
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--line-strong);
+}
+.open-pit-page .tab {
+  width: 148px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--ink-2);
+  border-right: 1px solid var(--line);
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.open-pit-page .tab:last-child {
+  border-right: 0;
+}
+.open-pit-page .tab:hover:not(.on) {
+  color: var(--ink);
+  background: rgba(34, 211, 238, 0.14);
+}
+.open-pit-page .tab.on {
+  color: #04131a;
+  background: var(--neon-cyan);
+  font-weight: 700;
+}
+.open-pit-page .clock {
+  margin-left: auto;
+  text-align: right;
+}
+.open-pit-page .clock .t {
+  font: 400 34px var(--f-num);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.open-pit-page .clock .d {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+}
+.open-pit-page .sync {
+  margin-left: 28px;
+  font-size: 13px;
+  text-align: left;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.open-pit-page .sync b {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+}
+.open-pit-page .sync b.w {
+  background: var(--warn);
+}
+
+/* ---- 指标条 ---- */
+.open-pit-page .kpi {
+  position: absolute;
+  left: 468px;
+  top: 84px;
+  width: 984px;
+  height: 98px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  pointer-events: none;
+}
+.open-pit-page .kpi .card {
+  position: relative;
+  padding: 8px 12px;
+}
+.open-pit-page .kpi .k {
+  font-size: 13px;
+  color: var(--ink-2);
+  letter-spacing: 0.04em;
+  display: flex;
+  justify-content: space-between;
+  white-space: nowrap;
+}
+.open-pit-page .kpi .v {
+  font: 400 var(--fs-num) var(--f-num);
+  line-height: 1.05;
+  margin-top: 3px;
+  color: var(--ink);
+}
+.open-pit-page .kpi .v u {
+  text-decoration: none;
+  font: 400 14px var(--f-body);
+  color: var(--ink-2);
+  margin-left: 4px;
+}
+.open-pit-page .kpi .s {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-top: 3px;
+  white-space: nowrap;
+}
+.open-pit-page .kpi .s .num {
+  color: var(--ink);
+  font-size: 14px;
+}
+/* 边坡安全卡：按最高预警等级着色（设计稿是二级预警 = 橙） */
+.open-pit-page .kpi .card.lv {
+  font-family: var(--f-body);
+}
+.open-pit-page .kpi .card.lv .v {
+  font-family: var(--f-title);
+  font-size: 28px;
+  padding-top: 4px;
+}
+.open-pit-page .kpi .card.lv0 .v {
+  color: var(--ok);
+}
+.open-pit-page .kpi .card.lv1 {
+  border-color: rgba(251, 191, 36, 0.7);
+}
+.open-pit-page .kpi .card.lv1 .v {
+  color: var(--neon-amber);
+}
+.open-pit-page .kpi .card.lv2 {
+  border-color: rgba(251, 146, 60, 0.7);
+}
+.open-pit-page .kpi .card.lv2 .v {
+  color: var(--warn);
+}
+.open-pit-page .kpi .card.lv3 {
+  border-color: rgba(244, 63, 94, 0.8);
+}
+.open-pit-page .kpi .card.lv3 .v {
+  color: var(--fault);
+}
+
+/* ---- 表格 ---- */
+.open-pit-page .tbl {
+  display: grid;
+  font-size: 13.5px;
+}
+.open-pit-page .tbl .th {
+  color: var(--ink-3);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--line);
+}
+.open-pit-page .tbl .r {
+  border-bottom: 1px dashed rgba(120, 160, 190, 0.16);
+  display: flex;
+  align-items: center;
+}
+.open-pit-page .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+}
+.open-pit-page .chip b {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+}
+.open-pit-page .bar {
+  height: 6px;
+  background: rgba(120, 160, 190, 0.18);
+  position: relative;
+  width: 100%;
+}
+.open-pit-page .bar > i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+}
+.open-pit-page .seg {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+}
+.open-pit-page .seg i {
+  display: block;
+  height: 100%;
+}
+
+/* 可点的行：悬停亮底，选中亮底 + 左侧青线 */
+.open-pit-page .pick {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.open-pit-page .pick:hover {
+  background: rgba(34, 211, 238, 0.1);
+}
+.open-pit-page .pick.sel {
+  /* 选中行只留一层很淡的底，设计稿里列表行没有选中态，选中靠详情卡和三维光柱表达 */
+  background: rgba(34, 211, 238, 0.06);
+}
+
+/* ---- 场景标签 ---- */
+.open-pit-page .tags {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.open-pit-page .tg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+}
+.open-pit-page .tag {
+  position: absolute;
+  font-size: 12.5px;
+  line-height: 1.2;
+  background: rgba(5, 12, 22, 0.82);
+  border: 1px solid var(--line-strong);
+  padding: 3px 8px 4px;
+  white-space: nowrap;
+  color: var(--ink);
+  cursor: pointer;
+}
+.open-pit-page .tag:hover,
+.open-pit-page .tag.sel {
+  background: rgba(8, 28, 44, 0.95);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.45);
+  border-color: var(--neon-cyan);
+}
+.open-pit-page .tag b {
+  font: 400 13px var(--f-num);
+  letter-spacing: 0.06em;
+  color: var(--neon-cyan);
+  margin-right: 6px;
+}
+.open-pit-page .tag.warn {
+  border-color: var(--warn);
+}
+.open-pit-page .tag.warn b {
+  color: var(--warn);
+}
+.open-pit-page .tag.fault {
+  border-color: var(--fault);
+}
+.open-pit-page .tag.fault b {
+  color: var(--fault);
+}
+.open-pit-page .tag.coal b {
+  color: var(--neon-amber);
+}
+.open-pit-page .pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border: 2px solid var(--neon-cyan);
+  border-radius: 50%;
+  background: rgba(34, 211, 238, 0.25);
+}
+.open-pit-page .pin.warn {
+  border-color: var(--warn);
+  background: rgba(251, 146, 60, 0.3);
+}
+.open-pit-page .pin.fault {
+  border-color: var(--fault);
+  background: rgba(244, 63, 94, 0.35);
+}
+.open-pit-page .pin.sel {
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  box-shadow: 0 0 10px currentColor;
+}
+.open-pit-page .leader {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 1px;
+  background: var(--line-strong);
+  transform-origin: 0 0;
+}
+
+/* ---- 控制台 ---- */
+.open-pit-page .btns {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+  margin-top: 0;
+}
+.open-pit-page .btn {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  font-size: 13px;
+  white-space: nowrap;
+  color: var(--ink);
+  background: rgba(34, 211, 238, 0.06);
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+.open-pit-page .btn:hover:not(.on) {
+  background: rgba(34, 211, 238, 0.22);
+  border-color: var(--neon-cyan);
+}
+.open-pit-page .btn.on {
+  background: var(--neon-cyan);
+  color: #04131a;
+  font-weight: 700;
+}
+.open-pit-page .tour {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.open-pit-page .tour .tour-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.open-pit-page .tour .tour-toggle:hover {
+  color: var(--ink);
+}
+.open-pit-page .tour .sw {
+  width: 38px;
+  height: 18px;
+  border: 1px solid var(--neon-cyan);
+  position: relative;
+  flex: none;
+}
+.open-pit-page .tour .sw::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  width: 12px;
+  height: 12px;
+  background: var(--neon-cyan);
+}
+.open-pit-page .tour .off .sw {
+  border-color: var(--ink-3);
+}
+.open-pit-page .tour .off .sw::after {
+  right: auto;
+  left: 2px;
+  background: var(--ink-3);
+}
+.open-pit-page .tour .bar {
+  flex: 1;
+}
+.open-pit-page .ev {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 13.5px;
+  padding: 1px 0;
+  border-bottom: 1px dashed rgba(120, 160, 190, 0.16);
+}
+.open-pit-page .ev .tm {
+  font: 400 13px var(--f-num);
+  color: var(--ink-3);
+  width: 40px;
+  flex: none;
+}
+.open-pit-page .ev .dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  align-self: center;
+}
+.open-pit-page .ev .ti {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.open-pit-page .badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 0 5px;
+  line-height: 17px;
+  border: 1px solid currentColor;
+  margin-left: 6px;
+  letter-spacing: 0.02em;
+}
+
+/* 详情卡的关闭按钮 */
+.open-pit-page .card h3 em.close {
+  cursor: pointer;
+  color: var(--ink-2);
+}
+.open-pit-page .card h3 em.close:hover {
+  color: var(--ink);
+}
+
+/* ---- 图表悬停提示 ---- */
+.open-pit-page .tip {
+  position: absolute;
+  z-index: 30;
+  pointer-events: none;
+  min-width: 96px;
+  padding: 6px 10px 7px;
+  background: rgba(6, 14, 26, 0.97);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.open-pit-page .tip .th {
+  color: var(--ink);
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+.open-pit-page .tip .tr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.open-pit-page .tip .tr b {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+}
+.open-pit-page .tip .tr .num {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+/* ---- 加载遮罩 ---- */
+.open-pit-page .loading {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--ink-2);
+  font-size: 16px;
+  letter-spacing: 0.2em;
+}
+.open-pit-page .loading small {
+  display: block;
+  margin-top: 8px;
+  font: 400 12px var(--f-num);
+  letter-spacing: 0.22em;
+  color: var(--ink-3);
+  text-align: center;
+}
