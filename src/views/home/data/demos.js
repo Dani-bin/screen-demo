@@ -342,6 +342,44 @@ export const DEMOS = [
     // 取自定稿的香槟金
     accent: "#c9a86a",
     preview: "home/estate.webp"
+  },
+  {
+    key: "open-pit",
+    path: "/open-pit",
+    name: "露天矿无人运输",
+    en: "OPEN-PIT UNMANNED HAUL",
+    subTitle: "青原露天矿 · 虚构矿名",
+    category: "智慧矿山",
+    desc: "给领导参观和对外汇报用的露天矿运输调度大屏：整座矿用 Blender 建模、Cycles 烘焙，十级台阶的采坑里 100 台纯电无人矿卡编组在采装、运输、卸载之间循环，换电、光伏、边坡雷达和 5G 都跟着仿真走。点卡车和设备看详情，边坡出现位移预警时坑壁泛红，45 秒无人操作自动导览。",
+    tags: ["Blender 全景建模", "百台无人矿卡", "边坡预警"],
+    // 依据：open-pit/data/layout.json 的卡车和电铲数量，sim/simulator.js 的换电时间 SWAP_SEC（360 s）
+    stats: [
+      { value: "100", unit: "台", key: "无人矿卡" },
+      { value: "7", unit: "台", key: "电铲" },
+      { value: "6", unit: "min", key: "单次换电" }
+    ],
+    // 取自定稿的煤能青蓝
+    accent: "#22d3ee",
+    preview: "home/open-pit.webp"
+  },
+  {
+    key: "smart-community",
+    path: "/smart-community",
+    name: "社区无人机空中巡防",
+    en: "COMMUNITY DRONE PATROL",
+    subTitle: "松岚苑 · 虚构小区",
+    category: "智慧社区",
+    desc: "给物业、街道和领导参观用的空中巡防指挥中心：暖光实体沙盘上，主侦查、中继、补盲三架无人机联动，一天里处置走失搜寻、周界入侵、充电区热源、消防通道占用和外立面隐患，盲区补扫、5.8G 切 2.4G 备用链路、低电量补位、工单闭环和隐私禁拍区都跟着仿真走。点底部剧情就播，45 秒无人操作自动导览。",
+    tags: ["三机联动", "盲区补扫", "隐私保护"],
+    // 依据：smart-community/data/layout.json（16 栋住宅，复用 /estate 的 B01–B16）、sim/simulator.js 的事件类型（5 类）和三机编队（3 架）
+    stats: [
+      { value: "3", unit: "架", key: "无人机联动" },
+      { value: "5", unit: "类", key: "巡防事件" },
+      { value: "16", unit: "栋", key: "住宅楼栋" }
+    ],
+    // 取自三机身份色里的主侦查机蓝（提亮版）
+    accent: "#7cc0ff",
+    preview: "home/smart-community.webp"
   }
 ]
 

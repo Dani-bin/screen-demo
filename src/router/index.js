@@ -114,6 +114,18 @@ const routes = [
     path: "/estate",
     name: "Estate",
     component: () => import("@/views/estate/index.vue")
+  },
+  {
+    // 露天矿无人矿卡运输调度：虚构青原露天矿，100 台无人矿卡的采装—运输—卸载闭环 + 换电光伏 + 边坡安全监测
+    path: "/open-pit",
+    name: "OpenPit",
+    component: () => import("@/views/open-pit/index.vue")
+  },
+  {
+    // 智慧社区：虚构小区「松岚苑」暖光实体沙盘 + 无人机三机联动（主侦查 / 中继 / 补盲）空中巡防指挥中心
+    path: "/smart-community",
+    name: "SmartCommunity",
+    component: () => import("@/views/smart-community/index.vue")
   }
 ]
 
