@@ -30,6 +30,7 @@ import {
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
+import { withMarkKey } from "../../lib/mark-key.mjs"
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, "..", "..", "..")
@@ -395,7 +396,7 @@ try {
   await send("Page.addScriptToEvaluateOnNewDocument", {
     source: `{ const real = Date.now.bind(Date); window.__vidNow = ${CLOCK0}; Date.now = () => window.__vidNow ?? real(); }`
   })
-  await send("Page.navigate", { url: `${base}/#/drone?tour=0` })
+  await send("Page.navigate", { url: withMarkKey(`${base}/#/drone?tour=0`) })
   for (let i = 0; i < 120; i++) {
     await sleep(500)
     if (await evaluate(`window.__dashboard?.ready === true`)) break

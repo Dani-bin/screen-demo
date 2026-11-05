@@ -24,6 +24,7 @@ import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { DEMOS } from "../src/views/home/data/demos.js"
+import { withMarkKey } from "./lib/mark-key.mjs"
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
 const WIDTH = 1920
@@ -224,7 +225,7 @@ async function main() {
       console.log(`→ ${demo.name}  ${url}`)
       // 先回空白页，保证每个演示都整页重新加载，而不是在同一页面里切路由
       await send("Page.navigate", { url: "about:blank" })
-      const nav = await send("Page.navigate", { url })
+      const nav = await send("Page.navigate", { url: withMarkKey(url) })
       if (nav.errorText) {
         throw new Error(
           `打不开 ${url}（${nav.errorText}），请确认开发服务器已启动`

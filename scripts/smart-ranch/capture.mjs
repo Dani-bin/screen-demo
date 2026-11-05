@@ -15,6 +15,7 @@ import { spawn } from "node:child_process"
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { withMarkKey } from "../lib/mark-key.mjs"
 
 const args = process.argv.slice(2)
 const opt = (k, d) => (args.includes(k) ? args[args.indexOf(k) + 1] : d)
@@ -113,7 +114,7 @@ try {
     mobile: false
   })
   const t0 = Date.now()
-  await send("Page.navigate", { url })
+  await send("Page.navigate", { url: withMarkKey(url) })
   let ok = false
   while (Date.now() - t0 < timeout * 1000) {
     await sleep(500)

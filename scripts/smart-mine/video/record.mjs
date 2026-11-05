@@ -27,6 +27,7 @@ import {
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
+import { withMarkKey } from "../../lib/mark-key.mjs"
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, "..", "..", "..")
@@ -597,7 +598,7 @@ try {
     source: `{ const real = Date.now.bind(Date); window.__vidNow = null; Date.now = () => window.__vidNow ?? real(); }`
   })
   await evaluate(`window.__vidNow = ${CLOCK0}`)
-  await send("Page.navigate", { url: `${base}/#/smart-mine` })
+  await send("Page.navigate", { url: withMarkKey(`${base}/#/smart-mine`) })
   for (let i = 0; i < 120; i++) {
     await sleep(500)
     if (

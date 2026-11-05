@@ -14,6 +14,7 @@ import "@/assets/styles/index.scss"
 import App from "./App.vue"
 import router from "@/router"
 import { installTopProgress } from "@/components/topProgress.js"
+import { installSignatureMark } from "@/components/signatureMark.js"
 
 const app = createApp(App)
 // 切换页面、加载三维模型时显示顶部进度条
@@ -22,3 +23,6 @@ app.use(router)
 
 // 挂载实例
 app.mount("#app")
+
+// 常驻署名水印：演示地址发给别人后，让汇报现场的人看得出出处（规则见 signatureMark.js）
+installSignatureMark(router)

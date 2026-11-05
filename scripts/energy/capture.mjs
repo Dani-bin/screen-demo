@@ -17,6 +17,7 @@ import { spawn } from "node:child_process"
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { withMarkKey } from "../lib/mark-key.mjs"
 
 const args = process.argv.slice(2)
 const flag = (k) => args.includes(k)
@@ -107,7 +108,7 @@ try {
     deviceScaleFactor: dpr,
     mobile: false
   })
-  await send("Page.navigate", { url: `${base}/#/energy` })
+  await send("Page.navigate", { url: withMarkKey(`${base}/#/energy`) })
   for (let i = 0; i < 200; i++) {
     await sleep(300)
     if (await evaluate(send, "!!window.__energyScene?.station")) break
